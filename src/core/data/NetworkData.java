@@ -10,7 +10,7 @@ import javax.json.JsonObject;
 
 public class NetworkData extends AData {
 
-	private String ipClass, domain, dns, ip, adBlocking, gpg, autoGenPasswds;
+	private String ipClass, domain, dns, ip, adBlocking, gpg, autoGenPasswds, adminEmail;
 
 	private ServerData defaultServerData;
 
@@ -31,13 +31,14 @@ public class NetworkData extends AData {
 		if (include != null) {
 			readInclude(include);
 		} else {
-			this.ipClass = data.getString("class", null);
+			this.ipClass = data.getString("class", "a");
 			this.domain = data.getString("domain", null);
-			this.dns = data.getString("dns", null);
+			this.dns = data.getString("dns", "8.8.8.8");
 			this.ip = data.getString("ip", null);
-			this.adBlocking = data.getString("adblocking", null);
+			this.adBlocking = data.getString("adblocking", "no");
 			this.gpg = data.getString("gpg", null);
 			this.autoGenPasswds = data.getString("autogenpasswds", "false"); //Default to false
+			this.adminEmail = data.getString("adminemail", null);
 			defaultServerData = new ServerData("");
 			defaultServerData.read(data);
 			servers = new HashMap<String, ServerData>();
@@ -106,6 +107,10 @@ public class NetworkData extends AData {
 	
 	public String getGPG() {
 		return gpg;
+	}
+	
+	public String getAdminEmail() {
+		return adminEmail;
 	}
 	
 	public String getAutoGenPasswds() {

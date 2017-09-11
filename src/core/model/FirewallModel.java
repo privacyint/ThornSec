@@ -281,11 +281,11 @@ public class FirewallModel extends AModel {
 
 	private String getMangle() {
 		//Vector<String> chain = this.getChain("nat", "POSTROUTING");
-		Vector<String> chain = new Vector<String>(new LinkedHashSet<String>(this.getChain("mangle", "OUTPUT")));
+		Vector<String> chain = new Vector<String>(new LinkedHashSet<String>(this.getChain("mangle", "FORWARD")));
 
 		String nat = "";
 		for (int i = 0; i < chain.size(); i++) {
-			nat += "-A OUTPUT " + chain.elementAt(chain.size() - 1 - i) + "\n";
+			nat += "-A FORWARD " + chain.elementAt(chain.size() - 1 - i) + "\n";
 		}
 		return nat;
 	}
