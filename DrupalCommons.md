@@ -1,4 +1,4 @@
-#DrupalCommons.java
+# DrupalCommons.java
 
 Creates a Drupal Commons installation.  Inherits all functionality from Drupal.java
 

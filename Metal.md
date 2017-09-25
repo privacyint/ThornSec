@@ -1,13 +1,13 @@
-#metal.java
+# metal.java
 
 This configures a Hypervisor ("metal").
 
-##getPersistentConfig
+## getPersistentConfig
 Creates the required ethernet ifaces - either physical or logical bridges depending on if this metal is also a router or not.
 
 Creates our backup shell script, as well as its cron job.
 
-##getInstalled
+## getInstalled
 Installs VirtualBox, genisoimage, bridge-utils, and rsync for creating VMs.
 Installs git, qemu-utils, and duplicity for backups.
 
@@ -15,15 +15,14 @@ Downloads John Kaul's iterative backup script from github (https://github.com/Jo
 
 Downloads and checks the specified Debian ISO against the specified sha512 sum.
 
-##getPersistentFirewall
+## getPersistentFirewall
 
-
-##getLiveConfig
+## getLiveConfig
 Takes passwords from our local GPG store, and turns them into a crypted string ready for inserting into our preseed file.
 
 If there is no password stored and the configuration file is not set to generate them, it uses the passphrase "secret"
 
-##preseed(String server, String service, NetworkModel model, Boolean expirePasswords)
+## preseed(String server, String service, NetworkModel model, Boolean expirePasswords)
 Spits out our service's Debian preseed file for unattended installs.
 
 Configures:
@@ -34,8 +33,8 @@ Configures:
 - Correct hostname/domain/mirror
 - OpenSSH-server && sudo
 
-##buildIso(String server, String service, NetworkModel model, String preseed)
+## buildIso(String server, String service, NetworkModel model, String preseed)
 Takes a preseed, inserts it into our Debian ISO.
 
-##buildVm(String server, String service, NetworkModel model, String bridge)
+## buildVm(String server, String service, NetworkModel model, String bridge)
 Creates our VM for our service.

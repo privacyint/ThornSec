@@ -1,11 +1,11 @@
-#Etherpad.java
+# Etherpad.java
 
 Creates an Etherpad-lite instance.  Inherits much functionality from Nginx.java, MariaDB.java && PHP.java.
 
-##getInstalled
+## getInstalled
 Installs Etherpad-lite's dependencies
 
-##getPersistentConfig
+## getPersistentConfig
 Builds nodejs 6.x from mainline.
 
 Installs and configures Etherpad-lite.

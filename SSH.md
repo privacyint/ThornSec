@@ -1,9 +1,8 @@
-#SSH.java
+# SSH.java
 
 This is our unit tests for configuring SSHd on a given server/service.
 
-
-##getPersistentConfig
+## getPersistentConfig
 Creates a secured /etc/ssh/sshd_config file.
 
 Creates a warning banner on SSH in - theoretically, this should never be displayed as login should always be done by keys, not passwords.
@@ -12,11 +11,11 @@ Creates a motd banner (adapted from https://nickcharlton.net/posts/debian-ubuntu
 
 Regenerates server-side keys if required, removes weak moduli, and imports public keys for login if required.
 
-##getInstalled
+## getInstalled
 Makes sure the OpenSSH server is installed.
 
-##getPersistentFirewall
+## getPersistentFirewall
 Opens the SSH port.
 
-##getLiveConfig
+## getLiveConfig
 Ensures sshd is running
