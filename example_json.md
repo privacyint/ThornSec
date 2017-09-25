@@ -1,4 +1,4 @@
-##Example Config
+## Example Config
 ```
 {
 	"office":{
@@ -77,16 +77,16 @@
 		* Server definitions                                                        *
 		****************************************************************************/
 		"servers":{
-			//Example of a router configured using ppp
-			//This is probably your default setup for a router
+			//Example of a router configured using _PPPoE_
+			//This is probably your default setup for a router if you're using ADSL, VDSL or point-to-point tunnel
 			"ppp_router":{
 				//Declare it's a router
 				"types":["router"],
 				//Give it the subnet of 1
 				"subnet":"1",
-				//Tell it to use ppp for external connection
+				//Tell it to use PPPoE for external connection
 				"extconnection":"ppp",
-				//Declare the ppp iface
+				//Declare the PPPoE iface
 				"extiface":"ppp0",
 				//Physical external iface to negotiate ppp
 				"pppiface":"enp2s0",
@@ -97,6 +97,7 @@
 			},
 			//Example of a router configured using dhcp
 			//This is probably only used if you're trying to create a network inside your main network (VMs, perhaps)
+			//Also likely if you're connected using coax, Ethernet over the last mile, or LTE/3G/WiMax etc
 			"dhcp_router":{
 				//Declare it's a router
 				"types":["router"],
@@ -151,7 +152,7 @@
 				//On our hypervisor
 				"metal":"hypervisor",
 				"mac":"de:ad:be:ef:ca:fe",
-				//Which is a proxy
+				//Which is a reverse proxy
 				"profiles":["Webproxy"],
 				//Proxying the following web services
 				"proxy":[ "etherpad",
