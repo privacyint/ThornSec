@@ -89,14 +89,14 @@ public class Router extends AStructuredProfile {
 	
 	private String buildDailyBandwidthEmail(String sender, String recipient, String subject, String username, boolean includeBlurb) {
 		String email = "";
-		email += "echo -e \"";
+		email += "echo -e \\\"";
 		
 		email += "subject:" + subject + "\\n";
 		email += "from:" + sender + "\\n";
 		email += "recipients:" + recipient + "\\n";
 		email += "\\n";
-		email += "UL: `iptables -L " + username + "_egress -v -n | tail -n 2 | head -n 1 | awk '{ print $2 }'`\\n";
-		email += "DL: `iptables -L " + username + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print $2 }'`\\n";
+		email += "UL: \\`iptables -L " + username + "_egress -v -n | tail -n 2 | head -n 1 | awk '{ print $2 }'\\`\\n";
+		email += "DL: \\`iptables -L " + username + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print $2 }'\\`\\n";
 		
 		if (includeBlurb) {
 			email += "\\n";
@@ -123,7 +123,7 @@ public class Router extends AStructuredProfile {
 			email += "Tech Team";
 		}
 		
-		email += "\"";
+		email += "\\\"";
 		email += "|sendmail \"" + recipient + "\"\n\n";
 		
 		return email;
