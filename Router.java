@@ -95,8 +95,8 @@ public class Router extends AStructuredProfile {
 		email += "from:" + sender + "\\n";
 		email += "recipients:" + recipient + "\\n";
 		email += "\\n";
-		email += "UL: \\`iptables -L " + username + "_egress -v -n | tail -n 2 | head -n 1 | awk '{ print $2 }'\\`\\n";
-		email += "DL: \\`iptables -L " + username + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print $2 }'\\`\\n";
+		email += "UL: \\`iptables -L " + username + "_egress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
+		email += "DL: \\`iptables -L " + username + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
 		
 		if (includeBlurb) {
 			email += "\\n";
