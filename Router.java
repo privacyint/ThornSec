@@ -6,6 +6,7 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 
 import core.iface.IUnit;
+import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
@@ -19,12 +20,14 @@ public class Router extends AStructuredProfile {
 
 	DNS dns;
 	DHCP dhcp;
+	QoS qos;
 	
 	public Router() {
 		super("router");
 		
 		dns = new DNS();
 		dhcp = new DHCP();
+		qos = new QoS();
 	}
 
 	public Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
@@ -41,11 +44,9 @@ public class Router extends AStructuredProfile {
 
 		units.addAll(dhcp.getPersistentConfig(server, model));
 		units.addAll(dns.getPersistentConfig(server, model));
+		units.addAll(qos.getPersistentConfig(server, model));
 		
 		units.addAll(extConnConfigUnits(server, model));
-		
-		units.addAll(bandwidthThrottlingUnits(server, model));
-		units.addAll(bandwidthThrottlingAlertUnits(server, model));
 		
 		units.addAll(dailyBandwidthEmailDigestUnits(server, model));
 		
@@ -60,6 +61,7 @@ public class Router extends AStructuredProfile {
 		
 		units.addAll(dns.getInstalled(server, model));
 		units.addAll(dhcp.getInstalled(server, model));
+		units.addAll(qos.getInstalled(server, model));
 		
 		return units;
 	}
@@ -69,8 +71,11 @@ public class Router extends AStructuredProfile {
 		
 		units.addAll(dhcp.getPersistentFirewall(server, model));
 		units.addAll(dns.getPersistentFirewall(server, model));
+		units.addAll(qos.getPersistentFirewall(server, model));
 		
-		units.addAll(deviceIptUnits(server, model));
+		units.addAll(userIptUnits(server, model));
+		units.addAll(intOnlyIptUnits(server, model));
+		units.addAll(extOnlyIptUnits(server, model));
 		units.addAll(serverIptUnits(server, model));
 
 		return units;
@@ -81,6 +86,7 @@ public class Router extends AStructuredProfile {
 		
 		units.addAll(dhcp.getLiveConfig(server, model));
 		units.addAll(dns.getLiveConfig(server, model));
+		units.addAll(qos.getLiveConfig(server, model));
 		
 		units.addAll(subnetConfigUnits(server, model));
 		
@@ -96,7 +102,7 @@ public class Router extends AStructuredProfile {
 		email += "recipients:" + recipient + "\\n";
 		email += "\\n";
 		email += "UL: \\`iptables -L " + username + "_egress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
-		email += "DL: \\`iptables -L " + username + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
+		email += "DL: \\`iptables -L " + username + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`";
 		
 		if (includeBlurb) {
 			email += "\\n";
@@ -144,15 +150,17 @@ public class Router extends AStructuredProfile {
 				//Email the user only
 				case "user":
 				case "superuser":
+					script += "\n\n";
 					script += buildDailyBandwidthEmail(model.getData().getAdminEmail(),
 													   devices[i] + "@" + model.getData().getDomain(),
-													   "[" + devices[i] + "] Daily Bandwidth Digest",
+													   "[" + devices[i] + "." + model.getData().getLabel() + "] Daily Bandwidth Digest",
 													   devices[i],
 													   true);
 					break;
 				//This is a peripheral of some sort.  Just let the responsible person know.
 				case "intonly":
 				case "extonly":
+					script += "\n\n";
 					script += buildDailyBandwidthEmail(devices[i] + "@" + model.getData().getDomain(),
 							   model.getData().getAdminEmail(),
 							   "[" + devices[i] + "." + model.getLabel() + "] Daily Bandwidth Digest",
@@ -164,11 +172,12 @@ public class Router extends AStructuredProfile {
 			}
 
 			script += "iptables -Z " + devices[i] + "_ingress\n";
-			script += "iptables -Z " + devices[i] + "_egress\n\n";
+			script += "iptables -Z " + devices[i] + "_egress";
 		}
 		
 		//Then servers
 		for (int i = 0; i < servers.length; ++i) {
+			script += "\n\n";
 			script += buildDailyBandwidthEmail(servers[i] + "@" + model.getData().getDomain(),
 					   model.getData().getAdminEmail(),
 					   "[" + servers[i] + "." + model.getLabel() + "] Daily Bandwidth Digest",
@@ -176,7 +185,7 @@ public class Router extends AStructuredProfile {
 					   false);
 
 			script += "iptables -Z " + servers[i] + "_ingress\n";
-			script += "iptables -Z " + servers[i] + "_egress\n\n";		
+			script += "iptables -Z " + servers[i] + "_egress";		
 		}
 
 		units.addElement(new FileUnit("daily_bandwidth_alert_script", "proceed", script, "/etc/cron.daily/bandwidth", "I couldn't create the bandwidth digest script.  This means you and your users won't receive daily updates on bandwidth use"));
@@ -185,209 +194,6 @@ public class Router extends AStructuredProfile {
 		return units;
 	}
 
-	private Vector<IUnit> bandwidthThrottlingAlertUnits(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
-		
-		String ommail = "";
-		String emailBody = "";
-		
-		emailBody += "As you know, one of the key advantages afforded by operating our network through Thornsec is that it monitors for uploading traffic. ";
-		emailBody += "The reason for this is that we want to try and check for any data exfiltration from our network.";
-		emailBody += "\\r\\n";
-		emailBody += "\\r\\n";
-		emailBody += "Our router has noticed that you have uploaded more than 20mb in a single connection. ";
-		emailBody += "While this may be entirely normal for you, our router is set to identify this type of activity as a potential exfiltration. ";
-		emailBody += "That is, it's possible your computer has been compromised and data is being uploaded to an external server. (Just ask Hacking Team about that!)";
-		emailBody += "\\r\\n";
-		emailBody += "\\r\\n";
-		emailBody += "Over the next little while we are going to start speed-limiting uploads which are over 20mb, and will be alerting both you and the Tech Team every time this happens. ";
-		emailBody += "\\r\\n";
-		emailBody += "\\r\\n";
-		emailBody += "It is important to note a couple of things: as a privacy organisation, we aren't using this to snoop on what you're up to! ";
-		emailBody += "However, we do have a lot of sensitive data inside our network, and we will be putting some precautions in place for large uploads. ";
-		emailBody += "\\r\\n";
-		emailBody += "\\r\\n";
-		emailBody += "We want this to be an inclusive feedback process so that we can try and minimise false positives before starting to roll out these precautions ";
-		emailBody += "- if you've received this email and aren't doing anything you perceive to be out of the ordinary, please let us know.";
-		emailBody += "\\r\\n";
-		emailBody += "\\r\\n";
-		emailBody += "You will only receive one of these email notices per hour.";
-		emailBody += "\\r\\n";
-		emailBody += "\\r\\n";
-		emailBody += "Thanks!";
-		emailBody += "\\r\\n";
-		emailBody += "Tech Team";
-		
-		ommail += "module(load=\\\"ommail\\\")\n";
-		ommail += "\n";
-		ommail += "template(name=\\\"mailBodyUser\\\" type=\\\"string\\\" string=\\\"" + emailBody + "\\\")\n";
-		ommail += "template(name=\\\"mailBodyTech\\\" type=\\\"string\\\" string=\\\"%msg%\\\")\n";
-		ommail += "\n";
-		ommail += "if \\$msg contains \\\"throttled\\\" then {\n";
-
-		String[] devices = model.getDeviceLabels();
-		String[] servers = model.getServerLabels();
-		
-		//Iterate through devicen first
-		for (int i = 0; i < devices.length; ++i) {
-			switch (model.getDeviceModel(devices[i]).getType()) {
-				//Email both the user && the responsible person
-				case "user":
-				case "superuser":
-					if (model.getDeviceModel(devices[i]).getWiredMac() != null && model.getDeviceModel(devices[i]).getWirelessMac() != null) {
-						ommail += buildThrottledEmailAction(model.getDeviceModel(devices[i]).getWiredIP(), model.getDeviceModel(devices[i]).getWirelessIP(), devices[i] + "." + model.getLabel(), devices[i] + "@" + model.getData().getDomain(),model.getData().getAdminEmail(), "mailBodyUser");
-						ommail += buildThrottledEmailAction(model.getDeviceModel(devices[i]).getWiredIP(), model.getDeviceModel(devices[i]).getWirelessIP(), devices[i] + "." + model.getLabel(), model.getData().getAdminEmail(), devices[i] + "@" + model.getData().getDomain(), "mailBodyTech");
-					}
-					if (model.getDeviceModel(devices[i]).getWiredMac() != null) {
-						ommail += buildThrottledEmailAction(model.getDeviceModel(devices[i]).getWiredIP(), devices[i] + "." + model.getLabel(), devices[i] + "@" + model.getData().getDomain(), model.getData().getAdminEmail() , "mailBodyUser");
-						ommail += buildThrottledEmailAction(model.getDeviceModel(devices[i]).getWiredIP(), devices[i] + "." + model.getLabel(), model.getData().getAdminEmail(), devices[i] + "@" + model.getData().getDomain(), "mailBodyTech");
-					}
-					else {
-						ommail += buildThrottledEmailAction(model.getDeviceModel(devices[i]).getWirelessIP(), devices[i] + "." + model.getLabel(), devices[i] + "@" + model.getData().getDomain(), model.getData().getAdminEmail() , "mailBodyUser");
-						ommail += buildThrottledEmailAction(model.getDeviceModel(devices[i]).getWirelessIP(), devices[i] + "." + model.getLabel(), model.getData().getAdminEmail(), devices[i] + "@" + model.getData().getDomain(), "mailBodyTech");
-					}
-					break;
-				//This is a peripheral of some sort.  Just let the responsible person know.
-				case "intonly":
-				case "extonly":
-					ommail += buildThrottledEmailAction(model.getDeviceModel(devices[i]).getWiredIP(), devices[i] + "." + model.getLabel(), devices[i] + "@" + model.getData().getDomain(), model.getData().getAdminEmail(), "mailBodyTech");
-					break;
-				default:
-					//It'll default drop.
-			}
-		}
-		
-		//Then servers
-		for (int i = 0; i < servers.length; ++i) {
-			ommail += buildThrottledEmailAction(model.getServerModel(servers[i]).getIP(), servers[i] + "." + model.getLabel(), servers[i] + "@" + model.getData().getDomain(), servers[i] + "." + model.getLabel(), model.getData().getAdminEmail(), "mailBodyTech");
-		}
-		
-		ommail += "}";
-		
-		units.addElement(new FileUnit("ommail_output", "proceed", ommail, "/etc/rsyslog.d/ommail.conf",
-				"I couldn't output the file for firing bandwidth emails.  This means you won't be able to "
-				+ "be notified of any potential exfiltration from your network."));
-		
-		return units;
-	}
-
-	private String buildThrottledEmailAction(String ip, String identifier, String fromEmail, String toEmail, String bodyTemplate) {
-		return buildThrottledEmailAction(ip, "", identifier, fromEmail, toEmail, bodyTemplate);
-	}
-	
-	private String buildThrottledEmailAction(String ip1, String ip2, String identifier, String fromEmail, String toEmail, String bodyTemplate) {
-		String action = "";
-		action += "    if \\$msg contains \\\"SRC=" + ip1 + "\\\"";
-		action += (!ip2.equals("")) ? " or \\$msg contains \\\"SRC=" + ip2 + "\\\"" : "";
-		action += " then {\n";
-		action += "        action(type=\\\"ommail\\\" server=\\\"localhost\\\" port=\\\"25\\\"\n";
-		action += "               mailfrom=\\\"" + fromEmail + "\\\"\n";
-		action += "               mailto=[\\\"" + toEmail + "\\\"]\n";
-		action += "               subject.text=\\\"[" + identifier + "] Upload bandwidth notification\\\"\n";
-		action += "               action.execonlyonceeveryinterval=\\\"3600\\\"\n";
-        action += "               template=\\\"" + bodyTemplate + "\\\"\n";
-        action += "               body.enable=\\\"on\\\"\n";
-		action += "        )\n";
-		action += "    }\n";
-		
-		return action;		
-	}
-	
-	private Vector<IUnit> bandwidthThrottlingUnits(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
-		
-		int userUploadRate = 150;
-		int extOnlyUploadRate = 600;
-		
-		String tcUnits = "kbps"; //Kilobytes per second
-		
-		String tcInit = "";
-		tcInit += "#!/bin/bash\n";
-		tcInit += "TC=/sbin/tc\n";
-		tcInit += "\n";
-		tcInit += "#DNLD=150Kbit # DOWNLOAD Limit\n";
-		tcInit += "#DWEIGHT=15Kbit # DOWNLOAD Weight Factor ~ 1/10 of DOWNLOAD Limit\n";
-		tcInit += "\n";
-		tcInit += "USR_UPLD=" + userUploadRate + tcUnits + " # UPLOAD Limit for users\n";
-		tcInit += "USR_UWEIGHT=" + (userUploadRate/10) + tcUnits + " # UPLOAD Weight Factor for users\n";
-		tcInit += "EXT_UPLD=" + extOnlyUploadRate + tcUnits + " # UPLOAD Limit for external-only devicen\n";
-		tcInit += "EXT_UWEIGHT=" + (extOnlyUploadRate/10) + tcUnits + " # UPLOAD Weight Factor for external-only devicen\n";
-		tcInit += "\n";
-		tcInit += "INTIFACE=" + model.getData().getIface(server) + "\n";
-		tcInit += "EXTIFACE=" + model.getData().getExtIface(server) + "\n";
-		tcInit += "\n";
-		tcInit += "tc_start() {\n";
-
-		//Ingress throttling
-		tcInit += "#    \\$TC qdisc add dev \\$INTIFACE root handle 11: cbq bandwidth 1000Mbit avpkt 1000 mpu 64\n";
-		tcInit += "#    \\$TC class add dev \\$INTIFACE parent 11:0 classid 11:1 cbq rate \\$DNLD weight \\$DWEIGHT allot 1514 prio 1 avpkt 1000 bounded\n";
-		tcInit += "#    \\$TC filter add dev \\$INTIFACE parent 11:0 protocol ip handle 4 fw flowid 11:1\n";
-		tcInit += "\n";
-
-		//Egress throttling
-		tcInit += "#    \\$TC qdisc add dev \\$EXTIFACE root handle 10: cbq bandwidth 1000Mbit avpkt 1000 mpu 64\n";
-		tcInit += "#    \\$TC class add dev \\$EXTIFACE parent 10:0 classid 10:1 cbq rate \\$USR_UPLD weight \\$USR_UWEIGHT allot 1514 prio 1 avpkt 1000 bounded\n";
-		tcInit += "#    \\$TC filter add dev \\$EXTIFACE parent 10:0 protocol ip handle 4 fw flowid 10:1\n";
-		tcInit += "#    \\$TC class add dev \\$EXTIFACE parent 10:0 classid 10:2 cbq rate \\$EXT_UPLD weight \\$EXT_UWEIGHT allot 1514 prio 1 avpkt 1000 bounded\n";
-		tcInit += "#    \\$TC filter add dev \\$EXTIFACE parent 10:0 protocol ip handle 3 fw flowid 10:2\n";
-		tcInit += "}\n";
-		tcInit += "\n";
-		tcInit += "tc_stop() {\n";
-		tcInit += "#    \\$TC qdisc del dev \\$INTIFACE root\n";
-		tcInit += "#    \\$TC qdisc del dev \\$EXTIFACE root\n";
-		tcInit += "}\n";
-		tcInit += "\n";
-		tcInit += "tc_restart() {\n";
-		tcInit += "    tc_stop\n";
-		tcInit += "    sleep 1\n";
-		tcInit += "    tc_start\n";
-		tcInit += "}\n";
-		tcInit += "\n";
-		tcInit += "tc_show() {\n";
-		tcInit += "#    echo \\\"\\\"\n";
-		tcInit += "#    echo \\\"\\$INTIFACE:\\\"\n";
-		tcInit += "#    \\$TC qdisc show dev \\$INTIFACE\n";
-		tcInit += "#    \\$TC class show dev \\$INTIFACE\n";
-		tcInit += "#    \\$TC filter show dev \\$INTIFACE\n";
-		tcInit += "#    echo \\\"\\\"\n";
-		tcInit += "\n";
-		tcInit += "    echo \\\"\\$EXTIFACE:\\\"\n";
-		tcInit += "    \\$TC qdisc show dev \\$EXTIFACE\n";
-		tcInit += "    \\$TC class show dev \\$EXTIFACE\n";
-		tcInit += "    \\$TC filter show dev \\$EXTIFACE\n";
-		tcInit += "    echo \\\"\\\"\n";
-		tcInit += "}\n";
-		tcInit += "\n";
-		tcInit += "case \\\"\\$1\\\" in\n";
-		tcInit += "  start)\n";
-		tcInit += "    echo -n \\\"Starting bandwidth shaping: \\\"\n";
-		tcInit += "    tc_start\n";
-		tcInit += "    echo \\\"done\\\"\n";
-		tcInit += "    ;;\n";
-		tcInit += "  stop)\n";
-		tcInit += "    echo -n \\\"Stopping bandwidth shaping: \\\"\n";
-		tcInit += "    tc_stop\n";
-		tcInit += "    echo \\\"done\\\"\n";
-		tcInit += "    ;;\n";
-		tcInit += "  restart)\n";
-		tcInit += "    echo -n \\\"Restarting bandwidth shaping: \\\"\n";
-		tcInit += "    tc_restart\n";
-		tcInit += "    echo \\\"done\\\"\n";
-		tcInit += "    ;;\n";
-		tcInit += "  *)\n";
-		tcInit += "    echo \\\"Usage: /etc/init.d/tc.sh {start|stop|restart|show}\\\"\n";
-		tcInit += "    ;;\n";
-		tcInit += "esac\n";
-		tcInit += "exit 0";
-		
-		units.addElement(new FileUnit("tc_init_script_created", "proceed", tcInit, "/etc/init.d/tc.sh",
-				"I couldn't output the file for starting bandwidth shaping.  This means you won't be able to "
-				+ "control any potential exfiltration from your network."));
-		units.addElement(new FilePermsUnit("tc_init_script_perms", "tc_init_script_created", "/etc/init.d/tc.sh", "755"));
-
-		return units;
-	}
-	
 	private Vector<IUnit> subnetConfigUnits(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
@@ -407,22 +213,14 @@ public class Router extends AStructuredProfile {
 			}
 						
 			for (int i = 0; i < devices.length; ++i) {
-				if (model.getDeviceModel(devices[i]).getWiredMac() != null) {
-					units.addElement(model.getServerModel(server).getInterfaceModel().addIface(devices[i].replaceAll("-", "_") + "_router_wired_iface",
+				String[] gateways = model.getDeviceModel(devices[i]).getGateways();
+				
+				for (int j = 0; j < gateways.length; ++j) {
+					units.addElement(model.getServerModel(server).getInterfaceModel().addIface(devices[i].replaceAll("-", "_") + "_router_iface_" + j,
 																							   "static",
 																							   model.getData().getIface(server),
 																							   null,
-																							   model.getDeviceModel(devices[i]).getWiredGateway(),
-																							   model.getData().getNetmask(),
-																							   null,
-																							   null));
-				}
-				if (model.getDeviceModel(devices[i]).getWirelessMac() != null) {
-					units.addElement(model.getServerModel(server).getInterfaceModel().addIface(devices[i].replaceAll("-", "_") + "_router_wireless_iface",
-																							   "static",
-																							   model.getData().getIface(server),
-																							   null,
-																							   model.getDeviceModel(devices[i]).getWirelessGateway(),
+																							   gateways[j],
 																							   model.getData().getNetmask(),
 																							   null,
 																							   null));
@@ -438,328 +236,347 @@ public class Router extends AStructuredProfile {
 		return units;
 	}
 	
+	private Vector<IUnit> baseIptConfig(String server, NetworkModel model, String name, String subnet) {
+		Vector<IUnit> units = new Vector<IUnit>();
+		
+        FirewallModel fm = model.getServerModel(server).getFirewallModel();
+        String intIface  = model.getData().getIface(server);
+        String extIface  = model.getData().getExtIface(server);
+        
+        String cleanName    = name.replace("-", "_");
+        String fwdChain     = cleanName + "_fwd";
+        String ingressChain = cleanName + "_ingress";
+        String egressChain  = cleanName + "_egress";
+
+        //Create our egress chain for bandwidth (exfil?) tracking
+		//In future, we could perhaps do some form of traffic blocking malarky here?
+		units.addElement(fm.addChain(cleanName + "_egress_chain", "filter", egressChain));
+		//Create our ingress chain for download bandwidth tracking
+		units.addElement(fm.addChain(cleanName + "_ingress_chain", "filter", ingressChain));
+		//Create our forward chain for all other rules
+		units.addElement(fm.addChain(cleanName + "_fwd_chain", "filter", fwdChain));
+
+        //Force traffic to/from a given subnet to jump to our chains
+        units.addElement(fm.addFilterForward(cleanName + "_ipt_server_src",
+				"-s " + subnet
+				+ " -j "+ fwdChain));
+		units.addElement(fm.addFilterForward(cleanName + "_ipt_server_dst",
+				"-d " + subnet
+				+ " -j " + fwdChain));
+
+		//We want to default drop anything not explicitly whitelisted
+		units.addElement(fm.addFilter(cleanName + "_fwd_default_drop", fwdChain,
+                "-j DROP"));
+		
+		//Jump to the ingress/egress chains
+		units.addElement(fm.addFilter(cleanName + "_allow_ingress", fwdChain,
+				"-i " + extIface + " -o " + intIface
+				+ " -j " + ingressChain));
+		units.addElement(fm.addFilter(cleanName + "_allow_egress", fwdChain,
+				"-i " + intIface + " -o " + extIface
+				+ " -j " + egressChain));
+		//Log anything hopping to our egress chain
+		units.addElement(fm.addFilter(cleanName + "_log_egress_traffic", fwdChain,
+				"-j LOG --log-prefix \\\"ipt-" + name + ": \\\""));
+
+		//Don't allow any traffic in from the outside world
+		units.addElement(fm.addFilter(cleanName + "_ingress_default_drop", ingressChain,
+                "-j DROP"));
+
+		//Don't allow any traffic out to the outside world
+		units.addElement(fm.addFilter(cleanName + "_egress_default_drop", egressChain,
+                "-j DROP"));
+		
+		//Add our forward chain rules (backwards(!))
+		//Allow our router to talk to us
+		units.addElement(fm.addFilter(cleanName + "_allow_router_traffic", fwdChain,
+				"-s " + subnet
+				+ " -j ACCEPT"));
+
+		return units;
+	}
+	
 	private Vector<IUnit> serverIptUnits(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		String[] servers = model.getServerLabels();
+		String[] devices = model.getDeviceLabels();
+		
+		Vector<String> users = new Vector<String>();
+		
+        FirewallModel fm = model.getServerModel(server).getFirewallModel();
 
-		//Force traffic to/from servers to jump to our chains
+        String intIface = model.getData().getIface(server);
+        String extIface = model.getData().getExtIface(server);
+
+		for (int i = 0; i < devices.length; ++i) {
+			switch (model.getDeviceModel(devices[i]).getType()) {
+				case "superuser":
+				case "user":
+					users.add(devices[i]);
+					break;
+			}
+		}
+        
 		for (int i = 0; i < servers.length; ++i) {
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilterForward(
-					servers[i].replace("-",  "_") + "_ipt_server_src",
-					"-s " + model.getServerModel(servers[i]).getBroadcast() + "/30 -j "
-					+ servers[i].replace("-",  "_") + "_fwd"));
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilterForward(
-					servers[i].replace("-",  "_") + "_ipt_server_dst",
-					"-d " + model.getServerModel(servers[i]).getBroadcast() + "/30 -j " + servers[i].replace("-",  "_") + "_fwd"));
-
-			//Build the chain
-			units.addElement(model.getServerModel(server).getFirewallModel().addChain("server_fwd_chain_" + servers[i].replace("-",  "_"), "filter", servers[i].replace("-",  "_") + "_fwd"));
-		
-			//Add our rules (backwards(!))
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("server_default_drop_" + servers[i].replaceAll("-", "_"), servers[i].replace("-",  "_") + "_fwd",
-					"-j DROP"));
-
-			//Allow (and log) anything passing through the router
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("server_allow_inet_traffic_" + servers[i].replaceAll("-",  "_"), servers[i].replace("-",  "_") + "_fwd",
-					"-i " + model.getData().getExtIface(server) + " -o " + model.getData().getIface(server) + " -j ACCEPT"));
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("server_allow_inet_traffic_" + servers[i].replaceAll("-",  "_"), servers[i].replace("-",  "_") + "_fwd",
-					"-i " + model.getData().getIface(server) + " -o " + model.getData().getExtIface(server) + " -j ACCEPT"));
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("server_log_inet_traffic_" + servers[i].replaceAll("-",  "_"), servers[i].replace("-",  "_") + "_fwd",
-					"-j LOG --log-prefix \\\"ipt-" + servers[i] + ": \\\""));
-		
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("allow_all_server_traffic_" + servers[i].replaceAll("-",  "_"), servers[i].replace("-",  "_") + "_fwd",
-					"-s " + model.getServerModel(servers[i]).getBroadcast() + "/30"
-					+ " -j ACCEPT"));
-
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("allow_all_server_traffic_" + servers[i].replaceAll("-",  "_"), servers[i].replace("-",  "_") + "_fwd",
-					"-d " + model.getServerModel(servers[i]).getBroadcast() + "/30"
-					+ " -j ACCEPT"));
+			String serverSubnet    = model.getServerModel(servers[i]).getSubnet() + "/30";
+			String cleanServerName = servers[i].replaceAll("-",  "_");
+	        String fwdChain        = cleanServerName + "_fwd";
 			
+			units.addAll(baseIptConfig(server, model, servers[i], serverSubnet));
+			
+			for (int j = 0; j < users.size(); ++j) {
+	            //They can talk to our servers on :80 && :443
+				units.addElement(fm.addFilter(cleanServerName + "_allow_http_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
+						"-s " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
+						+ " -d " + serverSubnet
+						+ " -p tcp"
+						+ " --dport 80"
+						+ " -j ACCEPT"));
+				units.addElement(fm.addFilter(cleanServerName + "_allow_https_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
+						"-s " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
+						+ " -d " + serverSubnet
+						+ " -p tcp"
+						+ " --dport 443"
+						+ " -j ACCEPT"));
+				
+				//And if they're a superuser, they can SSH in, too
+				if (model.getDeviceModel(users.elementAt(j)).getType().equals("superuser" )) {
+					units.addElement(fm.addFilter(cleanServerName + "_ssh_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
+							"-s " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
+							+ " -d " + serverSubnet
+							+ " -p tcp"
+							+ " --dport " + model.getData().getSSHPort(servers[i])
+							+ " -j ACCEPT"));
+				}
+				
+				//And servers can talk back to them, if established/related traffic
+				units.addElement(fm.addFilter(cleanServerName + "_allow_https_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
+						"-s " + serverSubnet
+						+ " -d " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
+						+ " -p tcp"
+						+ " -m state --state ESTABLISHED,RELATED"
+						+ " -j ACCEPT"));
+			}
+
+			
+			/*
+			 * There's probably no utility in this.
+			 * 
 			//We now want to make sure that under no circumstances can servers SSH between each other. Don't care about anything else!
 			//Anything else can be handled on the server-side iptables rules.
 			for (int j = 0; j < servers.length; ++j) {
 				if (i != j) {
-					units.addElement(model.getServerModel(server).getFirewallModel().addFilter("server_deny_ssh_traffic_" + servers[i].replaceAll("-",  "_"), servers[i].replace("-",  "_") + "_fwd",
-							"-s " + model.getServerModel(servers[i]).getBroadcast() + "/30"
-							+ " -d " + model.getServerModel(servers[j]).getBroadcast()+  "/30"
+					units.addElement(fm.addFilter(cleanServerName + "_deny_intra_server_ssh_traffic_" + j, fwdChain,
+							"-s " + serverSubnet
+							+ " -d " + model.getServerModel(servers[j]).getSubnet() + "/30"
 							+ " -p tcp"
 							+ " --dport " + model.getData().getSSHPort(servers[j])
 							+ " -j DROP"));
 				}
-			}
+			}*/
 		}
 	
 		return units;
 	}
 	
-	private Vector<IUnit> deviceIptUnits(String server, NetworkModel model) {
+	private Vector<IUnit> userIptUnits(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		String[] devices = model.getDeviceLabels();
-		String[] servers = model.getServerLabels();
-		Vector<String> users = new Vector<String>();
-		Vector<String> superusers = new Vector<String>();
+		String[] devices       = model.getDeviceLabels();
+		Vector<String> users   = new Vector<String>();
 		Vector<String> intOnly = new Vector<String>();
-		Vector<String> extOnly = new Vector<String>();
-		
+
 		for (int i = 0; i < devices.length; ++i) {
 			switch (model.getDeviceModel(devices[i]).getType()) {
 				case "superuser":
-					superusers.add(devices[i]);
-					users.add(devices[i]);
-					break;
 				case "user":
 					users.add(devices[i]);
 					break;
-				case "intonly":
+				case "intOnly":
 					intOnly.add(devices[i]);
 					break;
-				case "extonly":
+			}
+		}
+		
+		for (int i = 0; i < users.size(); ++i) {
+            String cleanUserName   = users.elementAt(i).replace("-", "_");
+            String fwdChain        = cleanUserName + "_fwd";
+            String ingressChain    = cleanUserName + "_ingress";
+            String egressChain     = cleanUserName + "_egress";
+            
+            String userSubnet = model.getDeviceModel(users.elementAt(i)).getSubnets()[0] + "/24";
+            
+            String intIface = model.getData().getIface(server);
+            String extIface = model.getData().getExtIface(server);
+
+            FirewallModel fm = model.getServerModel(server).getFirewallModel();
+        
+			units.addAll(baseIptConfig(server, model, users.elementAt(i), userSubnet));
+
+			//Configure what users can do with our servers
+        	String[] servers = model.getServerLabels();
+
+			for (int j = 0; j < servers.length; ++j) {
+	            //They can talk to our servers on :80 && :443
+				units.addElement(fm.addFilter(cleanUserName + "_allow_http_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
+						"-s " + userSubnet
+						+ " -d " + model.getServerModel(servers[j]).getSubnet() + "/30"
+						+ " -p tcp"
+						+ " --dport 80"
+						+ " -j ACCEPT"));
+				units.addElement(fm.addFilter(cleanUserName + "_allow_https_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
+						"-s " + userSubnet
+						+ " -d " + model.getServerModel(servers[j]).getSubnet() + "/30"
+						+ " -p tcp"
+						+ " --dport 443"
+						+ " -j ACCEPT"));
+
+				//Allow superusers to SSH into our servers
+	            if (model.getDeviceModel(users.elementAt(i)).getType().equals("superuser")) {
+					units.addElement(fm.addFilter(cleanUserName + "_allow_ssh_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
+							"-s " + userSubnet
+							+ " -d " + model.getServerModel(servers[j]).getSubnet() + "/30"
+							+ " -p tcp"
+							+ " --dport " + model.getData().getSSHPort(servers[j])
+							+ " -j ACCEPT"));
+	            }
+				
+				//And servers can talk back to them, if established/related traffic
+				units.addElement(fm.addFilter(cleanUserName + "_allow_response_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
+						"-s " + model.getServerModel(servers[j]).getSubnet() + "/30"
+						+ " -d " + userSubnet
+						+ " -p tcp"
+						+ " -m state --state ESTABLISHED,RELATED"
+						+ " -j ACCEPT"));
+			}
+			
+			//Configure what they can do with internal only devices
+			for (int j = 0; j < intOnly.size(); ++j) {
+				//Any user can talk to an internal-only device
+				units.addElement(fm.addFilter(cleanUserName + "_allow_int_only_" + intOnly.elementAt(j).replaceAll("-",  "_"), fwdChain,
+						"-s " + userSubnet
+						+ " -d " + model.getDeviceModel(intOnly.elementAt(j)).getSubnets()[0] + "/24"
+						+ " -j ACCEPT"));
+				//But these devices can only talk back, not initiate a conversation
+				units.addElement(fm.addFilter(cleanUserName + "_allow_int_only_response_" + intOnly.elementAt(j).replaceAll("-",  "_"), fwdChain,
+						"-s " + model.getDeviceModel(intOnly.elementAt(j)).getSubnets()[0] + "/24"
+						+ " -d " + userSubnet
+						+ " -m state --state ESTABLISHED,RELATED"
+						+ " -j ACCEPT"));
+			}
+			
+			//Users can talk to the outside world
+			units.addElement(fm.addFilter(cleanUserName + "_allow_egress_traffic", egressChain,
+					"-i " + intIface
+					+ " -o " + extIface
+					+ " -j ACCEPT"));
+			//And can accept established/related traffic from the outside world, too
+			units.addElement(fm.addFilter(cleanUserName + "_allow_ingress_traffic", ingressChain,
+					"-i " + extIface
+					+ " -o " + intIface
+					+ " -m state --state ESTABLISHED,RELATED"
+					+ " -j ACCEPT"));
+    	}
+		
+		return units;
+	}
+	
+	private Vector<IUnit> intOnlyIptUnits(String server, NetworkModel model) {
+		Vector<IUnit> units = new Vector<IUnit>();
+		
+		String[] devices       = model.getDeviceLabels();
+		Vector<String> users   = new Vector<String>();
+		Vector<String> intOnly = new Vector<String>();
+
+		for (int i = 0; i < devices.length; ++i) {
+			switch (model.getDeviceModel(devices[i]).getType()) {
+				case "superuser":
+				case "user":
+					users.add(devices[i]);
+					break;
+				case "intOnly":
+					intOnly.add(devices[i]);
+					break;
+			}
+		}
+		
+		for (int i = 0; i < intOnly.size(); ++i) {
+            String cleanDeviceName = intOnly.elementAt(i).replace("-", "_");
+            String fwdChain        = cleanDeviceName + "_fwd";
+            String ingressChain    = cleanDeviceName + "_ingress";
+            String egressChain     = cleanDeviceName + "_egress";
+            
+            String deviceSubnet = model.getDeviceModel(intOnly.elementAt(i)).getSubnets()[0] + "/24";
+            
+            String intIface = model.getData().getIface(server);
+            String extIface = model.getData().getExtIface(server);
+
+            FirewallModel fm = model.getServerModel(server).getFirewallModel();
+        
+			units.addAll(baseIptConfig(server, model, intOnly.elementAt(i), deviceSubnet));
+
+            //Users can talk to our internal only devices
+			for (int j = 0; j < users.size(); ++j) {
+				//Any user can talk to an internal-only device
+				units.addElement(fm.addFilter(cleanDeviceName + "_allow_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
+						"-s " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
+						+ " -d " + deviceSubnet
+						+ " -j ACCEPT"));
+				//But these devices can only talk back, not initiate a conversation
+				units.addElement(fm.addFilter(cleanDeviceName + "_allow_response_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
+						"-s " + deviceSubnet
+						+ " -d " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
+						+ " -m state --state ESTABLISHED,RELATED"
+						+ " -j ACCEPT"));
+			}
+		}
+		
+		return units;
+	}
+	
+	private Vector<IUnit> extOnlyIptUnits(String server, NetworkModel model) {
+		Vector<IUnit> units = new Vector<IUnit>();
+		
+		String[] devices       = model.getDeviceLabels();
+		Vector<String> extOnly = new Vector<String>();
+
+		for (int i = 0; i < devices.length; ++i) {
+			switch (model.getDeviceModel(devices[i]).getType()) {
+				case "extOnly":
 					extOnly.add(devices[i]);
 					break;
-				default:
-					//It'll default drop.
 			}
 		}
 		
-		//Create user forward chains
-		for (int i = 0; i < users.size(); ++i) {
-
-			//Create our user's egress chain for bandwidth (exfil?) tracking
-			//In future, we could perhaps do some form of traffic blocking malarky here?
-			units.addElement(model.getServerModel(server).getFirewallModel().addChain("egress_bandwidth_monitor", "filter", users.elementAt(i).replace("-",  "_") + "_egress"));
-			//Egress Rules (backwards)
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("egress_default_drop", users.elementAt(i).replace("-",  "_") + "_egress",
-					"-j DROP"));
-			//Allow anything passing through the router
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("allow_egress_traffic", users.elementAt(i).replace("-",  "_") + "_egress",
-					"-i " + model.getData().getIface(server) + " -o " + model.getData().getExtIface(server) + " -j ACCEPT"));
-			//Mark any connection which has uploaded > 20mb
-			units.addElement(model.getServerModel(server).getFirewallModel().addMangleForward("mark_large_uploads", 
-					"-o " + model.getData().getExtIface(server) +" -m connbytes --connbytes " + (20*1024*1024) + ": --connbytes-dir both --connbytes-mode bytes"
-					+ " -j MARK --set-mark 4"));
-			
-			//Create our ingress chain for download bandwidth tracking
-			units.addElement(model.getServerModel(server).getFirewallModel().addChain("ingress_bandwidth_monitor", "filter", users.elementAt(i).replace("-",  "_") + "_ingress"));
-			//Ingress Rules (backwards)
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("ingress_default_drop", users.elementAt(i).replace("-",  "_") + "_ingress",
-					"-j DROP"));
-			//Allow anything passing through the router
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("allow_ingress_traffic", users.elementAt(i).replace("-",  "_") + "_ingress",
-					"-i " + model.getData().getExtIface(server) + " -o " + model.getData().getIface(server) + " -j ACCEPT"));
-
-
-			if (model.getDeviceModel(users.elementAt(i)).getWiredMac() != null) {
-				//First force to jump to our chain if wired
-				units.addElement(model.getServerModel(server).getFirewallModel().addFilterForward(
-						users.elementAt(i).replace("-",  "_") + "_ipt_wired_src",
-						"-s " + model.getDeviceModel(users.elementAt(i)).getWiredBroadcast() + "/30 -j " + users.elementAt(i).replace("-",  "_") + "_fwd"));
-				units.addElement(model.getServerModel(server).getFirewallModel().addFilterForward(
-						users.elementAt(i).replace("-",  "_") + "_ipt_wired_dst",
-						"-d " + model.getDeviceModel(users.elementAt(i)).getWiredBroadcast() + "/30 -j " + users.elementAt(i).replace("-",  "_") + "_fwd"));
-	            //Log
-	            units.addElement(model.getServerModel(server).getFirewallModel().addMangleForward("log_large_uploads", 
-						"-o " + model.getData().getExtIface(server) +" -s " + model.getDeviceModel(users.elementAt(i)).getWiredIP() + " -m connbytes --connbytes " + (20*1024*1024) + ": --connbytes-dir both --connbytes-mode bytes"
-						+ " -j LOG --log-prefix \\\"ipt-" + users.elementAt(i) + "-throttled: \\\""));
-			}
-			//Also if wireless
-			if (model.getDeviceModel(users.elementAt(i)).getWirelessMac() != null) {
-				units.addElement(model.getServerModel(server).getFirewallModel().addFilterForward(
-						users.elementAt(i).replace("-",  "_") + "_ipt_wireless_src",
-						"-s " + model.getDeviceModel(users.elementAt(i)).getWirelessBroadcast() + "/30 -j " + users.elementAt(i).replace("-",  "_") + "_fwd"));
-				units.addElement(model.getServerModel(server).getFirewallModel().addFilterForward(
-						users.elementAt(i).replace("-",  "_") + "_ipt_wireless_dst",
-						"-d " + model.getDeviceModel(users.elementAt(i)).getWirelessBroadcast() + "/30 -j " + users.elementAt(i).replace("-",  "_") + "_fwd"));		
-	            units.addElement(model.getServerModel(server).getFirewallModel().addMangleForward("log_large_uploads", 
-						"-o " + model.getData().getExtIface(server) +" -s " + model.getDeviceModel(users.elementAt(i)).getWirelessIP() + " -m connbytes --connbytes " + (20*1024*1024) + ": --connbytes-dir both --connbytes-mode bytes"
-						+ " -j LOG --log-prefix \\\"ipt-" + users.elementAt(i) + "-throttled: \\\""));
-	        }
-
-			//Build the user's chain
-			units.addElement(model.getServerModel(server).getFirewallModel().addChain("user_fwd_chain_" + users.elementAt(i).replace("-",  "_"), "filter", users.elementAt(i).replace("-",  "_") + "_fwd"));
-			
-			//Add our rules (backwards(!))
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("user_default_drop_" + users.elementAt(i).replaceAll("-", "_"), users.elementAt(i).replace("-",  "_") + "_fwd",
-					"-j DROP"));
-			//Log anything passing through the router, jump to our ingress/egress chains
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("user_allow_inet_traffic_" + users.elementAt(i).replaceAll("-",  "_"), users.elementAt(i).replace("-",  "_") + "_fwd",
-					"-i " + model.getData().getExtIface(server) + " -o " + model.getData().getIface(server) + " -j " + users.elementAt(i).replace("-",  "_") + "_ingress"));
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("user_allow_inet_traffic_" + users.elementAt(i).replaceAll("-",  "_"), users.elementAt(i).replace("-",  "_") + "_fwd",
-					"-i " + model.getData().getIface(server) + " -o " + model.getData().getExtIface(server) + " -j " + users.elementAt(i).replace("-",  "_") + "_egress"));
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("user_log_inet_traffic_" + users.elementAt(i).replaceAll("-",  "_"), users.elementAt(i).replace("-",  "_") + "_fwd",
-					"-j LOG --log-prefix \\\"ipt-" + users.elementAt(i) + ": \\\""));
-			
-			if (model.getDeviceModel(users.elementAt(i)).getWiredMac() != null) {
-				units.addElement(model.getServerModel(server).getFirewallModel().addFilter("user_fwd_router_" + users.elementAt(i).replaceAll("-",  "_"), users.elementAt(i).replace("-",  "_") + "_fwd",
-						"-s " + model.getDeviceModel(users.elementAt(i)).getWiredGateway() + " -j ACCEPT"));
-			}
-			//Also if wireless
-			if (model.getDeviceModel(users.elementAt(i)).getWirelessMac() != null) {
-				units.addElement(model.getServerModel(server).getFirewallModel().addFilter("user_fwd_router_" + users.elementAt(i).replaceAll("-",  "_"), users.elementAt(i).replace("-",  "_") + "_fwd",
-					"-s " + model.getDeviceModel(users.elementAt(i)).getWirelessGateway() + " -j ACCEPT"));
-			}
-			for (int j = 0; j < intOnly.size(); ++j) {
-				if (model.getDeviceModel(users.elementAt(i)).getWiredMac() != null) {
-					//Want to be able to talk to/from internal devices
-					units.addElement(model.getServerModel(server).getFirewallModel().addFilter("user_fwd_int_only_" + intOnly.elementAt(j).replace("-",  "_"),  users.elementAt(i).replace("-",  "_") + "_fwd",
-							"-s " + model.getDeviceModel(users.elementAt(i)).getWiredBroadcast() + "/30 -d " + model.getDeviceModel(intOnly.elementAt(j)).getWiredIP() + " -j ACCEPT"));
-					units.addElement(model.getServerModel(server).getFirewallModel().addFilter("user_fwd_int_only_" + intOnly.elementAt(j).replace("-",  "_"),  users.elementAt(i).replace("-",  "_") + "_fwd",
-							"-d " + model.getDeviceModel(users.elementAt(i)).getWiredBroadcast() + "/30 -s " + model.getDeviceModel(intOnly.elementAt(j)).getWiredIP() + " -j ACCEPT"));
-				}
-				//Also if wireless
-				if (model.getDeviceModel(users.elementAt(i)).getWirelessMac() != null) {
-					units.addElement(model.getServerModel(server).getFirewallModel().addFilter("user_fwd_int_only_" + intOnly.elementAt(j).replace("-",  "_"),  users.elementAt(i).replace("-",  "_") + "_fwd",
-							"-s " + model.getDeviceModel(users.elementAt(i)).getWirelessBroadcast() + "/30 -d " + model.getDeviceModel(intOnly.elementAt(j)).getWirelessIP() + " -j ACCEPT"));
-					units.addElement(model.getServerModel(server).getFirewallModel().addFilter("user_fwd_int_only_" + intOnly.elementAt(j).replace("-",  "_"),  users.elementAt(i).replace("-",  "_") + "_fwd",
-							"-d " + model.getDeviceModel(users.elementAt(i)).getWirelessBroadcast() + "/30 -s " + model.getDeviceModel(intOnly.elementAt(j)).getWirelessIP() + " -j ACCEPT"));
-				}
-				
-			}
-			for (int k = 0; k < servers.length; ++k) {
-				if (model.getDeviceModel(users.elementAt(i)).getWiredMac() != null) {
-					//Want to be able to talk to/from services on our network - but only on ports 80/443
-					units.addElement(model.getServerModel(server).getFirewallModel().addFilter("user_fwd_servers_" + servers[k].replace("-",  "_"),  users.elementAt(i).replace("-",  "_") + "_fwd",
-							"-s " + model.getDeviceModel(users.elementAt(i)).getWiredBroadcast() + "/30 -d " + model.getServerModel(servers[k]).getIP()
-							+ " -p tcp --dport 80 -j ACCEPT"));				
-					units.addElement(model.getServerModel(server).getFirewallModel().addFilter("user_fwd_servers_" + servers[k].replace("-",  "_"),  users.elementAt(i).replace("-",  "_") + "_fwd",
-							"-s " + model.getDeviceModel(users.elementAt(i)).getWiredBroadcast() + "/30 -d " + model.getServerModel(servers[k]).getIP()
-							+ " -p tcp --dport 443 -j ACCEPT"));				
-					
-					//Unless they're a superuser!  Then they can SSH in :)
-					if (superusers.contains(users.elementAt(i))) {
-						units.addElement(model.getServerModel(server).getFirewallModel().addFilter("superuser_" + users.elementAt(i).replaceAll("-", "_") + "_fwd_servers_" + servers[k].replace("-",  "_"),  users.elementAt(i).replace("-",  "_") + "_fwd",
-								"-s " + model.getDeviceModel(users.elementAt(i)).getWiredBroadcast() + "/30 -d " + model.getServerModel(servers[k]).getIP()
-								+ " -p tcp --dport " + model.getData().getSSHPort(servers[k]) + " -j ACCEPT"));										
-					}
-					
-					//And servers can talk back to us
-					units.addElement(model.getServerModel(server).getFirewallModel().addFilter("user_fwd_servers_" + servers[k].replace("-",  "_"),  users.elementAt(i).replace("-",  "_") + "_fwd",
-							"-d " + model.getDeviceModel(users.elementAt(i)).getWiredBroadcast() + "/30 -s " + model.getServerModel(servers[k]).getIP()
-							+ " -j ACCEPT"));
-				}
-				//Also if wireless
-				if (model.getDeviceModel(users.elementAt(i)).getWirelessMac() != null) {
-					units.addElement(model.getServerModel(server).getFirewallModel().addFilter("user_fwd_servers_" + servers[k].replace("-",  "_"),  users.elementAt(i).replace("-",  "_") + "_fwd",
-							"-s " + model.getDeviceModel(users.elementAt(i)).getWirelessBroadcast() + "/30 -d " + model.getServerModel(servers[k]).getIP()
-							+ " -p tcp --dport 80 -j ACCEPT"));				
-
-					units.addElement(model.getServerModel(server).getFirewallModel().addFilter("user_fwd_servers_" + servers[k].replace("-",  "_"),  users.elementAt(i).replace("-",  "_") + "_fwd",
-							"-s " + model.getDeviceModel(users.elementAt(i)).getWirelessBroadcast() + "/30 -d " + model.getServerModel(servers[k]).getIP()
-							+ " -p tcp --dport 443 -j ACCEPT"));				
-
-					//Unless they're a superuser!  Then they can SSH in :)
-					if (superusers.contains(users.elementAt(i))) {
-						units.addElement(model.getServerModel(server).getFirewallModel().addFilter("superuser_" + users.elementAt(i).replaceAll("-", "_") + "_fwd_servers_" + servers[k].replace("-",  "_"),  users.elementAt(i).replace("-",  "_") + "_fwd",
-								"-s " + model.getDeviceModel(users.elementAt(i)).getWirelessBroadcast() + "/30 -d " + model.getServerModel(servers[k]).getIP()
-								+ " -p tcp --dport " + model.getData().getSSHPort(servers[k]) + " -j ACCEPT"));										
-					}
-					
-					//And servers can talk back to us
-					units.addElement(model.getServerModel(server).getFirewallModel().addFilter("user_fwd_servers_" + servers[k].replace("-",  "_"),  users.elementAt(i).replace("-",  "_") + "_fwd",
-							"-d " + model.getDeviceModel(users.elementAt(i)).getWirelessBroadcast() + "/30 -s " + model.getServerModel(servers[k]).getIP()
-							+ " -j ACCEPT"));
-				}
-			}
-		}
-		
-		//Create internal only forward chains
-		for (int i = 0; i < intOnly.size(); ++i) {
-			//First force to jump to our chain
-			if (model.getDeviceModel(intOnly.elementAt(i)).getWiredMac() != null) {
-				units.addElement(model.getServerModel(server).getFirewallModel().addFilterForward(
-						intOnly.elementAt(i).replace("-",  "_") + "_ipt_src",
-						"-s " + model.getDeviceModel(intOnly.elementAt(i)).getWiredIP() + " -j " + intOnly.elementAt(i).replace("-",  "_") + "_fwd"));
-				units.addElement(model.getServerModel(server).getFirewallModel().addFilterForward(
-						intOnly.elementAt(i).replace("-",  "_") + "_ipt_dst",
-						"-d " + model.getDeviceModel(intOnly.elementAt(i)).getWiredIP() + " -j " + intOnly.elementAt(i).replace("-",  "_") + "_fwd"));
-			}
-			if (model.getDeviceModel(intOnly.elementAt(i)).getWirelessMac() != null) {
-				units.addElement(model.getServerModel(server).getFirewallModel().addFilterForward(
-						intOnly.elementAt(i).replace("-",  "_") + "_ipt_src",
-						"-s " + model.getDeviceModel(intOnly.elementAt(i)).getWirelessIP() + " -j " + intOnly.elementAt(i).replace("-",  "_") + "_fwd"));
-				units.addElement(model.getServerModel(server).getFirewallModel().addFilterForward(
-						intOnly.elementAt(i).replace("-",  "_") + "_ipt_dst",
-						"-d " + model.getDeviceModel(intOnly.elementAt(i)).getWirelessIP() + " -j " + intOnly.elementAt(i).replace("-",  "_") + "_fwd"));
-			}
-			//Build the chain
-			units.addElement(model.getServerModel(server).getFirewallModel().addChain("int_only_fwd_chain" + intOnly.elementAt(i).replace("-",  "_"), "filter", intOnly.elementAt(i).replace("-",  "_") + "_fwd"));
-			
-			//Drop anything else
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("int_only_fwd_drop_" + intOnly.elementAt(i).replace("-",  "_"), intOnly.elementAt(i).replace("-",  "_") + "_fwd",
-					"-j DROP"));
-			
-			if (model.getDeviceModel(intOnly.elementAt(i)).getWiredMac() != null) {
-				units.addElement(model.getServerModel(server).getFirewallModel().addFilter("int_only_fwd_router_" + intOnly.elementAt(i).replaceAll("-",  "_"), intOnly.elementAt(i).replace("-",  "_") + "_fwd",
-						"-s " + model.getDeviceModel(users.elementAt(i)).getWiredGateway() + " -j ACCEPT"));
-			}
-			if (model.getDeviceModel(intOnly.elementAt(i)).getWirelessMac() != null) {
-				units.addElement(model.getServerModel(server).getFirewallModel().addFilter("int_only_fwd_router_" + intOnly.elementAt(i).replaceAll("-",  "_"), intOnly.elementAt(i).replace("-",  "_") + "_fwd",
-						"-s " + model.getDeviceModel(users.elementAt(i)).getWirelessGateway() + " -j ACCEPT"));				
-			}
-			for (int j = 0; j < users.size(); ++j) {
-				//Want to accept all traffic from users in
-				if (model.getDeviceModel(users.elementAt(j)).getWiredMac() != null) {
-					if (model.getDeviceModel(intOnly.elementAt(i)).getWiredMac() != null) { //Wired users can get at the wired interface
-						units.addElement(model.getServerModel(server).getFirewallModel().addFilter("int_only_fwd_accept_in_" + intOnly.elementAt(i).replace("-",  "_"), intOnly.elementAt(i).replace("-",  "_") + "_fwd",
-								"-s " + model.getDeviceModel(users.elementAt(j)).getWiredBroadcast() + "/30 -d " + model.getDeviceModel(intOnly.elementAt(i)).getWiredIP() + " -j ACCEPT"));
-						//Only established connections out
-						units.addElement(model.getServerModel(server).getFirewallModel().addFilter("int_only_fwd_accept_out_" + intOnly.elementAt(i).replace("-",  "_"), intOnly.elementAt(i).replace("-",  "_") + "_fwd",
-								"-d " + model.getDeviceModel(users.elementAt(j)).getWiredBroadcast() + "/30 -s " + model.getDeviceModel(intOnly.elementAt(i)).getWiredIP() + " -m state --state ESTABLISHED,RELATED -j ACCEPT"));
-					}
-					if (model.getDeviceModel(intOnly.elementAt(i)).getWirelessMac() != null) { //Wired users can get at the wireless interface
-						units.addElement(model.getServerModel(server).getFirewallModel().addFilter("int_only_fwd_accept_in_" + intOnly.elementAt(i).replace("-",  "_"), intOnly.elementAt(i).replace("-",  "_") + "_fwd",
-								"-s " + model.getDeviceModel(users.elementAt(j)).getWiredBroadcast() + "/30 -d " + model.getDeviceModel(intOnly.elementAt(i)).getWirelessIP() + " -j ACCEPT"));
-						//Only established connections out
-						units.addElement(model.getServerModel(server).getFirewallModel().addFilter("int_only_fwd_accept_out_" + intOnly.elementAt(i).replace("-",  "_"), intOnly.elementAt(i).replace("-",  "_") + "_fwd",
-								"-d " + model.getDeviceModel(users.elementAt(j)).getWiredBroadcast() + "/30 -s " + model.getDeviceModel(intOnly.elementAt(i)).getWirelessIP() + " -m state --state ESTABLISHED,RELATED -j ACCEPT"));
-					}				
-				}
-				if (model.getDeviceModel(users.elementAt(j)).getWirelessMac() != null) {
-					if (model.getDeviceModel(intOnly.elementAt(i)).getWiredMac() != null) { //Wireless users can get at the wired interface
-						units.addElement(model.getServerModel(server).getFirewallModel().addFilter("int_only_fwd_accept_in_" + intOnly.elementAt(i).replace("-",  "_"), intOnly.elementAt(i).replace("-",  "_") + "_fwd",
-								"-s " + model.getDeviceModel(users.elementAt(j)).getWirelessBroadcast() + "/30 -d " + model.getDeviceModel(intOnly.elementAt(i)).getWiredIP() + " -j ACCEPT"));
-						//Only established connections out
-						units.addElement(model.getServerModel(server).getFirewallModel().addFilter("int_only_fwd_accept_out_" + intOnly.elementAt(i).replace("-",  "_"), intOnly.elementAt(i).replace("-",  "_") + "_fwd",
-								"-d " + model.getDeviceModel(users.elementAt(j)).getWirelessBroadcast() + "/30 -s " + model.getDeviceModel(intOnly.elementAt(i)).getWiredIP() + " -m state --state ESTABLISHED,RELATED -j ACCEPT"));
-					}
-					if (model.getDeviceModel(intOnly.elementAt(i)).getWirelessMac() != null) { //Wireless users can get at the wireless interface
-						units.addElement(model.getServerModel(server).getFirewallModel().addFilter("int_only_fwd_accept_in_" + intOnly.elementAt(i).replace("-",  "_"), intOnly.elementAt(i).replace("-",  "_") + "_fwd",
-								"-s " + model.getDeviceModel(users.elementAt(j)).getWirelessBroadcast() + "/30 -d " + model.getDeviceModel(intOnly.elementAt(i)).getWirelessIP() + " -j ACCEPT"));
-						//Only established connections out
-						units.addElement(model.getServerModel(server).getFirewallModel().addFilter("int_only_fwd_accept_out_" + intOnly.elementAt(i).replace("-",  "_"), intOnly.elementAt(i).replace("-",  "_") + "_fwd",
-								"-d " + model.getDeviceModel(users.elementAt(j)).getWirelessBroadcast() + "/30 -s " + model.getDeviceModel(intOnly.elementAt(i)).getWirelessIP() + " -m state --state ESTABLISHED,RELATED -j ACCEPT"));
-					}	
-				}
-			}
-
-		}
-		//Create external only forward chains
 		for (int i = 0; i < extOnly.size(); ++i) {
-			//First force to jump to our chain
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilterForward(
-					extOnly.elementAt(i).replace("-",  "_") + "_ipt_src",
-					"-s " + model.getDeviceModel(extOnly.elementAt(i)).getWiredIP() + " -j " + extOnly.elementAt(i).replace("-",  "_") + "_fwd"));
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilterForward(
-					extOnly.elementAt(i).replace("-",  "_") + "_ipt_dst",
-					"-d " + model.getDeviceModel(extOnly.elementAt(i)).getWiredIP() + " -j " + extOnly.elementAt(i).replace("-",  "_") + "_fwd"));
-			
-			//Build the chain
-			units.addElement(model.getServerModel(server).getFirewallModel().addChain("ext_only_fwd_chain" + extOnly.elementAt(i).replace("-",  "_"), "filter", extOnly.elementAt(i).replace("-",  "_") + "_fwd"));
-			//Drop anything else
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("ext_only_fwd_drop_" + extOnly.elementAt(i).replace("-",  "_"), extOnly.elementAt(i).replace("-",  "_") + "_fwd",
-					"-j DROP"));
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("ext_only_allow_inet_traffic_" + extOnly.elementAt(i).replaceAll("-",  "_"), extOnly.elementAt(i).replace("-",  "_") + "_fwd",
-					"-i " + model.getData().getExtIface(server) + " -o " + model.getData().getIface(server) + " -j ACCEPT"));
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("ext_only_allow_inet_traffic_" + extOnly.elementAt(i).replaceAll("-",  "_"), extOnly.elementAt(i).replace("-",  "_") + "_fwd",
-					"-i " + model.getData().getIface(server) + " -o " + model.getData().getExtIface(server) + " -j ACCEPT"));
+            String cleanDeviceName = extOnly.elementAt(i).replace("-", "_");
+            String fwdChain        = cleanDeviceName + "_fwd";
+            String ingressChain    = cleanDeviceName + "_ingress";
+            String egressChain     = cleanDeviceName + "_egress";
+            
+            String deviceSubnet = model.getDeviceModel(extOnly.elementAt(i)).getSubnets()[0] + "/24";
+            
+            String intIface = model.getData().getIface(server);
+            String extIface = model.getData().getExtIface(server);
 
-			//Mark ext-only traffic as 3
-			//Mark any connection which has uploaded > 20mb
-			units.addElement(model.getServerModel(server).getFirewallModel().addMangleForward("mark_large_downloads", 
-					"-o " + model.getData().getExtIface(server) +" -s " + model.getDeviceModel(extOnly.elementAt(i)).getWiredIP() + " -m connbytes --connbytes " + (20*1024*1024) + ": --connbytes-dir both --connbytes-mode bytes -j MARK --set-mark 3"));
+            FirewallModel fm = model.getServerModel(server).getFirewallModel();
+        
+			units.addAll(baseIptConfig(server, model, extOnly.elementAt(i), deviceSubnet));
+
+			//External only devices can talk to the outside world
+			units.addElement(fm.addFilter(cleanDeviceName + "_allow_egress_traffic", egressChain,
+					"-i " + intIface
+					+ " -o " + extIface
+					+ " -j ACCEPT"));
+			//And can accept established/related traffic from the outside world, too
+			units.addElement(fm.addFilter(cleanDeviceName + "_allow_ingress_traffic", ingressChain,
+					"-i " + extIface
+					+ " -o " + intIface
+					+ " -m state --state ESTABLISHED,RELATED"
+					+ " -j ACCEPT"));
 		}
-
+		
 		return units;
 	}
 	

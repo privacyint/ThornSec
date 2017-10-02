@@ -88,7 +88,7 @@ public class DHCP extends AStructuredProfile {
 		dhcpconf += "\n";
 		// add iptfwd for shared net
 		dhcpconf += "shared-network sharednet {\n";
-		dhcpconf += "\tsubnet " + model.getServerModel(server).getBroadcast() + " netmask " + model.getData().getNetmask() + " {\n";
+		dhcpconf += "\tsubnet " + model.getServerModel(server).getSubnet() + " netmask " + model.getData().getNetmask() + " {\n";
 		dhcpconf += "\t}";
 
 		String[] servers = model.getServerLabels();
@@ -96,7 +96,7 @@ public class DHCP extends AStructuredProfile {
 		for (int i = 0; i < servers.length; ++i) {
 			if (!model.getServerModel(servers[i]).isRouter()) {
 				dhcpconf += "\n\n";
-				dhcpconf += "\tsubnet " + model.getServerModel(servers[i]).getBroadcast() + " netmask " + model.getData().getNetmask() + " {\n";
+				dhcpconf += "\tsubnet " + model.getServerModel(servers[i]).getSubnet() + " netmask " + model.getData().getNetmask() + " {\n";
 				dhcpconf += "\t\thost " + servers[i] + " {\n";
 				dhcpconf += "\t\t\thardware ethernet " + model.getServerModel(servers[i]).getMac() + ";\n";
 				dhcpconf += "\t\t\tfixed-address " + model.getServerModel(servers[i]).getIP() + ";\n";
@@ -119,7 +119,7 @@ public class DHCP extends AStructuredProfile {
 			for (int j = 0; j < subnets.length; ++j) {
 				dhcpconf += "\n";
 				dhcpconf += "\tsubnet " + subnets[j] + " netmask " + netmask + " {\n";
-				dhcpconf += "\t\thost " + devices[j] + "_wired {\n";
+				dhcpconf += "\t\thost " + devices[i] + "_" + j + " {\n";
 				dhcpconf += "\t\t\thardware ethernet " + macs[j] + ";\n";
 				dhcpconf += "\t\t\tfixed-address " + ips[j] + ";\n";
 				dhcpconf += "\t\t\toption routers " + gateways[j] + ";\n";

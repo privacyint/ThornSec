@@ -166,15 +166,16 @@ public class DNS extends AStructuredProfile {
 		units.addElement(new FileUnit("dns_listening_interfaces", "dns_installed", ifaceConfig.replaceAll("\\s+$", ""), "/etc/unbound/unbound.conf.d/interfaces.conf"));
 		
 		String zoneConfig = "";
-		zoneConfig += "    local-zone: \\\"" + model.getData().getDomain() + ".\\\" transparent\n";
+		zoneConfig += "    local-zone: \\\"" + model.getData().getDomain() + ".\\\" transparent";
 
 		//Forward DNS
 		for (int i = 0; i < servers.length; ++i) {
 			if (!model.getServerModel(servers[i]).isRouter()) {
+				zoneConfig += "\n";
 				zoneConfig += "    local-data: \\\"" + model.getData().getHostname(servers[i]) + " A " + model.getServerModel(servers[i]).getIP() +"\\\"\n";
 				zoneConfig += "    local-data: \\\"" + model.getData().getHostname(servers[i]) + "." + model.getData().getDomain() + " A " + model.getServerModel(servers[i]).getIP() +"\\\"\n";
 				zoneConfig += "    local-data-ptr: \\\"" + model.getServerModel(servers[i]).getIP() + " " + model.getData().getHostname(servers[i]) + "." + model.getData().getDomain() + "\\\"\n";
-				zoneConfig += "    local-data-ptr: \\\"" + model.getServerModel(servers[i]).getGateway() + " router" + model.getData().getSubnet(servers[i]) + "." + model.getData().getDomain() + "\\\"\n";
+				zoneConfig += "    local-data-ptr: \\\"" + model.getServerModel(servers[i]).getGateway() + " router" + model.getData().getSubnet(servers[i]) + "." + model.getData().getDomain() + "\\\"";
 				//CNAMEs - more like ALIASES
 				if (model.getData().getCnames(servers[i]) != null) {
 					for (int j = 0; j < model.getData().getCnames(servers[i]).length; ++j) {
