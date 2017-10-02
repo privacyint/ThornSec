@@ -231,6 +231,10 @@ public class ServerModel extends AModel {
 		}
 	}
 	
+	public String getBroadcast() {
+		return ipFromClass() + ".3";
+	}
+	
 	public String getIP() {
 		return ipFromClass() + ".2";
 	}
@@ -240,7 +244,7 @@ public class ServerModel extends AModel {
 
 	}
 
-	public String getBroadcast() {
+	public String getSubnet() {
 		return ipFromClass() + ".0";
 	}
 	
