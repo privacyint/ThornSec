@@ -157,10 +157,11 @@ public class DNS extends AStructuredProfile {
 			ifaceConfig += "    interface: " + model.getServerModel(servers[i]).getGateway() + "\n";
 		}
 		for (int i = 0; i < devices.length; ++i) {
-			if (model.getDeviceModel(devices[i]).getWiredMac() != null)
-				ifaceConfig += "    interface: " + model.getDeviceModel(devices[i]).getWiredGateway() + "\n";
-			if (model.getDeviceModel(devices[i]).getWirelessMac() != null)
-				ifaceConfig += "    interface: " + model.getDeviceModel(devices[i]).getWirelessGateway() + "\n";
+			String[] gateways = model.getDeviceModel(devices[i]).getGateways();
+
+			for (int j = 0; j < gateways.length; ++j) {
+				ifaceConfig += "    interface: " + gateways[j] + "\n";
+			}
 		}
 		units.addElement(new FileUnit("dns_listening_interfaces", "dns_installed", ifaceConfig.replaceAll("\\s+$", ""), "/etc/unbound/unbound.conf.d/interfaces.conf"));
 		
@@ -177,27 +178,26 @@ public class DNS extends AStructuredProfile {
 				//CNAMEs - more like ALIASES
 				if (model.getData().getCnames(servers[i]) != null) {
 					for (int j = 0; j < model.getData().getCnames(servers[i]).length; ++j) {
+						zoneConfig += "\n";
 						zoneConfig += (model.getData().getCnames(servers[i])[j].equals("")) ? "" : "    local-data: \\\"" + model.getData().getCnames(servers[i])[j] + " A " + model.getServerModel(servers[i]).getIP() +"\\\"\n";
                         zoneConfig += "    local-data: \\\"";
 						zoneConfig += (model.getData().getCnames(servers[i])[j].equals("")) ? "" :  model.getData().getCnames(servers[i])[j] + ".";
-						zoneConfig += model.getData().getDomain() + " A " + model.getServerModel(servers[i]).getIP() +"\\\"\n";
+						zoneConfig += model.getData().getDomain() + " A " + model.getServerModel(servers[i]).getIP() +"\\\"";
 					}
 				}
 			}
 		}
 		
 		for (int i = 0; i < devices.length; ++i) {
-			if (model.getDeviceModel(devices[i]).getWiredMac() != null) {
-				zoneConfig += "    local-data: \\\"" + devices[i] + ".wired A " + model.getDeviceModel(devices[i]).getWiredIP() +"\\\"\n";
-				zoneConfig += "    local-data: \\\"" + devices[i] + ".wired." + model.getData().getDomain() + " A " + model.getDeviceModel(devices[i]).getWiredIP() +"\\\"\n";
-				zoneConfig += "    local-data-ptr: \\\"" + model.getDeviceModel(devices[i]).getWiredIP() + " " + devices[i] + ".wired." + model.getData().getDomain() + "\\\"\n";
-				zoneConfig += "    local-data-ptr: \\\"" + model.getDeviceModel(devices[i]).getWiredGateway() + " router.wired." + devices[i] + "." + model.getData().getDomain() + "\\\"\n";
-			}
-			if (model.getDeviceModel(devices[i]).getWirelessMac() != null) {
-				zoneConfig += "    local-data: \\\"" + devices[i] + ".wireless A " + model.getDeviceModel(devices[i]).getWirelessIP() +"\\\"\n";
-				zoneConfig += "    local-data: \\\"" + devices[i] + ".wireless." + model.getData().getDomain() + " A " + model.getDeviceModel(devices[i]).getWirelessIP() +"\\\"\n";
-				zoneConfig += "    local-data-ptr: \\\"" + model.getDeviceModel(devices[i]).getWirelessIP() + " " + devices[i] + ".wired." + model.getData().getDomain() + "\\\"\n";				
-				zoneConfig += "    local-data-ptr: \\\"" + model.getDeviceModel(devices[i]).getWirelessGateway() + " router.wireless." + devices[i] + "." + model.getData().getDomain() + "\\\"\n";
+			String[] ips      = model.getDeviceModel(devices[i]).getIPs();
+			String[] gateways = model.getDeviceModel(devices[i]).getGateways();
+			
+			for (int j = 0; j < ips.length; ++j) {
+				zoneConfig += "\n";
+				zoneConfig += "    local-data: \\\"" + devices[i] + "." + j + " A " + ips[j] +"\\\"\n";
+				zoneConfig += "    local-data: \\\"" + devices[i] + "." + j + "." + model.getData().getDomain() + " A " + ips[j] +"\\\"\n";
+				zoneConfig += "    local-data-ptr: \\\"" + ips[j] + " " + devices[i] + "." + j + "." + model.getData().getDomain() + "\\\"\n";
+				zoneConfig += "    local-data-ptr: \\\"" + gateways[j] + " router." + j + "." + devices[i] + "." + model.getData().getDomain() + "\\\"";
 			}
 		}		
 		

@@ -1,17 +1,11 @@
 package profile;
 
 import java.util.Iterator;
-import java.util.StringTokenizer;
 import java.util.Vector;
-
-import javax.json.JsonArray;
-import javax.json.JsonObject;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
-import core.unit.SimpleUnit;
-import core.unit.fs.FileAppendUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
@@ -115,26 +109,23 @@ public class DHCP extends AStructuredProfile {
 		String[] devices = model.getDeviceLabels();
 		
 		for (int i = 0; i < devices.length; ++i) {
-			if (model.getDeviceModel(devices[i]).getWiredMac() != null) {
+			String[] subnets  = model.getDeviceModel(devices[i]).getSubnets();
+			String[] ips      = model.getDeviceModel(devices[i]).getIPs();
+			String[] macs     = model.getDeviceModel(devices[i]).getMacs();
+			String[] gateways = model.getDeviceModel(devices[i]).getGateways();
+
+			String netmask = model.getDeviceModel(devices[i]).getNetmask();
+			
+			for (int j = 0; j < subnets.length; ++j) {
 				dhcpconf += "\n";
-				dhcpconf += "\tsubnet " + model.getDeviceModel(devices[i]).getWiredBroadcast() + " netmask " + model.getDeviceModel(devices[i]).getNetmask() + " {\n";
-				dhcpconf += "\t\thost " + devices[i] + "_wired {\n";
-				dhcpconf += "\t\t\thardware ethernet " + model.getDeviceModel(devices[i]).getWiredMac() + ";\n";
-				dhcpconf += "\t\t\tfixed-address " + model.getDeviceModel(devices[i]).getWiredIP() + ";\n";
-				dhcpconf += "\t\t\toption routers " + model.getDeviceModel(devices[i]).getWiredGateway() + ";\n";
+				dhcpconf += "\tsubnet " + subnets[j] + " netmask " + netmask + " {\n";
+				dhcpconf += "\t\thost " + devices[j] + "_wired {\n";
+				dhcpconf += "\t\t\thardware ethernet " + macs[j] + ";\n";
+				dhcpconf += "\t\t\tfixed-address " + ips[j] + ";\n";
+				dhcpconf += "\t\t\toption routers " + gateways[j] + ";\n";
 				dhcpconf += "\t\t}\n";
 				dhcpconf += "\t}\n";
 			}
-			if (model.getDeviceModel(devices[i]).getWirelessMac() != null) {
-				dhcpconf += "\n";
-				dhcpconf += "\tsubnet " + model.getDeviceModel(devices[i]).getWirelessBroadcast() + " netmask " + model.getDeviceModel(devices[i]).getNetmask() + " {\n";
-				dhcpconf += "\t\thost " + devices[i] + "_wireless {\n";
-				dhcpconf += "\t\t\thardware ethernet " + model.getDeviceModel(devices[i]).getWirelessMac() + ";\n";
-				dhcpconf += "\t\t\tfixed-address " + model.getDeviceModel(devices[i]).getWirelessIP() + ";\n";
-				dhcpconf += "\t\t\toption routers " + model.getDeviceModel(devices[i]).getWirelessGateway() + ";\n";
-				dhcpconf += "\t\t}\n";
-				dhcpconf += "\t}\n";
-			}				
 		}
 		
 		dhcpconf += "}";
