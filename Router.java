@@ -152,20 +152,20 @@ public class Router extends AStructuredProfile {
 				case "superuser":
 					script += "\n\n";
 					script += buildDailyBandwidthEmail(model.getData().getAdminEmail(),
-													   devices[i] + "@" + model.getData().getDomain(),
-													   "[" + devices[i] + "." + model.getData().getLabel() + "] Daily Bandwidth Digest",
-													   devices[i],
-													   true);
+													devices[i] + "@" + model.getData().getDomain(),
+													"[" + devices[i] + "." + model.getData().getLabel() + "] Daily Bandwidth Digest",
+													devices[i],
+													true);
 					break;
 				//This is a peripheral of some sort.  Just let the responsible person know.
 				case "intonly":
 				case "extonly":
 					script += "\n\n";
 					script += buildDailyBandwidthEmail(devices[i] + "@" + model.getData().getDomain(),
-							   model.getData().getAdminEmail(),
-							   "[" + devices[i] + "." + model.getLabel() + "] Daily Bandwidth Digest",
-							   devices[i],
-							   false);
+							model.getData().getAdminEmail(),
+							"[" + devices[i] + "." + model.getLabel() + "] Daily Bandwidth Digest",
+							devices[i],
+							false);
 					break;
 				default:
 					//It'll default drop.
@@ -179,10 +179,10 @@ public class Router extends AStructuredProfile {
 		for (int i = 0; i < servers.length; ++i) {
 			script += "\n\n";
 			script += buildDailyBandwidthEmail(servers[i] + "@" + model.getData().getDomain(),
-					   model.getData().getAdminEmail(),
-					   "[" + servers[i] + "." + model.getLabel() + "] Daily Bandwidth Digest",
-					   servers[i],
-					   false);
+					model.getData().getAdminEmail(),
+					"[" + servers[i] + "." + model.getLabel() + "] Daily Bandwidth Digest",
+					servers[i],
+					false);
 
 			script += "iptables -Z " + servers[i] + "_ingress\n";
 			script += "iptables -Z " + servers[i] + "_egress";		
@@ -203,13 +203,13 @@ public class Router extends AStructuredProfile {
 	
 			for (int i = 0; i < servers.length; ++i) {
 				units.addElement(model.getServerModel(server).getInterfaceModel().addIface(servers[i].replaceAll("-", "_") + "_router_iface",
-																						   "static",
-																						   model.getData().getIface(server),
-																						   null,
-																						   model.getServerModel(servers[i]).getGateway(),
-																						   model.getData().getNetmask(),
-																						   null,
-																						   null));
+																							"static",
+																							model.getData().getIface(server),
+																							null,
+																							model.getServerModel(servers[i]).getGateway(),
+																							model.getData().getNetmask(),
+																							null,
+																							null));
 			}
 						
 			for (int i = 0; i < devices.length; ++i) {
@@ -217,13 +217,13 @@ public class Router extends AStructuredProfile {
 				
 				for (int j = 0; j < gateways.length; ++j) {
 					units.addElement(model.getServerModel(server).getInterfaceModel().addIface(devices[i].replaceAll("-", "_") + "_router_iface_" + j,
-																							   "static",
-																							   model.getData().getIface(server),
-																							   null,
-																							   gateways[j],
-																							   model.getData().getNetmask(),
-																							   null,
-																							   null));
+																								"static",
+																								model.getData().getIface(server),
+																								null,
+																								gateways[j],
+																								model.getData().getNetmask(),
+																								null,
+																								null));
 				}
 			}
 			
@@ -239,16 +239,16 @@ public class Router extends AStructuredProfile {
 	private Vector<IUnit> baseIptConfig(String server, NetworkModel model, String name, String subnet) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-        FirewallModel fm = model.getServerModel(server).getFirewallModel();
-        String intIface  = model.getData().getIface(server);
-        String extIface  = model.getData().getExtIface(server);
-        
-        String cleanName    = name.replace("-", "_");
-        String fwdChain     = cleanName + "_fwd";
-        String ingressChain = cleanName + "_ingress";
-        String egressChain  = cleanName + "_egress";
+		FirewallModel fm = model.getServerModel(server).getFirewallModel();
+		String intIface  = model.getData().getIface(server);
+		String extIface  = model.getData().getExtIface(server);
+		
+		String cleanName    = name.replace("-", "_");
+		String fwdChain     = cleanName + "_fwd";
+		String ingressChain = cleanName + "_ingress";
+		String egressChain  = cleanName + "_egress";
 
-        //Create our egress chain for bandwidth (exfil?) tracking
+		//Create our egress chain for bandwidth (exfil?) tracking
 		//In future, we could perhaps do some form of traffic blocking malarky here?
 		units.addElement(fm.addChain(cleanName + "_egress_chain", "filter", egressChain));
 		//Create our ingress chain for download bandwidth tracking
@@ -256,8 +256,8 @@ public class Router extends AStructuredProfile {
 		//Create our forward chain for all other rules
 		units.addElement(fm.addChain(cleanName + "_fwd_chain", "filter", fwdChain));
 
-        //Force traffic to/from a given subnet to jump to our chains
-        units.addElement(fm.addFilterForward(cleanName + "_ipt_server_src",
+		//Force traffic to/from a given subnet to jump to our chains
+		units.addElement(fm.addFilterForward(cleanName + "_ipt_server_src",
 				"-s " + subnet
 				+ " -j "+ fwdChain));
 		units.addElement(fm.addFilterForward(cleanName + "_ipt_server_dst",
@@ -266,7 +266,7 @@ public class Router extends AStructuredProfile {
 
 		//We want to default drop anything not explicitly whitelisted
 		units.addElement(fm.addFilter(cleanName + "_fwd_default_drop", fwdChain,
-                "-j DROP"));
+				"-j DROP"));
 		
 		//Jump to the ingress/egress chains
 		units.addElement(fm.addFilter(cleanName + "_allow_ingress", fwdChain,
@@ -281,11 +281,11 @@ public class Router extends AStructuredProfile {
 
 		//Don't allow any traffic in from the outside world
 		units.addElement(fm.addFilter(cleanName + "_ingress_default_drop", ingressChain,
-                "-j DROP"));
+				"-j DROP"));
 
 		//Don't allow any traffic out to the outside world
 		units.addElement(fm.addFilter(cleanName + "_egress_default_drop", egressChain,
-                "-j DROP"));
+				"-j DROP"));
 		
 		//Add our forward chain rules (backwards(!))
 		//Allow our router to talk to us
@@ -304,10 +304,10 @@ public class Router extends AStructuredProfile {
 		
 		Vector<String> users = new Vector<String>();
 		
-        FirewallModel fm = model.getServerModel(server).getFirewallModel();
+		FirewallModel fm = model.getServerModel(server).getFirewallModel();
 
-        String intIface = model.getData().getIface(server);
-        String extIface = model.getData().getExtIface(server);
+		String intIface = model.getData().getIface(server);
+		String extIface = model.getData().getExtIface(server);
 
 		for (int i = 0; i < devices.length; ++i) {
 			switch (model.getDeviceModel(devices[i]).getType()) {
@@ -317,16 +317,16 @@ public class Router extends AStructuredProfile {
 					break;
 			}
 		}
-        
+		
 		for (int i = 0; i < servers.length; ++i) {
 			String serverSubnet    = model.getServerModel(servers[i]).getSubnet() + "/30";
 			String cleanServerName = servers[i].replaceAll("-",  "_");
-	        String fwdChain        = cleanServerName + "_fwd";
+			String fwdChain        = cleanServerName + "_fwd";
 			
 			units.addAll(baseIptConfig(server, model, servers[i], serverSubnet));
 			
 			for (int j = 0; j < users.size(); ++j) {
-	            //They can talk to our servers on :80 && :443
+				//They can talk to our servers on :80 && :443
 				units.addElement(fm.addFilter(cleanServerName + "_allow_http_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
 						"-s " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
 						+ " -d " + serverSubnet
@@ -361,8 +361,8 @@ public class Router extends AStructuredProfile {
 
 			
 			/*
-			 * There's probably no utility in this.
-			 * 
+			* There's probably no utility in this.
+			* 
 			//We now want to make sure that under no circumstances can servers SSH between each other. Don't care about anything else!
 			//Anything else can be handled on the server-side iptables rules.
 			for (int j = 0; j < servers.length; ++j) {
@@ -393,32 +393,32 @@ public class Router extends AStructuredProfile {
 				case "user":
 					users.add(devices[i]);
 					break;
-				case "intOnly":
+				case "intonly":
 					intOnly.add(devices[i]);
 					break;
 			}
 		}
 		
 		for (int i = 0; i < users.size(); ++i) {
-            String cleanUserName   = users.elementAt(i).replace("-", "_");
-            String fwdChain        = cleanUserName + "_fwd";
-            String ingressChain    = cleanUserName + "_ingress";
-            String egressChain     = cleanUserName + "_egress";
-            
-            String userSubnet = model.getDeviceModel(users.elementAt(i)).getSubnets()[0] + "/24";
-            
-            String intIface = model.getData().getIface(server);
-            String extIface = model.getData().getExtIface(server);
+			String cleanUserName = users.elementAt(i).replace("-", "_");
+			String fwdChain      = cleanUserName + "_fwd";
+			String ingressChain  = cleanUserName + "_ingress";
+			String egressChain   = cleanUserName + "_egress";
+			
+			String userSubnet = model.getDeviceModel(users.elementAt(i)).getSubnets()[0] + "/24";
+			
+			String intIface = model.getData().getIface(server);
+			String extIface = model.getData().getExtIface(server);
 
-            FirewallModel fm = model.getServerModel(server).getFirewallModel();
-        
+			FirewallModel fm = model.getServerModel(server).getFirewallModel();
+		
 			units.addAll(baseIptConfig(server, model, users.elementAt(i), userSubnet));
 
 			//Configure what users can do with our servers
-        	String[] servers = model.getServerLabels();
+			String[] servers = model.getServerLabels();
 
 			for (int j = 0; j < servers.length; ++j) {
-	            //They can talk to our servers on :80 && :443
+				//They can talk to our servers on :80 && :443
 				units.addElement(fm.addFilter(cleanUserName + "_allow_http_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
 						"-s " + userSubnet
 						+ " -d " + model.getServerModel(servers[j]).getSubnet() + "/30"
@@ -433,14 +433,14 @@ public class Router extends AStructuredProfile {
 						+ " -j ACCEPT"));
 
 				//Allow superusers to SSH into our servers
-	            if (model.getDeviceModel(users.elementAt(i)).getType().equals("superuser")) {
+				if (model.getDeviceModel(users.elementAt(i)).getType().equals("superuser")) {
 					units.addElement(fm.addFilter(cleanUserName + "_allow_ssh_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
 							"-s " + userSubnet
 							+ " -d " + model.getServerModel(servers[j]).getSubnet() + "/30"
 							+ " -p tcp"
 							+ " --dport " + model.getData().getSSHPort(servers[j])
 							+ " -j ACCEPT"));
-	            }
+				}
 				
 				//And servers can talk back to them, if established/related traffic
 				units.addElement(fm.addFilter(cleanUserName + "_allow_response_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
@@ -477,7 +477,7 @@ public class Router extends AStructuredProfile {
 					+ " -o " + intIface
 					+ " -m state --state ESTABLISHED,RELATED"
 					+ " -j ACCEPT"));
-    	}
+		}
 		
 		return units;
 	}
@@ -495,28 +495,28 @@ public class Router extends AStructuredProfile {
 				case "user":
 					users.add(devices[i]);
 					break;
-				case "intOnly":
+				case "intonly":
 					intOnly.add(devices[i]);
 					break;
 			}
 		}
 		
 		for (int i = 0; i < intOnly.size(); ++i) {
-            String cleanDeviceName = intOnly.elementAt(i).replace("-", "_");
-            String fwdChain        = cleanDeviceName + "_fwd";
-            String ingressChain    = cleanDeviceName + "_ingress";
-            String egressChain     = cleanDeviceName + "_egress";
-            
-            String deviceSubnet = model.getDeviceModel(intOnly.elementAt(i)).getSubnets()[0] + "/24";
-            
-            String intIface = model.getData().getIface(server);
-            String extIface = model.getData().getExtIface(server);
+			String cleanDeviceName = intOnly.elementAt(i).replace("-", "_");
+			String fwdChain     = cleanDeviceName + "_fwd";
+			String ingressChain = cleanDeviceName + "_ingress";
+			String egressChain  = cleanDeviceName + "_egress";
+			
+			String deviceSubnet = model.getDeviceModel(intOnly.elementAt(i)).getSubnets()[0] + "/24";
+			
+			String intIface = model.getData().getIface(server);
+			String extIface = model.getData().getExtIface(server);
 
-            FirewallModel fm = model.getServerModel(server).getFirewallModel();
-        
+			FirewallModel fm = model.getServerModel(server).getFirewallModel();
+		
 			units.addAll(baseIptConfig(server, model, intOnly.elementAt(i), deviceSubnet));
 
-            //Users can talk to our internal only devices
+			//Users can talk to our internal only devices
 			for (int j = 0; j < users.size(); ++j) {
 				//Any user can talk to an internal-only device
 				units.addElement(fm.addFilter(cleanDeviceName + "_allow_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
@@ -538,30 +538,30 @@ public class Router extends AStructuredProfile {
 	private Vector<IUnit> extOnlyIptUnits(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		String[] devices       = model.getDeviceLabels();
+		String[] devices	   = model.getDeviceLabels();
 		Vector<String> extOnly = new Vector<String>();
 
 		for (int i = 0; i < devices.length; ++i) {
 			switch (model.getDeviceModel(devices[i]).getType()) {
-				case "extOnly":
+				case "extonly":
 					extOnly.add(devices[i]);
 					break;
 			}
 		}
 		
 		for (int i = 0; i < extOnly.size(); ++i) {
-            String cleanDeviceName = extOnly.elementAt(i).replace("-", "_");
-            String fwdChain        = cleanDeviceName + "_fwd";
-            String ingressChain    = cleanDeviceName + "_ingress";
-            String egressChain     = cleanDeviceName + "_egress";
-            
-            String deviceSubnet = model.getDeviceModel(extOnly.elementAt(i)).getSubnets()[0] + "/24";
-            
-            String intIface = model.getData().getIface(server);
-            String extIface = model.getData().getExtIface(server);
+			String cleanDeviceName = extOnly.elementAt(i).replace("-", "_");
+			String fwdChain     = cleanDeviceName + "_fwd";
+			String ingressChain = cleanDeviceName + "_ingress";
+			String egressChain  = cleanDeviceName + "_egress";
+			
+			String deviceSubnet = model.getDeviceModel(extOnly.elementAt(i)).getSubnets()[0] + "/24";
+			
+			String intIface = model.getData().getIface(server);
+			String extIface = model.getData().getExtIface(server);
 
-            FirewallModel fm = model.getServerModel(server).getFirewallModel();
-        
+			FirewallModel fm = model.getServerModel(server).getFirewallModel();
+		
 			units.addAll(baseIptConfig(server, model, extOnly.elementAt(i), deviceSubnet));
 
 			//External only devices can talk to the outside world
@@ -590,13 +590,13 @@ public class Router extends AStructuredProfile {
 		}
 		else if (model.getData().getExtConn(server).equals("dhcp")){
 			units.addElement(model.getServerModel(server).getInterfaceModel().addIface("router_ext_dhcp_iface", 
-																					   "dhcp",
-																					   model.getData().getExtIface(server),
-																					   null,
-																					   null,
-																					   null,
-																					   null,
-																					   null));
+																						"dhcp",
+																						model.getData().getExtIface(server),
+																						null,
+																						null,
+																						null,
+																						null,
+																						null));
 
 			String dhclient = "option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n";
 			dhclient += "send host-name = gethostname();\n";
@@ -626,13 +626,13 @@ public class Router extends AStructuredProfile {
 				String broadcast = row.getString("broadcast");
 
 				units.addElement(model.getServerModel(server).getInterfaceModel().addIface("router_ext_static_iface_" + i,
-																						   "static",
-																						   model.getData().getExtIface(server),
-																						   null,
-																						   address,
-																						   netmask,
-																						   broadcast,
-																						   gateway));
+																							"static",
+																							model.getData().getExtIface(server),
+																							null,
+																							address,
+																							netmask,
+																							broadcast,
+																							gateway));
 			}
 		}
 		
