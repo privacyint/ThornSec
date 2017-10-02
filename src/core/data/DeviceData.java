@@ -1,13 +1,13 @@
 package core.data;
 
+import javax.json.JsonArray;
 import javax.json.JsonObject;
 
 public class DeviceData extends AData {
 
 	private JsonObject data;
-	private String wiredMac;
-	private String wirelessMac;
-	private String type;
+	private String[]   macs;
+	private String     type;
 	
 	public DeviceData(String label) {
 		super(label);
@@ -16,23 +16,28 @@ public class DeviceData extends AData {
 	public void read(JsonObject data) {
 		this.data = data;
 		
-		wiredMac = data.getString("wired", null);
-		wirelessMac = data.getString("wireless", null);
 		type = data.getString("type", null);
+
+		JsonArray jsonMacs = data.getJsonArray("macs");
+		if (jsonMacs != null) {
+			macs = new String[jsonMacs.size()];
+			for (int i = 0; i < macs.length; ++i) {
+				macs[i] = jsonMacs.getString(i);
+			}
+		}
+		else {
+			macs = new String[0];
+		}
 	}
 
 	public String getProperty(String property) {
 		return data.getString(property, null);
 	}
 	
-	public String getWired() {
-		return this.wiredMac;
+	public String[] getMacs() {
+		return this.macs;
 	}
 
-	public String getWireless() {
-		return this.wirelessMac;
-	}
-	
 	public String getType() {
 		return this.type;
 	}

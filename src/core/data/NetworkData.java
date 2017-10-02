@@ -353,14 +353,10 @@ public class NetworkData extends AData {
 	}
 	
 	//Device only stuff
-	public String getDeviceWiredMac(String device) {
-		return this.devices.get(device).getWired();
+	public String[] getDeviceMacs(String device) {
+		return this.devices.get(device).getMacs();
 	}
 
-	public String getDeviceWirelessMac(String device) {
-		return this.devices.get(device).getWireless();
-	}
-	
 	public String getDeviceType(String device) {
 		return this.devices.get(device).getType();
 	}

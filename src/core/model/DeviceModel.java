@@ -48,40 +48,56 @@ public class DeviceModel extends AModel {
 		}
 	}
 	
-	public String getWirelessIP() {
-		return ipFromClass() + ".6";
+	public String[] getSubnets() {
+		String[] macs    = getMacs();
+		String[] subnets = new String[macs.length];
+		
+		for (int i = 0; i < macs.length; ++i) {
+			subnets[i] = ipFromClass() + "." + (i*4);
+		}
+		
+		return subnets;
 	}
 	
-	public String getWirelessGateway() {
-		return ipFromClass() + ".5";
+	public String[] getGateways() {
+		String[] macs     = getMacs();
+		String[] gateways = new String[macs.length];
+		
+		for (int i = 0; i < macs.length; ++i) {
+			gateways[i] = ipFromClass() + "." + ((i*4)+1);
+		}
+		
+		return gateways;
 	}
 	
-	public String getWirelessBroadcast() {
-		return ipFromClass() + ".4";
+	public String[] getIPs() {
+		String[] macs = getMacs();
+		String[] ips  = new String[macs.length];
+		
+		for (int i = 0; i < macs.length; ++i) {
+			ips[i] = ipFromClass() + "." + ((i*4)+2);
+		}
+		
+		return ips;
 	}
 	
-	public String getWiredIP() {
-		return ipFromClass() + ".2";
-	}
-	
-	public String getWiredGateway() {
-		return ipFromClass() + ".1";
-	}
-
-	public String getWiredBroadcast() {
-		return ipFromClass() + ".0";
+	public String[] getBroadcasts() {
+		String[] macs       = getMacs();
+		String[] broadcasts = new String[macs.length];
+		
+		for (int i = 0; i < macs.length; ++i) {
+			broadcasts[i] = ipFromClass() + "." + ((i*4)+3);
+		}
+		
+		return broadcasts;
 	}
 	
 	public String getNetmask() {
 		return "255.255.255.252";
 	}
 	
-	public String getWiredMac() {
-		return this.networkData.getDeviceWiredMac(this.getLabel());
-	}
-
-	public String getWirelessMac() {
-		return this.networkData.getDeviceWirelessMac(this.getLabel());
+	public String[] getMacs() {
+		return this.networkData.getDeviceMacs(this.getLabel());
 	}
 	
 	public String getType() {
