@@ -195,7 +195,7 @@ public class ServerModel extends AModel {
 	}
 
 	public int getUnitCount() {
-		return this.getUnits().size();
+		return 0; //this.getUnits().size();
 	}
 
 	public String[] getProfiles() {
