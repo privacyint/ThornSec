@@ -59,6 +59,11 @@ public class Router extends AStructuredProfile {
 		units.addElement(new InstalledUnit("xsltproc", "xsltproc"));
 		units.addElement(new InstalledUnit("sendmail", "sendmail"));;
 		
+		model.getServerModel(server).getProcessModel().addProcess("sendmail: MTA: accepting connections$");
+		model.getServerModel(server).getUserModel().addUsername("smmta");
+		model.getServerModel(server).getUserModel().addUsername("smmpa");
+		model.getServerModel(server).getUserModel().addUsername("smmsp");
+		
 		units.addAll(dns.getInstalled(server, model));
 		units.addAll(dhcp.getInstalled(server, model));
 		units.addAll(qos.getInstalled(server, model));
@@ -152,7 +157,7 @@ public class Router extends AStructuredProfile {
 				case "superuser":
 					script += "\n\n";
 					script += buildDailyBandwidthEmail(model.getData().getAdminEmail(),
-													devices[i] + "@" + model.getData().getDomain(),
+													devices[i] + "@" + model.getData().getDomain(server),
 													"[" + devices[i] + "." + model.getData().getLabel() + "] Daily Bandwidth Digest",
 													devices[i],
 													true);
@@ -161,7 +166,7 @@ public class Router extends AStructuredProfile {
 				case "intonly":
 				case "extonly":
 					script += "\n\n";
-					script += buildDailyBandwidthEmail(devices[i] + "@" + model.getData().getDomain(),
+					script += buildDailyBandwidthEmail(devices[i] + "@" + model.getData().getDomain(server),
 							model.getData().getAdminEmail(),
 							"[" + devices[i] + "." + model.getLabel() + "] Daily Bandwidth Digest",
 							devices[i],
@@ -178,7 +183,7 @@ public class Router extends AStructuredProfile {
 		//Then servers
 		for (int i = 0; i < servers.length; ++i) {
 			script += "\n\n";
-			script += buildDailyBandwidthEmail(servers[i] + "@" + model.getData().getDomain(),
+			script += buildDailyBandwidthEmail(servers[i] + "@" + model.getData().getDomain(servers[i]),
 					model.getData().getAdminEmail(),
 					"[" + servers[i] + "." + model.getLabel() + "] Daily Bandwidth Digest",
 					servers[i],
@@ -250,48 +255,49 @@ public class Router extends AStructuredProfile {
 
 		//Create our egress chain for bandwidth (exfil?) tracking
 		//In future, we could perhaps do some form of traffic blocking malarky here?
-		units.addElement(fm.addChain(cleanName + "_egress_chain", "filter", egressChain));
+		fm.addChain(cleanName + "_egress_chain", "filter", egressChain);
 		//Create our ingress chain for download bandwidth tracking
-		units.addElement(fm.addChain(cleanName + "_ingress_chain", "filter", ingressChain));
+		fm.addChain(cleanName + "_ingress_chain", "filter", ingressChain);
 		//Create our forward chain for all other rules
-		units.addElement(fm.addChain(cleanName + "_fwd_chain", "filter", fwdChain));
+		fm.addChain(cleanName + "_fwd_chain", "filter", fwdChain);
 
 		//Force traffic to/from a given subnet to jump to our chains
-		units.addElement(fm.addFilterForward(cleanName + "_ipt_server_src",
+		fm.addFilterForward(cleanName + "_ipt_server_src",
 				"-s " + subnet
-				+ " -j "+ fwdChain));
-		units.addElement(fm.addFilterForward(cleanName + "_ipt_server_dst",
+				+ " -j "+ fwdChain);
+		fm.addFilterForward(cleanName + "_ipt_server_dst",
 				"-d " + subnet
-				+ " -j " + fwdChain));
+				+ " -j " + fwdChain);
 
 		//We want to default drop anything not explicitly whitelisted
-		units.addElement(fm.addFilter(cleanName + "_fwd_default_drop", fwdChain,
-				"-j DROP"));
+		//Make sure that these are the very first rules as the chain may have been pre-populated
+		fm.addFilter(cleanName + "_fwd_default_drop", fwdChain, 0,
+				"-j DROP");
 		
 		//Jump to the ingress/egress chains
-		units.addElement(fm.addFilter(cleanName + "_allow_ingress", fwdChain,
+		fm.addFilter(cleanName + "_allow_ingress", fwdChain, 1,
 				"-i " + extIface + " -o " + intIface
-				+ " -j " + ingressChain));
-		units.addElement(fm.addFilter(cleanName + "_allow_egress", fwdChain,
+				+ " -j " + ingressChain);
+		fm.addFilter(cleanName + "_allow_egress", fwdChain, 2,
 				"-i " + intIface + " -o " + extIface
-				+ " -j " + egressChain));
+				+ " -j " + egressChain);
 		//Log anything hopping to our egress chain
-		units.addElement(fm.addFilter(cleanName + "_log_egress_traffic", fwdChain,
-				"-j LOG --log-prefix \\\"ipt-" + name + ": \\\""));
+		fm.addFilter(cleanName + "_log_egress_traffic", fwdChain, 3,
+				"-j LOG --log-prefix \\\"ipt-" + name + ": \\\"");
 
 		//Don't allow any traffic in from the outside world
-		units.addElement(fm.addFilter(cleanName + "_ingress_default_drop", ingressChain,
-				"-j DROP"));
+		fm.addFilter(cleanName + "_ingress_default_drop", ingressChain, 0,
+				"-j DROP");
 
 		//Don't allow any traffic out to the outside world
-		units.addElement(fm.addFilter(cleanName + "_egress_default_drop", egressChain,
-				"-j DROP"));
+		fm.addFilter(cleanName + "_egress_default_drop", egressChain, 0,
+				"-j DROP");
 		
 		//Add our forward chain rules (backwards(!))
 		//Allow our router to talk to us
-		units.addElement(fm.addFilter(cleanName + "_allow_router_traffic", fwdChain,
+		fm.addFilter(cleanName + "_allow_router_traffic", fwdChain,
 				"-s " + subnet
-				+ " -j ACCEPT"));
+				+ " -j ACCEPT");
 
 		return units;
 	}
@@ -322,59 +328,50 @@ public class Router extends AStructuredProfile {
 			String serverSubnet    = model.getServerModel(servers[i]).getSubnet() + "/30";
 			String cleanServerName = servers[i].replaceAll("-",  "_");
 			String fwdChain        = cleanServerName + "_fwd";
+			String egressChain     = cleanServerName + "_egress";
 			
-			units.addAll(baseIptConfig(server, model, servers[i], serverSubnet));
+			baseIptConfig(server, model, servers[i], serverSubnet);
+			
+			if (model.getServerModel(servers[i]).isRouter()) {
+				fm.addFilter(cleanServerName + "_allow_email_out", egressChain,
+						"-p tcp"
+						+ " --dport 25"
+						+ " -j ACCEPT");
+			}
 			
 			for (int j = 0; j < users.size(); ++j) {
 				//They can talk to our servers on :80 && :443
-				units.addElement(fm.addFilter(cleanServerName + "_allow_http_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
+				fm.addFilter(cleanServerName + "_allow_http_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
 						"-s " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
 						+ " -d " + serverSubnet
 						+ " -p tcp"
 						+ " --dport 80"
-						+ " -j ACCEPT"));
-				units.addElement(fm.addFilter(cleanServerName + "_allow_https_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
+						+ " -j ACCEPT");
+				fm.addFilter(cleanServerName + "_allow_https_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
 						"-s " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
 						+ " -d " + serverSubnet
 						+ " -p tcp"
 						+ " --dport 443"
-						+ " -j ACCEPT"));
+						+ " -j ACCEPT");
 				
 				//And if they're a superuser, they can SSH in, too
 				if (model.getDeviceModel(users.elementAt(j)).getType().equals("superuser" )) {
-					units.addElement(fm.addFilter(cleanServerName + "_ssh_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
+					fm.addFilter(cleanServerName + "_ssh_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
 							"-s " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
 							+ " -d " + serverSubnet
 							+ " -p tcp"
 							+ " --dport " + model.getData().getSSHPort(servers[i])
-							+ " -j ACCEPT"));
+							+ " -j ACCEPT");
 				}
 				
 				//And servers can talk back to them, if established/related traffic
-				units.addElement(fm.addFilter(cleanServerName + "_allow_https_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
+				fm.addFilter(cleanServerName + "_allow_https_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
 						"-s " + serverSubnet
 						+ " -d " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
 						+ " -p tcp"
 						+ " -m state --state ESTABLISHED,RELATED"
-						+ " -j ACCEPT"));
+						+ " -j ACCEPT");
 			}
-
-			
-			/*
-			* There's probably no utility in this.
-			* 
-			//We now want to make sure that under no circumstances can servers SSH between each other. Don't care about anything else!
-			//Anything else can be handled on the server-side iptables rules.
-			for (int j = 0; j < servers.length; ++j) {
-				if (i != j) {
-					units.addElement(fm.addFilter(cleanServerName + "_deny_intra_server_ssh_traffic_" + j, fwdChain,
-							"-s " + serverSubnet
-							+ " -d " + model.getServerModel(servers[j]).getSubnet() + "/30"
-							+ " -p tcp"
-							+ " --dport " + model.getData().getSSHPort(servers[j])
-							+ " -j DROP"));
-				}
-			}*/
 		}
 	
 		return units;
@@ -412,71 +409,71 @@ public class Router extends AStructuredProfile {
 
 			FirewallModel fm = model.getServerModel(server).getFirewallModel();
 		
-			units.addAll(baseIptConfig(server, model, users.elementAt(i), userSubnet));
+			baseIptConfig(server, model, users.elementAt(i), userSubnet);
 
 			//Configure what users can do with our servers
 			String[] servers = model.getServerLabels();
 
 			for (int j = 0; j < servers.length; ++j) {
 				//They can talk to our servers on :80 && :443
-				units.addElement(fm.addFilter(cleanUserName + "_allow_http_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
+				fm.addFilter(cleanUserName + "_allow_http_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
 						"-s " + userSubnet
 						+ " -d " + model.getServerModel(servers[j]).getSubnet() + "/30"
 						+ " -p tcp"
 						+ " --dport 80"
-						+ " -j ACCEPT"));
-				units.addElement(fm.addFilter(cleanUserName + "_allow_https_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
+						+ " -j ACCEPT");
+				fm.addFilter(cleanUserName + "_allow_https_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
 						"-s " + userSubnet
 						+ " -d " + model.getServerModel(servers[j]).getSubnet() + "/30"
 						+ " -p tcp"
 						+ " --dport 443"
-						+ " -j ACCEPT"));
+						+ " -j ACCEPT");
 
 				//Allow superusers to SSH into our servers
 				if (model.getDeviceModel(users.elementAt(i)).getType().equals("superuser")) {
-					units.addElement(fm.addFilter(cleanUserName + "_allow_ssh_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
+					fm.addFilter(cleanUserName + "_allow_ssh_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
 							"-s " + userSubnet
 							+ " -d " + model.getServerModel(servers[j]).getSubnet() + "/30"
 							+ " -p tcp"
 							+ " --dport " + model.getData().getSSHPort(servers[j])
-							+ " -j ACCEPT"));
+							+ " -j ACCEPT");
 				}
 				
 				//And servers can talk back to them, if established/related traffic
-				units.addElement(fm.addFilter(cleanUserName + "_allow_response_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
+				fm.addFilter(cleanUserName + "_allow_response_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
 						"-s " + model.getServerModel(servers[j]).getSubnet() + "/30"
 						+ " -d " + userSubnet
 						+ " -p tcp"
 						+ " -m state --state ESTABLISHED,RELATED"
-						+ " -j ACCEPT"));
+						+ " -j ACCEPT");
 			}
 			
 			//Configure what they can do with internal only devices
 			for (int j = 0; j < intOnly.size(); ++j) {
 				//Any user can talk to an internal-only device
-				units.addElement(fm.addFilter(cleanUserName + "_allow_int_only_" + intOnly.elementAt(j).replaceAll("-",  "_"), fwdChain,
+				fm.addFilter(cleanUserName + "_allow_int_only_" + intOnly.elementAt(j).replaceAll("-",  "_"), fwdChain,
 						"-s " + userSubnet
 						+ " -d " + model.getDeviceModel(intOnly.elementAt(j)).getSubnets()[0] + "/24"
-						+ " -j ACCEPT"));
+						+ " -j ACCEPT");
 				//But these devices can only talk back, not initiate a conversation
-				units.addElement(fm.addFilter(cleanUserName + "_allow_int_only_response_" + intOnly.elementAt(j).replaceAll("-",  "_"), fwdChain,
+				fm.addFilter(cleanUserName + "_allow_int_only_response_" + intOnly.elementAt(j).replaceAll("-",  "_"), fwdChain,
 						"-s " + model.getDeviceModel(intOnly.elementAt(j)).getSubnets()[0] + "/24"
 						+ " -d " + userSubnet
 						+ " -m state --state ESTABLISHED,RELATED"
-						+ " -j ACCEPT"));
+						+ " -j ACCEPT");
 			}
 			
 			//Users can talk to the outside world
-			units.addElement(fm.addFilter(cleanUserName + "_allow_egress_traffic", egressChain,
+			fm.addFilter(cleanUserName + "_allow_egress_traffic", egressChain,
 					"-i " + intIface
 					+ " -o " + extIface
-					+ " -j ACCEPT"));
+					+ " -j ACCEPT");
 			//And can accept established/related traffic from the outside world, too
-			units.addElement(fm.addFilter(cleanUserName + "_allow_ingress_traffic", ingressChain,
+			fm.addFilter(cleanUserName + "_allow_ingress_traffic", ingressChain,
 					"-i " + extIface
 					+ " -o " + intIface
 					+ " -m state --state ESTABLISHED,RELATED"
-					+ " -j ACCEPT"));
+					+ " -j ACCEPT");
 		}
 		
 		return units;
@@ -514,21 +511,21 @@ public class Router extends AStructuredProfile {
 
 			FirewallModel fm = model.getServerModel(server).getFirewallModel();
 		
-			units.addAll(baseIptConfig(server, model, intOnly.elementAt(i), deviceSubnet));
+			baseIptConfig(server, model, intOnly.elementAt(i), deviceSubnet);
 
 			//Users can talk to our internal only devices
 			for (int j = 0; j < users.size(); ++j) {
 				//Any user can talk to an internal-only device
-				units.addElement(fm.addFilter(cleanDeviceName + "_allow_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
+				fm.addFilter(cleanDeviceName + "_allow_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
 						"-s " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
 						+ " -d " + deviceSubnet
-						+ " -j ACCEPT"));
+						+ " -j ACCEPT");
 				//But these devices can only talk back, not initiate a conversation
-				units.addElement(fm.addFilter(cleanDeviceName + "_allow_response_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
+				fm.addFilter(cleanDeviceName + "_allow_response_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
 						"-s " + deviceSubnet
 						+ " -d " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
 						+ " -m state --state ESTABLISHED,RELATED"
-						+ " -j ACCEPT"));
+						+ " -j ACCEPT");
 			}
 		}
 		
@@ -562,19 +559,19 @@ public class Router extends AStructuredProfile {
 
 			FirewallModel fm = model.getServerModel(server).getFirewallModel();
 		
-			units.addAll(baseIptConfig(server, model, extOnly.elementAt(i), deviceSubnet));
+			baseIptConfig(server, model, extOnly.elementAt(i), deviceSubnet);
 
 			//External only devices can talk to the outside world
-			units.addElement(fm.addFilter(cleanDeviceName + "_allow_egress_traffic", egressChain,
+			fm.addFilter(cleanDeviceName + "_allow_egress_traffic", egressChain,
 					"-i " + intIface
 					+ " -o " + extIface
-					+ " -j ACCEPT"));
+					+ " -j ACCEPT");
 			//And can accept established/related traffic from the outside world, too
-			units.addElement(fm.addFilter(cleanDeviceName + "_allow_ingress_traffic", ingressChain,
+			fm.addFilter(cleanDeviceName + "_allow_ingress_traffic", ingressChain,
 					"-i " + extIface
 					+ " -o " + intIface
 					+ " -m state --state ESTABLISHED,RELATED"
-					+ " -j ACCEPT"));
+					+ " -j ACCEPT");
 		}
 		
 		return units;
@@ -587,6 +584,7 @@ public class Router extends AStructuredProfile {
 			units.addElement(new InstalledUnit("ext_ppp", "ppp"));
 			units.addElement(new RunningUnit("ext_ppp", "ppp", "pppd-dns"));
 			units.addElement(model.getServerModel(server).getInterfaceModel().addPPPIface("router_ext_ppp_iface", model.getData().getProperty(server, "pppiface")));
+			model.getServerModel(server).getProcessModel().addProcess("/usr/sbin/pppd call provider$");
 		}
 		else if (model.getData().getExtConn(server).equals("dhcp")){
 			units.addElement(model.getServerModel(server).getInterfaceModel().addIface("router_ext_dhcp_iface", 
@@ -600,7 +598,7 @@ public class Router extends AStructuredProfile {
 
 			String dhclient = "option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n";
 			dhclient += "send host-name = gethostname();\n";
-			dhclient += "supersede domain-search \\\"" + model.getData().getDomain() + "\\\";\n";
+			dhclient += "supersede domain-search \\\"" + model.getData().getDomain(server) + "\\\";\n";
 			dhclient += "supersede domain-name-servers " + model.getServerModel(server).getGateway() + ";\n";
 			dhclient += "request subnet-mask, broadcast-address, time-offset, routers,\n";
 			dhclient += "	domain-name, domain-name-servers, domain-search, host-name,\n";

@@ -70,25 +70,25 @@ public class QoS extends AStructuredProfile {
 		
 		//Iterate through devicen first
 		for (int i = 0; i < devices.length; ++i) {
-			String deviceSubnet    = model.getDeviceModel(devices[i]).getSubnets()[0] + "/30";
+			String deviceSubnet = model.getDeviceModel(devices[i]).getSubnets()[0] + "/24";
 			
 			switch (model.getDeviceModel(devices[i]).getType()) {
 				//Email the user only
 				case "user":
 				case "superuser":
-					units.addAll(markingUnits(server, model, devices[i], deviceSubnet, userMark, userMarkAfter));
+					markingUnits(server, model, devices[i], deviceSubnet, userMark, userMarkAfter);
 			        break;
 				//This is a peripheral of some sort.  Just let the responsible person know.
 				case "intonly":
 				case "extonly":
-					units.addAll(markingUnits(server, model, devices[i], deviceSubnet, deviceMark, deviceMarkAfter));
+					markingUnits(server, model, devices[i], deviceSubnet, deviceMark, deviceMarkAfter);
 					break;
 				default:
 			}
 		}
 
 		for (int i = 0; i < servers.length; ++i) {
-			units.addAll(markingUnits(server, model, servers[i], model.getServerModel(servers[i]).getIP(), serverMark, serverMarkAfter));
+			markingUnits(server, model, servers[i], model.getServerModel(servers[i]).getIP(), serverMark, serverMarkAfter);
 		}
 		
 		return units;
@@ -160,7 +160,7 @@ public class QoS extends AStructuredProfile {
 		
 		//Iterate through devicen first
 		for (int i = 0; i < devices.length; ++i) {
-			String deviceEmail  = devices[i] + "@" + model.getData().getDomain();
+			String deviceEmail  = devices[i] + "@" + model.getData().getDomain(server);
 			String adminEmail = model.getData().getAdminEmail();
 			String identifier = devices[i] + "." + model.getLabel();
 			
@@ -188,7 +188,7 @@ public class QoS extends AStructuredProfile {
 			String[] ip = new String[1];
 			ip[0] = model.getServerModel(servers[i]).getIP();
 			
-			ommail += buildThrottledEmailAction(ip, servers[i] + "." + model.getLabel(), servers[i] + "@" + model.getLabel() + model.getData().getDomain(), model.getData().getAdminEmail(), "mailBodyTech");
+			ommail += buildThrottledEmailAction(ip, servers[i] + "." + model.getLabel(), servers[i] + "@" + model.getLabel() + model.getData().getDomain(servers[i]), model.getData().getAdminEmail(), "mailBodyTech");
 		}
 		
 		ommail += "}";

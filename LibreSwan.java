@@ -47,14 +47,39 @@ public class LibreSwan extends AStructuredProfile {
 			while (itr.hasNext()) {
 				String router = itr.next();
 				
+				String ip           = model.getServerModel(server).getIP();
+				String cleanName    = server.replaceAll("-",  "_");
+				String fwdChain     = cleanName + "_fwd";
+				String ingressChain = cleanName + "_fwd";
+				String egressChain  = cleanName + "_fwd";
+				
 				model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + model.getData().getExternalIp(server) + "_1701",
 						"-p udp --dport 1701 -j DNAT --to-destination " + model.getServerModel(server).getIP() + ":1701");
+				model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_1701", fwdChain,
+						"-p udp"
+						+ " --dport 1701"
+						+ " -j ACCEPT");
 
 				model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + model.getData().getExternalIp(server) + "_4500",
 						"-p udp --dport 4500 -j DNAT --to-destination " + model.getServerModel(server).getIP() + ":4500");
+				model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_4500", fwdChain,
+						"-p udp"
+						+ " --dport 4500"
+						+ " -j ACCEPT");
 			
 				model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + model.getData().getExternalIp(server) + "_500",
 						"-p udp --dport 500 -j DNAT --to-destination " + model.getServerModel(server).getIP() + ":500");
+				model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_500", fwdChain,
+						"-p udp"
+						+ " --dport 500"
+						+ " -j ACCEPT");
+
+				model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_egress", egressChain,
+						"-j ACCEPT");
+				model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_ingress", ingressChain,
+						"-m state --state ESTABLISHED,RELATED"
+						+ " -j ACCEPT");
+				
 			}
 		}
 		

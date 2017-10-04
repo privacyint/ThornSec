@@ -86,7 +86,7 @@ public class Webproxy extends AStructuredProfile {
 			for (int i = 0; i < proxies.length; ++i) {
 				String canonicalName = proxies[i];
 				String[] cnames = model.getData().getCnames(canonicalName);
-				String domain = model.getData().getDomain();
+				String domain = model.getData().getDomain(canonicalName);
 				String nginxConf = "";
 			
 				units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, canonicalName + "_tls_certs", "proceed", "/media/metaldata/tls/" + canonicalName, "/media/data/tls/" + canonicalName, "root", "root", "600"));
@@ -162,13 +162,59 @@ public class Webproxy extends AStructuredProfile {
 				String router = itr.next();
 				
 				for (int i = 0; i < proxies.length; ++i) {
-					String canonicalName = proxies[i];
+					String backendCanonicalName      = proxies[i];
+					String backendIP                 = model.getServerModel(backendCanonicalName).getIP();
+					String cleanBackendCanonicalName = backendCanonicalName.replaceAll("-",  "_");
+					String backendFwdChain           = cleanBackendCanonicalName + "_fwd";
 					
-					model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + canonicalName + "_80",
-							"-d " + model.getServerModel(canonicalName).getIP() + " ! -s " + model.getServerModel(server).getIP() + " -p tcp --dport 80 -j DNAT --to-destination " + model.getServerModel(server).getIP() + ":80");
-	
-					model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + canonicalName + "_443",
-							"-d " + model.getServerModel(canonicalName).getIP() + " ! -s " + model.getServerModel(server).getIP() + " -p tcp --dport 443 -j DNAT --to-destination " + model.getServerModel(server).getIP() + ":443");
+					String lbName      = server;
+					String lbIP        = model.getServerModel(server).getIP();
+					String cleanLbName = lbName.replaceAll("-",  "_");
+					String lbFwdChain  = cleanLbName + "_fwd";
+					
+					//Allow traffic to flow between our lb and backend
+					model.getServerModel(router).getFirewallModel().addFilter(cleanLbName + "_allow_lb_out_traffic_" + cleanBackendCanonicalName, lbFwdChain,
+							"-s " + lbIP
+							+ " -d " + backendIP
+							+ " -p tcp"
+							+ " --dport 80"
+							+ " -j ACCEPT");
+
+					model.getServerModel(router).getFirewallModel().addFilter(cleanLbName + "_allow_lb_reply_traffic_" + cleanBackendCanonicalName, lbFwdChain,
+							"-s " + backendIP
+							+ " -d " + lbIP
+							+ " -p tcp"
+							+ " -m state --state ESTABLISHED,RELATED"
+							+ " -j ACCEPT");
+					
+					model.getServerModel(router).getFirewallModel().addFilter(cleanBackendCanonicalName + "_allow_lb_in_traffic_" + cleanLbName, backendFwdChain,
+							"-s " + lbIP
+							+ " -d " + backendIP
+							+ " -p tcp"
+							+ " --dport 80"
+							+ " -j ACCEPT");
+
+					model.getServerModel(router).getFirewallModel().addFilter(cleanBackendCanonicalName + "_allow_lb_reply_traffic_" + cleanLbName, backendFwdChain,
+							"-s " + backendIP
+							+ " -d " + lbIP
+							+ " -p tcp"
+							+ " -m state --state ESTABLISHED,RELATED"
+							+ " -j ACCEPT");
+
+					//DNAT all traffic to our lb
+					model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + backendCanonicalName + "_80",
+							"-d " + backendIP
+							+ " ! -s " + lbIP
+							+ " -p tcp"
+							+ " --dport 80"
+							+ " -j DNAT --to-destination " + lbIP + ":80");
+
+					model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + backendCanonicalName + "_443",
+							"-d " + backendIP
+							+ " ! -s " + lbIP
+							+ " -p tcp"
+							+ " --dport 443"
+							+ " -j DNAT --to-destination " + lbIP + ":443");
 				}
 			}
 		}

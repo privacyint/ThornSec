@@ -20,7 +20,7 @@ public class DHCP extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		String defiface = "INTERFACES=\\\"";
-		String procString = "/usr/sbin/dhcpd -q -cf /etc/dhcp/dhcpd.conf -pf /var/run/dhcpd.pid ";
+		String procString = "/usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf ";
 
 		//If our router is also a metal, then we only want to bind to bridges
 		if (model.getServerModel(server).isMetal()) {
@@ -79,7 +79,7 @@ public class DHCP extends AStructuredProfile {
 		units.addElement(new RunningUnit("dhcp", "isc-dhcp-server", "isc-dhcp-server"));
 		
 		String dhcpconf = "ddns-update-style none;\n";
-		dhcpconf += "option domain-name \\\"" + model.getData().getDomain() + "\\\";\n";
+		dhcpconf += "option domain-name \\\"" + model.getData().getDomain(server) + "\\\";\n";
 		dhcpconf += "option domain-name-servers " + model.getServerModel(server).getGateway() + ";\n";
 		dhcpconf += "default-lease-time 600;\n";
 		dhcpconf += "max-lease-time 1800;\n";
