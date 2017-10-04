@@ -207,6 +207,10 @@ public class FirewallModel extends AModel {
 		return add(name, "filter", chain, rule);
 	}
 
+	public SimpleUnit addFilter(String name, String chain, int position, String rule) {
+		return add(name, "filter", chain, position, rule);
+	}
+	
 	public SimpleUnit addNatPostrouting(String name, String rule) {
 		return add(name, "nat", "POSTROUTING", rule);
 	}
@@ -233,6 +237,16 @@ public class FirewallModel extends AModel {
 				"cat /etc/iptables/iptables.conf | iptables-xml | xsltproc --stringparam table " + table
 						+ " /etc/iptables/iptables.xslt - | " + "grep \":" + chain + " -\"",
 				":" + chain + " - [0:0]", "pass");
+	}
+
+
+	private SimpleUnit add(String name, String table, String chain, int position, String rule) {
+		this.getChain(table, chain).add(position, rule);
+		return new SimpleUnit(name, "proceed", "echo \\\"handled by model\\\";",
+				"cat /etc/iptables/iptables.conf | iptables-xml | xsltproc --stringparam table " + table
+						+ " /etc/iptables/iptables.xslt - | " + "grep \"" + chain + " " + rule.replaceAll("-", "\\\\-")
+						+ "\"",
+				"-A " + chain + " " + rule, "pass");
 	}
 
 	private SimpleUnit add(String name, String table, String chain, String rule) {
@@ -324,6 +338,11 @@ public class FirewallModel extends AModel {
 	}
 
 	private Vector<String> getChain(String table, String chain) {
+		Vector<String> ch = tables.get(table).get(chain);
+		if (ch == null) {
+			addChain("auto_create_chain_" + chain, table, chain);
+		}
+		
 		return tables.get(table).get(chain);
 	}
 

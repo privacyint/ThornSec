@@ -34,6 +34,7 @@ public class ServerData extends AData {
 	private String bridge;
 	private String debianMirror;
 	private String adminEmail;
+	private String domain;
 	
 	public ServerData(String label) {
 		super(label);
@@ -53,8 +54,8 @@ public class ServerData extends AData {
 		adminFullName = data.getString("adminname", "Thornsec Admin User");
 		connection = data.getString("connection", "direct");
 		subnet = data.getString("subnet", null);
-		adminPort = data.getString("adminport", "22");
-		sshPort = data.getString("sshport", "22");
+		adminPort = data.getString("adminport", "65422");
+		sshPort = data.getString("sshport", "65422");
 		update = data.getString("update", "false");
 		hostname = data.getString("hostname", null);
 		JsonArray jsonTypes = data.getJsonArray("types");
@@ -97,6 +98,7 @@ public class ServerData extends AData {
 		bridge = data.getString("bridge", null);
 		debianMirror = data.getString("debianmirror", "ftp.uk.debian.org");
 		adminEmail = data.getString("adminemail", null);
+		domain = data.getString("domain", null);
 	}
 
 	public String getProperty(String property) {
@@ -237,5 +239,8 @@ public class ServerData extends AData {
 	public String getAdminEmail() {
 		return this.adminEmail;
 	}
-		
+
+	public String getDomain() {
+		return this.domain;
+	}
 }

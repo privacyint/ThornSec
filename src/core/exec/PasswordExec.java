@@ -24,14 +24,14 @@ public class PasswordExec {
 	}
 	
 	public String getPassword() {
-		OutputExec passwordGetExec = new OutputExec("pass Thornsec/" + network.getData().getDomain() + "/" + network.getLabel() + "/" + server);
+		OutputExec passwordGetExec = new OutputExec("pass Thornsec/" + network.getData().getDomain(server) + "/" + network.getLabel() + "/" + server);
 		String password = passwordGetExec.getOutput();
 	
-		if (password.equals("Error: Thornsec/" + network.getData().getDomain() + "/" + network.getLabel() + "/" + server +" is not in the password store.")) {
+		if (password.equals("Error: Thornsec/" + network.getData().getDomain(server) + "/" + network.getLabel() + "/" + server +" is not in the password store.")) {
 			System.out.println("\nPassword for " + server + " isn't stored.");
 			if (network.getData().getAutoGenPasswds().equals("true")) {
 				System.out.println("\nGenerating you a password for " + server);
-				OutputExec passwordSetExec = new OutputExec("pass generate Thornsec/" + network.getData().getDomain() + "/" + network.getLabel() + "/" + server + " 31 | tail -n1");
+				OutputExec passwordSetExec = new OutputExec("pass generate Thornsec/" + network.getData().getDomain(server) + "/" + network.getLabel() + "/" + server + " 31 | tail -n1");
 				password = passwordSetExec.getOutput();
 			}
 			else {

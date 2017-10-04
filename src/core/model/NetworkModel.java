@@ -303,7 +303,7 @@ public class NetworkModel {
 			preseed += "d-i netcfg/choose_interface select auto\n";
 		}
 		preseed += "d-i netcfg/get_hostname string " + server + "\n";
-		preseed += "d-i netcfg/get_domain string " + getData().getDomain() + "\n";
+		preseed += "d-i netcfg/get_domain string " + getData().getDomain(server) + "\n";
 		preseed += "d-i netcfg/hostname string " + server + "\n";
 		//preseed += "d-i hw-detect/load_firmware boolean true\n"; //Always try to load non-free firmware
 		preseed += "d-i mirror/country string GB\n";

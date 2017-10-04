@@ -32,7 +32,7 @@ public class NetworkData extends AData {
 			readInclude(include);
 		} else {
 			this.ipClass = data.getString("class", "a");
-			this.domain = data.getString("domain", null);
+//			this.domain = data.getString("domain", null);
 			this.dns = data.getString("dns", "8.8.8.8");
 			this.ip = data.getString("ip", null);
 			this.adBlocking = data.getString("adblocking", "no");
@@ -97,10 +97,6 @@ public class NetworkData extends AData {
 		return ipClass;
 	}
 
-	public String getDomain() {
-		return domain;
-	}
-	
 	public String getDNS() {
 		return dns;
 	}
@@ -172,6 +168,15 @@ public class NetworkData extends AData {
 	}
 	
 	// Can have default values
+	
+	public String getDomain(String server) {
+		String val = this.servers.get(server).getDomain();
+		if (val == null) {
+			return this.defaultServerData.getDomain();
+		} else {
+			return val;
+		}
+	}
 	
 	public String getUser(String server) {
 		String val = this.servers.get(server).getUser();

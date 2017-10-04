@@ -6,6 +6,7 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Vector;
 
 import core.iface.IUnit;
@@ -116,10 +117,32 @@ public class AptSourcesModel extends AModel {
 			    }
 			});
 			
-			for (int i = 0; i < mirrorIps.length; ++i) {
-				if (!mirrorIps[i].getHostAddress().contains(":")) { //no IPv6, please
-					model.getServerModel(this.getLabel()).getFirewallModel().addFilterOutput(name + i + "_out", "-d " + mirrorIps[i].getHostAddress() + " -p tcp --dport 80 -j ACCEPT");
-					model.getServerModel(this.getLabel()).getFirewallModel().addFilterInput(name + i + "_in", "-s " + mirrorIps[i].getHostAddress() + " -p tcp --sport 80 -j ACCEPT");
+			String ip           = model.getServerModel(server).getIP();
+			String cleanName    = server.replaceAll("-",  "_");
+			String ingressChain = cleanName + "_ingress";
+			String egressChain  = cleanName + "_egress";
+			
+			Vector<String> routers = model.getRouters();
+			Iterator<String> itr = routers.iterator();
+			
+			while (itr.hasNext()) {
+				String router = itr.next();
+				
+				for (int i = 0; i < mirrorIps.length; ++i) {
+					if (!mirrorIps[i].getHostAddress().contains(":")) { //no IPv6, please
+						model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_apt_mirror_in_" + i, ingressChain,
+								"-s " + mirrorIps[i].getHostAddress()
+								+ " -d " + ip
+								+ " -p tcp"
+								+ " --sport 80"
+								+ " -j ACCEPT");
+						model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_apt_mirror_out_" + i, egressChain,
+								"-d " + mirrorIps[i].getHostAddress()
+								+ " -s " + ip
+								+ " -p tcp"
+								+ " --dport 80"
+								+ " -j ACCEPT");
+					}
 				}
 			}
 	
