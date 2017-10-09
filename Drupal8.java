@@ -135,6 +135,7 @@ public class Drupal8 extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_drupal", "drupal.org", new String[]{"80","443"});
 		units.addAll(webserver.getPersistentFirewall(server, model));
 
 		return units;
