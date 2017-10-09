@@ -209,15 +209,16 @@ public class DNS extends AStructuredProfile {
 			//If this domain is the same as our router's, add devicen to it
 			if (domain.equals(model.getData().getDomain(model.getRouters().elementAt(0)))) {
 				for (int i = 0; i < devices.length; ++i) {
+					String cleanName  = devices[i].replaceAll("_", "-");
 					String[] ips      = model.getDeviceModel(devices[i]).getIPs();
 					String[] gateways = model.getDeviceModel(devices[i]).getGateways();
 					
 					for (int j = 0; j < ips.length; ++j) {
 						zoneConfig += "\n";
-						zoneConfig += "    local-data: \\\"" + devices[i] + "." + j + " A " + ips[j] +"\\\"\n";
-						zoneConfig += "    local-data: \\\"" + devices[i] + "." + j + "." + domain + " A " + ips[j] +"\\\"\n";
-						zoneConfig += "    local-data-ptr: \\\"" + ips[j] + " " + devices[i] + "." + j + "." + domain + "\\\"\n";
-						zoneConfig += "    local-data-ptr: \\\"" + gateways[j] + " router." + j + "." + devices[i] + "." + domain + "\\\"";
+						zoneConfig += "    local-data: \\\"" + cleanName + "." + j + " A " + ips[j] +"\\\"\n";
+						zoneConfig += "    local-data: \\\"" + cleanName + "." + j + "." + domain + " A " + ips[j] +"\\\"\n";
+						zoneConfig += "    local-data-ptr: \\\"" + ips[j] + " " + cleanName + "." + j + "." + domain + "\\\"\n";
+						zoneConfig += "    local-data-ptr: \\\"" + gateways[j] + " router." + j + "." + cleanName + "." + domain + "\\\"";
 					}
 				}		
 			}
