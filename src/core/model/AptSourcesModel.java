@@ -31,8 +31,8 @@ public class AptSourcesModel extends AModel {
 		
 		model.getServerModel(this.getLabel()).getProcessModel().addProcess("dirmngr --daemon --homedir /tmp/apt-key-gpghome.[a-zA-Z0-9]*$");
 
-		addFirewallRule(this.getLabel(), model, "base_debian", repo);
-		addFirewallRule(this.getLabel(), model, "security_debian", "security.debian.org");
+		model.getServerModel(this.getLabel()).addRouterFirewallRule(this.getLabel(), model, "base_debian", repo, new String[]{"80"});
+		model.getServerModel(this.getLabel()).addRouterFirewallRule(this.getLabel(), model, "security_debian", "security.debian.org", new String[]{"80"});
 	}
 
 	public Vector<IUnit> getUnits() {
@@ -55,7 +55,7 @@ public class AptSourcesModel extends AModel {
 		URI hostname;
 		try {
 			hostname = new URI(sourceLine.split(" ")[1]);
-			addFirewallRule(server, model, name, hostname.getHost());
+			model.getServerModel(server).addRouterFirewallRule(server, model, name, hostname.getHost(), new String[]{"80"});
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}
@@ -79,76 +79,4 @@ public class AptSourcesModel extends AModel {
 		return list;
 	}
 	
-	private void addFirewallRule(String server, NetworkModel model, String name, String hostname) {
-		try {
-			InetAddress mirrorIps[] = InetAddress.getAllByName(hostname);
-			
-			//This Comparator taken from https://thilosdevblog.wordpress.com/2010/09/15/sorting-ip-addresses-in-java/
-
-			/**
-			 * LGPL
-			 */
-			Arrays.sort(mirrorIps, new Comparator<InetAddress>() {
-			    @Override
-			    public int compare(InetAddress adr1, InetAddress adr2) {
-			        byte[] ba1 = adr1.getAddress();
-			        byte[] ba2 = adr2.getAddress();
-			  
-			        // general ordering: ipv4 before ipv6
-			        if(ba1.length < ba2.length) return -1;
-			        if(ba1.length > ba2.length) return 1;
-			  
-			        // we have 2 ips of the same type, so we have to compare each byte
-			        for(int i = 0; i < ba1.length; i++) {
-			            int b1 = unsignedByteToInt(ba1[i]);
-			            int b2 = unsignedByteToInt(ba2[i]);
-			            if(b1 == b2)
-			                continue;
-			            if(b1 < b2)
-			                return -1;
-			            else
-			                return 1;
-			        }
-			        return 0;
-			    }
-			  
-			    private int unsignedByteToInt(byte b) {
-			        return (int) b & 0xFF;
-			    }
-			});
-			
-			String ip           = model.getServerModel(server).getIP();
-			String cleanName    = server.replaceAll("-",  "_");
-			String ingressChain = cleanName + "_ingress";
-			String egressChain  = cleanName + "_egress";
-			
-			Vector<String> routers = model.getRouters();
-			Iterator<String> itr = routers.iterator();
-			
-			while (itr.hasNext()) {
-				String router = itr.next();
-				
-				for (int i = 0; i < mirrorIps.length; ++i) {
-					if (!mirrorIps[i].getHostAddress().contains(":")) { //no IPv6, please
-						model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_apt_mirror_in_" + i, ingressChain,
-								"-s " + mirrorIps[i].getHostAddress()
-								+ " -d " + ip
-								+ " -p tcp"
-								+ " --sport 80"
-								+ " -j ACCEPT");
-						model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_apt_mirror_out_" + i, egressChain,
-								"-d " + mirrorIps[i].getHostAddress()
-								+ " -s " + ip
-								+ " -p tcp"
-								+ " --dport 80"
-								+ " -j ACCEPT");
-					}
-				}
-			}
-	
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
-	}
-
 }
