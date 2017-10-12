@@ -16,8 +16,8 @@ import core.unit.pkg.InstalledUnit;
 
 public class Redmine extends AStructuredProfile {
 	
-	Nginx webserver;
-	MariaDB db;
+	private Nginx webserver;
+	private MariaDB db;
 	
 	public Redmine() {
 		super("redmine");
