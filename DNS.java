@@ -13,18 +13,47 @@ import core.unit.pkg.RunningUnit;
 
 public class DNS extends AStructuredProfile {
 
-	HashMap<String, Vector<String>> serverDomains;
+	private Vector<String> gateways;
+	private HashMap<String, Vector<String>> domainRecords;
 	
 	public DNS() {
 		super("dns");
 		
-		serverDomains = new HashMap<String, Vector<String>>();
+		domainRecords = new HashMap<String, Vector<String>>();
+		gateways      = new Vector<String>();
 	}
 
+	private void addGateway(String ip) {
+		if (!gateways.contains(ip) ) {
+			gateways.add(ip);
+		}
+	}
+	
+	public void addDomainRecord(String domain, String gatewayIp, String[] subdomains, String ip) {
+		this.addGateway(gatewayIp);
+		
+		Vector<String> records = domainRecords.get(domain);
+		
+		if (records == null) {
+			domainRecords.put(domain, new Vector<String>());
+		}
+		records = domainRecords.get(domain);
+		
+		records.addElement("    local-data: \\\"" + subdomains[0] + " A " + ip + "\\\"");
+		records.addElement("    local-data: \\\"" + subdomains[0] + "." + domain + " A " + ip + "\\\"");
+		records.addElement("    local-data-ptr: \\\"" + ip + " " + subdomains[0] + "." + domain + "\\\"");
+		records.addElement("    local-data-ptr: \\\"" + gatewayIp + " router." + subdomains[0] + "." + domain + "\\\"");
+		
+		for (int i = 1; i < subdomains.length; ++i) {
+			records.addElement("    local-data: \\\"" + subdomains[i] + " A " + ip + "\\\"");
+			records.addElement("    local-data: \\\"" + subdomains[i] + "." + domain + " A " + ip + "\\\"");			
+		}
+		
+		domainRecords.put(domain,  records);
+	}
+	
 	public Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
-		
-		getServerDomains(model);
 		
 		//Config taken from https://calomel.org/unbound_dns.html
 		String config = "";
@@ -59,7 +88,7 @@ public class DNS extends AStructuredProfile {
 		config += "    private-address: 192.168.0.0/16\n";
 		config += "    private-address: 172.16.0.0/12\n";
 		config += "    private-address: 10.0.0.0/8\n";
-		for (String domain : serverDomains.keySet()) {
+		for (String domain : domainRecords.keySet()) {
 			config += "    private-domain: \\\"" + domain + "\\\"\n";
 		}
 		config += "    unwanted-reply-threshold: 10000\n";
@@ -82,7 +111,7 @@ public class DNS extends AStructuredProfile {
 			config += "    local-zone: \\\"ask.com\\\" redirect\n";
 			config += "    local-data: \\\"ask.com A 127.0.0.1\\\"\n";
 		}
-		for (String domain : serverDomains.keySet()) {
+		for (String domain : domainRecords.keySet()) {
 			config += "    include: \\\"/etc/unbound/unbound.conf.d/" + domain + ".zone\\\"\n";
 		}
 		//rDNS
@@ -105,14 +134,6 @@ public class DNS extends AStructuredProfile {
 		units.addElement(new InstalledUnit("dns", "unbound"));
 
 		model.getServerModel(server).getUserModel().addUsername("unbound");
-		
-//		String resolv = "";
-//		resolv += "domain " + model.getData().getDomain() + "\n";
-//		resolv += "search " + model.getData().getDomain() + "\n";
-//		resolv += "nameserver " + model.getData().getDNS();
-		
-//		units.addElement(new FileUnit("persistent_resolv_config", "dns_installed", resolv, "/etc/resolv.conf"));
-
 		model.getServerModel(server).getProcessModel().addProcess("/usr/sbin/unbound$");
 
 		return units;
@@ -159,68 +180,22 @@ public class DNS extends AStructuredProfile {
 		
 		units.addElement(new RunningUnit("dns", "unbound", "unbound"));
 		
-		String[] servers = model.getServerLabels();
-		String[] devices = model.getDeviceLabels();
-
 		String ifaceConfig = "";
-		for (int i = 0; i < servers.length; ++i) {
-			ifaceConfig += "    interface: " + model.getServerModel(servers[i]).getGateway() + "\n";
+		for (String gateway : this.gateways) {
+			ifaceConfig += "    interface: " + gateway + "\n";
 		}
-		for (int i = 0; i < devices.length; ++i) {
-			String[] gateways = model.getDeviceModel(devices[i]).getGateways();
-
-			for (int j = 0; j < gateways.length; ++j) {
-				ifaceConfig += "    interface: " + gateways[j] + "\n";
-			}
-		}
+		
 		units.addElement(new FileUnit("dns_listening_interfaces", "dns_installed", ifaceConfig.replaceAll("\\s+$", ""), "/etc/unbound/unbound.conf.d/interfaces.conf"));
 
-		for (String domain : serverDomains.keySet()) {
+		for (String domain : domainRecords.keySet()) {
 			String zoneConfig = "";
 			zoneConfig += "    local-zone: \\\"" + domain + ".\\\" transparent";
 	
-			Vector<String> srvs = serverDomains.get(domain);
+			Vector<String> records = domainRecords.get(domain);
 			
-			//Forward DNS
-			for (int i = 0; i < srvs.size(); ++i) {
-				String hostname = model.getData().getHostname(srvs.elementAt(i));
-				String ip       = model.getServerModel(srvs.elementAt(i)).getIP();
-				String gateway  = model.getServerModel(srvs.elementAt(i)).getGateway();
-				String subnet   = model.getData().getSubnet(srvs.elementAt(i));
-				
-//				if (!model.getServerModel(servers[i]).isRouter()) {
-					zoneConfig += "\n";
-					zoneConfig += "    local-data: \\\"" + hostname + " A " + ip +"\\\"\n";
-					zoneConfig += "    local-data: \\\"" + hostname + "." + domain + " A " + ip +"\\\"\n";
-					zoneConfig += "    local-data-ptr: \\\"" + ip + " " + hostname + "." + domain + "\\\"\n";
-					zoneConfig += "    local-data-ptr: \\\"" + gateway + " router" + subnet + "." + domain + "\\\"";
-					//CNAMEs - more like ALIASES
-					if (model.getData().getCnames(srvs.elementAt(i)) != null) {
-						for (int j = 0; j < model.getData().getCnames(srvs.elementAt(i)).length; ++j) {
-							zoneConfig += "\n";
-							zoneConfig += (model.getData().getCnames(srvs.elementAt(i))[j].equals("")) ? "" : "    local-data: \\\"" + model.getData().getCnames(srvs.elementAt(i))[j] + " A " + ip +"\\\"\n";
-	                        zoneConfig += "    local-data: \\\"";
-							zoneConfig += (model.getData().getCnames(srvs.elementAt(i))[j].equals("")) ? "" :  model.getData().getCnames(srvs.elementAt(i))[j] + ".";
-							zoneConfig += domain + " A " + ip +"\\\"";
-						}
-					}
-//				}
-			}
-			//If this domain is the same as our router's, add devicen to it
-			if (domain.equals(model.getData().getDomain(model.getRouters().elementAt(0)))) {
-				for (int i = 0; i < devices.length; ++i) {
-					String cleanName  = devices[i].replaceAll("_", "-");
-					String[] ips      = model.getDeviceModel(devices[i]).getIPs();
-					String[] gateways = model.getDeviceModel(devices[i]).getGateways();
-					
-					for (int j = 0; j < ips.length; ++j) {
-						zoneConfig += "\n";
-						zoneConfig += "    local-data: \\\"" + cleanName + "." + j + " A " + ips[j] +"\\\"\n";
-						zoneConfig += "    local-data: \\\"" + cleanName + "." + j + "." + domain + " A " + ips[j] +"\\\"\n";
-						zoneConfig += "    local-data-ptr: \\\"" + ips[j] + " " + cleanName + "." + j + "." + domain + "\\\"\n";
-						zoneConfig += "    local-data-ptr: \\\"" + gateways[j] + " router." + j + "." + cleanName + "." + domain + "\\\"";
-					}
-				}		
+			for (String record : records) {
+				zoneConfig += "\n";
+				zoneConfig += record;
 			}
 			
 			units.addElement(new FileUnit(domain.replaceAll("\\.", "_").replaceAll("-",  "_") + "_dns_internal_zone", "dns_installed", zoneConfig.replaceAll("\\s+$", ""), "/etc/unbound/unbound.conf.d/" + domain + ".zone"));
@@ -228,23 +203,5 @@ public class DNS extends AStructuredProfile {
 		
 		return units;
 	}
-	
-	private void getServerDomains(NetworkModel model) {
-		String[] servers = model.getServerLabels();
-		
-		for (int i = 0; i < servers.length; ++i) {
-			String domain = model.getData().getDomain(servers[i]);
-			
-			Vector<String> srvs = serverDomains.get(domain);
-			
-			if (srvs == null) {
-				serverDomains.put(domain, new Vector<String>());
-			}
-			srvs = serverDomains.get(domain);
-			srvs.add(servers[i]);
-			
-			serverDomains.put(domain,  srvs);
-		}
-	}
-	
+
 }

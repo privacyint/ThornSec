@@ -1,5 +1,6 @@
 package profile;
 
+import java.util.Arrays;
 import java.util.Vector;
 
 import javax.json.JsonArray;
@@ -18,9 +19,9 @@ import core.unit.pkg.RunningUnit;
 
 public class Router extends AStructuredProfile {
 
-	DNS dns;
-	DHCP dhcp;
-	QoS qos;
+	private DNS dns;
+	private DHCP dhcp;
+	private QoS qos;
 	
 	public Router() {
 		super("router");
@@ -30,8 +31,18 @@ public class Router extends AStructuredProfile {
 		qos = new QoS();
 	}
 
+	public DHCP getDHCP() {
+		return this.dhcp;
+	}
+	
+	public DNS getDNS() {
+		return this.dns;
+	}
+	
 	public Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
+		
+		units.addAll(subnetConfigUnits(server, model));
 		
 		units.addElement(new FileAppendUnit("router_fwd", "proceed", "net.ipv4.ip_forward=1", "/etc/sysctl.conf",
 				"Couldn't set IPv4 forwarding to on.  This will mean that your router won't work.  Sorry about that."));
@@ -92,8 +103,6 @@ public class Router extends AStructuredProfile {
 		units.addAll(dhcp.getLiveConfig(server, model));
 		units.addAll(dns.getLiveConfig(server, model));
 		units.addAll(qos.getLiveConfig(server, model));
-		
-		units.addAll(subnetConfigUnits(server, model));
 		
 		return units;
 	}
@@ -207,20 +216,36 @@ public class Router extends AStructuredProfile {
 			String[] devices = model.getDeviceLabels();
 	
 			for (int i = 0; i < servers.length; ++i) {
+				String[] cnames  = model.getData().getCnames(servers[i]);
+				String   ip      = model.getServerModel(servers[i]).getIP();
+				String   gateway = model.getServerModel(servers[i]).getGateway();
+				String   domain  = model.getData().getDomain(servers[i]);
+
+				String[] subdomains = new String[cnames.length + 1];
+				System.arraycopy(new String[] {model.getData().getHostname(servers[i])},0,subdomains,0, 1);
+				System.arraycopy(cnames,0,subdomains,1, cnames.length);
+
 				units.addElement(model.getServerModel(server).getInterfaceModel().addIface(servers[i].replaceAll("-", "_") + "_router_iface",
 																							"static",
 																							model.getData().getIface(server),
 																							null,
-																							model.getServerModel(servers[i]).getGateway(),
+																							gateway,
 																							model.getData().getNetmask(),
 																							null,
 																							null));
+				
+				
+				this.dns.addDomainRecord(domain, gateway, subdomains, ip);
 			}
 						
 			for (int i = 0; i < devices.length; ++i) {
 				String[] gateways = model.getDeviceModel(devices[i]).getGateways();
+				String[] ips      = model.getDeviceModel(devices[i]).getIPs();
+				String   domain   = model.getData().getDomain(server);
 				
 				for (int j = 0; j < gateways.length; ++j) {
+					String subdomain = devices[i] + "." + model.getLabel() + ".lan." + j;
+					
 					units.addElement(model.getServerModel(server).getInterfaceModel().addIface(devices[i].replaceAll("-", "_") + "_router_iface_" + j,
 																								"static",
 																								model.getData().getIface(server),
@@ -229,6 +254,8 @@ public class Router extends AStructuredProfile {
 																								model.getData().getNetmask(),
 																								null,
 																								null));
+					
+					this.dns.addDomainRecord(domain, gateways[j], new String[] {subdomain}, ips[j]);
 				}
 			}
 			

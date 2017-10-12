@@ -12,8 +12,22 @@ import core.unit.pkg.RunningUnit;
 
 public class DHCP extends AStructuredProfile {
 
+	private Vector<String> classes;
+	private Vector<String> stanzas;
+	
 	public DHCP() {
 		super("dhcp");
+
+		classes = new Vector<String>();
+		stanzas = new Vector<String>();
+	}
+	
+	public void addStanza(String stanza) {
+		stanzas.add(stanza);
+	}
+	
+	public void addClass(String stanza) {
+		classes.add(stanza);
 	}
 
 	public Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
@@ -48,6 +62,48 @@ public class DHCP extends AStructuredProfile {
 		
 		units.addElement(new FileUnit("dhcp_defiface", "dhcp_installed", defiface, "/etc/default/isc-dhcp-server"));
 		model.getServerModel(server).getProcessModel().addProcess(procString);
+		
+		String[] servers = model.getServerLabels();
+		String dhcpconf  = "";
+		
+		for (int i = 0; i < servers.length; ++i) {
+			if (!model.getServerModel(servers[i]).isRouter()) {
+				dhcpconf = "\n\n";
+				dhcpconf += "\tsubnet " + model.getServerModel(servers[i]).getSubnet() + " netmask " + model.getData().getNetmask() + " {\n";
+				dhcpconf += "\t\thost " + servers[i] + " {\n";
+				dhcpconf += "\t\t\thardware ethernet " + model.getServerModel(servers[i]).getMac() + ";\n";
+				dhcpconf += "\t\t\tfixed-address " + model.getServerModel(servers[i]).getIP() + ";\n";
+				dhcpconf += "\t\t\toption routers " + model.getServerModel(servers[i]).getGateway() + ";\n";
+				dhcpconf += "\t\t}\n";
+				dhcpconf += "\t}";
+				
+				stanzas.add(dhcpconf);
+			}
+		}
+		
+		String[] devices = model.getDeviceLabels();
+		
+		for (int i = 0; i < devices.length; ++i) {
+			String[] subnets  = model.getDeviceModel(devices[i]).getSubnets();
+			String[] ips      = model.getDeviceModel(devices[i]).getIPs();
+			String[] macs     = model.getDeviceModel(devices[i]).getMacs();
+			String[] gateways = model.getDeviceModel(devices[i]).getGateways();
+
+			String netmask = model.getDeviceModel(devices[i]).getNetmask();
+			
+			for (int j = 0; j < subnets.length; ++j) {
+				dhcpconf = "\n\n";
+				dhcpconf += "\tsubnet " + subnets[j] + " netmask " + netmask + " {\n";
+				dhcpconf += "\t\thost " + devices[i] + "_" + j + " {\n";
+				dhcpconf += "\t\t\thardware ethernet " + macs[j] + ";\n";
+				dhcpconf += "\t\t\tfixed-address " + ips[j] + ";\n";
+				dhcpconf += "\t\t\toption routers " + gateways[j] + ";\n";
+				dhcpconf += "\t\t}\n";
+				dhcpconf += "\t}";
+				
+				stanzas.add(dhcpconf);
+			}
+		}
 		
 		return units;
 	}
@@ -84,48 +140,21 @@ public class DHCP extends AStructuredProfile {
 		dhcpconf += "default-lease-time 600;\n";
 		dhcpconf += "max-lease-time 1800;\n";
 		dhcpconf += "authoritative;\n";
-		dhcpconf += "log-facility local7;\n";
-		dhcpconf += "\n";
+		dhcpconf += "log-facility local7;";
+		
+		for (int i = 0; i < classes.size(); ++i) {
+			dhcpconf += classes.elementAt(i);
+		}
+
+		dhcpconf += "\n\n";
 		// add iptfwd for shared net
 		dhcpconf += "shared-network sharednet {\n";
+		dhcpconf += "\n";
 		dhcpconf += "\tsubnet " + model.getServerModel(server).getSubnet() + " netmask " + model.getData().getNetmask() + " {\n";
 		dhcpconf += "\t}";
 
-		String[] servers = model.getServerLabels();
-		
-		for (int i = 0; i < servers.length; ++i) {
-			if (!model.getServerModel(servers[i]).isRouter()) {
-				dhcpconf += "\n\n";
-				dhcpconf += "\tsubnet " + model.getServerModel(servers[i]).getSubnet() + " netmask " + model.getData().getNetmask() + " {\n";
-				dhcpconf += "\t\thost " + servers[i] + " {\n";
-				dhcpconf += "\t\t\thardware ethernet " + model.getServerModel(servers[i]).getMac() + ";\n";
-				dhcpconf += "\t\t\tfixed-address " + model.getServerModel(servers[i]).getIP() + ";\n";
-				dhcpconf += "\t\t\toption routers " + model.getServerModel(servers[i]).getGateway() + ";\n";
-				dhcpconf += "\t\t}\n";
-				dhcpconf += "\t}\n";
-			}
-		}
-		
-		String[] devices = model.getDeviceLabels();
-		
-		for (int i = 0; i < devices.length; ++i) {
-			String[] subnets  = model.getDeviceModel(devices[i]).getSubnets();
-			String[] ips      = model.getDeviceModel(devices[i]).getIPs();
-			String[] macs     = model.getDeviceModel(devices[i]).getMacs();
-			String[] gateways = model.getDeviceModel(devices[i]).getGateways();
-
-			String netmask = model.getDeviceModel(devices[i]).getNetmask();
-			
-			for (int j = 0; j < subnets.length; ++j) {
-				dhcpconf += "\n";
-				dhcpconf += "\tsubnet " + subnets[j] + " netmask " + netmask + " {\n";
-				dhcpconf += "\t\thost " + devices[i] + "_" + j + " {\n";
-				dhcpconf += "\t\t\thardware ethernet " + macs[j] + ";\n";
-				dhcpconf += "\t\t\tfixed-address " + ips[j] + ";\n";
-				dhcpconf += "\t\t\toption routers " + gateways[j] + ";\n";
-				dhcpconf += "\t\t}\n";
-				dhcpconf += "\t}\n";
-			}
+		for (int i = 0; i < stanzas.size(); ++i) {
+			dhcpconf += stanzas.elementAt(i);
 		}
 		
 		dhcpconf += "}";
