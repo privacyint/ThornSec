@@ -31,9 +31,9 @@ public class BindFsModel extends AModel {
 		//Make sure the directory exists
 		units.addElement(new DirUnit(name + "_base_directory", precondition, baseDirectory));
 		//Make sure the bind point exists
-		units.addElement(new DirUnit(name + "_bindpoint", name + "_base_directory", bindPoint));
+		units.addElement(new DirUnit(name + "_bindpoint", name + "_base_directory_created", bindPoint));
 		//Add to our fstab
-		units.addElement(new FileAppendUnit("fstab", name + "_bindpoint", baseDirectory + " " + bindPoint + " fuse.bindfs force-user=" + username + ",force-group=" + group + ",create-for-user=" + username + ",create-for-group=" + group + ",perms=" + permissions + " 0 0", "/etc/fstab",
+		units.addElement(new FileAppendUnit("fstab", name + "_bindpoint_created", baseDirectory + " " + bindPoint + " fuse.bindfs force-user=" + username + ",force-group=" + group + ",create-for-user=" + username + ",create-for-group=" + group + ",perms=" + permissions + " 0 0", "/etc/fstab",
 				"Couldn't add " + bindPoint + " to our fstab.  This means the directory will have the wrong permissions and there will be other failures."));
 		
 		//Mount!
