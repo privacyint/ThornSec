@@ -16,9 +16,9 @@ import core.unit.pkg.InstalledUnit;
 
 public class AptSourcesModel extends AModel {
 
-	Vector<IUnit> sources;
-	String repo;
-	Vector<IUnit> gpg;
+	private Vector<IUnit> sources;
+	private String repo;
+	private Vector<IUnit> gpg;
 	
 	public AptSourcesModel(String label) {
 		super(label);
