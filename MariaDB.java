@@ -64,7 +64,7 @@ public class MariaDB extends AStructuredProfile {
 				"[ -d /var/lib/mysql ] && echo fail || echo pass", "pass", "pass",
 				"Couldn't move MariaDB's data directory.  This means that the database files will be stored in the VM."));
 
-		units.addElement(new RunningUnit("mariadb", "mariadb_data_dir_moved", "mysql"));
+		units.addElement(new RunningUnit("mariadb", "mysql", "mysql"));
 		
 		return units;
 	}
