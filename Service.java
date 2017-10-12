@@ -9,6 +9,7 @@ import core.unit.SimpleUnit;
 import core.unit.fs.DirMountedUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileAppendUnit;
+import core.unit.pkg.InstalledUnit;
 
 public class Service extends AStructuredProfile {
 	
@@ -24,7 +25,10 @@ public class Service extends AStructuredProfile {
 				"sudo dmidecode -s system-product-name", "VirtualBox", "pass",
 				"It seems that " + server + " isn't actually a VM.  This will cause a bunch of misconfigurations, please fix your config file."));
 		
-		units.addElement(new SimpleUnit("guest_additions_installed", "is_virtualbox_guest",
+		units.addElement(new InstalledUnit("build_essential", "is_virtualbox_guest", "build-essential"));
+		units.addElement(new InstalledUnit("linux_headers", "build_essential_installed", "linux-headers-$(uname -r)"));
+
+		units.addElement(new SimpleUnit("guest_additions_installed", "linux_headers_installed",
 				"sudo bash -c '"
 								+ "mount /dev/sr1 /mnt;"
 								+ "sh /mnt/VBoxLinuxAdditions.run --nox11;"
@@ -99,6 +103,7 @@ public class Service extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
+		model.getServerModel(server).addRouterFirewallRule(server, model, "virtualbox", "download.virtualbox.org", new String[]{"80"});
 		
 		return units;
 	}
