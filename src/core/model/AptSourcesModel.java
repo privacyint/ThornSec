@@ -1,12 +1,7 @@
 package core.model;
 
-import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Iterator;
 import java.util.Vector;
 
 import core.iface.IUnit;
