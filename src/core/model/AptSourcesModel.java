@@ -54,8 +54,8 @@ public class AptSourcesModel extends AModel {
 		
 		URI hostname;
 		try {
-			hostname = new URI(sourceLine.split(" ")[1]);
-			model.getServerModel(server).addRouterFirewallRule(server, model, name, hostname.getHost(), new String[]{"80"});
+			hostname = new URI(keyserver);
+			model.getServerModel(server).addRouterFirewallRule(server, model, name, hostname.getHost(), new String[]{"11371"});
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}
