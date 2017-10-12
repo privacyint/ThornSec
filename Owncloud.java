@@ -1,5 +1,6 @@
 package profile;
 
+import java.util.Iterator;
 import java.util.Vector;
 
 import core.iface.IUnit;
@@ -45,6 +46,7 @@ public class Owncloud extends AStructuredProfile {
 		units.addElement(new InstalledUnit("php_unzip", "php_fpm_installed", "php-unzip"));
 		units.addElement(new InstalledUnit("redis", "redis-server"));
 		units.addElement(new InstalledUnit("php_redis", "php_fpm_installed", "php-redis"));
+		units.addElement(new InstalledUnit("php_intl", "php_fpm_installed", "php-intl"));
 		
 		model.getServerModel(server).getUserModel().addUsername("redis");
 
@@ -192,6 +194,20 @@ public class Owncloud extends AStructuredProfile {
 	
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
+		Vector<String> routers = model.getRouters();
+		Iterator<String> itr   = routers.iterator();
+
+		String cleanName   = server.replaceAll("-",  "_");
+		String egressChain = cleanName + "_egress";
+		
+		while (itr.hasNext()) {
+			String router = itr.next();
+
+			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_email", egressChain,
+				"-p tcp"
+				+ " --dport 25"
+				+ " -j ACCEPT");
+		}
 		
 		units.addAll(webserver.getPersistentFirewall(server, model));
 
