@@ -10,6 +10,7 @@ import core.unit.SimpleUnit;
 import core.unit.fs.DirOwnUnit;
 import core.unit.fs.DirPermsUnit;
 import core.unit.fs.DirUnit;
+import core.unit.fs.FileOwnUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 
@@ -29,15 +30,59 @@ public class Redmine extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 				
 		units.addAll(webserver.getInstalled(server, model));
-
 		units.addAll(db.getInstalled(server, model));
 				
 		units.addElement(new SimpleUnit("redmine_mysql_password", "proceed",
-				"REDMINE_PASSWORD=`grep \"password\" /usr/share/redmine/instances/default/config/database.yml 2>/dev/null | grep -v \"[*#]\" | awk '{ print $2 }'`; [[ -z $REDMINE_PASSWORD ]] && REDMINE_PASSWORD=`openssl rand -hex 32`",
+				"REDMINE_PASSWORD=`sudo grep \"password\" /usr/share/redmine/instances/default/config/database.yml 2>/dev/null | grep -v \"[*#]\" | awk '{ print $2 }'`; [[ -z $REDMINE_PASSWORD ]] && REDMINE_PASSWORD=`openssl rand -hex 32`",
 				"echo $REDMINE_PASSWORD", "", "fail",
 				"Couldn't set the Redmine database user's password.  Redmine will be left in a broken state."));
 		
 		units.addAll(db.createDb("redmine", "redmine", "ALL", "REDMINE_PASSWORD"));
+		
+		units.addElement(new InstalledUnit("redmine", "proceed", "redmine-mysql"));
+		units.addElement(new InstalledUnit("thin", "redmine_installed", "thin"));
+		units.addElement(new InstalledUnit("sendmail", "proceed", "sendmail"));
+		
+		model.getServerModel(server).getProcessModel().addProcess("sendmail: MTA: accepting connections$");
+		model.getServerModel(server).getUserModel().addUsername("smmta");
+		model.getServerModel(server).getUserModel().addUsername("smmpa");
+		model.getServerModel(server).getUserModel().addUsername("smmsp");
+		
+		model.getServerModel(server).getProcessModel().addProcess("thin server \\(/var/run/thin/sockets/thin.[0-3].sock\\)$");
+		
+		return units;
+	}
+	
+	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+		Vector<IUnit> units =  new Vector<IUnit>();
+		
+		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "redmine_logs", "proceed", "/media/metaldata/redmine-logs", "/media/data/redmine-logs", "nginx", "nginx", "0644"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "redmine_files", "proceed", "/media/metaldata/redmine-files", "/media/data/redmine-files", "nginx", "nginx", "0755"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "redmine_data", "proceed", "/media/metaldata/redmine-data", "/media/data/redmine-data", "nginx", "nginx", "0755"));
+
+		units.addElement(new SimpleUnit("logs_symlinked", "redmine_installed",
+				//Move over fresh installation if the files aren't already there
+				"sudo mv /var/log/redmine/* /media/data/redmine-log;"
+				//Then symlink
+				+ "sudo rm -R /var/log/redmine ; sudo ln -s /media/data/redmine-log /var/log/redmine;",
+				"sudo [ -L /var/log/redmine ] && echo pass || echo fail", "pass", "pass"));
+		
+		units.addElement(new SimpleUnit("files_symlinked", "redmine_installed",
+				//Move over fresh installation if the files aren't already there
+				"if [ ! -d /media/data/redmine-files/default ] ; then sudo mv /var/lib/redmine/* /media/data/redmine-files ; fi ;"
+				//Then symlink
+				+ "sudo rm -R /var/lib/redmine ; sudo ln -s /media/data/redmine-files /var/lib/redmine;",
+				"[ -L /var/lib/redmine ] && echo pass || echo fail", "pass", "pass"));
+
+		units.addElement(new SimpleUnit("data_symlinked", "redmine_installed",
+				//Move over fresh installation if the files aren't already there
+				"if [ ! -d /media/data/redmine-data/config ] ; then sudo mv /usr/share/redmine/* /media/data/redmine-data ; fi ;"
+				//Then symlink
+				+ "sudo rm -R /usr/share/redmine ; sudo ln -s /media/data/redmine-data /usr/share/redmine;",
+				"[ -L /usr/share/redmine ] && echo pass || echo fail", "pass", "pass"));
+
+		units.addElement(new FileOwnUnit("database_config", "redmine_installed", "/etc/redmine/default/database.yml", "nginx"));
+		units.addElement(new FileOwnUnit("secret_key", "redmine_installed", "/etc/redmine/default/secret_key.txt", "nginx"));
 		
 		String dbConfig = "";
 		dbConfig += "production:\n";
@@ -51,42 +96,12 @@ public class Redmine extends AStructuredProfile {
 		units.addElement(new DirUnit("database_config_dir", "proceed", "/usr/share/redmine/instances/default/config/"));
 		units.addElement(new FileUnit("database_config", "mariadb_installed", dbConfig, "/usr/share/redmine/instances/default/config/database.yml"));	
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "nginx", "proceed", "/media/metaldata/redmine-logs", "/media/data/redmine-logs", "nginx", "nginx", "0644"));
-
-		units.addElement(new InstalledUnit("redmine", "proceed", "redmine-mysql"));
-		units.addElement(new InstalledUnit("thin", "redmine_installed", "thin"));
-		
-		model.getServerModel(server).getProcessModel().addProcess("thin server \\(/var/run/thin/sockets/thin.[0-3].sock\\)$");
-		
-		return units;
-	}
-	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
-		Vector<IUnit> units =  new Vector<IUnit>();
-		
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "nginx", "proceed", "/media/metaldata/redmine-files", "/media/data/redmine-files", "nginx", "nginx", "0755"));
-
-		units.addElement(new SimpleUnit("files_symlinked", "redmine_installed",
-				//Move over fresh installation if the files aren't already there
-				"if [ ! -d /media/data/redmine-files/default ] ; then sudo mv /var/lib/redmine/* /media/data/redmine-files ; fi ;"
-				//Then symlink
-				+ "sudo rm -R /var/lib/redmine ; sudo ln -s /media/data/redmine-files /var/lib/redmine;",
-				"[ -L /var/lib/redmine ] && echo pass || echo fail", "pass", "pass"));
-
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "nginx", "proceed", "/media/metaldata/redmine-data", "/media/data/redmine-data", "nginx", "nginx", "0755"));
-		units.addElement(new SimpleUnit("data_symlinked", "redmine_installed",
-				//Move over fresh installation if the files aren't already there
-				"if [ ! -d /media/data/redmine-data/config ] ; then sudo mv /usr/share/redmine/* /media/data/redmine-data ; fi ;"
-				//Then symlink
-				+ "sudo rm -R /usr/share/redmine ; sudo ln -s /media/data/redmine-data /usr/share/redmine;",
-				"[ -L /usr/share/redmine ] && echo pass || echo fail", "pass", "pass"));
-		
 		units.addElement(new DirUnit("thin_pid_dir", "thin_installed", "/var/run/thin"));
-		units.addElement(new DirOwnUnit("thin_pid_dir", "thin_pid_dir", "root", "root"));
-		units.addElement(new DirPermsUnit("thin_pid_dir_perms", "thin_pid_dir_chowned", "/var/run/thin", "711"));
+		units.addElement(new DirOwnUnit("thin_pid_dir", "thin_pid_dir_created", "/var/run/thin", "nginx"));
+		units.addElement(new DirPermsUnit("thin_pid_dir_perms", "thin_pid_dir_chowned", "/var/run/thin", "744"));
 		
 		units.addElement(new DirUnit("thin_sockets_dir", "thin_installed", "/var/run/thin/sockets"));
-		units.addElement(new DirOwnUnit("thin_sockets_dir_permissions", "thin_sockets_dir", "/var/run/thin/sockets", "nginx", "nginx"));
+		units.addElement(new DirOwnUnit("thin_sockets_dir_permissions", "thin_sockets_dir_created", "/var/run/thin/sockets", "nginx", "nginx"));
 		
 		String thinConfig = "";
 		thinConfig += "---\n";
@@ -109,7 +124,7 @@ public class Redmine extends AStructuredProfile {
 		units.addElement(new FileUnit("thin_config", "thin_installed", thinConfig, "/etc/thin2.3/redmine.yml"));
 		
 		units.addElement(new SimpleUnit("secret_key_base", "proceed",
-				"SECRET_KEY_BASE=`grep \"secret_key_base:\" /usr/share/redmine/config/secrets.yml 2>/dev/null | awk '{ print $2 }'`; [[ -z $SECRET_KEY_BASE ]] && SECRET_KEY_BASE=`cd /usr/share/redmine; rake secret`",
+				"SECRET_KEY_BASE=`grep \"secret_key_base:\" /usr/share/redmine/config/secrets.yml 2>/dev/null | awk '{ print $2 }'`; [[ -z $SECRET_KEY_BASE ]] && SECRET_KEY_BASE=`cd /usr/share/redmine; sudo rake secret`",
 				"echo $SECRET_KEY_BASE", "", "fail"));
 		
 		String thinSecretKey = "";
@@ -118,6 +133,12 @@ public class Redmine extends AStructuredProfile {
 		
 		units.addElement(new FileUnit("thin_secret_key", "thin_installed", thinSecretKey, "/usr/share/redmine/config/secrets.yml"));
 		
+		String emailConf = "";
+		emailConf += "default:\n";
+		emailConf += "  email_delivery:\n";
+		emailConf += "    delivery_method: :sendmail";
+		units.addElement(new FileUnit("redmine_allow_email", "sendmail_installed", emailConf, "/usr/share/redmine/config/secrets.yml"));
+
 		String nginxConf = "";
 		nginxConf += "upstream thin_cluster {\n";
 		nginxConf += "    server unix:/var/run/thin/sockets/thin.0.sock;\n";
