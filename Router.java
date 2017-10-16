@@ -1,6 +1,5 @@
 package profile;
 
-import java.util.Arrays;
 import java.util.Vector;
 
 import javax.json.JsonArray;
@@ -272,8 +271,6 @@ public class Router extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		FirewallModel fm = model.getServerModel(server).getFirewallModel();
-		String intIface  = model.getData().getIface(server);
-		String extIface  = model.getData().getExtIface(server);
 		
 		String cleanName    = name.replace("-", "_");
 		String fwdChain     = cleanName + "_fwd";
@@ -301,17 +298,6 @@ public class Router extends AStructuredProfile {
 		fm.addFilter(cleanName + "_fwd_default_drop", fwdChain, 0,
 				"-j DROP");
 		
-		//Jump to the ingress/egress chains
-		fm.addFilter(cleanName + "_allow_ingress", fwdChain, 1,
-				"-i " + extIface + " -o " + intIface
-				+ " -j " + ingressChain);
-		fm.addFilter(cleanName + "_allow_egress", fwdChain, 2,
-				"-i " + intIface + " -o " + extIface
-				+ " -j " + egressChain);
-		//Log anything hopping to our egress chain
-		fm.addFilter(cleanName + "_log_egress_traffic", fwdChain, 3,
-				"-j LOG --log-prefix \\\"ipt-" + name + ": \\\"");
-
 		//Don't allow any traffic in from the outside world
 		fm.addFilter(cleanName + "_ingress_default_drop", ingressChain, 0,
 				"-j DROP");
@@ -332,9 +318,6 @@ public class Router extends AStructuredProfile {
 	private Vector<IUnit> serverIptUnits(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		String[] servers = model.getServerLabels();
-		String[] devices = model.getDeviceLabels();
-		
 		Vector<String> users = new Vector<String>();
 		
 		FirewallModel fm = model.getServerModel(server).getFirewallModel();
@@ -342,63 +325,77 @@ public class Router extends AStructuredProfile {
 		String intIface = model.getData().getIface(server);
 		String extIface = model.getData().getExtIface(server);
 
-		for (int i = 0; i < devices.length; ++i) {
-			switch (model.getDeviceModel(devices[i]).getType()) {
+		for (String device : model.getDeviceLabels()) {
+			switch (model.getDeviceModel(device).getType()) {
 				case "superuser":
 				case "user":
-					users.add(devices[i]);
+					users.add(device);
 					break;
 			}
 		}
 		
-		for (int i = 0; i < servers.length; ++i) {
-			String serverSubnet    = model.getServerModel(servers[i]).getSubnet() + "/30";
-			String cleanServerName = servers[i].replaceAll("-",  "_");
+		for (String srv : model.getServerLabels()) {
+			String serverSubnet    = model.getServerModel(srv).getSubnet() + "/30";
+			String cleanServerName = srv.replaceAll("-",  "_");
 			String fwdChain        = cleanServerName + "_fwd";
 			String egressChain     = cleanServerName + "_egress";
+			String ingressChain    = cleanServerName + "_ingress";
 			
-			baseIptConfig(server, model, servers[i], serverSubnet);
+			baseIptConfig(server, model, srv, serverSubnet);
 			
-			if (model.getServerModel(servers[i]).isRouter()) {
+			if (model.getServerModel(srv).isRouter()) {
 				fm.addFilter(cleanServerName + "_allow_email_out", egressChain,
 						"-p tcp"
 						+ " --dport 25"
 						+ " -j ACCEPT");
 			}
 			
-			for (int j = 0; j < users.size(); ++j) {
-				//They can talk to our servers on :80 && :443
-				fm.addFilter(cleanServerName + "_allow_http_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
-						"-s " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
-						+ " -d " + serverSubnet
-						+ " -p tcp"
-						+ " --dport 80"
-						+ " -j ACCEPT");
-				fm.addFilter(cleanServerName + "_allow_https_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
-						"-s " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
-						+ " -d " + serverSubnet
-						+ " -p tcp"
-						+ " --dport 443"
-						+ " -j ACCEPT");
-				
-				//And if they're a superuser, they can SSH in, too
-				if (model.getDeviceModel(users.elementAt(j)).getType().equals("superuser" )) {
-					fm.addFilter(cleanServerName + "_ssh_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
-							"-s " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
-							+ " -d " + serverSubnet
-							+ " -p tcp"
-							+ " --dport " + model.getData().getSSHPort(servers[i])
-							+ " -j ACCEPT");
+			//Only actually do this if we have any users!
+			if (users.size() > 0) {
+				String userRule = "";
+				userRule += "-s ";
+				for (String user : users) {
+					userRule += model.getDeviceModel(user).getSubnets()[0] + "/24,";
 				}
+				userRule = userRule.replaceAll(",$", ""); //Remove any trailing comma
+				userRule += " -d " + serverSubnet;
+				userRule += " -p tcp";
+				userRule += " -m state --state NEW";
+				userRule += " -m tcp -m multiport --dports 80,443";
+				userRule += " -j ACCEPT";
 				
-				//And servers can talk back to them, if established/related traffic
-				fm.addFilter(cleanServerName + "_allow_https_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
-						"-s " + serverSubnet
-						+ " -d " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
-						+ " -p tcp"
-						+ " -m state --state ESTABLISHED,RELATED"
-						+ " -j ACCEPT");
+				fm.addFilter("allow_users_80_443_" + server, fwdChain, userRule);
+				
+				for (String user : users) {
+					//And if they're a superuser, they can SSH in, too
+					if (model.getDeviceModel(user).getType().equals("superuser" )) {
+						fm.addFilter(cleanServerName + "_ssh_" + user.replaceAll("-",  "_"), fwdChain,
+								"-s " + model.getDeviceModel(user).getSubnets()[0] + "/24"
+								+ " -d " + serverSubnet
+								+ " -p tcp"
+								+ " --dport " + model.getData().getSSHPort(srv)
+								+ " -j ACCEPT");
+					}
+				}
 			}
+			
+			//And servers can talk back, if established/related traffic
+			fm.addFilter(cleanServerName + "_allow_related_traffic", fwdChain,
+					"-p tcp"
+					+ " -m state --state ESTABLISHED,RELATED"
+					+ " -j ACCEPT");
+	
+			//Jump to the ingress/egress chains
+			fm.addFilter(cleanServerName + "_jump_ingress", fwdChain,
+					"-i " + extIface + " -o " + intIface
+					+ " -j " + ingressChain);
+			fm.addFilter(cleanServerName + "_jump_egress", fwdChain,
+					"-i " + intIface + " -o " + extIface
+					+ " -j " + egressChain);
+			//Log anything hopping to our egress chain
+			fm.addFilter(cleanServerName + "_log_egress_traffic", egressChain,
+					"-j LOG --log-prefix \\\"ipt-" + cleanServerName + ": \\\"");
+
 		}
 	
 		return units;
@@ -407,89 +404,80 @@ public class Router extends AStructuredProfile {
 	private Vector<IUnit> userIptUnits(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		String[] devices       = model.getDeviceLabels();
 		Vector<String> users   = new Vector<String>();
 		Vector<String> intOnly = new Vector<String>();
 
-		for (int i = 0; i < devices.length; ++i) {
-			switch (model.getDeviceModel(devices[i]).getType()) {
+		for (String device : model.getDeviceLabels()) {
+			switch (model.getDeviceModel(device).getType()) {
 				case "superuser":
 				case "user":
-					users.add(devices[i]);
+					users.add(device);
 					break;
 				case "intonly":
-					intOnly.add(devices[i]);
+					intOnly.add(device);
 					break;
 			}
 		}
 		
-		for (int i = 0; i < users.size(); ++i) {
-			String cleanUserName = users.elementAt(i).replace("-", "_");
+		for (String user : users) {
+			String cleanUserName = user.replace("-", "_");
 			String fwdChain      = cleanUserName + "_fwd";
 			String ingressChain  = cleanUserName + "_ingress";
 			String egressChain   = cleanUserName + "_egress";
 			
-			String userSubnet = model.getDeviceModel(users.elementAt(i)).getSubnets()[0] + "/24";
+			String userSubnet = model.getDeviceModel(user).getSubnets()[0] + "/24";
 			
 			String intIface = model.getData().getIface(server);
 			String extIface = model.getData().getExtIface(server);
 
 			FirewallModel fm = model.getServerModel(server).getFirewallModel();
 		
-			baseIptConfig(server, model, users.elementAt(i), userSubnet);
+			baseIptConfig(server, model, user, userSubnet);
 
-			//Configure what users can do with our servers
-			String[] servers = model.getServerLabels();
+			//They can talk to our servers on :80 && :443
+			String serverRule = "";
+			serverRule += "-s " + model.getDeviceModel(user).getSubnets()[0] + "/24";
+			serverRule += " -d ";
 
-			for (int j = 0; j < servers.length; ++j) {
-				//They can talk to our servers on :80 && :443
-				fm.addFilter(cleanUserName + "_allow_http_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
-						"-s " + userSubnet
-						+ " -d " + model.getServerModel(servers[j]).getSubnet() + "/30"
-						+ " -p tcp"
-						+ " --dport 80"
-						+ " -j ACCEPT");
-				fm.addFilter(cleanUserName + "_allow_https_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
-						"-s " + userSubnet
-						+ " -d " + model.getServerModel(servers[j]).getSubnet() + "/30"
-						+ " -p tcp"
-						+ " --dport 443"
-						+ " -j ACCEPT");
-
-				//Allow superusers to SSH into our servers
-				if (model.getDeviceModel(users.elementAt(i)).getType().equals("superuser")) {
-					fm.addFilter(cleanUserName + "_allow_ssh_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
+			for (String srv : model.getServerLabels()) {
+				serverRule += model.getServerModel(srv).getSubnet() + "/30,";
+			}
+			serverRule = serverRule.replaceAll(",$", ""); //Remove any trailing comma
+			
+			serverRule += " -p tcp";
+			serverRule += " -m state --state NEW";
+			serverRule += " -m tcp -m multiport --dports 80,443";
+			serverRule += " -j ACCEPT";
+			
+			fm.addFilter("allow_users_80_443_" + server, fwdChain, serverRule);
+			
+			//Allow superusers to SSH into our servers
+			if (model.getDeviceModel(user).getType().equals("superuser")) {
+				for (String srv : model.getServerLabels()) {
+					fm.addFilter(cleanUserName + "_allow_ssh_traffic_" + srv.replaceAll("-",  "_"), fwdChain,
 							"-s " + userSubnet
-							+ " -d " + model.getServerModel(servers[j]).getSubnet() + "/30"
+							+ " -d " + model.getServerModel(srv).getSubnet() + "/30"
 							+ " -p tcp"
-							+ " --dport " + model.getData().getSSHPort(servers[j])
+							+ " --dport " + model.getData().getSSHPort(srv)
 							+ " -j ACCEPT");
 				}
+			}
 				
-				//And servers can talk back to them, if established/related traffic
-				fm.addFilter(cleanUserName + "_allow_response_traffic_" + servers[j].replaceAll("-",  "_"), fwdChain,
-						"-s " + model.getServerModel(servers[j]).getSubnet() + "/30"
-						+ " -d " + userSubnet
-						+ " -p tcp"
-						+ " -m state --state ESTABLISHED,RELATED"
-						+ " -j ACCEPT");
-			}
-			
 			//Configure what they can do with internal only devices
-			for (int j = 0; j < intOnly.size(); ++j) {
-				//Any user can talk to an internal-only device
-				fm.addFilter(cleanUserName + "_allow_int_only_" + intOnly.elementAt(j).replaceAll("-",  "_"), fwdChain,
-						"-s " + userSubnet
-						+ " -d " + model.getDeviceModel(intOnly.elementAt(j)).getSubnets()[0] + "/24"
-						+ " -j ACCEPT");
-				//But these devices can only talk back, not initiate a conversation
-				fm.addFilter(cleanUserName + "_allow_int_only_response_" + intOnly.elementAt(j).replaceAll("-",  "_"), fwdChain,
-						"-s " + model.getDeviceModel(intOnly.elementAt(j)).getSubnets()[0] + "/24"
-						+ " -d " + userSubnet
-						+ " -m state --state ESTABLISHED,RELATED"
-						+ " -j ACCEPT");
+			String intOnlyRule = "";
+			intOnlyRule += "-s " + model.getDeviceModel(user).getSubnets()[0] + "/24";
+			intOnlyRule += " -d ";
+
+			for (String device : intOnly) {
+				intOnlyRule += model.getDeviceModel(device).getSubnets()[0] + "/30,";
 			}
 			
+			intOnlyRule = intOnlyRule.replaceAll(",$", ""); //Remove any trailing comma
+			intOnlyRule += " -p tcp";
+			intOnlyRule += " -m state --state NEW";
+			intOnlyRule += " -j ACCEPT";
+			fm.addFilter("allow_int_only_" + server, fwdChain, intOnlyRule);
+
 			//Users can talk to the outside world
 			fm.addFilter(cleanUserName + "_allow_egress_traffic", egressChain,
 					"-i " + intIface
@@ -501,6 +489,31 @@ public class Router extends AStructuredProfile {
 					+ " -o " + intIface
 					+ " -m state --state ESTABLISHED,RELATED"
 					+ " -j ACCEPT");
+
+			fm.addFilter(cleanUserName + "_allow_related_traffic", fwdChain,
+					"-p tcp"
+					+ " -m state --state ESTABLISHED,RELATED"
+					+ " -j ACCEPT");
+			
+			//Jump to the ingress/egress chains
+			fm.addFilter(cleanUserName + "_allow_ingress", fwdChain,
+					"-i " + extIface + " -o " + intIface
+					+ " -j " + ingressChain);
+			fm.addFilter(cleanUserName + "_allow_egress", fwdChain,
+					"-i " + intIface + " -o " + extIface
+					+ " -j " + egressChain);
+			
+			//Log any NEW connections on our egress chain
+			fm.addFilter(cleanUserName + "_log_new_egress_traffic", egressChain,
+					"-m state --state NEW"
+					+ " -j LOG --log-prefix \\\"ipt-" + cleanUserName + "-[new]: \\\"");
+			//Log any DESTROYED conections on our egress chain
+			fm.addFilter(cleanUserName + "_log_destroyed_fin_egress_traffic", egressChain,
+					"-p tcp --tcp-flags FIN FIN"
+					+ " -j LOG --log-prefix \\\"ipt-" + cleanUserName + "-[fin]: \\\"");
+			fm.addFilter(cleanUserName + "_log_destroyed_fin_egress_traffic", egressChain,
+					"-p tcp --tcp-flags RST RST"
+					+ " -j LOG --log-prefix \\\"ipt-" + cleanUserName + "-[rst]: \\\"");
 		}
 		
 		return units;
@@ -509,51 +522,67 @@ public class Router extends AStructuredProfile {
 	private Vector<IUnit> intOnlyIptUnits(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		String[] devices       = model.getDeviceLabels();
 		Vector<String> users   = new Vector<String>();
 		Vector<String> intOnly = new Vector<String>();
 
-		for (int i = 0; i < devices.length; ++i) {
-			switch (model.getDeviceModel(devices[i]).getType()) {
+		for (String device : model.getDeviceLabels()) {
+			switch (model.getDeviceModel(device).getType()) {
 				case "superuser":
 				case "user":
-					users.add(devices[i]);
+					users.add(device);
 					break;
 				case "intonly":
-					intOnly.add(devices[i]);
+					intOnly.add(device);
 					break;
 			}
 		}
 		
-		for (int i = 0; i < intOnly.size(); ++i) {
-			String cleanDeviceName = intOnly.elementAt(i).replace("-", "_");
-			String fwdChain     = cleanDeviceName + "_fwd";
-			String ingressChain = cleanDeviceName + "_ingress";
-			String egressChain  = cleanDeviceName + "_egress";
+		for (String device : intOnly) {
+			String cleanDeviceName = device.replace("-", "_");
+			String fwdChain        = cleanDeviceName + "_fwd";
+			String ingressChain    = cleanDeviceName + "_ingress";
+			String egressChain     = cleanDeviceName + "_egress";
 			
-			String deviceSubnet = model.getDeviceModel(intOnly.elementAt(i)).getSubnets()[0] + "/24";
+			String deviceSubnet = model.getDeviceModel(device).getSubnets()[0] + "/24";
 			
 			String intIface = model.getData().getIface(server);
 			String extIface = model.getData().getExtIface(server);
 
 			FirewallModel fm = model.getServerModel(server).getFirewallModel();
 		
-			baseIptConfig(server, model, intOnly.elementAt(i), deviceSubnet);
+			baseIptConfig(server, model, device, deviceSubnet);
 
+			//Jump to the ingress/egress chains
+			fm.addFilter(cleanDeviceName + "_allow_ingress", fwdChain,
+					"-i " + extIface + " -o " + intIface
+					+ " -j " + ingressChain);
+			fm.addFilter(cleanDeviceName + "_allow_egress", fwdChain,
+					"-i " + intIface + " -o " + extIface
+					+ " -j " + egressChain);
+			//Log anything hopping to our egress chain
+			fm.addFilter(cleanDeviceName + "_log_egress_traffic", egressChain,
+					"-j LOG --log-prefix \\\"ipt-" + cleanDeviceName + ": \\\"");
+			
 			//Users can talk to our internal only devices
-			for (int j = 0; j < users.size(); ++j) {
-				//Any user can talk to an internal-only device
-				fm.addFilter(cleanDeviceName + "_allow_traffic_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
-						"-s " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
-						+ " -d " + deviceSubnet
-						+ " -j ACCEPT");
-				//But these devices can only talk back, not initiate a conversation
-				fm.addFilter(cleanDeviceName + "_allow_response_" + users.elementAt(j).replaceAll("-",  "_"), fwdChain,
-						"-s " + deviceSubnet
-						+ " -d " + model.getDeviceModel(users.elementAt(j)).getSubnets()[0] + "/24"
-						+ " -m state --state ESTABLISHED,RELATED"
-						+ " -j ACCEPT");
+			//Configure what they can do with internal only devices
+			String intOnlyRule = "";
+			intOnlyRule += "-d " + deviceSubnet;
+			intOnlyRule += " -s ";
+
+			for (String user : users) {
+				intOnlyRule += model.getDeviceModel(user).getSubnets()[0] + "/24,";
 			}
+			
+			intOnlyRule = intOnlyRule.replaceAll(",$", ""); //Remove any trailing comma
+			intOnlyRule += " -p tcp";
+			intOnlyRule += " -m state --state NEW";
+			intOnlyRule += " -j ACCEPT";
+			fm.addFilter("allow_users_" + device, fwdChain, intOnlyRule);
+
+			fm.addFilter(cleanDeviceName + "_allow_related_traffic", fwdChain,
+					"-p tcp"
+					+ " -m state --state ESTABLISHED,RELATED"
+					+ " -j ACCEPT");
 		}
 		
 		return units;
@@ -562,31 +591,30 @@ public class Router extends AStructuredProfile {
 	private Vector<IUnit> extOnlyIptUnits(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		String[] devices	   = model.getDeviceLabels();
 		Vector<String> extOnly = new Vector<String>();
 
-		for (int i = 0; i < devices.length; ++i) {
-			switch (model.getDeviceModel(devices[i]).getType()) {
+		for (String device : model.getDeviceLabels()) {
+			switch (model.getDeviceModel(device).getType()) {
 				case "extonly":
-					extOnly.add(devices[i]);
+					extOnly.add(device);
 					break;
 			}
 		}
 		
-		for (int i = 0; i < extOnly.size(); ++i) {
-			String cleanDeviceName = extOnly.elementAt(i).replace("-", "_");
+		for (String device : extOnly) {
+			String cleanDeviceName = device.replace("-", "_");
 			String fwdChain     = cleanDeviceName + "_fwd";
 			String ingressChain = cleanDeviceName + "_ingress";
 			String egressChain  = cleanDeviceName + "_egress";
 			
-			String deviceSubnet = model.getDeviceModel(extOnly.elementAt(i)).getSubnets()[0] + "/24";
+			String deviceSubnet = model.getDeviceModel(device).getSubnets()[0] + "/24";
 			
 			String intIface = model.getData().getIface(server);
 			String extIface = model.getData().getExtIface(server);
 
 			FirewallModel fm = model.getServerModel(server).getFirewallModel();
 		
-			baseIptConfig(server, model, extOnly.elementAt(i), deviceSubnet);
+			baseIptConfig(server, model, device, deviceSubnet);
 
 			//External only devices can talk to the outside world
 			fm.addFilter(cleanDeviceName + "_allow_egress_traffic", egressChain,
@@ -599,6 +627,14 @@ public class Router extends AStructuredProfile {
 					+ " -o " + intIface
 					+ " -m state --state ESTABLISHED,RELATED"
 					+ " -j ACCEPT");
+			
+			//Jump to the ingress/egress chains
+			fm.addFilter(cleanDeviceName + "_allow_ingress", fwdChain,
+					"-i " + extIface + " -o " + intIface
+					+ " -j " + ingressChain);
+			fm.addFilter(cleanDeviceName + "_allow_egress", fwdChain,
+					"-i " + intIface + " -o " + extIface
+					+ " -j " + egressChain);
 		}
 		
 		return units;
