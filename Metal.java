@@ -5,6 +5,7 @@ import java.util.regex.Pattern;
 
 import core.exec.PasswordExec;
 import core.iface.IUnit;
+import core.model.InterfaceModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
@@ -63,37 +64,38 @@ public class Metal extends AStructuredProfile {
 	
 	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
+
+		InterfaceModel im = model.getServerModel(server).getInterfaceModel();
 		
 		if (model.getServerModel(server).isRouter()) {
-			Vector<String> services = model.getServerModel(server).getServices();			
-			units.addElement(model.getServerModel(server).getInterfaceModel().addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(server),
-																					   "static",
-																					   "br" + model.getData().getSubnet(server),
-																					   "none",
-																					   model.getServerModel(server).getGateway(),
-																					   model.getData().getNetmask(),
-																					   null,
-																					   null));			
-			for (int i = 0; i < services.size(); ++i) {
-				units.addElement(model.getServerModel(server).getInterfaceModel().addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(services.get(i)),
-																						   "static",
-																						   "br" + model.getData().getSubnet(services.get(i)),
-																						   "none",
-																						   model.getServerModel(services.get(i)).getGateway(),
-																						   model.getData().getNetmask(),
-																						   null,
-																						   null));
+			units.addElement(im.addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(server),
+									   "static",
+									   "br" + model.getData().getSubnet(server),
+									   "none",
+									   model.getServerModel(server).getGateway(),
+									   model.getData().getNetmask(),
+									   null,
+									   null));			
+			for (String service : model.getServerModel(server).getServices()) {
+				units.addElement(im.addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(service),
+									   "static",
+									   "br" + model.getData().getSubnet(service),
+									   "none",
+									   model.getServerModel(service).getGateway(),
+									   model.getData().getNetmask(),
+									   null,
+									   null));
 			}
 		}
 		else {
-			units.addElement(model.getServerModel(server).getInterfaceModel().addIface(server.replace("-", "_") + "_primary_iface",
-																					   "static",
-																					   model.getData().getIface(server),
-																					   null,
-																					   model.getServerModel(server).getIP(),
-																					   model.getData().getNetmask(),
-																					   null,
-																					   model.getServerModel(server).getGateway()));
+			units.addElement(im.addIface(server.replace("-", "_") + "_primary_iface",
+									   "static",
+									   model.getData().getIface(server),
+									   null,
+									   model.getServerModel(server).getIP(),
+									   model.getData().getNetmask(),
+									   null,
+									   model.getServerModel(server).getGateway()));
 		}
 				
 		String backupScript = "";
@@ -144,22 +146,21 @@ public class Metal extends AStructuredProfile {
 	}
 
 	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
-		Vector<String> services = model.getServerModel(server).getServices();
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		for (int i=0; i < services.size(); ++i) {
+		for (String service : model.getServerModel(server).getServices()) {
 			String bridge;
 			String password = "";
 			Boolean expirePasswords = false;
 			
 			if (model.getServerModel(server).isRouter()) {
-				bridge = "br" + model.getData().getSubnet(services.get(i));
+				bridge = "br" + model.getData().getSubnet(service);
 			}
 			else {
 				bridge = model.getData().getIface(server);
 			}
 			
-			PasswordExec pass   = new PasswordExec(services.get(i), model);
+			PasswordExec pass   = new PasswordExec(service, model);
 			if (pass.init()) {
 				password = pass.getPassword();
 			}
@@ -174,13 +175,13 @@ public class Metal extends AStructuredProfile {
 				password = password.replace("\"", "\\\""); //Also, make sure quote marks are properly escaped!
 			}
 			
-			units.addElement(new SimpleUnit(services.get(i) + "_password", "proceed",
-					services.get(i).toUpperCase() + "_PASSWORD=`printf \"" + password + "\" | mkpasswd -s -m md5`",
-					"echo $" + services.get(i).toUpperCase() + "_PASSWORD", "", "fail",
-					"Couldn't set the passphrase for " + services.get(i) + ".  You won't be able to configure this service."));
+			units.addElement(new SimpleUnit(service + "_password", "proceed",
+					service.toUpperCase() + "_PASSWORD=`printf \"" + password + "\" | mkpasswd -s -m md5`",
+					"echo $" + service.toUpperCase() + "_PASSWORD", "", "fail",
+					"Couldn't set the passphrase for " + service + ".  You won't be able to configure this service."));
 			
-			units.addAll(buildIso(server, services.get(i), model, preseed(server, services.get(i), model, expirePasswords)));
-			units.addAll(buildVm(server, services.get(i), model, bridge));
+			units.addAll(buildIso(server, service, model, preseed(server, service, model, expirePasswords)));
+			units.addAll(buildVm(server, service, model, bridge));
 		}
 		
 		model.getServerModel(server).getProcessModel().addProcess("/usr/lib/virtualbox/VBoxXPCOMIPCD$");
@@ -196,9 +197,9 @@ public class Metal extends AStructuredProfile {
 
 		String   user         = model.getData().getUser(service);
 		String   sshDir       = "/home/" + user + "/.ssh";
-		String[] pubKeys    = model.getData().getUserKeys(service);
+		String[] pubKeys      = model.getData().getUserKeys(service);
 		String   hostname     = model.getData().getHostname(service);
-		String   domain       = model.getData().getDomain();
+		String   domain       = model.getData().getDomain(service);
 		String   fullName     = model.getData().getFullName(service);
 		String   debianMirror = model.getData().getDebianMirror(service);
 		//String subnet       = model.getData().getSubnet(server);
