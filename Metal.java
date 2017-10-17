@@ -202,8 +202,6 @@ public class Metal extends AStructuredProfile {
 		String   domain       = model.getData().getDomain(service);
 		String   fullName     = model.getData().getFullName(service);
 		String   debianMirror = model.getData().getDebianMirror(service);
-		//String subnet       = model.getData().getSubnet(server);
-		//String metalDataDir = model.getData().getVmBase(server) + "/data/" + service;
 
 		String preseed = "";
 		//Set up new box before rebooting. Sometimes you need to echo out in chroot;
@@ -235,9 +233,6 @@ public class Metal extends AStructuredProfile {
 		//Set up shared folders
 		preseed += "	echo \\\""
 								+ "echo '# Shared folders mount' >> /etc/fstab"
-								//+ "&& echo 'data   /media/metaldata   vboxsf defaults,_netdev,uid=nobody,gid=nogroup,fmask=0777,dmask=0777 0 0' >> /etc/fstab"
-								//+ "&& echo '10.255." + subnet + ".250:" + metalDataDir + " /media/metaldata nfs soft,_netdev,intr,rsize=8192,wsize=8192,sync 0 0' >> /etc/fstab"
-								//+ "&& echo '/dev/sdb1 /media/metaldata   ext4   defaults 0 0' >> /etc/fstab"
 								+ "&& echo 'log       /var/log           vboxsf defaults,dmode=751,_netdev 0 0' >> /etc/fstab"
 								+ "&& echo 'backup    /media/backup      vboxsf defaults,_netdev 0 0' >> /etc/fstab"
 						+ "\\\"| chroot /target /bin/bash";
@@ -255,13 +250,9 @@ public class Metal extends AStructuredProfile {
 		preseed += "d-i mirror/http/directory string /debian\n";
 		preseed += "d-i mirror/http/proxy string\n";
 		preseed += "d-i passwd/root-password-crypted password ${" + service.toUpperCase() + "_PASSWORD}\n";
-		//preseed += "d-i passwd/root-password password " + password + "\n";
-		//preseed += "d-i passwd/root-password-again password " + password + " \n";
 		preseed += "d-i passwd/user-fullname string " + fullName + "\n";
 		preseed += "d-i passwd/username string " + user + "\n";
 		preseed += "d-i passwd/user-password-crypted password ${" + service.toUpperCase() + "_PASSWORD}\n";
-		//preseed += "d-i passwd/user-password password " + password + "\n";
-		//preseed += "d-i passwd/user-password-again password " + password + "\n";
 		preseed += "d-i passwd/user-default-groups string sudo\n";
 		preseed += "d-i clock-setup/utc boolean true\n";
 		preseed += "d-i time/zone string Europe/London\n";
@@ -294,7 +285,6 @@ public class Metal extends AStructuredProfile {
 		
 		String isoDir =  model.getData().getVmBase(server) + "/iso/" + service + "/";
 
-		//units.addElement(new DirUnit("base_dir_" + service, "proceed", model.getData().getVmBase(server) + "/" + service));
 		units.addElement(new DirUnit("iso_dir_" + service, "proceed", isoDir));
 		units.addElement(new FileUnit("preseed_" + service, "debian_netinst_iso_downloaded", preseed, isoDir + "preseed.cfg"));
 		units.addElement(new FileOwnUnit("preseed_" + service, "preseed_" + service, isoDir + "preseed.cfg", "root"));
@@ -389,7 +379,6 @@ public class Metal extends AStructuredProfile {
 				"sudo -u " + user + " bash -c 'VBoxManage createhd --filename " + storageVdi + " --size " + model.getData().getDiskSize(service) + "'",
 				"sudo [ -f " + storageVdi + " ] && echo pass;", "pass", "pass",
 				"Couldn't create the disk for " + service + "'s base filesystem.  This is fatal."));
-				//"sudo -u " + user + " bash -c 'VBoxManage showhdinfo " + vdi + " 2>&1 | grep error'", "", "pass"));
 		
 		units.addElement(new SimpleUnit(service + "_disk_attached", service + "_sata_controller",
 				"sudo -u " + user + " bash -c 'VBoxManage storageattach " + service + " --storagectl \"SATA Controller\" --port 0 --device 0 --type hdd --medium " + storageVdi +"'",
@@ -400,7 +389,6 @@ public class Metal extends AStructuredProfile {
 				"sudo -u " + user + " bash -c 'VBoxManage createhd --filename " + dataVdi + " --size " + model.getData().getDataDiskSize(service) + "'",
 				"sudo [ -f " + dataVdi + " ] && echo pass;", "pass", "pass",
 				"Couldn't create the disk for " + service + "'s data.  This is fatal."));
-				//"sudo -u " + user + " bash -c 'VBoxManage showhdinfo " + vdi + " 2>&1 | grep error'", "", "pass"));
 		
 		units.addElement(new SimpleUnit(service + "_data_disk_attached", service + "_sata_controller",
 				"sudo -u " + user + " bash -c 'VBoxManage storageattach " + service + " --storagectl \"SATA Controller\" --port 1 --device 0 --type hdd --medium " + dataVdi +"'",
@@ -475,21 +463,6 @@ public class Metal extends AStructuredProfile {
 				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep macaddress1'", "macaddress1=\\\"" + model.getData().getMac(service).replace(":", "").toUpperCase() + "\\\"", "pass",
 				"Couldn't set " + service + "'s MAC address.  This means the service will not be able to get an IP address, and will not be installed."));
 		
-		/*
-		//This iface is _only_ for NFS.  It's not exposed to the outside world.
-		units.addElement(new SimpleUnit(service + "_host_only_nfs_iface", service + "_exists",
-				"sudo -u " + user + " bash -c 'VBoxManage hostonlyif create';"
-				+ "IFACE=`VBoxManage list hostonlyifs | head -n1 | awk '{print $2}'`;" //Push the first unassigned int-only iface to a var since we can't name the damned things!
-				+ "sudo -u " + user + " bash -c 'VBoxManage modifyvm " + service + " --nic2 hostonly'"
-				+ "&& sudo -u " + user + " bash -c \"VBoxManage modifyvm " + service + " --hostonlyadapter2 ${IFACE}\""
-				+ "&& sudo -u " + user + " bash -c \"VBoxManage hostonlyif ipconfig ${IFACE} --ip 10.255." + model.getData().getSubnet(service) + ".250 --netmask 255.255.255.252\"",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep nic2'", "nic2=\\\"hostonly\\\"", "pass"));
-		
-		units.addElement(new SimpleUnit(service + "_nic2_type", service + "_host_only_nfs_iface",
-				"sudo -u " + user + " bash -c 'VBoxManage modifyvm " + service + " --nictype2 virtio'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep nictype2'", "nictype2=\\\"virtio\\\"", "pass"));
-		*/
-		
 		//Audio setup (switch it off)
 		units.addElement(new SimpleUnit(service + "_no_audio", service + "_exists",
 				"sudo -u " + user + " bash -c 'VBoxManage modifyvm " + service + " --audio none'",
@@ -497,13 +470,6 @@ public class Metal extends AStructuredProfile {
 				"Couldn't switch off " + service + "'s audio.  No biggie."));
 		
 		//Shared folders setup
-		//units.addElement(new SimpleUnit(service + "_data_sf_attached", service + "_exists",
-		//		"sudo -u " + user + " bash -c 'VBoxManage sharedfolder add " + service + " --name data --hostpath " + dataDir + "';"
-		//		+ "sudo -u " + user + " bash -c 'VBoxManage setextradata " + service + " VBoxInternal2/SharedFoldersEnableSymlinksCreate/data 1'",
-		//		"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep SharedFolderPathMachineMapping1'", "SharedFolderPathMachineMapping1=\\\"" + dataDir + "\\\"", "pass"));
-		//units.addElement(new DirUnit("nfs_exports_dir", service + "_exists", "/etc/exports.d"));
-		//units.addElement(new FileUnit(service + "_data_dir_export", "nfs_exports_dir", dataDir + " 10.255." + model.getData().getSubnet(service) + ".249(rw,fsid=1)", "/etc/exports.d/" + service + ".exports"));
-		
 		units.addElement(new SimpleUnit(service + "_log_sf_attached", service + "_exists",
 				"sudo -u " + user + " bash -c 'VBoxManage sharedfolder add " + service + " --name log --hostpath " + logDir + "';"
 				+ "sudo -u " + user + " bash -c 'VBoxManage setextradata " + service + " VBoxInternal1/SharedFoldersEnableSymlinksCreate/log 1'",
