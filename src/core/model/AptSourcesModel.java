@@ -1,7 +1,5 @@
 package core.model;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Vector;
 
 import core.iface.IUnit;
@@ -47,13 +45,7 @@ public class AptSourcesModel extends AModel {
 	public void addAptSource(String server, NetworkModel model, String name, String precondition, String sourceLine, String keyserver, String fingerprint) {
 		sources.addElement(new FileUnit("source_" + name, precondition, sourceLine, "/etc/apt/sources.list.d/" + name + ".list"));
 		
-		URI hostname;
-		try {
-			hostname = new URI(keyserver);
-			model.getServerModel(server).addRouterFirewallRule(server, model, name, hostname.getHost(), new String[]{"11371"});
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		}
+		model.getServerModel(server).addRouterFirewallRule(server, model, name, keyserver, new String[]{"11371"});
 		
 		addGpgKey(name, keyserver, fingerprint);
 	}
