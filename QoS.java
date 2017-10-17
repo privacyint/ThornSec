@@ -11,17 +11,17 @@ import core.unit.fs.FileUnit;
 
 public class QoS extends AStructuredProfile {
 
-	int userMarkAfter;
-	int deviceMarkAfter;
-	int serverMarkAfter;
-	int userMark;
-	int deviceMark;
-	int serverMark;
+	private int userMarkAfter;
+	private int deviceMarkAfter;
+	private int serverMarkAfter;
+	private int userMark;
+	private int deviceMark;
+	private int serverMark;
 
-	int userUploadRate;
-	int extOnlyUploadRate;
+	private int userUploadRate;
+	private int extOnlyUploadRate;
 	
-	String tcUnits;
+	private String tcUnits;
 
 	public QoS() {
 		super("qos");
@@ -50,45 +50,30 @@ public class QoS extends AStructuredProfile {
 		return units;
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
-		
-		return units;
-	}
-
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
-		
-		return units;
-	}
-
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		String[] devices = model.getDeviceLabels();
-		String[] servers = model.getServerLabels();
-		
 		//Iterate through devicen first
-		for (int i = 0; i < devices.length; ++i) {
-			String deviceSubnet = model.getDeviceModel(devices[i]).getSubnets()[0] + "/24";
+		for (String device : model.getDeviceLabels()) {
+			String deviceSubnet = model.getDeviceModel(device).getSubnets()[0] + "/24";
 			
-			switch (model.getDeviceModel(devices[i]).getType()) {
+			switch (model.getDeviceModel(device).getType()) {
 				//Email the user only
 				case "user":
 				case "superuser":
-					markingUnits(server, model, devices[i], deviceSubnet, userMark, userMarkAfter);
+					markingUnits(server, model, device, deviceSubnet, userMark, userMarkAfter);
 			        break;
 				//This is a peripheral of some sort.  Just let the responsible person know.
 				case "intonly":
 				case "extonly":
-					markingUnits(server, model, devices[i], deviceSubnet, deviceMark, deviceMarkAfter);
+					markingUnits(server, model, device, deviceSubnet, deviceMark, deviceMarkAfter);
 					break;
 				default:
 			}
 		}
 
-		for (int i = 0; i < servers.length; ++i) {
-			markingUnits(server, model, servers[i], model.getServerModel(servers[i]).getIP(), serverMark, serverMarkAfter);
+		for (String srv : model.getServerLabels()) {
+			markingUnits(server, model, srv, model.getServerModel(srv).getIP(), serverMark, serverMarkAfter);
 		}
 		
 		return units;
@@ -105,11 +90,16 @@ public class QoS extends AStructuredProfile {
 
         //Mark any connection which has uploaded > markAfter bytes
 		units.addElement(fm.addMangleForward(name.replaceAll("-",  "_") + "_mark_large_uploads", 
-				"-s " + subnet + " -o " + extIface + " -m connbytes --connbytes " + markAfter + ": --connbytes-dir both --connbytes-mode bytes"
+				"-s " + subnet
+				+ " -o " + extIface
+				+ " -m connbytes --connbytes " + markAfter + ": --connbytes-dir both --connbytes-mode bytes"
 				+ " -j MARK --set-mark " + mark));
 		//Log any connection which has uploaded > markAfter bytes
         units.addElement(fm.addMangleForward(name.replaceAll("-",  "_") + "_log_large_uploads", 
-				"-s " + subnet + " -o " + extIface + " -m connbytes --connbytes " + markAfter + ": --connbytes-dir both --connbytes-mode bytes"
+				"-s " + subnet
+				+ " -o " + extIface
+				+ " -m connbytes --connbytes " + markAfter + ": --connbytes-dir both --connbytes-mode bytes"
+				+ " -m limit --limit 1/minute" //Poor, poor syslog!
 				+ " -j LOG --log-prefix \\\"ipt-" + name + "-throttled: \\\""));
 		
 		return units;
@@ -155,18 +145,15 @@ public class QoS extends AStructuredProfile {
 		ommail += "\n";
 		ommail += "if \\$msg contains \\\"throttled\\\" then {\n";
 
-		String[] devices = model.getDeviceLabels();
-		String[] servers = model.getServerLabels();
-		
 		//Iterate through devicen first
-		for (int i = 0; i < devices.length; ++i) {
-			String deviceEmail  = devices[i] + "@" + model.getData().getDomain(server);
+		for (String device : model.getDeviceLabels()) {
+			String deviceEmail  = device + "@" + model.getData().getDomain(server);
 			String adminEmail = model.getData().getAdminEmail();
-			String identifier = devices[i] + "." + model.getLabel();
+			String identifier = device + "." + model.getLabel();
 			
-			String[] ips = model.getDeviceModel(devices[i]).getIPs();
+			String[] ips = model.getDeviceModel(device).getIPs();
 			
-			switch (model.getDeviceModel(devices[i]).getType()) {
+			switch (model.getDeviceModel(device).getType()) {
 				//Email both the user && the responsible person
 				case "user":
 				case "superuser":
@@ -184,11 +171,11 @@ public class QoS extends AStructuredProfile {
 		}
 		
 		//Then servers
-		for (int i = 0; i < servers.length; ++i) {
+		for (String srv : model.getServerLabels()) {
 			String[] ip = new String[1];
-			ip[0] = model.getServerModel(servers[i]).getIP();
+			ip[0] = model.getServerModel(srv).getIP();
 			
-			ommail += buildThrottledEmailAction(ip, servers[i] + "." + model.getLabel(), servers[i] + "@" + model.getLabel() + model.getData().getDomain(servers[i]), model.getData().getAdminEmail(), "mailBodyTech");
+			ommail += buildThrottledEmailAction(ip, srv + "." + model.getLabel(), srv + "@" + model.getLabel() + model.getData().getDomain(srv), model.getData().getAdminEmail(), "mailBodyTech");
 		}
 		
 		ommail += "}";
@@ -219,7 +206,7 @@ public class QoS extends AStructuredProfile {
 		action += "        )\n";
 		action += "    }\n";
 		
-		return action;		
+		return action;
 	}
 	
 	private Vector<IUnit> bandwidthThrottlingUnits(String server, NetworkModel model) {
