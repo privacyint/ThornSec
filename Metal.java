@@ -233,8 +233,8 @@ public class Metal extends AStructuredProfile {
 		//Set up shared folders
 		preseed += "	echo \\\""
 								+ "echo '# Shared folders mount' >> /etc/fstab"
-								+ "&& echo 'log       /var/log           vboxsf defaults,dmode=751,_netdev 0 0' >> /etc/fstab"
-								+ "&& echo 'backup    /media/backup      vboxsf defaults,_netdev 0 0' >> /etc/fstab"
+								+ "&& echo 'log       /var/log           vboxsf defaults,dmode=751 0 0' >> /etc/fstab"
+								+ "&& echo 'backup    /media/backup      vboxsf defaults 0 0' >> /etc/fstab"
 						+ "\\\"| chroot /target /bin/bash";
 		//Debian installer options.
 		preseed += "\n";
