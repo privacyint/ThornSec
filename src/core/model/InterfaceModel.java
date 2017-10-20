@@ -1,5 +1,6 @@
 package core.model;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Vector;
 
@@ -8,6 +9,7 @@ import core.unit.SimpleUnit;
 
 public class InterfaceModel extends AModel {
 
+	private Vector<String> stanzas;
 	private Vector<String> ifaces;
 
 	public InterfaceModel(String label) {
@@ -15,7 +17,8 @@ public class InterfaceModel extends AModel {
 	}
 
 	public void init(NetworkModel model) {
-		this.ifaces = new Vector<>();
+		this.stanzas = new Vector<>();
+		this.ifaces  = new Vector<>();
 	}
 
 	public Vector<IUnit> getUnits() {
@@ -27,28 +30,29 @@ public class InterfaceModel extends AModel {
 		return units;
 	}
 
-	//At some point, refactor this to add all of the addresses under a single auto iface line
     public SimpleUnit addIface(String name, String type, String iface, String bridgePorts, String address, String netmask, String broadcast, String gateway) {
-		String net = "auto " + iface + "\n";
+		String net = "";
 		net += "iface " + iface + " inet " + type;
 		net += (bridgePorts != null) ?  "\n" + "bridge_ports " + bridgePorts : "";
 		net += (address != null) ? "\n" + "address " + address : "";
 		net += (netmask != null) ? "\n" + "netmask " + netmask : "";
 		net += (broadcast != null) ? "\n" + "broadcast " + netmask : "";
 		net += (gateway != null) ? "\n" + "gateway " + gateway : "";
-		ifaces.add(net);
+		stanzas.add(net);
+		ifaces.add(iface);
 		return new SimpleUnit(name, "proceed", "echo \\\"handled by model\\\";",
 				"grep \"" + address.replace(".", "\\.") + "\" /etc/network/interfaces;", "", "fail");
 	}
 
 	public SimpleUnit addPPPIface(String name, String iface) {
-		String net = "auto " + iface + "\n";
+		String net = "";
 		net +=	"iface " + iface + " inet manual\n";
 		net += "\n";
 		net += "auto provider\n";
 		net += "iface provider inet ppp\n";
 		net += "provider provider";
-		ifaces.add(net);
+		stanzas.add(net);
+		ifaces.add(iface);
 		return new SimpleUnit(name, "proceed", "echo \\\"handled by model\\\";",
 				"grep \"iface provider inet ppp\" /etc/network/interfaces;",
 				net, "pass");
@@ -59,11 +63,21 @@ public class InterfaceModel extends AModel {
 		net += "\n";
 		net += "auto lo\n";
 		net += "iface lo inet loopback\n";
-		net += "pre-up iptables-restore < /etc/iptables/iptables.conf\n";
-		net += "\n";
-		ifaces = new Vector<String>(new LinkedHashSet<String>(ifaces));
-		for (int i = 0; i < ifaces.size(); i++) {
-			net += ifaces.elementAt(i) + "\n\n";
+		net += "pre-up iptables-restore < /etc/iptables/iptables.conf";
+		
+		ifaces = new Vector<String>(new LinkedHashSet<String>(ifaces)); //Remove any duplicate stanzas
+		Collections.sort(ifaces); // Sort them into what's (hopefully) a sensible order
+
+		net += "\n\n";
+		net += "auto";
+		for (String iface : ifaces) {
+			net += " " + iface;
+		}
+		
+		stanzas = new Vector<String>(new LinkedHashSet<String>(stanzas)); //Remove any duplicate stanzas
+		for (String stanza : stanzas) {
+			net += "\n\n";
+			net += stanza;
 		}
 		return net.trim();
 	}
