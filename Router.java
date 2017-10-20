@@ -76,7 +76,6 @@ public class Router extends AStructuredProfile {
 		
 		units.addAll(dns.getInstalled(server, model));
 		units.addAll(dhcp.getInstalled(server, model));
-		units.addAll(qos.getInstalled(server, model));
 		
 		return units;
 	}
@@ -101,7 +100,6 @@ public class Router extends AStructuredProfile {
 		
 		units.addAll(dhcp.getLiveConfig(server, model));
 		units.addAll(dns.getLiveConfig(server, model));
-		units.addAll(qos.getLiveConfig(server, model));
 		
 		return units;
 	}
@@ -226,13 +224,12 @@ public class Router extends AStructuredProfile {
 
 				units.addElement(model.getServerModel(server).getInterfaceModel().addIface(servers[i].replaceAll("-", "_") + "_router_iface",
 																							"static",
-																							model.getData().getIface(server),
+																							model.getData().getIface(server) + ((!servers[i].equals(server)) ? ":" + model.getData().getSubnet(servers[i]) : ""),
 																							null,
 																							gateway,
 																							model.getData().getNetmask(),
 																							null,
 																							null));
-				
 				
 				this.dns.addDomainRecord(domain, gateway, subdomains, ip);
 			}
@@ -241,13 +238,14 @@ public class Router extends AStructuredProfile {
 				String[] gateways = model.getDeviceModel(devices[i]).getGateways();
 				String[] ips      = model.getDeviceModel(devices[i]).getIPs();
 				String   domain   = model.getData().getDomain(server);
+				String   subnet   = gateways[0].split("\\.")[2];
 				
 				for (int j = 0; j < gateways.length; ++j) {
 					String subdomain = devices[i] + "." + model.getLabel() + ".lan." + j;
 					
 					units.addElement(model.getServerModel(server).getInterfaceModel().addIface(devices[i].replaceAll("-", "_") + "_router_iface_" + j,
 																								"static",
-																								model.getData().getIface(server),
+																								model.getData().getIface(server) + ":" + subnet + j,
 																								null,
 																								gateways[j],
 																								model.getData().getNetmask(),
