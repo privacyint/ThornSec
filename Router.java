@@ -152,51 +152,48 @@ public class Router extends AStructuredProfile {
 		String script = "";
 		script += "#!/bin/bash\n";
 		
-		String[] devices = model.getDeviceLabels();
-		String[] servers = model.getServerLabels();
-		
 		//Iterate through devicen first
-		for (int i = 0; i < devices.length; ++i) {
-			switch (model.getDeviceModel(devices[i]).getType()) {
+		for (String device : model.getDeviceLabels()) {
+			switch (model.getDeviceModel(device).getType()) {
 				//Email the user only
 				case "user":
 				case "superuser":
 					script += "\n\n";
 					script += buildDailyBandwidthEmail(model.getData().getAdminEmail(),
-													devices[i] + "@" + model.getData().getDomain(server),
-													"[" + devices[i] + "." + model.getData().getLabel() + "] Daily Bandwidth Digest",
-													devices[i],
+													device + "@" + model.getData().getDomain(server),
+													"[" + device + "." + model.getData().getLabel() + "] Daily Bandwidth Digest",
+													device,
 													true);
 					break;
 				//This is a peripheral of some sort.  Just let the responsible person know.
 				case "intonly":
 				case "extonly":
 					script += "\n\n";
-					script += buildDailyBandwidthEmail(devices[i] + "@" + model.getData().getDomain(server),
+					script += buildDailyBandwidthEmail(device + "@" + model.getData().getDomain(server),
 							model.getData().getAdminEmail(),
-							"[" + devices[i] + "." + model.getLabel() + "] Daily Bandwidth Digest",
-							devices[i],
+							"[" + device + "." + model.getLabel() + "] Daily Bandwidth Digest",
+							device,
 							false);
 					break;
 				default:
 					//It'll default drop.
 			}
 
-			script += "iptables -Z " + devices[i] + "_ingress\n";
-			script += "iptables -Z " + devices[i] + "_egress";
+			script += "iptables -Z " + device + "_ingress\n";
+			script += "iptables -Z " + device + "_egress";
 		}
 		
 		//Then servers
-		for (int i = 0; i < servers.length; ++i) {
+		for (String srv : model.getServerLabels()) {
 			script += "\n\n";
-			script += buildDailyBandwidthEmail(servers[i] + "@" + model.getData().getDomain(servers[i]),
+			script += buildDailyBandwidthEmail(srv + "@" + model.getData().getDomain(srv),
 					model.getData().getAdminEmail(),
-					"[" + servers[i] + "." + model.getLabel() + "] Daily Bandwidth Digest",
-					servers[i],
+					"[" + srv + "." + model.getLabel() + "] Daily Bandwidth Digest",
+					srv,
 					false);
 
-			script += "iptables -Z " + servers[i] + "_ingress\n";
-			script += "iptables -Z " + servers[i] + "_egress";		
+			script += "iptables -Z " + srv + "_ingress\n";
+			script += "iptables -Z " + srv + "_egress";		
 		}
 
 		units.addElement(new FileUnit("daily_bandwidth_alert_script", "proceed", script, "/etc/cron.daily/bandwidth", "I couldn't create the bandwidth digest script.  This means you and your users won't receive daily updates on bandwidth use"));
@@ -209,22 +206,19 @@ public class Router extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		if (!model.getServerModel(server).isMetal()) {
-			String[] servers = model.getServerLabels();
-			String[] devices = model.getDeviceLabels();
-	
-			for (int i = 0; i < servers.length; ++i) {
-				String[] cnames  = model.getData().getCnames(servers[i]);
-				String   ip      = model.getServerModel(servers[i]).getIP();
-				String   gateway = model.getServerModel(servers[i]).getGateway();
-				String   domain  = model.getData().getDomain(servers[i]);
+			for (String srv : model.getServerLabels()) {
+				String[] cnames  = model.getData().getCnames(srv);
+				String   ip      = model.getServerModel(srv).getIP();
+				String   gateway = model.getServerModel(srv).getGateway();
+				String   domain  = model.getData().getDomain(srv);
 
 				String[] subdomains = new String[cnames.length + 1];
-				System.arraycopy(new String[] {model.getData().getHostname(servers[i])},0,subdomains,0, 1);
+				System.arraycopy(new String[] {model.getData().getHostname(srv)},0,subdomains,0, 1);
 				System.arraycopy(cnames,0,subdomains,1, cnames.length);
 
-				units.addElement(model.getServerModel(server).getInterfaceModel().addIface(servers[i].replaceAll("-", "_") + "_router_iface",
+				units.addElement(model.getServerModel(server).getInterfaceModel().addIface(srv.replaceAll("-", "_") + "_router_iface",
 																							"static",
-																							model.getData().getIface(server) + ((!servers[i].equals(server)) ? ":" + model.getData().getSubnet(servers[i]) : ""),
+																							model.getData().getIface(server) + ((!srv.equals(server)) ? ":" + model.getData().getSubnet(srv) : ""),
 																							null,
 																							gateway,
 																							model.getData().getNetmask(),
@@ -233,26 +227,26 @@ public class Router extends AStructuredProfile {
 				
 				this.dns.addDomainRecord(domain, gateway, subdomains, ip);
 			}
-						
-			for (int i = 0; i < devices.length; ++i) {
-				String[] gateways = model.getDeviceModel(devices[i]).getGateways();
-				String[] ips      = model.getDeviceModel(devices[i]).getIPs();
+			
+			for (String device : model.getDeviceLabels()) {
+				String[] gateways = model.getDeviceModel(device).getGateways();
+				String[] ips      = model.getDeviceModel(device).getIPs();
 				String   domain   = model.getData().getDomain(server);
 				String   subnet   = gateways[0].split("\\.")[2];
 				
-				for (int j = 0; j < gateways.length; ++j) {
-					String subdomain = devices[i] + "." + model.getLabel() + ".lan." + j;
+				for (int i = 0; i < gateways.length; ++i) {
+					String subdomain = device + "." + model.getLabel() + ".lan." + i;
 					
-					units.addElement(model.getServerModel(server).getInterfaceModel().addIface(devices[i].replaceAll("-", "_") + "_router_iface_" + j,
+					units.addElement(model.getServerModel(server).getInterfaceModel().addIface(device.replaceAll("-", "_") + "_router_iface_" + i,
 																								"static",
-																								model.getData().getIface(server) + ":" + subnet + j,
+																								model.getData().getIface(server) + ":" + subnet + i,
 																								null,
-																								gateways[j],
+																								gateways[i],
 																								model.getData().getNetmask(),
 																								null,
 																								null));
 					
-					this.dns.addDomainRecord(domain, gateways[j], new String[] {subdomain}, ips[j]);
+					this.dns.addDomainRecord(domain, gateways[i], new String[] {subdomain}, ips[i]);
 				}
 			}
 			
