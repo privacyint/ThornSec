@@ -55,6 +55,10 @@ public class QoS extends AStructuredProfile {
 
 		//Iterate through devicen first
 		for (String device : model.getDeviceLabels()) {
+			
+			//If they're not throttled, don't bother
+			if (!model.getData().getDeviceThrottled(device)) { continue; }
+			
 			String deviceSubnet = model.getDeviceModel(device).getSubnets()[0] + "/24";
 			
 			switch (model.getDeviceModel(device).getType()) {
@@ -147,6 +151,10 @@ public class QoS extends AStructuredProfile {
 
 		//Iterate through devicen first
 		for (String device : model.getDeviceLabels()) {
+			
+			//If they're not throttled, don't bother
+			if (!model.getData().getDeviceThrottled(device)) { continue; }
+			
 			String deviceEmail  = device + "@" + model.getData().getDomain(server);
 			String adminEmail = model.getData().getAdminEmail();
 			String identifier = device + "." + model.getLabel();
