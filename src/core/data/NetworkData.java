@@ -365,4 +365,8 @@ public class NetworkData extends AData {
 	public String getDeviceType(String device) {
 		return this.devices.get(device).getType();
 	}
+	
+	public Boolean getDeviceThrottled(String device) {
+		return this.devices.get(device).getThrottled();
+	}
 }

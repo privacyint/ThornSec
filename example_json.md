@@ -201,16 +201,18 @@
 		****************************************************************************/
 		"devices":{
 			//For devices which represent an individual's device, use their email username so they can receive emails (domain comes from network-level settings)
+			//Setting throttle to true will enable QoS against this device
 			//Access to internal stuff (including ability to SSH) & interwebs
-			"superuser": {"macs":["de:ad:be:ef:ca:fe", "de:ad:be:ef:ca:fe"], "type":"superuser"},
+			"superuser": {"macs":["de:ad:be:ef:ca:fe", "de:ad:be:ef:ca:fe"], "throttle":"true", "type":"superuser"},
 			//Access to internal stuff & interwebs
-			"user_a": {"macs":["de:ad:be:ef:ca:fe", "de:ad:be:ef:ca:fe"], "type":"user"},
-			"user_b": {"macs":["de:ad:be:ef:ca:fe", "de:ad:be:ef:ca:fe"], "type":"user"},
+			"user_a": {"macs":["de:ad:be:ef:ca:fe", "de:ad:be:ef:ca:fe"], "throttle":"true", "type":"user"},
+			"user_b": {"macs":["de:ad:be:ef:ca:fe", "de:ad:be:ef:ca:fe"], "throttle":"true", "type":"user"},
 			//For other devices, just use a useful identifier as it'll never receive email
 			//Internal connections only
-			"printer": {"macs":["de:ad:be:ef:ca:fe"], "type":"intonly"},
+			"printer": {"macs":["de:ad:be:ef:ca:fe"], "throttle":"true", "type":"intonly"},
 			//Interwebs only
-			"guest_wifi": {"macs":["de:ad:be:ef:ca:fe"], "type":"extonly"}
+			"guest_wifi": {"macs":["de:ad:be:ef:ca:fe"], "throttle":"false", "type":"extonly"},
+			"staff_wifi": {"macs":["de:ad:be:ef:ca:fe"], "throttle":"true", "type":"extonly"}
 		}
 	}
 }

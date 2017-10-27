@@ -8,6 +8,7 @@ public class DeviceData extends AData {
 	private JsonObject data;
 	private String[]   macs;
 	private String     type;
+	private Boolean    throttled;
 	
 	public DeviceData(String label) {
 		super(label);
@@ -28,6 +29,8 @@ public class DeviceData extends AData {
 		else {
 			macs = new String[0];
 		}
+		
+		throttled = data.getString("throttle", "true").equals("true");
 	}
 
 	public String getProperty(String property) {
@@ -40,6 +43,10 @@ public class DeviceData extends AData {
 
 	public String getType() {
 		return this.type;
+	}
+	
+	public Boolean getThrottled() {
+		return this.throttled;
 	}
 	
 }

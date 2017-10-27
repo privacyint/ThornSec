@@ -103,4 +103,8 @@ public class DeviceModel extends AModel {
 	public String getType() {
 		return this.networkData.getDeviceType(this.getLabel());
 	}
+	
+	public Boolean isThrottled() {
+		return this.networkData.getDeviceThrottled(this.getLabel());
+	}
 }
