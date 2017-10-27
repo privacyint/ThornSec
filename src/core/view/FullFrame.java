@@ -4,7 +4,9 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.util.Vector;
 
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -13,11 +15,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.JTree;
-import javax.swing.border.TitledBorder;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.TreeSelectionModel;
 
 import core.model.NetworkModel;
 import core.model.ThornsecModel;
@@ -26,9 +29,8 @@ public class FullFrame {
 
 	public FullFrame(ThornsecModel model) {
 		JTabbedPane jtp = new JTabbedPane();
-		String[] nets = model.getNetworkLabels();
-		for (int i = 0; i < nets.length; i++) {
-			jtp.add(nets[i], getNetworkPane(model.getNetworkModel(nets[i])));
+		for (String network : model.getNetworkLabels()) {
+			jtp.add(network, getNetworkPane(model.getNetworkModel(network)));
 		}
 
 		JFrame frame = new JFrame("Thornsec");
@@ -39,32 +41,37 @@ public class FullFrame {
 		frame.setVisible(true);
 	}
 
-	public Component getNetworkPane(NetworkModel model) {
+	private JPanel getNewPanel() {
+		GridBagLayout layout = new GridBagLayout();
+
+		JPanel ripInPepperoniTheIncredibleMrHong = new JPanel(layout);
+		ripInPepperoniTheIncredibleMrHong.setBackground(Color.WHITE);
+
+		return ripInPepperoniTheIncredibleMrHong;
+	}
+
+	private Component getNetworkPane(NetworkModel model) {
+		JTabbedPane jtp = new JTabbedPane();
+
 		JTextArea area = new JTextArea();
 		area.setEditable(false);
 		TextAreaOutputStream out = new TextAreaOutputStream(area);
-
-		JSplitPane jsp1 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-		jsp1.setLeftComponent(getServerPanel(model, out));
-		jsp1.setRightComponent(getDevicePanel(model));
-		jsp1.setDividerLocation(0.5);
-		JSplitPane jsp2 = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-		jsp2.setTopComponent(jsp1);
-		jsp2.setBottomComponent(getConsolePanel(area));
-		jsp2.setDividerLocation(0.5);
-
-		return jsp2;
+		
+		//jtp.add("Network Info", getInfoPanel(model));
+		jtp.add("Servers", getServerPanel(model, out));
+		jtp.add("Devices", getDevicePanel(model));
+		jtp.add("Output", getOutputPanel(area));
+		
+		return jtp;
 	}
+	
+	private JPanel getOutputPanel(JTextArea area) {
+		JPanel panel = getNewPanel();
 
-	private JPanel getConsolePanel(JTextArea area) {
-		GridBagLayout layout = new GridBagLayout();
+		JScrollPane areapane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+
 		GridBagConstraints g = new GridBagConstraints();
 
-		JPanel panel = new JPanel(layout);
-		panel.setBackground(Color.WHITE);
-
-		JScrollPane areapane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 		areapane.setViewportView(area);
 
 		g.gridx = 0;
@@ -73,115 +80,356 @@ public class FullFrame {
 		g.weighty = 1;
 		g.fill = GridBagConstraints.BOTH;
 		panel.add(areapane, g);
-
-		g.gridx = 0;
-		g.gridy = 2;
-		g.weightx = 0;
-		g.weighty = 0;
-		g.fill = GridBagConstraints.HORIZONTAL;
-		panel.add(new JTextField(), g);
-
+		
 		return panel;
 	}
 
-	private JScrollPane getServerPanel(NetworkModel model, TextAreaOutputStream out) {
-		JScrollPane serverPane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+	private JSplitPane getDevicePanel(final NetworkModel model) {
+		// Right-hand pane
+		JScrollPane  detailsPane  = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		final JPanel detailsPanel = getNewPanel();
 
-		GridBagLayout layout = new GridBagLayout();
-		JPanel panel = new JPanel(layout);
-		panel.setLayout(layout);
-		panel.setBackground(Color.WHITE);
+		detailsPane.setViewportView(detailsPanel);
 
-		GridBagConstraints g = new GridBagConstraints();
+		JPanel devicePanel = getNewPanel();
+		JScrollPane   devicePane  = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
-		String[] servers = model.getServerLabels();
-		for (int i = 0; i < servers.length; i++) {
-			ServerListener listener = new ServerListener(servers[i], model, out, System.in);
-			g.gridx = 0;
-			g.gridy = i;
-			g.weightx = 1;
-			g.weighty = 0;
-			g.fill = GridBagConstraints.HORIZONTAL;
+		DefaultMutableTreeNode root  = new DefaultMutableTreeNode(model.getLabel());
 
-			DefaultMutableTreeNode root = new DefaultMutableTreeNode(servers[i] + " (" + model.getServerModel(servers[i]).getUnitCount() + " units)");
-			
-			String[] types = model.getServerModel(servers[i]).getTypes();
-			for (int j = 0; j < types.length; j++) {
-				root.add(new DefaultMutableTreeNode(types[j]));
+		Vector<String> superUsers = new Vector<String>();
+		Vector<String> users = new Vector<String>();
+		Vector<String> intOnly = new Vector<String>();
+		Vector<String> extOnly = new Vector<String>();
+
+		for (String device : model.getDeviceLabels()) {
+			switch (model.getDeviceModel(device).getType()) {
+			case "superuser":
+				superUsers.add(device);
+				break;
+			case "user":
+				users.add(device);
+				break;
+			case "intonly":
+				intOnly.add(device);
+				break;
+			case "extonly":
+				extOnly.add(device);
+				break;
 			}
-			String[] profiles = model.getServerModel(servers[i]).getProfiles();
-			for (int j = 0; j < profiles.length; j++) {
-				root.add(new DefaultMutableTreeNode(profiles[j]));
-			}
-			JTree tree = new JTree(root);
-			tree.setCellRenderer(new DefaultTreeCellRenderer());
-			panel.add(tree, g);
-
-			g.gridx = 1;
-			g.gridy = i;
-			g.weightx = 0;
-			g.weighty = 0;
-			g.fill = GridBagConstraints.NONE;
-			JButton buildiso = new JButton("Build ISO");
-			buildiso.addActionListener(listener);
-			panel.add(buildiso, g);
-
-			g.gridx = 2;
-			g.gridy = i;
-			g.weightx = 0;
-			g.weighty = 0;
-			g.fill = GridBagConstraints.NONE;
-			JButton audit = new JButton("Audit");
-			audit.addActionListener(listener);
-			panel.add(audit, g);
-
-			g.gridx = 3;
-			g.gridy = i;
-			g.weightx = 0;
-			g.weighty = 0;
-			g.fill = GridBagConstraints.NONE;
-			JButton dryrun = new JButton("Dry Run");
-			dryrun.addActionListener(listener);
-			panel.add(dryrun, g);
-
-			g.gridx = 4;
-			g.gridy = i;
-			g.weightx = 0;
-			g.weighty = 0;
-			g.fill = GridBagConstraints.NONE;
-			JButton config = new JButton("Config");
-			config.addActionListener(listener);
-			panel.add(config, g);
-
 		}
-		serverPane.setViewportView(panel);
-		return serverPane;
+
+		DefaultMutableTreeNode superUsersNode = new DefaultMutableTreeNode("Super Users");
+		for (String superUser : superUsers) {
+			superUsersNode.add(new DefaultMutableTreeNode(superUser));
+		}
+		root.add(superUsersNode);
+
+		DefaultMutableTreeNode usersNode = new DefaultMutableTreeNode("Users");
+		for (String user : users) {
+			usersNode.add(new DefaultMutableTreeNode(user));
+		}
+		root.add(usersNode);
+
+		DefaultMutableTreeNode intOnlyNode = new DefaultMutableTreeNode("Internal-Only Devices");
+		for (String intO : intOnly) {
+			intOnlyNode.add(new DefaultMutableTreeNode(intO));
+		}
+		root.add(intOnlyNode);
+
+		DefaultMutableTreeNode extOnlyNode = new DefaultMutableTreeNode("External-Only Devices");
+		for (String extO : extOnly) {
+			extOnlyNode.add(new DefaultMutableTreeNode(extO));
+		}
+		root.add(extOnlyNode);
+
+		final JTree deviceTree = new JTree(root);
+		deviceTree.setCellRenderer(new DeviceIconRenderer(model));
+		deviceTree.setRootVisible(false);
+		deviceTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+		deviceTree.addTreeSelectionListener(new TreeSelectionListener() {
+			public void valueChanged(TreeSelectionEvent e) {
+				GridBagConstraints g = new GridBagConstraints();
+
+				String device = e.getPath().getLastPathComponent().toString();
+
+				detailsPanel.removeAll();
+
+				g.fill = GridBagConstraints.VERTICAL;
+
+				//Title
+				g.gridx = 0;
+				g.gridy = 0;
+				g.gridwidth = 4;
+				g.ipady = 40;
+				detailsPanel.add(new JLabel(device), g);
+
+				//Reset values
+				g.gridwidth = 1;
+				g.ipady = 10;
+
+				//IP Address
+				g.gridy += 1;
+
+				g.gridx = 1;
+				g.anchor = GridBagConstraints.LINE_START;
+				detailsPanel.add(new JLabel("Subnets:"), g);
+				g.gridx = 2;
+				g.anchor = GridBagConstraints.LINE_END;
+				detailsPanel.add(new JLabel(model.getDeviceModel(device).getSubnets()[0] + "/24"), g);
+
+				//MACs
+				g.gridy += 1;
+
+				g.gridx = 1;
+				g.anchor = GridBagConstraints.LINE_START;
+				detailsPanel.add(new JLabel("MACs:"), g);
+				g.gridx = 2;
+				g.anchor = GridBagConstraints.LINE_END;
+				JLabel macs = new JLabel();
+				for (String mac : model.getDeviceModel(device).getMacs()) {
+					macs.setText(macs.getText() + mac + " ");
+				}
+				detailsPanel.add(macs, g);
+
+				detailsPanel.repaint();
+				detailsPanel.validate();
+			}
+		});
+
+		for (int i = 0; i < deviceTree.getRowCount(); i++) {
+			deviceTree.expandRow(i);
+		}
+
+		devicePanel.add(deviceTree);
+		devicePane.setViewportView(devicePanel);
+
+		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+		splitPane.setLeftComponent(devicePane);
+		splitPane.setRightComponent(detailsPane);
+
+		return splitPane;
 	}
 
-	private JScrollPane getDevicePanel(NetworkModel model) {
-		JScrollPane devicePane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+	private JSplitPane getServerPanel(final NetworkModel model, final TextAreaOutputStream out) {
+		// Right-hand pane
+		JScrollPane  detailsPane  = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		final JPanel detailsPanel = getNewPanel();
 
-		GridBagLayout layout = new GridBagLayout();
-		GridBagConstraints g = new GridBagConstraints();
-		JPanel panel = new JPanel(layout);
-		panel.setBorder(new TitledBorder("devices"));
-		panel.setBackground(Color.WHITE);
+		detailsPane.setViewportView(detailsPanel);
 
-		String[] devices = model.getDeviceLabels();
-		for (int i = 0; i < devices.length; i++) {
-			g.gridx = 0;
-			g.gridy = i;
-			g.weightx = 1;
-			g.weighty = 0;
-			g.fill = GridBagConstraints.HORIZONTAL;
+		// Left-hand pane
+		JScrollPane            serverPane  = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		JPanel                 serverPanel = getNewPanel();
+		DefaultMutableTreeNode serverRoot  = new DefaultMutableTreeNode(model.getLabel());
 
-			JLabel label = new JLabel(devices[i] + " (" + model.getDeviceModel(devices[i]).getType() + ")");
-			panel.add(label, g);
+		for (String router : model.getRouters()) {
+			if (!model.getServerModel(router).isMetal()) {
+				serverRoot.add(new DefaultMutableTreeNode(router));
+			}
 		}
-		devicePane.setViewportView(panel);
-		return devicePane;
+
+		for (String metal : model.getMetals()) {
+			DefaultMutableTreeNode metalNode = new DefaultMutableTreeNode(metal);
+			for (String service : model.getServerModel(metal).getServices()) {
+				metalNode.add(new DefaultMutableTreeNode(service));
+			}
+			serverRoot.add(metalNode);
+		}
+
+		final JTree serverTree = new JTree(serverRoot);
+		serverTree.setCellRenderer(new CustomServerIconRenderer(model));
+		serverTree.setRootVisible(false);
+		serverTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+		serverTree.addTreeSelectionListener(new TreeSelectionListener() {
+			public void valueChanged(TreeSelectionEvent e) {
+				GridBagConstraints g = new GridBagConstraints();
+
+				String server = e.getPath().getLastPathComponent().toString();
+
+				ServerListener listener = new ServerListener(server, model, out, System.in);
+
+				detailsPanel.removeAll();
+
+				g.fill = GridBagConstraints.VERTICAL;
+
+				//Title
+				g.gridx = 0;
+				g.gridy = 0;
+				g.gridwidth = 4;
+				g.ipady = 40;
+				detailsPanel.add(new JLabel(server), g);
+
+				//Reset values
+				g.gridwidth = 1;
+				g.ipady = 10;
+
+				//IP Address
+				g.gridy += 1;
+
+				g.gridx = 1;
+				g.anchor = GridBagConstraints.LINE_START;
+				detailsPanel.add(new JLabel("IP:"), g);
+				g.gridx = 2;
+				g.anchor = GridBagConstraints.LINE_END;
+				detailsPanel.add(new JLabel(model.getServerModel(server).getIP()), g);
+
+				//SSH
+				g.gridy += 1;
+
+				g.gridx = 1;
+				g.anchor = GridBagConstraints.LINE_START;
+				detailsPanel.add(new JLabel("External SSH Port:"), g);
+				g.gridx = 2;
+				g.anchor = GridBagConstraints.LINE_END;
+				detailsPanel.add(new JLabel(model.getData().getAdminPort(server)), g);
+
+				//Profiles
+				g.gridy += 1;
+
+				g.gridx = 1;
+				g.anchor = GridBagConstraints.LINE_START;
+				detailsPanel.add(new JLabel("Profiles:"), g);
+				g.gridx = 2;
+				g.anchor = GridBagConstraints.LINE_END;
+				JLabel profiles = new JLabel();
+				for (String profile : model.getServerModel(server).getProfiles()) {
+					profiles.setText(profiles.getText() + profile + " ");
+				}
+				detailsPanel.add(profiles, g);
+
+				//FQDN
+				g.gridy += 1;
+
+				g.gridx = 1;
+				g.anchor = GridBagConstraints.LINE_START;
+				detailsPanel.add(new JLabel("FQDN:"), g);
+				g.gridx = 2;
+				g.anchor = GridBagConstraints.LINE_END;
+				detailsPanel.add(new JLabel(model.getData().getHostname(server) + "." + model.getData().getDomain(server)), g);
+
+				//CNAMEs
+				g.gridy += 1;
+
+				g.gridx = 1;
+				g.anchor = GridBagConstraints.LINE_START;
+				detailsPanel.add(new JLabel("CNAMEs:"), g);
+				g.gridx = 2;
+				g.anchor = GridBagConstraints.LINE_END;
+				JLabel cnames = new JLabel();
+				for (String cname : model.getData().getCnames(server)) {
+					cnames.setText(cnames.getText() + cname + " ");
+				}
+				detailsPanel.add(cnames, g);
+
+				//MAC
+				g.gridy += 1;
+
+				g.gridx = 1;
+				g.anchor = GridBagConstraints.LINE_START;
+				detailsPanel.add(new JLabel("MAC Address:"), g);
+				g.gridx = 2;
+				g.anchor = GridBagConstraints.LINE_END;
+				detailsPanel.add(new JLabel(model.getData().getMac(server)), g);
+
+				//Buttons
+				g.gridwidth = 2;
+				g.gridx = 1;
+				g.fill = GridBagConstraints.HORIZONTAL;
+
+				g.gridy += 1;
+				JButton buildiso = new JButton("Build ISO");
+				buildiso.addActionListener(listener);
+				detailsPanel.add(buildiso, g);
+
+				g.gridy += 1;
+				JButton audit = new JButton("Audit");
+				audit.addActionListener(listener);
+				detailsPanel.add(audit, g);
+
+				g.gridy += 1;
+				JButton dryrun = new JButton("Dry Run");
+				dryrun.addActionListener(listener);
+				detailsPanel.add(dryrun, g);
+
+				g.gridy += 1;
+				JButton config = new JButton("Config");
+				config.addActionListener(listener);
+				detailsPanel.add(config, g);
+
+				detailsPanel.repaint();
+				detailsPanel.validate();
+			}
+		});
+
+		for (int i = 0; i < serverTree.getRowCount(); i++) {
+			serverTree.expandRow(i);
+		}
+
+		serverPanel.add(serverTree);
+		serverPane.setViewportView(serverPanel);
+
+		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+		splitPane.setLeftComponent(serverPane);
+		splitPane.setRightComponent(detailsPane);
+
+		return splitPane;
 	}
-	
+}
+
+class CustomServerIconRenderer extends DefaultTreeCellRenderer {
+	private static final long serialVersionUID = 51204425271690803L;
+	private ImageIcon routerIcon;
+	private ImageIcon metalIcon;
+	private ImageIcon serviceIcon;
+	private NetworkModel model;
+
+	public CustomServerIconRenderer(NetworkModel model) {
+		routerIcon  = new ImageIcon(CustomServerIconRenderer.class.getResource("images/router.png"));
+		metalIcon   = new ImageIcon(CustomServerIconRenderer.class.getResource("images/metal.jpeg"));
+		serviceIcon = new ImageIcon(CustomServerIconRenderer.class.getResource("images/service.jpeg"));
+
+		this.model = model;
+	}
+	public Component getTreeCellRendererComponent(JTree tree, Object value,boolean sel,boolean expanded,boolean leaf,int row,boolean hasFocus) {
+		super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+		Object nodeObj = ((DefaultMutableTreeNode)value).getUserObject();
+
+		if (model.getServerModel(nodeObj.toString()).isRouter()) {
+			setIcon(routerIcon);
+		}
+		else if (model.getServerModel(nodeObj.toString()).isMetal()) {
+			setIcon(metalIcon);
+		}
+		else if (model.getServerModel(nodeObj.toString()).isService()) {
+			setIcon(serviceIcon);
+		}
+
+		return this;
+	}
+}
+
+class DeviceIconRenderer extends DefaultTreeCellRenderer {
+	private static final long serialVersionUID = 513044252716923403L;
+	private ImageIcon superUserIcon;
+	private ImageIcon userIcon;
+	private ImageIcon intOnlyIcon;
+	private ImageIcon extOnlyIcon;
+	private NetworkModel model;
+
+	public DeviceIconRenderer(NetworkModel model) {
+		superUserIcon = new ImageIcon(DeviceIconRenderer.class.getResource("images/superuser.png"));
+		userIcon      = new ImageIcon(DeviceIconRenderer.class.getResource("images/user.png"));
+		intOnlyIcon   = new ImageIcon(DeviceIconRenderer.class.getResource("images/intonly.png"));
+		extOnlyIcon   = new ImageIcon(DeviceIconRenderer.class.getResource("images/extonly.jpeg"));
+
+		this.model = model;
+	}
+	public Component getTreeCellRendererComponent(JTree tree, Object value,boolean sel,boolean expanded,boolean leaf,int row,boolean hasFocus) {
+		super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+		Object nodeObj = ((DefaultMutableTreeNode)value).getUserObject();
+
+		setIcon(null);
+
+		return this;
+	}
 }
