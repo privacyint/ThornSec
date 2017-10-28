@@ -379,10 +379,12 @@ public class Router extends AStructuredProfile {
 	
 			//Jump to the ingress/egress chains
 			fm.addFilter(cleanServerName + "_jump_ingress", fwdChain,
-					"-i " + extIface + " -o " + intIface
+					"-i " + extIface
+					//+ " -o " + intIface
 					+ " -j " + ingressChain);
 			fm.addFilter(cleanServerName + "_jump_egress", fwdChain,
-					"-i " + intIface + " -o " + extIface
+					//"-i " + intIface
+					"-o " + extIface
 					+ " -j " + egressChain);
 			//Log anything hopping to our egress chain
 			fm.addFilter(cleanServerName + "_log_egress_traffic", egressChain,
@@ -472,13 +474,13 @@ public class Router extends AStructuredProfile {
 
 			//Users can talk to the outside world
 			fm.addFilter(cleanUserName + "_allow_egress_traffic", egressChain,
-					"-i " + intIface
-					+ " -o " + extIface
+					//"-i " + intIface
+					"-o " + extIface
 					+ " -j ACCEPT");
 			//And can accept established/related traffic from the outside world, too
 			fm.addFilter(cleanUserName + "_allow_ingress_traffic", ingressChain,
 					"-i " + extIface
-					+ " -o " + intIface
+					//+ " -o " + intIface
 					+ " -m state --state ESTABLISHED,RELATED"
 					+ " -j ACCEPT");
 
@@ -489,10 +491,12 @@ public class Router extends AStructuredProfile {
 			
 			//Jump to the ingress/egress chains
 			fm.addFilter(cleanUserName + "_allow_ingress", fwdChain,
-					"-i " + extIface + " -o " + intIface
+					"-i " + extIface
+					//+ " -o " + intIface
 					+ " -j " + ingressChain);
 			fm.addFilter(cleanUserName + "_allow_egress", fwdChain,
-					"-i " + intIface + " -o " + extIface
+					//"-i " + intIface
+					"-o " + extIface
 					+ " -j " + egressChain);
 			
 			//Log any NEW connections on our egress chain
@@ -537,7 +541,6 @@ public class Router extends AStructuredProfile {
 			
 			String deviceSubnet = model.getDeviceModel(device).getSubnets()[0] + "/24";
 			
-			String intIface = model.getData().getIface(server);
 			String extIface = model.getData().getExtIface(server);
 
 			FirewallModel fm = model.getServerModel(server).getFirewallModel();
@@ -546,10 +549,12 @@ public class Router extends AStructuredProfile {
 
 			//Jump to the ingress/egress chains
 			fm.addFilter(cleanDeviceName + "_allow_ingress", fwdChain,
-					"-i " + extIface + " -o " + intIface
+					"-i " + extIface
+					//+ " -o " + intIface
 					+ " -j " + ingressChain);
 			fm.addFilter(cleanDeviceName + "_allow_egress", fwdChain,
-					"-i " + intIface + " -o " + extIface
+					//"-i " + intIface
+					"-o " + extIface
 					+ " -j " + egressChain);
 			//Log anything hopping to our egress chain
 			fm.addFilter(cleanDeviceName + "_log_egress_traffic", egressChain,
@@ -601,7 +606,6 @@ public class Router extends AStructuredProfile {
 			
 			String deviceSubnet = model.getDeviceModel(device).getSubnets()[0] + "/24";
 			
-			String intIface = model.getData().getIface(server);
 			String extIface = model.getData().getExtIface(server);
 
 			FirewallModel fm = model.getServerModel(server).getFirewallModel();
@@ -610,22 +614,24 @@ public class Router extends AStructuredProfile {
 
 			//External only devices can talk to the outside world
 			fm.addFilter(cleanDeviceName + "_allow_egress_traffic", egressChain,
-					"-i " + intIface
-					+ " -o " + extIface
+					//"-i " + intIface
+					"-o " + extIface
 					+ " -j ACCEPT");
 			//And can accept established/related traffic from the outside world, too
 			fm.addFilter(cleanDeviceName + "_allow_ingress_traffic", ingressChain,
 					"-i " + extIface
-					+ " -o " + intIface
+					//+ " -o " + intIface
 					+ " -m state --state ESTABLISHED,RELATED"
 					+ " -j ACCEPT");
 			
 			//Jump to the ingress/egress chains
 			fm.addFilter(cleanDeviceName + "_allow_ingress", fwdChain,
-					"-i " + extIface + " -o " + intIface
+					"-i " + extIface
+					//+ " -o " + intIface
 					+ " -j " + ingressChain);
 			fm.addFilter(cleanDeviceName + "_allow_egress", fwdChain,
-					"-i " + intIface + " -o " + extIface
+					//"-i " + intIface
+					"-o " + extIface
 					+ " -j " + egressChain);
 		}
 		
@@ -640,6 +646,7 @@ public class Router extends AStructuredProfile {
 			units.addElement(new RunningUnit("ext_ppp", "ppp", "pppd-dns"));
 			units.addElement(model.getServerModel(server).getInterfaceModel().addPPPIface("router_ext_ppp_iface", model.getData().getProperty(server, "pppiface")));
 			model.getServerModel(server).getProcessModel().addProcess("/usr/sbin/pppd call provider$");
+			units.addElement(new FileUnit("resolv_conf", "proceed", "nameserver " + model.getServerModel(server).getIP(), "/etc/ppp/resolv.conf"));
 		}
 		else if (model.getData().getExtConn(server).equals("dhcp")){
 			units.addElement(model.getServerModel(server).getInterfaceModel().addIface("router_ext_dhcp_iface", 
