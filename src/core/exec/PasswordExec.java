@@ -27,7 +27,7 @@ public class PasswordExec {
 		OutputExec passwordGetExec = new OutputExec("pass Thornsec/" + network.getData().getDomain(server) + "/" + network.getLabel() + "/" + server);
 		String password = passwordGetExec.getOutput();
 	
-		if (password.equals("Error: Thornsec/" + network.getData().getDomain(server) + "/" + network.getLabel() + "/" + server +" is not in the password store.")) {
+		if (password.equals("") || password.equals("Error: Thornsec/" + network.getData().getDomain(server) + "/" + network.getLabel() + "/" + server +" is not in the password store.")) {
 			System.out.println("\nPassword for " + server + " isn't stored.");
 			if (network.getData().getAutoGenPasswds().equals("true")) {
 				System.out.println("\nGenerating you a password for " + server);
@@ -35,7 +35,9 @@ public class PasswordExec {
 				password = passwordSetExec.getOutput();
 			}
 			else {
-				password = null;
+				System.out.println("Add the password to the store by issuing the following command:");
+				System.out.println("pass add Thornsec/"  + network.getData().getDomain(server) + "/" + network.getLabel() + "/" + server);
+				password = "";
 			}
 		}
 		
