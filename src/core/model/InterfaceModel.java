@@ -30,10 +30,9 @@ public class InterfaceModel extends AModel {
 		return units;
 	}
 
-    public SimpleUnit addIface(String name, String type, String iface, String bridgePorts, String address, String netmask, String broadcast, String gateway) {
+    public SimpleUnit addIface(String name, String type, String iface, String address, String netmask, String broadcast, String gateway) {
 		String net = "";
 		net += "iface " + iface + " inet " + type;
-		net += (bridgePorts != null) ?  "\n" + "bridge_ports " + bridgePorts : "";
 		net += (address != null) ? "\n" + "address " + address : "";
 		net += (netmask != null) ? "\n" + "netmask " + netmask : "";
 		net += (broadcast != null) ? "\n" + "broadcast " + netmask : "";
