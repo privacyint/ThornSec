@@ -1,12 +1,12 @@
 package profile;
 
-import java.util.Iterator;
 import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
+import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 
 public class OpenSocial extends AStructuredProfile {
@@ -40,6 +40,12 @@ public class OpenSocial extends AStructuredProfile {
 		units.addElement(new InstalledUnit("curl", "proceed", "curl"));
 		units.addElement(new InstalledUnit("unzip", "proceed", "unzip"));
 		units.addElement(new InstalledUnit("php_mod_curl", "php_fpm_installed", "php-curl"));
+		units.addElement(new InstalledUnit("sendmail", "proceed", "sendmail"));
+		
+		model.getServerModel(server).getProcessModel().addProcess("sendmail: MTA: accepting connections$");
+		model.getServerModel(server).getUserModel().addUsername("smmta");
+		model.getServerModel(server).getUserModel().addUsername("smmpa");
+		model.getServerModel(server).getUserModel().addUsername("smmsp");
 		
 		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "drush", "composer_installed", "/media/metaldata/drush", "/media/data/drush", "nginx", "nginx", "0755"));
 		
@@ -73,6 +79,9 @@ public class OpenSocial extends AStructuredProfile {
 		nginxConf += "    sendfile off;\n";
 		nginxConf += "    default_type text/plain;\n";
 		nginxConf += "    server_tokens off;\n";
+		nginxConf += "\n";
+		nginxConf += "    client_max_body_size 0;\n";
+		nginxConf += "\n";
 		nginxConf += "    location / {\n";
 		nginxConf += "        try_files \\$uri @rewrite;\n";
 		nginxConf += "    }\n";
@@ -105,6 +114,11 @@ public class OpenSocial extends AStructuredProfile {
 				"OPENSOCIAL_PASSWORD=`sudo grep \"password\" /media/data/www/html/sites/default/settings.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',\"`; [[ -z $OPENSOCIAL_PASSWORD ]] && OPENSOCIAL_PASSWORD=`openssl rand -hex 32`",
 				"echo $OPENSOCIAL_PASSWORD", "", "fail",
 				"Couldn't set a password for OpenSocial's database user. The installation will fail."));
+
+		units.addElement(new SimpleUnit("opensocial_salt", "proceed",
+				"OPENSOCIAL_SALT=`sudo grep \"hash_salt'] =\" /media/data/www/html/sites/default/settings.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',;\"`; [[ -z $OPENSOCIAL_SALT ]] && OPENSOCIAL_SALT=`openssl rand -hex 75`",
+				"echo $OPENSOCIAL_SALT", "", "fail",
+				"Couldn't set a hash salt for OpenSocial's one-time login links. Your installation may not function correctly."));
 		
 		units.addAll(db.createDb("opensocial", "opensocial", "SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES", "OPENSOCIAL_PASSWORD"));
 		
@@ -113,6 +127,50 @@ public class OpenSocial extends AStructuredProfile {
 				+ " && sudo /media/data/drush/drush -y -r /media/data/www/html site-install social --db-url=mysql://opensocial:${OPENSOCIAL_PASSWORD}@localhost:3306/opensocial --account-pass=admin",
 				"sudo /media/data/drush/drush status -r /media/data/www/html 2>&1 | grep 'Install profile'", "", "fail",
 				"OpenSocial could not be installed."));
+
+		String[] cnames = model.getData().getCnames(server);
+		String   domain = model.getData().getDomain(server).replaceAll("\\.", "\\\\.");  
+		
+		String opensocialConf = "";
+		opensocialConf += "<?php\n";
+		opensocialConf += "\n";
+		opensocialConf += "\\$databases = array();\n";
+		opensocialConf += "\\$config_directories = array();\n";
+		opensocialConf += "\n";
+		opensocialConf += "\\$settings['hash_salt'] = '${OPENSOCIAL_SALT}';";
+		opensocialConf += "\\$settings['update_free_access'] = FALSE;\n";
+		opensocialConf += "\n";
+		opensocialConf += "\\$settings['container_yamls'][] = \\$app_root . '/' . \\$site_path . '/services.yml';\n";;
+		opensocialConf += "\n";
+		opensocialConf += "\\$settings['trusted_host_patterns'] = array(\n";
+		opensocialConf += "    '^" + server + "\\\\." + domain + "$',\n";
+		
+		for (int i = 0; i < cnames.length; ++i) {
+			opensocialConf += "    '^" + cnames[i].replaceAll("\\.", "\\\\.") + "." + domain + "$',\n";
+		}
+		
+		opensocialConf += ");\n";
+		opensocialConf += "\n";
+		opensocialConf += "\\$settings['container_yamls'][] = $app_root . '/' . \\$site_path . '/services.yml';\n";
+		opensocialConf += "\n";
+		opensocialConf += "\\$settings['file_scan_ignore_directories'] = [\n"; 
+		opensocialConf += "    'node_modules',\n"; 
+		opensocialConf += "    'bower_components',\n";
+		opensocialConf += "];\n";
+		opensocialConf += "\\$databases['default']['default'] = array (\n"; 
+		opensocialConf += "    'database' => 'opensocial',\n";
+		opensocialConf += "    'username' => 'opensocial',\n";
+		opensocialConf += "    'password' => '${OPENSOCIAL_PASSWORD}',\n";
+		opensocialConf += "    'prefix' => '',\n"; 
+		opensocialConf += "    'host' => 'localhost',\n"; 
+		opensocialConf += "    'port' => '3306',\n"; 
+		opensocialConf += "    'namespace' => 'Drupal\\\\Core\\\\Database\\\\Driver\\\\mysql',\n"; 
+		opensocialConf += "    'driver' => 'mysql',\n";
+		opensocialConf += ");\n"; 
+		opensocialConf += "\n";
+		opensocialConf += "\\$settings['install_profile'] = 'social';";
+
+		units.addElement(new FileUnit("opensocial_config", "opensocial_installed", opensocialConf, "/media/data/www/html/sites/default/settings.php"));
 		
 		return units;
 	}
@@ -129,6 +187,15 @@ public class OpenSocial extends AStructuredProfile {
 		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_github_api", "api.github.com", new String[]{"80","443"});
 		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_github_codeload", "codeload.github.com", new String[]{"80","443"});
 		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_drupal_git", "git.drupal.org", new String[]{"80","443"});
+		
+		String egressChain = model.getData().getHostname(server) + "_egress";
+		
+		for (String router : model.getRouters()) {
+			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_email", egressChain,
+				"-p tcp"
+				+ " --dport 25"
+				+ " -j ACCEPT");
+		}
 		
 		return units;
 	}
