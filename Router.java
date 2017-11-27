@@ -219,6 +219,7 @@ public class Router extends AStructuredProfile {
 				units.addElement(model.getServerModel(server).getInterfaceModel().addIface(srv.replaceAll("-", "_") + "_router_iface",
 																							"static",
 																							model.getData().getIface(server) + ((!srv.equals(server)) ? ":" + model.getData().getSubnet(srv) : ""),
+																							null,
 																							gateway,
 																							model.getData().getNetmask(),
 																							null,
@@ -239,6 +240,7 @@ public class Router extends AStructuredProfile {
 					units.addElement(model.getServerModel(server).getInterfaceModel().addIface(device.replaceAll("-", "_") + "_router_iface_" + i,
 																								"static",
 																								model.getData().getIface(server) + ":" + subnet + i,
+																								null,
 																								gateways[i],
 																								model.getData().getNetmask(),
 																								null,
@@ -387,11 +389,6 @@ public class Router extends AStructuredProfile {
 			//Log anything hopping to our egress chain
 			fm.addFilter(cleanServerName + "_log_egress_traffic", egressChain,
 					"-j LOG --log-prefix \\\"ipt-" + cleanServerName + ": \\\"");
-			//Allow related ingress traffic
-			fm.addFilter(cleanServerName + "_allow_related_ingress_traffic", ingressChain,
-					"-p tcp"
-					+ " -m state --state ESTABLISHED,RELATED"
-					+ " -j ACCEPT");
 
 		}
 	
@@ -658,6 +655,7 @@ public class Router extends AStructuredProfile {
 																						null,
 																						null,
 																						null,
+																						null,
 																						null));
 
 			String dhclient = "option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n";
@@ -690,6 +688,7 @@ public class Router extends AStructuredProfile {
 				units.addElement(model.getServerModel(server).getInterfaceModel().addIface("router_ext_static_iface_" + i,
 																							"static",
 																							model.getData().getExtIface(server),
+																							null,
 																							address,
 																							netmask,
 																							broadcast,

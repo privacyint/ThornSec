@@ -91,6 +91,7 @@ public class Service extends AStructuredProfile {
 		units.addElement(model.getServerModel(server).getInterfaceModel().addIface(server.replace("-", "_") + "_primary_iface",
 																				   "static",
 																				   model.getData().getIface(server),
+																				   null,
 																				   model.getServerModel(server).getIP(),
 																				   model.getData().getNetmask(),
 																				   null,
