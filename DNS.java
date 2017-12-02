@@ -71,10 +71,11 @@ public class DNS extends AStructuredProfile {
 		config += "    do-ip6: no\n";
 		config += "    do-udp: yes\n";
 		config += "    do-tcp: yes\n";
-		config += "    access-control: 10.0.0.0/8 allow\n";
-		config += "    access-control: 127.0.0.0/8 allow\n";
-		config += "    access-control: 192.168.0.0/16 allow\n";
-		config += "    access-control: 172.16.0.0/12 allow\n";
+		config += "    access-control: 10.0.0.0/0 allow\n";
+		config += "    access-control: 127.0.0.0/0 allow\n";
+		config += "    access-control: 192.168.0.0/0 allow\n";
+		config += "    access-control: 172.16.0.0/0 allow\n";
+		config += "    access-control: 127.0.0.1 allow\n";
 		config += "    hide-identity: yes\n";
 		config += "    hide-version: yes\n";
 		config += "    harden-glue: yes\n";
@@ -91,9 +92,9 @@ public class DNS extends AStructuredProfile {
 		config += "    rrset-cache-size: " + (Integer.parseInt(model.getData().getRam(server))/4) + "m\n";
 		config += "    msg-cache-size: " + (Integer.parseInt(model.getData().getRam(server))/8) + "m\n";
 		config += "    so-rcvbuf: 1m\n";
-		config += "    private-address: 192.168.0.0/16\n";
-		config += "    private-address: 172.16.0.0/12\n";
-		config += "    private-address: 10.0.0.0/8\n";
+		config += "    private-address: 192.168.0.0/0\n";
+		config += "    private-address: 172.16.0.0/0\n";
+		config += "    private-address: 10.0.0.0/0\n";
 		for (String domain : domainRecords.keySet()) {
 			config += "    private-domain: \\\"" + domain + "\\\"\n";
 		}
@@ -178,6 +179,15 @@ public class DNS extends AStructuredProfile {
 			count++;
 		}
 
+		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_loopback_in",
+				"dnsd", "-i lo -j ACCEPT"));
+		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_loopback_out",
+				"dnsd", "-o lo -j ACCEPT"));
+		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_bridges_in",
+						"dnsd", "-i br+ -j ACCEPT"));
+				units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_bridges_out",
+						"dnsd", "-o br+ -j ACCEPT"));
+		
 		return units;
 	}
 
