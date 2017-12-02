@@ -11,6 +11,7 @@ public class AptSourcesModel extends AModel {
 
 	private Vector<IUnit> sources;
 	private String repo;
+	private String dir;
 	private Vector<IUnit> gpg;
 	
 	public AptSourcesModel(String label) {
@@ -21,6 +22,7 @@ public class AptSourcesModel extends AModel {
 		sources = new Vector<IUnit>();
 		gpg = new Vector<IUnit>();
 		repo = model.getData().getDebianMirror(this.getLabel());
+		dir = model.getData().getDebianDirectory(this.getLabel());
 		
 		model.getServerModel(this.getLabel()).getProcessModel().addProcess("dirmngr --daemon --homedir /tmp/apt-key-gpghome.[a-zA-Z0-9]*$");
 
@@ -59,9 +61,9 @@ public class AptSourcesModel extends AModel {
 	
 	private String getPersistent() {
 		String list = "";
-		list += "deb http://" + repo + "/debian/ stretch main\n";
+		list += "deb http://" + repo + dir + " stretch main\n";
 		list += "deb http://security.debian.org/ stretch/updates main\n";
-		list += "deb http://" + repo + "/debian/ stretch-updates main";
+		list += "deb http://" + repo + dir + " stretch-updates main";
 		
 		return list;
 	}
