@@ -188,11 +188,6 @@ public class NetworkModel {
 			} else {
 				String password = pass.getPassword();
 				
-				if (password == null) {
-					System.out.println("FAIL: no password in keychain for " + serverModel.getLabel());
-					return null;
-				}
-				
 				System.out.println("PASS: password in keychain for " + serverModel.getLabel());
 				String audit = getScript(serverModel, action, quiet);
 				
@@ -207,6 +202,11 @@ public class NetworkModel {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					return null;
+				}
+
+				if (password == null || password.equals("")) {
+					System.out.println("FAIL: no password in keychain for " + serverModel.getLabel());
 					return null;
 				}
 				
