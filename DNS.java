@@ -43,10 +43,16 @@ public class DNS extends AStructuredProfile {
 		records.addElement("    local-data: \\\"" + subdomains[0] + "." + domain + " A " + ip + "\\\"");
 		records.addElement("    local-data-ptr: \\\"" + ip + " " + subdomains[0] + "." + domain + "\\\"");
 		records.addElement("    local-data-ptr: \\\"" + gatewayIp + " router." + subdomains[0] + "." + domain + "\\\"");
-		
-		for (int i = 1; i < subdomains.length; ++i) {
-			records.addElement("    local-data: \\\"" + subdomains[i] + " A " + ip + "\\\"");
-			records.addElement("    local-data: \\\"" + subdomains[i] + "." + domain + " A " + ip + "\\\"");			
+
+		for (String subdomain : subdomains) {
+			//If you're trying to have a cname which is just the domain, it craps out unless you do this...
+			if (!subdomain.equals("")) {
+				records.addElement("    local-data: \\\"" + subdomain + " A " + ip + "\\\"");
+				records.addElement("    local-data: \\\"" + subdomain + "." + domain + " A " + ip + "\\\"");
+			}
+			else {
+				records.addElement("    local-data: \\\"" + domain + " A " + ip + "\\\"");
+			}
 		}
 		
 		domainRecords.put(domain,  records);
