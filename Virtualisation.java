@@ -99,15 +99,17 @@ public class Virtualisation extends AStructuredProfile {
 		preseed += "    in-target sed -i 's/#Port 22/Port " + model.getData().getSSHPort(service) + "/g' /etc/ssh/sshd_config;";
 		
 		//Set up shared folders
-		preseed += "	echo \\\""
-								+ "echo '# Shared folders mount' >> /etc/fstab"
-								+ "&& echo 'log       /var/log           vboxsf defaults,dmode=751 0 0' >> /etc/fstab"
-								+ "&& echo 'backup    /media/backup      vboxsf defaults 0 0' >> /etc/fstab"
-						+ "\\\"| chroot /target /bin/bash";
+		//Don't do this any more - Debian no longer boots if it can't mount them :'(
+		//preseed += "	echo \\\""
+		//						+ "echo '# Shared folders mount' >> /etc/fstab"
+		//						+ "&& echo 'log       /var/log           vboxsf defaults,dmode=751 0 0' >> /etc/fstab"
+		//						+ "&& echo 'backup    /media/backup      vboxsf defaults 0 0' >> /etc/fstab"
+		//				+ "\\\"| chroot /target /bin/bash";
+		
 		//Debian installer options.
 		preseed += "\n";
-		preseed += "d-i debian-installer/locale string en_GB.UTF-8\n";
-		preseed += "d-i keyboard-configuration/xkb-keymap select uk\n";
+		preseed += "d-i debian-installer/locale string en_US\n";
+		preseed += "d-i keyboard-configuration/xkb-keymap select us\n";
 		preseed += "d-i netcfg/target_network_config select ifupdown\n";
 		preseed += "d-i netcfg/choose_interface select auto\n";
 		preseed += "d-i netcfg/get_hostname string " + hostname + "\n";

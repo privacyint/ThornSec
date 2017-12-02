@@ -75,12 +75,16 @@ public class Service extends AStructuredProfile {
 		units.addElement(new DirUnit("data_dir_exists", "is_virtualbox_guest", "/media/data/"));
 		
 		//Mount /media/backuo
+		units.addElement(new FileAppendUnit("backup_fstab", "is_virtualbox_guest", "backup    /media/backup      vboxsf defaults 0 0", "/etc/fstab",
+				"Couldn't create the mount for the backup at /media/backup.  Meh."));
 		units.addElement(new DirUnit("backup_bindpoint", "is_virtualbox_guest", "/media/backup"));
-		units.addElement(new DirMountedUnit("backup", "is_virtualbox_guest", "backup",
+		units.addElement(new DirMountedUnit("backup", "backup_fstab_appended", "backup",
 				"Couldn't mount the backup directory.  This isn't a problem, and this functionality should probably be scrubbed."));
 		
 		//Mount /log
-		units.addElement(new SimpleUnit("log_mounted", "is_virtualbox_guest",
+		units.addElement(new FileAppendUnit("log_fstab", "is_virtualbox_guest", "log       /var/log           vboxsf defaults,dmode=751 0 0", "/etc/fstab",
+				"Couldn't create the mount for /var/log.  Meh."));
+		units.addElement(new SimpleUnit("log_mounted", "log_fstab_appended",
 				"sudo mkdir /tmp/log;"
 				+ "sudo mv /var/log/* /tmp/log;"
 				+ "sudo mount log;"
