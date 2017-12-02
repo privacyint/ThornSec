@@ -93,6 +93,7 @@ public class Nginx extends AStructuredProfile {
 		units.add(model.getServerModel(server).getFirewallModel().addFilterInput(server, "-p tcp --dport 443 -m state --state NEW,ESTABLISHED -j ACCEPT"));
 		units.add(model.getServerModel(server).getFirewallModel().addFilterOutput(server, "-p tcp --sport 80 -m state --state ESTABLISHED -j ACCEPT"));
 		units.add(model.getServerModel(server).getFirewallModel().addFilterOutput(server, "-p tcp --sport 443 -m state --state ESTABLISHED -j ACCEPT"));
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_nginx", "nginx.org", new String[]{"80","443"});
 
 		return units;
 	}
