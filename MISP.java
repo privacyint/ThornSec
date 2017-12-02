@@ -38,7 +38,7 @@ public class MISP extends AStructuredProfile {
 		
 		//Hush your face, postfix config!
 		units.addElement(new SimpleUnit("postfix_mailname", "proceed",
-				"sudo debconf-set-selections <<< 'postfix postfix/mailname string " + model.getData().getDomain() + "'",
+				"sudo debconf-set-selections <<< 'postfix postfix/mailname string " + model.getData().getDomain(server) + "'",
 				"sudo debconf-show postfix | grep 'postfix/mailname:' || dpkg -l | grep '^.i' | grep 'postfix'", "", "fail"));
 		units.addElement(new SimpleUnit("postfix_mailer_type", "postfix_mailname",
 				"sudo debconf-set-selections <<< 'postfix postfix/main_mailer_type string \"Satellite system\"'",
