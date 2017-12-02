@@ -122,6 +122,10 @@ public class Webproxy extends AStructuredProfile {
 				nginxConf += "        proxy_buffering         off;\n";
 				nginxConf += "        client_max_body_size    0;\n";
 				nginxConf += "        proxy_http_version      1.1;\n";
+				nginxConf += "        proxy_connect_timeout   3000;\n";
+				nginxConf += "        proxy_send_timeout      3000;\n";
+				nginxConf += "        proxy_read_timeout      3000;\n";
+				nginxConf += "        send_timeout            3000;\n";
 				nginxConf += "    }\n";
 				nginxConf += "}";
 				
