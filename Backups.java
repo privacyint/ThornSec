@@ -124,7 +124,7 @@ public class Backups extends AStructuredProfile {
 		backupRecoveryScript += "        sudo -u vboxuser_\\${vmName} bash -c \\\"VBoxManage startvm \\${vmName} --type headless\\\"\n";
 		backupRecoveryScript += "    fi\n";
 		backupRecoveryScript += "done\n";
-		backupRecoveryScript += "echo \\\"=== Finished restoring latest backup at \\`date\\` ===\\\"\n";
+		backupRecoveryScript += "echo \\\"=== Finished restoring latest backup at \\`date\\` ===\\\"";
 		
 		units.addElement(new DirUnit("backup_recovery_dir", "proceed", model.getData().getVmBase(server) + "/recoveryscripts"));
 		units.addElement(new DirOwnUnit("backup_recovery_dir", "backup_recovery_dir_created", model.getData().getVmBase(server) + "/recoveryscripts", "root"));
