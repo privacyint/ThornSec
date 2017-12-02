@@ -62,7 +62,7 @@ public class ManageExec {
 				"-p " + sshPort,
 				network.getData().getUser(server) + "@" + sshIP,
 				"cat > script.sh;",
-				"chmod +x script.sh; exit;"		
+				"chmod +x script.sh;"		
 		};
 		
 		//Run it!
@@ -74,7 +74,8 @@ public class ManageExec {
 				"-p " + sshPort,
 				network.getData().getUser(server) + "@" + sshIP,
 				"./script.sh;",
-				"rm script.sh; exit;"					
+				"while [ -f ~/script.pid ]; do sleep 2; done;",
+				"rm script.sh;"					
 		};
 		
 		if (network.getData().getConnection(this.server).equals("tunnelled")) {
@@ -91,7 +92,6 @@ public class ManageExec {
 		SSHExec scriptExecuteExec = new SSHExec(scriptExecute, pass, out);	
 		System.out.println(scriptOutputExec.getOutput());
 		System.out.println(scriptOutputExec.getError());
-		scriptExecuteExec.waitFor();
 		
 		return scriptExecuteExec;
 	}
