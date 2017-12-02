@@ -33,6 +33,7 @@ public class ServerData extends AData {
 	private String externalIp;
 	private String bridge;
 	private String debianMirror;
+	private String debianDirectory;
 	private String adminEmail;
 	private String domain;
 	
@@ -43,7 +44,7 @@ public class ServerData extends AData {
 	public void read(JsonObject data) {
 		this.data = data;
 		
-		adminUser = data.getString("user", "thornsec");
+		adminUser = data.getString("user", null);
 		JsonArray keys = data.getJsonArray("keys");
 		if (keys != null) {
 			adminKeys = new String[keys.size()];
@@ -51,12 +52,12 @@ public class ServerData extends AData {
 				adminKeys[i] = keys.getString(i);
 			}
 		}
-		adminFullName = data.getString("adminname", "Thornsec Admin User");
+		adminFullName = data.getString("adminname", null);
 		connection = data.getString("connection", "direct");
 		subnet = data.getString("subnet", null);
-		adminPort = data.getString("adminport", "65422");
-		sshPort = data.getString("sshport", "65422");
-		update = data.getString("update", "false");
+		adminPort = data.getString("adminport", null);
+		sshPort = data.getString("sshport", null);
+		update = data.getString("update", null);
 		hostname = data.getString("hostname", null);
 		JsonArray jsonTypes = data.getJsonArray("types");
 		if (jsonTypes != null) {
@@ -65,14 +66,14 @@ public class ServerData extends AData {
 				types[i] = jsonTypes.getString(i);
 			}
 		}
-		iface = data.getString("iface", "enp0s3");
+		iface = data.getString("iface", null);
 		extIface = data.getString("extiface", null);
 		metal = data.getString("metal", null);
-		ram = data.getString("ram", "1024");
-		diskSize = data.getString("disksize", "8096");
-		dataDiskSize = data.getString("datadisksize", "8096");
+		ram = data.getString("ram", null);
+		diskSize = data.getString("disksize", null);
+		dataDiskSize = data.getString("datadisksize", null);
 		mac = data.getString("mac", null);
-		cpus = data.getString("cpus", "1");
+		cpus = data.getString("cpus", null);
 		extConn = data.getString("extconnection", null);
 		JsonArray jsonCnames = data.getJsonArray("cnames");
 		if (jsonCnames != null) {
@@ -84,9 +85,9 @@ public class ServerData extends AData {
 		else {
 			cnames = new String[0];
 		}
-		debianIsoUrl = data.getString("debianisourl", "cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-9.1.0-amd64-netinst.iso");
-		debianIsoSha512 = data.getString("debianisosha512", "697600a110c7a5a1471fbf45c8030dd99b3c570db612044730f09b4624aa49f2a3d79469d55f1c18610c2414e9fffde1533b9a6fab6f3af4b5ba7c2d59003dc1");
-		vmBase = data.getString("vmbase", "/media/VMs");
+		debianIsoUrl = data.getString("debianisourl", null);
+		debianIsoSha512 = data.getString("debianisosha512", null);
+		vmBase = data.getString("vmbase", null);
 		JsonArray jsonProfiles = data.getJsonArray("profiles");
 		if (jsonProfiles != null) {
 			profiles = new String[jsonProfiles.size()];
@@ -96,7 +97,8 @@ public class ServerData extends AData {
 		}
 		externalIp = data.getString("externalip", null);
 		bridge = data.getString("bridge", null);
-		debianMirror = data.getString("debianmirror", "ftp.uk.debian.org");
+		debianMirror = data.getString("debianmirror", null);
+		debianDirectory = data.getString("debiandirectory", null);
 		adminEmail = data.getString("adminemail", null);
 		domain = data.getString("domain", null);
 	}
@@ -232,6 +234,10 @@ public class ServerData extends AData {
 		return this.debianMirror;
 	}
 
+	public String getDebianDirectory() {
+		return this.debianDirectory;
+	}
+	
 	public String getDataDiskSize() {
 		return this.dataDiskSize;
 	}

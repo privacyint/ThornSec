@@ -186,19 +186,25 @@ public class NetworkData extends AData {
 	public String getUser(String server) {
 		String val = this.servers.get(server).getUser();
 		if (val == null) {
-			return this.defaultServerData.getUser();
-		} else {
-			return val;
+			val = this.defaultServerData.getUser();
+			if (val == null) {
+				return "thornsec";
+			}
 		}
+		
+		return val;
 	}
 	
 	public String getFullName(String server) {
 		String val = this.servers.get(server).getFullName();
 		if (val==null) {
-			return this.defaultServerData.getFullName();
-		} else {
-			return val;
+			val = this.defaultServerData.getFullName();
+			if (val == null) {
+				return "Thornsec Admin User";
+			}
 		}
+		
+		return val;
 	}
 
 	public String[] getUserKeys(String server) {
@@ -213,19 +219,25 @@ public class NetworkData extends AData {
 	public String getAdminPort(String server) {
 		String val = this.servers.get(server).getAdminPort();
 		if (val == null) {
-			return this.defaultServerData.getAdminPort();
-		} else {
-			return val;
+			val = this.defaultServerData.getAdminPort();
+			if (val == null) {
+				return "65422";
+			}
 		}
+		
+		return val;
 	}
 	
 	public String getSSHPort(String server) {
 		String val = this.servers.get(server).getSSHPort();
 		if (val == null) {
-			return this.defaultServerData.getSSHPort();
-		} else {
-			return val;
+			val = this.defaultServerData.getSSHPort();
+			if (val == null) {
+				return "65422";
+			}
 		}
+		
+		return val;
 	}
 
 	public String getConnection(String server) {
@@ -240,19 +252,25 @@ public class NetworkData extends AData {
 	public String getUpdate(String server) {
 		String val = this.servers.get(server).getUpdate();
 		if (val == null) {
-			return this.defaultServerData.getUpdate();
-		} else {
-			return val;
+			val = this.defaultServerData.getUpdate();
+			if (val == null) {
+				return "false";
+			}
 		}
+		
+		return val;
 	}
 	
 	public String getIface(String server) {
 		String val = this.servers.get(server).getIface();
 		if (val == null) {
-			return this.defaultServerData.getIface();
-		} else {
-			return val;
+			val = this.defaultServerData.getIface();
+			if (val == null) {
+				return "enp0s3";
+			}
 		}
+
+		return val;
 	}
 	
 	public String getExtIface(String server) {
@@ -275,37 +293,49 @@ public class NetworkData extends AData {
 	public String getRam(String server) {
 		String val = this.servers.get(server).getRam();
 		if (val == null) {
-			return this.defaultServerData.getRam();
-		} else {
-			return val;
+			val = this.defaultServerData.getRam();
+			if (val == null) {
+				return "1024";
+			}
 		}
+		
+		return val;
 	}
 
 	public String getCpus(String server) {
 		String val = this.servers.get(server).getCpus();
 		if (val == null) {
-			return this.defaultServerData.getCpus();
-		} else {
-			return val;
+			val = this.defaultServerData.getCpus();
+			if (val == null) {
+				return "1";
+			}
 		}
+		
+		return val;
 	}
 	
 	public String getDiskSize(String server) {
 		String val = this.servers.get(server).getDiskSize();
 		if (val == null) {
-			return this.defaultServerData.getDiskSize();
-		} else {
-			return val;
+			val = this.defaultServerData.getDiskSize();
+			if (val == null) {
+				return  "8096";
+			}
 		}
+		
+		return val;
 	}
 	
 	public String getDataDiskSize(String server) {
 		String val = this.servers.get(server).getDataDiskSize();
 		if (val == null) {
-			return this.defaultServerData.getDataDiskSize();
-		} else {
-			return val;
+			val = this.defaultServerData.getDataDiskSize();
+			if (val == null) {
+				return  "8096";
+			}
 		}
+		
+		return val;
 	}
 	
 	public String getExtConn(String server) {
@@ -320,28 +350,37 @@ public class NetworkData extends AData {
 	public String getDebianIsoUrl(String server) {
 		String val = this.servers.get(server).getDebianIsoUrl();
 		if (val == null) {
-			return this.defaultServerData.getDebianIsoUrl();
-		} else {
-			return val;
+			val = this.defaultServerData.getDebianIsoUrl();
+			if (val == null) {
+				return "cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-9.2.1-amd64-netinst.iso";
+			}
 		}
+		
+		return val;
 	}
 
 	public String getDebianIsoSha512(String server) {
 		String val = this.servers.get(server).getDebianIsoSha512();
 		if (val == null) {
-			return this.defaultServerData.getDebianIsoSha512();
-		} else {
-			return val;
+			val = this.defaultServerData.getDebianIsoSha512();
+			if (val == null) {
+				return "ebfe25dc593967e39349b205480b0ec0103ef4a0468c602f4857e13d06d407bfe876162399e0e8d4dea5675953dc37ab585316f307ccf9f4440124b4f719df04";
+			}
 		}
+		
+		return val;
 	}
 
 	public String getVmBase(String server) {
 		String val = this.servers.get(server).getVmBase();
 		if (val == null) {
-			return this.defaultServerData.getVmBase();
-		} else {
-			return val;
+			val = this.defaultServerData.getVmBase();
+			if (val == null) {
+				return "/media/VMs";
+			}
 		}
+	
+		return val;
 	}
 
 	public String getBridge(String server) {
@@ -356,10 +395,25 @@ public class NetworkData extends AData {
 	public String getDebianMirror(String server) {
 		String val = this.servers.get(server).getDebianMirror();
 		if (val == null) {
-			return this.defaultServerData.getDebianMirror();
-		} else {
-			return val;
+			val = this.defaultServerData.getDebianMirror();
+			if (val == null) {
+				return "ftp.uk.debian.org";
+			}
 		}
+		
+		return val;
+	}
+
+	public String getDebianDirectory(String server) {
+		String val = this.servers.get(server).getDebianDirectory();
+		if (val == null) {
+			val = this.defaultServerData.getDebianDirectory();
+			if (val == null) {
+				return "/debian";
+			}
+		}
+		
+		return val;
 	}
 	
 	//Device only stuff
