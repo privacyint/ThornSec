@@ -145,6 +145,10 @@ public class ServerModel extends AModel {
 				units.addAll(service.getUnits(this.getLabel(), networkModel));
 			} else {
 				System.out.println("Unsupported type: " + types[i]);
+		//Useful packages
+		units.addElement(new InstalledUnit("sysstat", "proceed", "sysstat"));
+		units.addElement(new InstalledUnit("net_tools", "proceed", "net-tools"));
+		units.addElement(new InstalledUnit("htop", "proceed", "htop"));
 			}
 
 		}
