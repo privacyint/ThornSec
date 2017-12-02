@@ -214,34 +214,42 @@ public class Router extends AStructuredProfile {
 	private Vector<IUnit> subnetConfigUnits(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		if (!model.getServerModel(server).isMetal()) {
-			for (String srv : model.getServerLabels()) {
-				String[] cnames  = model.getData().getCnames(srv);
-				String   ip      = model.getServerModel(srv).getIP();
-				String   gateway = model.getServerModel(srv).getGateway();
-				String   domain  = model.getData().getDomain(srv);
+		InterfaceModel im = model.getServerModel(server).getInterfaceModel();
+		
+		String iface   = model.getData().getIface(server);
+		String netmask = model.getData().getNetmask();
+		
+		for (String srv : model.getServerLabels()) {
+			String[] cnames  = model.getData().getCnames(srv);
+			
+			String ip       = model.getServerModel(srv).getIP();
+			String gateway  = model.getServerModel(srv).getGateway();
+			String domain   = model.getData().getDomain(srv);
+			String hostname = srv.replaceAll("-", "_");
 
-				String[] subdomains = new String[cnames.length + 1];
-				System.arraycopy(new String[] {model.getData().getHostname(srv)},0,subdomains,0, 1);
-				System.arraycopy(cnames,0,subdomains,1, cnames.length);
+			String[] subdomains = new String[cnames.length + 1];
+			System.arraycopy(new String[] {model.getData().getHostname(srv)},0,subdomains,0, 1);
+			System.arraycopy(cnames,0,subdomains,1, cnames.length);
 
-				units.addElement(model.getServerModel(server).getInterfaceModel().addIface(srv.replaceAll("-", "_") + "_router_iface",
-																							"static",
-																							model.getData().getIface(server) + ((!srv.equals(server)) ? ":" + model.getData().getSubnet(srv) : ""),
-																							null,
-																							gateway,
-																							model.getData().getNetmask(),
-																							null,
-																							null));
-				
-				this.dns.addDomainRecord(domain, gateway, subdomains, ip);
+			if (!model.getServerModel(server).isMetal()) {
+				units.addElement(im.addIface(hostname + "_router_iface",
+										"static",
+										iface + ((!srv.equals(server)) ? ":0" + model.getData().getSubnet(srv) : ""),
+										null,
+										gateway,
+										netmask,
+										null,
+										null));
 			}
+			
+			this.dns.addDomainRecord(domain, gateway, subdomains, ip);
 			
 			for (String device : model.getDeviceLabels()) {
 				String[] gateways = model.getDeviceModel(device).getGateways();
 				String[] ips      = model.getDeviceModel(device).getIPs();
-				String   domain   = model.getData().getDomain(server);
-				String   subnet   = gateways[0].split("\\.")[2];
+				
+				domain   = model.getData().getDomain(server);
+				String subnet   = gateways[0].split("\\.")[2];
 				
 				for (int i = 0; i < gateways.length; ++i) {
 					String subdomain = device + "." + model.getLabel() + ".lan." + i;
@@ -261,7 +269,7 @@ public class Router extends AStructuredProfile {
 			
 			units.addElement(new SimpleUnit("ifaces_up", "proceed",
 					"sudo service networking restart",
-					"sudo ip addr | grep " + model.getData().getIface(server), "", "fail",
+					"sudo ip addr | grep " + iface, "", "fail",
 					"Couldn't bring your network interfaces up.  This can potentially be resolved by a restart (assuming you've had no other network-related errors)."));
 		}
 			
