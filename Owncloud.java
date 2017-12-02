@@ -204,6 +204,10 @@ public class Owncloud extends AStructuredProfile {
 				+ " -j ACCEPT");
 		}
 		
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_owncloud_update_check", "apps.owncloud.com", new String[]{"443"});
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_owncloud_updates", "updates.owncloud.org", new String[]{"443"});
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_owncloud_marketplace", "marketplace.owncloud.org", new String[]{"443"});
+
 		units.addAll(webserver.getPersistentFirewall(server, model));
 
 		return units;
