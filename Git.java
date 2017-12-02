@@ -5,7 +5,9 @@ import java.util.Vector;
 import core.iface.IUnit;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
+import core.unit.SimpleUnit;
 import core.unit.fs.FileEditUnit;
+import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
@@ -62,6 +64,25 @@ public class Git extends AStructuredProfile {
 		
 		webserver.addLiveConfig("default", nginxConf);
 		units.addAll(webserver.getPersistentConfig(server, model));
+		
+		String systemd = "";
+		systemd += "[Unit]\n";
+		systemd += "Description=scm-manager\n";
+		systemd += "After=network.target auditd.service\n";
+		systemd += "\n";
+		systemd += "[Service]\n";
+		systemd += "ExecStart=/etc/init.d/scm-server start\n";
+		systemd += "ExecStop=/etc/init.d/scm-server stop\n";
+		systemd += "Restart=always\n";
+		systemd += "\n";
+		systemd += "[Install]\n";
+		systemd += "WantedBy=default.target";
+
+		units.addElement(new FileUnit("scm_service", "scm_server_installed", systemd, "/etc/systemd/system/scm.service"));
+
+		units.addElement(new SimpleUnit("scm_service_enabled", "scm_service",
+				"sudo systemctl enable scm.service",
+				"systemctl status scm.service 2>&1", "Unit scm.service could not be found.", "fail"));
 		
 		return units;
 	}
