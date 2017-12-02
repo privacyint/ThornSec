@@ -38,7 +38,7 @@ public class PHP extends AStructuredProfile {
 				"Couldn't get PHP-FPM listening as the webserver user.  This means your nginx will throw errors."));
 		units.addElement(new FileEditUnit("php_nginx_group", "php_fpm_installed", "^group = www-data", "group = nginx", "/etc/php/7.0/fpm/pool.d/www.conf",
 				"Couldn't get PHP-FPM listening as the webserver user.  This means your nginx will throw errors."));	
-		units.addElement(new FileEditUnit("php_env_path", "php_fpm_installed", "^;env\\[PATH\\]", "^env\\[PATH\\]", "/etc/php/7.0/fpm/pool.d/www.conf",
+		units.addElement(new FileEditUnit("php_env_path", "php_fpm_installed", "^;env\\[PATH\\]", "env\\[PATH\\]", "/etc/php/7.0/fpm/pool.d/www.conf",
 				"Couldn't set PHP's Path environment variable.  This may in some (very limited) instances cause some PHP software to act strangely."));
 		
 		return units;
