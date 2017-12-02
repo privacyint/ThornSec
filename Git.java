@@ -28,7 +28,7 @@ public class Git extends AStructuredProfile {
 				
 		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "scm_manager", "proceed", "deb http://maven.scm-manager.org/nexus/content/repositories/releases ./", "keyserver.ubuntu.com", "D742B261");
 		
-		units.addElement(new InstalledUnit("scm_admin", "scm_manager_gpg", "scm-server"));
+		units.addElement(new InstalledUnit("scm_server", "scm_manager_gpg", "scm-server"));
 		
 		units.addAll(webserver.getInstalled(server, model));
 		
@@ -40,7 +40,7 @@ public class Git extends AStructuredProfile {
 				
 		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "scm_base_dir", "proceed", "/media/metaldata/scm", "/media/data/scm", "scm", "scm", "0755"));
 		
-		units.addElement(new FileEditUnit("scm_admin_home", "scm_base_dir_mounted", "export SCM_HOME=/var/lib/scm", "export SCM_HOME=/media/data/scm", "/etc/default/scm-server",
+		units.addElement(new FileEditUnit("scm_server_home", "scm_base_dir_mounted", "export SCM_HOME=/var/lib/scm", "export SCM_HOME=/media/data/scm", "/etc/default/scm-server",
 				"Couldn't change scm-manager's data directory.  Its data will be stored in the VM only."));
 		
 		units.addElement(new RunningUnit("scm_server", "scm-server", "scm-server"));
