@@ -27,6 +27,8 @@ public class SSH extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		String sshdconf = "";
+		
+		sshdconf += (model.getServerModel(server).isRouter()) ? "ListenAddress " + model.getData().getIP() + "\n" : "";
 		sshdconf += "Port " + model.getData().getSSHPort(server) + "\n";
 		sshdconf += "Protocol 2\n";
 		sshdconf += "HostKey /etc/ssh/ssh_host_rsa_key\n";
