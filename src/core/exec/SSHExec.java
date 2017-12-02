@@ -52,13 +52,23 @@ public class SSHExec {
 				BufferedReader isr = new BufferedReader(new InputStreamReader(p.getInputStream()));
 				
 				//String buff = new String();
+				//int c;
+				//while ((c = isr.read()) != -1) {
+				//	readBuffer.append(String.valueOf((char) c));
+				//	System.out.print(String.valueOf((char) c));
+				//	outputStream.write(c);
+				//	outputStream.flush();
+				//}
+				String buff = "";
+				while ((buff = isr.readLine()) != null) {
+					readBuffer.append(buff);
+				}
 				int c;
-				while ((c = isr.read()) != -1) {
-					//readBuffer.append(String.valueOf((char) c);
-					System.out.print(String.valueOf((char) c));
-					outputStream.write(c);
+				for (int i = 0; i < readBuffer.length(); ++i) {
+					outputStream.write(readBuffer.charAt(i));
 					outputStream.flush();
 				}
+				
 				output = readBuffer.toString();
 				outputSem.release();
 			}
