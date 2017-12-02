@@ -51,34 +51,35 @@ public class Metal extends AStructuredProfile {
 
 		InterfaceModel im = model.getServerModel(server).getInterfaceModel();
 		
-		String serverCleanName = model.getData().getHostname(server);
-		String iface           = model.getData().getIface(server);
-		String netmask         = model.getData().getNetmask();
-		
-		//Add our actual physical iface
-		units.addElement(im.addIface(serverCleanName + "_primary_iface",
-								   "static",
-								   iface,
-								   null,
-								   model.getServerModel(server).getGateway(),
-								   netmask,
-								   null,
-								   null));
-		
-		//Add aliases for services
-		for (String service : model.getServerModel(server).getServices()) {
-			String subnet           = model.getData().getSubnet(service);
-			String serviceCleanName = service.replaceAll("-", "_");
-			String gateway          = model.getServerModel(service).getGateway();
-			
-			units.addElement(im.addIface(serverCleanName + "_" + serviceCleanName + "_iface",
-								   "static",
-								   iface + ":" + subnet,
-								   null,
-								   gateway,
-								   netmask,
-								   null,
-								   null));
+		if (model.getServerModel(server).isRouter()) {
+			units.addElement(im.addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(server),
+									   "static",
+									   "br" + model.getData().getSubnet(server),
+									   "none",
+									   model.getServerModel(server).getGateway(),
+									   model.getData().getNetmask(),
+									   null,
+									   null));			
+			for (String service : model.getServerModel(server).getServices()) {
+				units.addElement(im.addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(service),
+									   "static",
+									   "br" + model.getData().getSubnet(service),
+									   "none",
+									   model.getServerModel(service).getGateway(),
+									   model.getData().getNetmask(),
+									   null,
+									   null));
+			}
+		}
+		else {
+			units.addElement(im.addIface(server.replace("-", "_") + "_primary_iface",
+									   "static",
+									   model.getData().getIface(server),
+									   null,
+									   model.getServerModel(server).getIP(),
+									   model.getData().getNetmask(),
+									   null,
+									   model.getServerModel(server).getGateway()));
 		}
 
 		units.addAll(backups.getPersistentConfig(server, model));
@@ -113,12 +114,18 @@ public class Metal extends AStructuredProfile {
 					"echo $" + service.toUpperCase() + "_PASSWORD", "", "fail",
 					"Couldn't set the passphrase for " + service + ".  You won't be able to configure this service."));
 			
+			String bridge = "";
+			if (model.getServerModel(server).isRouter()) {
+				bridge = "br" + model.getData().getSubnet(service);
+			}
+			else {
+				bridge = model.getData().getIface(server);
+			}
+			
 			units.addAll(hypervisor.buildIso(server, service, model, hypervisor.preseed(server, service, model, expirePasswords)));
-			units.addAll(hypervisor.buildVm(server, service, model, model.getData().getIface(server) + ":" + model.getData().getSubnet(service)));
+			units.addAll(hypervisor.buildVm(server, service, model, bridge));
 		}
 		
 		return units;
 	}
-	
-
 }
