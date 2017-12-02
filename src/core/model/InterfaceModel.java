@@ -36,7 +36,7 @@ public class InterfaceModel extends AModel {
 		net += (bridgePorts != null) ?  "\n" + "bridge_ports " + bridgePorts : "";
 		net += (address != null) ? "\n" + "address " + address : "";
 		net += (netmask != null) ? "\n" + "netmask " + netmask : "";
-		net += (broadcast != null) ? "\n" + "broadcast " + netmask : "";
+		net += (broadcast != null) ? "\n" + "broadcast " + broadcast : "";
 		net += (gateway != null) ? "\n" + "gateway " + gateway : "";
 		stanzas.add(net);
 		ifaces.add(iface);
