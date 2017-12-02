@@ -404,6 +404,11 @@ public class Router extends AStructuredProfile {
 			//Log anything hopping to our egress chain
 			fm.addFilter(cleanServerName + "_log_egress_traffic", egressChain,
 					"-j LOG --log-prefix \\\"ipt-" + cleanServerName + ": \\\"");
+			//Allow related ingress traffic
+			fm.addFilter(cleanServerName + "_allow_related_ingress_traffic", ingressChain,
+					"-p tcp"
+					+ " -m state --state ESTABLISHED,RELATED"
+					+ " -j ACCEPT");
 
 		}
 	
@@ -467,6 +472,7 @@ public class Router extends AStructuredProfile {
 						fm.addFilter(cleanUserName + "_allow_ssh_traffic_" + srv.replaceAll("-",  "_"), fwdChain,
 								"-i " + intIface + iface
 								+ " -d " + model.getServerModel(srv).getSubnet() + "/30"
+								+ " -p tcp"
 								+ " --dport " + model.getData().getSSHPort(srv)
 								+ " -j ACCEPT");
 					}
