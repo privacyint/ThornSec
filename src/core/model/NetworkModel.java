@@ -51,41 +51,47 @@ public class NetworkModel {
 		devices = new HashMap<>();
 		units = new HashMap<>();
 		
-		String[] serverLabels = data.getServerLabels();
-		for (int i = 0; i < serverLabels.length; i++) {
-			ServerModel sm = new ServerModel(serverLabels[i]);
+		for (String server : data.getServerLabels()) {
+			ServerModel sm = new ServerModel(server);
 			sm.setData(this.data);
-			servers.put(serverLabels[i], sm);
+			servers.put(server, sm);
 		}
 
-		for (int i = 0; i < serverLabels.length; ++i) {
-			servers.get(serverLabels[i]).init(this);
+		//Need to init them out here as they may depend on others
+		for (String server : data.getServerLabels()) {
+			servers.get(server).init(this);
 		}
 		
-		String[] deviceLabels = data.getDeviceLabels();
-		for (int i = 0; i < deviceLabels.length; ++i) {
-			DeviceModel dm = new DeviceModel(deviceLabels[i]);
+		for (String device : data.getDeviceLabels()) {
+			DeviceModel dm = new DeviceModel(device);
 			dm.setData(this.data);
-			devices.put(deviceLabels[i], dm);
-		}
-		
-		for (int i = 0; i < deviceLabels.length; ++i) {
-			devices.get(deviceLabels[i]).init(this);
+			devices.put(device, dm);
+			//Can init them in this loop as they don't depend on others
+			dm.init(this);
 		}
 		
 		//We need to do it in the following order: devices, services, metals, routers.
 		//This is because inherited rules (e.g. IPTables) will only ever go in that direction
-		for (int i = 0; i < deviceLabels.length; ++i) {
-			units.put(deviceLabels[i], devices.get(deviceLabels[i]).getUnits());
+		for (String device : data.getDeviceLabels()) {
+			//Remove duplication
+			if (!units.containsKey(device)) {
+				units.put(device, devices.get(device).getUnits());
+			}
 		}
 		for (int i = 0; i < services.size(); ++i) {
-			units.put(services.get(i), servers.get(services.get(i)).getUnits());
+			if (!units.containsKey(services.get(i))) {
+				units.put(services.get(i), servers.get(services.get(i)).getUnits());
+			}
 		}
 		for (int i = 0; i < metals.size(); ++i) {
-			units.put(metals.get(i), servers.get(metals.get(i)).getUnits());
+			if (!units.containsKey(metals.get(i))) {
+				units.put(metals.get(i), servers.get(metals.get(i)).getUnits());
+			}
 		}
 		for (int i = 0; i < routers.size(); ++i) {
-			units.put(routers.get(i), servers.get(routers.get(i)).getUnits());
+			if (!units.containsKey(routers.get(i))) {
+				units.put(routers.get(i), servers.get(routers.get(i)).getUnits());
+			}
 		}
 	}
 
