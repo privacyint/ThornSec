@@ -7,6 +7,7 @@ import javax.json.JsonObject;
 
 import core.iface.IUnit;
 import core.model.FirewallModel;
+import core.model.InterfaceModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
@@ -21,6 +22,7 @@ public class Router extends AStructuredProfile {
 	private DNS dns;
 	private DHCP dhcp;
 	private QoS qos;
+	private Vector<String> userIfaces;
 	
 	public Router() {
 		super("router");
@@ -28,6 +30,9 @@ public class Router extends AStructuredProfile {
 		dns = new DNS();
 		dhcp = new DHCP();
 		qos = new QoS();
+		
+		userIfaces = new Vector<String>();
+		userIfaces.addElement(":2+");
 	}
 
 	public DHCP getDHCP() {
@@ -82,6 +87,10 @@ public class Router extends AStructuredProfile {
 	
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
+		
+		if (!model.getData().getVpnOnly()) {
+			userIfaces.addElement(":1+");
+		}
 		
 		units.addAll(dhcp.getPersistentFirewall(server, model));
 		units.addAll(dns.getPersistentFirewall(server, model));
@@ -237,14 +246,14 @@ public class Router extends AStructuredProfile {
 				for (int i = 0; i < gateways.length; ++i) {
 					String subdomain = device + "." + model.getLabel() + ".lan." + i;
 					
-					units.addElement(model.getServerModel(server).getInterfaceModel().addIface(device.replaceAll("-", "_") + "_router_iface_" + i,
-																								"static",
-																								model.getData().getIface(server) + ":" + subnet + i,
-																								null,
-																								gateways[i],
-																								model.getData().getNetmask(),
-																								null,
-																								null));
+					units.addElement(im.addIface(device.replaceAll("-", "_") + "_router_iface_" + i,
+											"static",
+											iface + ":1" + subnet + i,
+											null,
+											gateways[i],
+											netmask,
+											null,
+											null));
 					
 					this.dns.addDomainRecord(domain, gateways[i], new String[] {subdomain}, ips[i]);
 				}
@@ -446,29 +455,32 @@ public class Router extends AStructuredProfile {
 			//Allow superusers to SSH into our servers
 			if (model.getDeviceModel(user).getType().equals("superuser")) {
 				for (String srv : model.getServerLabels()) {
-					fm.addFilter(cleanUserName + "_allow_ssh_traffic_" + srv.replaceAll("-",  "_"), fwdChain,
-							"-s " + userSubnet
-							+ " -d " + model.getServerModel(srv).getSubnet() + "/30"
-							+ " -p tcp"
-							+ " --dport " + model.getData().getSSHPort(srv)
-							+ " -j ACCEPT");
+					for (String iface : userIfaces) {
+						fm.addFilter(cleanUserName + "_allow_ssh_traffic_" + srv.replaceAll("-",  "_"), fwdChain,
+								"-i " + intIface + iface
+								+ " -d " + model.getServerModel(srv).getSubnet() + "/30"
+								+ " --dport " + model.getData().getSSHPort(srv)
+								+ " -j ACCEPT");
+					}
 				}
 			}
 				
 			//Configure what they can do with internal only devices
-			String intOnlyRule = "";
-			intOnlyRule += "-s " + model.getDeviceModel(user).getSubnets()[0] + "/24";
-			intOnlyRule += " -d ";
+			for (String iface : userIfaces) { 
+				String intOnlyRule = "";
+				intOnlyRule += "-i " + intIface + iface;
+				intOnlyRule += " -d ";
 
-			for (String device : intOnly) {
-				intOnlyRule += model.getDeviceModel(device).getSubnets()[0] + "/30,";
+				for (String device : intOnly) {
+					intOnlyRule += model.getDeviceModel(device).getSubnets()[0] + "/30,";
+				}
+				
+				intOnlyRule = intOnlyRule.replaceAll(",$", ""); //Remove any trailing comma
+				intOnlyRule += " -p tcp";
+				intOnlyRule += " -m state --state NEW";
+				intOnlyRule += " -j ACCEPT";
+				fm.addFilter("allow_int_only_" + server, fwdChain, intOnlyRule);
 			}
-			
-			intOnlyRule = intOnlyRule.replaceAll(",$", ""); //Remove any trailing comma
-			intOnlyRule += " -p tcp";
-			intOnlyRule += " -m state --state NEW";
-			intOnlyRule += " -j ACCEPT";
-			fm.addFilter("allow_int_only_" + server, fwdChain, intOnlyRule);
 
 			//Users can talk to the outside world
 			fm.addFilter(cleanUserName + "_allow_egress_traffic", egressChain,
@@ -567,7 +579,7 @@ public class Router extends AStructuredProfile {
 			intOnlyRule += " -m state --state NEW";
 			intOnlyRule += " -j ACCEPT";
 			fm.addFilter("allow_users_" + device, fwdChain, intOnlyRule);
-
+			
 			fm.addFilter(cleanDeviceName + "_allow_related_traffic", fwdChain,
 					"-p tcp"
 					+ " -m state --state ESTABLISHED,RELATED"
@@ -670,12 +682,17 @@ public class Router extends AStructuredProfile {
 				
 				String address   = row.getString("address");
 				String netmask   = row.getString("netmask");
-				String gateway   = row.getString("gateway");
+				String gateway   = row.getString("gateway", null);
 				String broadcast = row.getString("broadcast");
-
+				String iface     = model.getData().getExtIface(server);
+				
+				if (i > 0) {
+					iface += ":" + i;
+				}
+				
 				units.addElement(model.getServerModel(server).getInterfaceModel().addIface("router_ext_static_iface_" + i,
 																							"static",
-																							model.getData().getExtIface(server),
+																							iface,
 																							null,
 																							address,
 																							netmask,
