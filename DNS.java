@@ -143,32 +143,32 @@ public class DNS extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterInput("dns_ipt_in_udp",
-				"-i " + model.getData().getIface(server) + " -p udp --dport 53 -j ACCEPT"));
+				"-p udp --dport 53 -j ACCEPT"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("dns_ipt_out_udp",
-				"-o " + model.getData().getIface(server) + " -p udp --sport 53 -j ACCEPT"));
+				"-p udp --sport 53 -j ACCEPT"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterInput("dns_ipt_in_tcp",
-				"-i " + model.getData().getIface(server) + " -p tcp --dport 53 -j ACCEPT"));
+				"-p tcp --dport 53 -j ACCEPT"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("dns_ipt_out_tcp",
-				"-o " + model.getData().getIface(server) + " -p tcp --sport 53 -j ACCEPT"));
+				"-p tcp --sport 53 -j ACCEPT"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("dns_ipt_out_tcp_lo",
-				"-o " + model.getData().getIface(server) + " -p tcp --dport 953 -j ACCEPT"));
+				"-p tcp --dport 53 -j ACCEPT"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addChain("dns_ipt_chain", "filter", "dnsd"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext", "dnsd", "-j DROP"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_log", "dnsd",
 				"-j LOG --log-prefix \\\"ipt-dnsd: \\\""));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterInput("dns_ext_in",
-				"-i " + model.getData().getExtIface(server) + " -p udp --sport 53 -j dnsd"));
+				"-p udp --sport 53 -j dnsd"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("dns_ext_out",
-				"-o " + model.getData().getExtIface(server) + " -p udp --sport 53 -j dnsd"));
+				"-p udp --sport 53 -j dnsd"));
 		
 		int count = 1;
 		StringTokenizer str = new StringTokenizer(model.getData().getDNS());
 		while (str.hasMoreTokens()) {
 			String ip = str.nextToken(";");
 			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_server_in_" + count,
-					"dnsd", "-i " + model.getData().getExtIface(server) + " -s " + ip + " -p udp --sport 53 -j ACCEPT"));
+					"dnsd", "-s " + ip + " -p udp --sport 53 -j ACCEPT"));
 			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_server_out_" + count,
-					"dnsd", "-o " + model.getData().getExtIface(server) + " -d " + ip + " -p udp --dport 53 -j ACCEPT"));
+					"dnsd", "-d " + ip + " -p udp --dport 53 -j ACCEPT"));
 			count++;
 		}
 
