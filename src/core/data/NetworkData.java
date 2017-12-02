@@ -10,7 +10,7 @@ import javax.json.JsonObject;
 
 public class NetworkData extends AData {
 
-	private String ipClass, domain, dns, ip, adBlocking, gpg, autoGenPasswds, adminEmail;
+	private String ipClass, domain, dns, ip, adBlocking, gpg, autoGenPasswds, adminEmail, vpnOnly;
 
 	private ServerData defaultServerData;
 
@@ -39,6 +39,7 @@ public class NetworkData extends AData {
 			this.gpg = data.getString("gpg", null);
 			this.autoGenPasswds = data.getString("autogenpasswds", "false"); //Default to false
 			this.adminEmail = data.getString("adminemail", null);
+			this.vpnOnly = data.getString("vpnonly", "no");
 			defaultServerData = new ServerData("");
 			defaultServerData.read(data);
 			servers = new HashMap<String, ServerData>();
@@ -123,6 +124,10 @@ public class NetworkData extends AData {
 	
 	public boolean getAdBlocking() {
 		return adBlocking.equals("yes");
+	}
+
+	public boolean getVpnOnly() {
+		return vpnOnly.equals("yes");
 	}
 	
 	public String[] getServerLabels() {
@@ -368,5 +373,9 @@ public class NetworkData extends AData {
 	
 	public Boolean getDeviceThrottled(String device) {
 		return this.devices.get(device).getThrottled();
+	}
+
+	public Boolean getDeviceManaged(String device) {
+		return this.devices.get(device).getManaged();
 	}
 }
