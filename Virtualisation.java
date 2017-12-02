@@ -62,13 +62,14 @@ public class Virtualisation extends AStructuredProfile {
 	
 	public String preseed(String server, String service, NetworkModel model, Boolean expirePasswords) {
 
-		String   user         = model.getData().getUser(service);
-		String   sshDir       = "/home/" + user + "/.ssh";
-		String[] pubKeys      = model.getData().getUserKeys(service);
-		String   hostname     = model.getData().getHostname(service);
-		String   domain       = model.getData().getDomain(service);
-		String   fullName     = model.getData().getFullName(service);
-		String   debianMirror = model.getData().getDebianMirror(service);
+		String   user            = model.getData().getUser(service);
+		String   sshDir          = "/home/" + user + "/.ssh";
+		String[] pubKeys         = model.getData().getUserKeys(service);
+		String   hostname        = model.getData().getHostname(service);
+		String   domain          = model.getData().getDomain(service);
+		String   fullName        = model.getData().getFullName(service);
+		String   debianMirror    = model.getData().getDebianMirror(service);
+		String   debianDirectory = model.getData().getDebianDirectory(service);
 
 		String preseed = "";
 		//Set up new box before rebooting. Sometimes you need to echo out in chroot;
@@ -114,7 +115,7 @@ public class Virtualisation extends AStructuredProfile {
 		preseed += "d-i netcfg/hostname string " + hostname + "\n";
 		preseed += "d-i mirror/country string GB\n";
 		preseed += "d-i mirror/http/mirror string " + debianMirror + "\n";
-		preseed += "d-i mirror/http/directory string /debian\n";
+		preseed += "d-i mirror/http/directory string " + debianDirectory + "\n";
 		preseed += "d-i mirror/http/proxy string\n";
 		preseed += "d-i passwd/root-password-crypted password ${" + service.toUpperCase() + "_PASSWORD}\n";
 		preseed += "d-i passwd/user-fullname string " + fullName + "\n";
