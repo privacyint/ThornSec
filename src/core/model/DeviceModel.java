@@ -107,4 +107,8 @@ public class DeviceModel extends AModel {
 	public Boolean isThrottled() {
 		return this.networkData.getDeviceThrottled(this.getLabel());
 	}
+
+	public Boolean isManaged() {
+		return this.networkData.getDeviceManaged(this.getLabel());
+	}
 }
