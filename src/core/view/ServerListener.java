@@ -31,6 +31,8 @@ public class ServerListener implements ActionListener {
 			network.configNonBlock(server, out, in);
 		else if (action.equals("Build ISO"))
 			network.genIsoServer(server, "./");
+		else if (action.equals("Audit All"))
+			network.auditAll(out, in, false);
  	}
 
 }

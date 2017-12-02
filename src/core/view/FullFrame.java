@@ -366,6 +366,13 @@ public class FullFrame {
 		}
 
 		serverPanel.add(serverTree);
+
+		GridBagConstraints g = new GridBagConstraints();
+		g.fill = GridBagConstraints.VERTICAL;
+		JButton buildiso = new JButton("Audit All");
+		buildiso.addActionListener(new ServerListener(null, model, out, System.in));
+		serverPanel.add(buildiso, g);
+
 		serverPane.setViewportView(serverPanel);
 
 		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);

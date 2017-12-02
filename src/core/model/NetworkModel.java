@@ -152,6 +152,14 @@ public class NetworkModel {
 			exec.runNonBlock();
 	}
 
+	public void auditAll(OutputStream out, InputStream in, boolean quiet) {
+		for (String server : this.servers.keySet()) {
+			ManageExec exec = getManageExec(server, "audit", out, quiet);
+			if (exec != null)
+				exec.runNonBlock();
+		}
+	}
+
 //	public void configBlock(String server, OutputStream out, InputStream in) {
 //		ManageExec exec = getManageExec(server, "config", out, false);
 //		if (exec != null)
