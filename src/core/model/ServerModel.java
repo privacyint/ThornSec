@@ -132,36 +132,36 @@ public class ServerModel extends AModel {
 		this.pm.addProcess("sshd: " + networkModel.getData().getUser(this.getLabel()) + " \\[priv\\]$");
 		this.pm.addProcess("sshd: " + networkModel.getData().getUser(this.getLabel()) + "@pts/0$");
 		
-		String[] types = this.networkData.getTypes(this.getLabel());
-		for (int i = 0; i < types.length; i++) {
-			if (types[i].equals("router")) {
-				//router = new Router();
-				units.addAll(router.getUnits(this.getLabel(), networkModel));
-			} else if (types[i].equals("metal")) {
-				Metal metal = new Metal();
-				units.addAll(metal.getUnits(this.getLabel(), networkModel));
-			} else if (types[i].equals("service")) {
-				Service service = new Service();
-				units.addAll(service.getUnits(this.getLabel(), networkModel));
-			} else {
-				System.out.println("Unsupported type: " + types[i]);
 		//Useful packages
 		units.addElement(new InstalledUnit("sysstat", "proceed", "sysstat"));
 		units.addElement(new InstalledUnit("net_tools", "proceed", "net-tools"));
 		units.addElement(new InstalledUnit("htop", "proceed", "htop"));
+		
+		for (String type : this.getTypes()) {
+			switch (type) {
+				case "router":
+					units.addAll(router.getUnits(this.getLabel(), networkModel));
+					break;
+				case "metal":
+					Metal metal = new Metal();
+					units.addAll(metal.getUnits(this.getLabel(), networkModel));
+					break;
+				case "service":
+					Service service = new Service();
+					units.addAll(service.getUnits(this.getLabel(), networkModel));
+					break;
+				default:
+					System.out.println("Unsupported type: " + type);
 			}
 
 		}
 		
-		String profiles[] = this.networkData.getServerProfiles(this.getLabel());
-		if (profiles != null) {
-			for (int i = 0; i < profiles.length; i++) {
-				try {
-					AProfile profile = (AProfile) Class.forName("profile." + profiles[i]).newInstance();
-					units.addAll(profile.getUnits(this.getLabel(), networkModel));
-				} catch (Exception e) {
-					System.err.println(profiles[i]);
-				}
+		for (String profile : this.getProfiles()) {
+			try {
+				AProfile profileClass = (AProfile) Class.forName("profile." + profile).newInstance();
+				units.addAll(profileClass.getUnits(this.getLabel(), networkModel));
+			} catch (Exception e) {
+				System.err.println(profile);
 			}
 		}
 		
@@ -337,31 +337,26 @@ public class ServerModel extends AModel {
 			    }
 			});
 			
-			String ip           = model.getServerModel(server).getIP();
+			String serverIp     = model.getServerModel(server).getIP();
 			String cleanName    = server.replaceAll("-",  "_");
 			String ingressChain = cleanName + "_ingress";
 			String egressChain  = cleanName + "_egress";
 			
-			Vector<String> routers = model.getRouters();
-			Iterator<String> itr = routers.iterator();
-			
-			while (itr.hasNext()) {
-				String router = itr.next();
-				
-				for (int i = 0; i < ips.length; ++i) {
-					if (!ips[i].getHostAddress().contains(":")) { //no IPv6, please
-						for (int j = 0; j < ports.length; ++j) {
-							model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_in_" + ports[j], ingressChain,
-									"-s " + ips[i].getHostAddress()
-									+ " -d " + ip
+			for (String router : model.getRouters()) {
+				for (InetAddress ip : ips) {
+					if (!ip.getHostAddress().contains(":")) { //no IPv6, please
+						for (String port : ports) {
+							model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_in_" + port, ingressChain,
+									"-s " + ip.getHostAddress()
+									+ " -d " + serverIp
 									+ " -p tcp"
-									+ " --sport " + ports[j]
+									+ " --sport " + port
 									+ " -j ACCEPT");
-							model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_out_" + ports[j], egressChain,
-									"-d " + ips[i].getHostAddress()
-									+ " -s " + ip
+							model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_out_" + port, egressChain,
+									"-d " + ip.getHostAddress()
+									+ " -s " + serverIp
 									+ " -p tcp"
-									+ " --dport " + ports[j]
+									+ " --dport " + port
 									+ " -j ACCEPT");
 						}
 					}
