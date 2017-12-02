@@ -54,19 +54,6 @@ public class FirewallModel extends AModel {
 		this.addFilterOutput("iptables_out_tcp", "-p tcp -j ACCEPT");
 		this.addFilterOutput("iptables_out_udp", "-p udp -j ACCEPT");
 		this.addFilterOutput("iptables_out_icmp", "-p icmp -j ACCEPT");
-		
-		//We'll now do this on a per-server basis!
-		/*
-		this.addFilterOutput("base_debian1_out", "-d 78.129.164.123 -p tcp --dport 80 -j ACCEPT");
-		this.addFilterOutput("base_debian2_out", "-d 212.211.132.250 -p tcp --dport 80 -j ACCEPT");
-		this.addFilterOutput("base_debian3_out", "-d 212.211.132.32 -p tcp --dport 80 -j ACCEPT");
-		this.addFilterOutput("base_debian4_out", "-d 195.20.242.89 -p tcp --dport 80 -j ACCEPT");
-
-		this.addFilterInput("base_debian1_in", "-s 78.129.164.123 -p tcp --sport 80 -j ACCEPT");
-		this.addFilterInput("base_debian2_in", "-s 212.211.132.250 -p tcp --sport 80 -j ACCEPT");
-		this.addFilterInput("base_debian3_in", "-s 212.211.132.32 -p tcp --sport 80 -j ACCEPT");
-		this.addFilterInput("base_debian4_in", "-s 195.20.242.89 -p tcp --sport 80 -j ACCEPT");
-		*/
 	}
 
 	public Vector<IUnit> getUnits() {
