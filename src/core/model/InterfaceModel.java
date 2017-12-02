@@ -55,7 +55,7 @@ public class InterfaceModel extends AModel {
 		ifaces.add(iface);
 		return new SimpleUnit(name, "proceed", "echo \\\"handled by model\\\";",
 				"grep \"iface provider inet ppp\" /etc/network/interfaces;",
-				net, "pass");
+				"iface provider inet ppp", "pass");
 	}
 
 	private String getPersistent() {
