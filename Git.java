@@ -26,7 +26,7 @@ public class Git extends AStructuredProfile {
 		
 		units.addElement(new InstalledUnit("java", "proceed", "default-jre-headless"));
 				
-		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "scm_manager", "proceed", "deb http://maven.scm-manager.org/nexus/content/repositories/releases ./", "hkp://keyserver.ubuntu.com:80", "D742B261");
+		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "scm_manager", "proceed", "deb http://maven.scm-manager.org/nexus/content/repositories/releases ./", "keyserver.ubuntu.com", "D742B261");
 		
 		units.addElement(new InstalledUnit("scm_admin", "scm_manager_gpg", "scm-server"));
 		
