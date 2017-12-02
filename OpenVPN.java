@@ -83,7 +83,7 @@ public class OpenVPN extends AStructuredProfile {
 		//Need to push our routes here
 		String[] routes = model.getServerLabels();
 		for (int i = 0; i < routes.length; ++i) {
-			config += "push \\\"route " + model.getServerModel(routes[i]).getBroadcast() + " " + model.getData().getNetmask() + "\\\"\n";
+			config += "push \\\"route " + model.getServerModel(routes[i]).getSubnet() + " " + model.getData().getNetmask() + "\\\"\n";
 		}
 		config += "push \"redirect-gateway def1 bypass-dhcp\"\n";
                 config += "push \"dhcp-option DNS 10.8.0.1\"\n";

@@ -38,9 +38,8 @@ public class DNS extends AStructuredProfile {
 			domainRecords.put(domain, new Vector<String>());
 		}
 		records = domainRecords.get(domain);
-		
-		records.addElement("    local-data: \\\"" + subdomains[0] + " A " + ip + "\\\"");
-		records.addElement("    local-data: \\\"" + subdomains[0] + "." + domain + " A " + ip + "\\\"");
+
+		//subdomains[0] *should always* be the canonical hostname...
 		records.addElement("    local-data-ptr: \\\"" + ip + " " + subdomains[0] + "." + domain + "\\\"");
 		records.addElement("    local-data-ptr: \\\"" + gatewayIp + " router." + subdomains[0] + "." + domain + "\\\"");
 

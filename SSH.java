@@ -133,12 +133,11 @@ public class SSH extends AStructuredProfile {
 
 		units.addElement(new DirUnit("sshd_dir", "sshd_config", "/home/" + model.getData().getUser(server) + "/.ssh"));
 
-		String[] keys = model.getData().getUserKeys(server);
-		String concat = "";
-		for (int i = 0; i < keys.length; i++) {
-			concat += keys[i] + "\n";
+		String keys = "";
+		for (String key : model.getData().getUserKeys(server)) {
+			keys += key + "\n";
 		}
-		units.addElement(new FileUnit("sshd_keys", "sshd_dir_created", concat.trim(), "/home/" + model.getData().getUser(server) + "/.ssh/authorized_keys"));
+		units.addElement(new FileUnit("sshd_keys", "sshd_dir_created", keys.trim(), "/home/" + model.getData().getUser(server) + "/.ssh/authorized_keys"));
 
 		return units;
 	}

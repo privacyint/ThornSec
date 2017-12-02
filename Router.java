@@ -380,10 +380,8 @@ public class Router extends AStructuredProfile {
 			//Jump to the ingress/egress chains
 			fm.addFilter(cleanServerName + "_jump_ingress", fwdChain,
 					"-i " + extIface
-					//+ " -o " + intIface
 					+ " -j " + ingressChain);
 			fm.addFilter(cleanServerName + "_jump_egress", fwdChain,
-					//"-i " + intIface
 					"-o " + extIface
 					+ " -j " + egressChain);
 			//Log anything hopping to our egress chain
@@ -474,13 +472,11 @@ public class Router extends AStructuredProfile {
 
 			//Users can talk to the outside world
 			fm.addFilter(cleanUserName + "_allow_egress_traffic", egressChain,
-					//"-i " + intIface
 					"-o " + extIface
 					+ " -j ACCEPT");
 			//And can accept established/related traffic from the outside world, too
 			fm.addFilter(cleanUserName + "_allow_ingress_traffic", ingressChain,
 					"-i " + extIface
-					//+ " -o " + intIface
 					+ " -m state --state ESTABLISHED,RELATED"
 					+ " -j ACCEPT");
 
@@ -492,10 +488,8 @@ public class Router extends AStructuredProfile {
 			//Jump to the ingress/egress chains
 			fm.addFilter(cleanUserName + "_allow_ingress", fwdChain,
 					"-i " + extIface
-					//+ " -o " + intIface
 					+ " -j " + ingressChain);
 			fm.addFilter(cleanUserName + "_allow_egress", fwdChain,
-					//"-i " + intIface
 					"-o " + extIface
 					+ " -j " + egressChain);
 			
@@ -550,10 +544,8 @@ public class Router extends AStructuredProfile {
 			//Jump to the ingress/egress chains
 			fm.addFilter(cleanDeviceName + "_allow_ingress", fwdChain,
 					"-i " + extIface
-					//+ " -o " + intIface
 					+ " -j " + ingressChain);
 			fm.addFilter(cleanDeviceName + "_allow_egress", fwdChain,
-					//"-i " + intIface
 					"-o " + extIface
 					+ " -j " + egressChain);
 			//Log anything hopping to our egress chain
@@ -614,23 +606,19 @@ public class Router extends AStructuredProfile {
 
 			//External only devices can talk to the outside world
 			fm.addFilter(cleanDeviceName + "_allow_egress_traffic", egressChain,
-					//"-i " + intIface
 					"-o " + extIface
 					+ " -j ACCEPT");
 			//And can accept established/related traffic from the outside world, too
 			fm.addFilter(cleanDeviceName + "_allow_ingress_traffic", ingressChain,
 					"-i " + extIface
-					//+ " -o " + intIface
 					+ " -m state --state ESTABLISHED,RELATED"
 					+ " -j ACCEPT");
 			
 			//Jump to the ingress/egress chains
 			fm.addFilter(cleanDeviceName + "_allow_ingress", fwdChain,
 					"-i " + extIface
-					//+ " -o " + intIface
 					+ " -j " + ingressChain);
 			fm.addFilter(cleanDeviceName + "_allow_egress", fwdChain,
-					//"-i " + intIface
 					"-o " + extIface
 					+ " -j " + egressChain);
 		}
