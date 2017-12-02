@@ -51,8 +51,8 @@ public class Virtualisation extends AStructuredProfile {
 	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		model.getServerModel(server).getProcessModel().addProcess("/usr/lib/virtualbox/VBoxXPCOMIPCD$");
-		model.getServerModel(server).getProcessModel().addProcess("/usr/lib/virtualbox/VBoxSVC --auto-shutdown$");
+		model.getServerModel(server).getProcessModel().addProcess("/usr/lib/virtualbox/VBoxXPCOMIPCD");
+		model.getServerModel(server).getProcessModel().addProcess("/usr/lib/virtualbox/VBoxSVC --auto-shutdown");
 		model.getServerModel(server).getProcessModel().addProcess("\\[iprt-VBoxWQueue\\]");
 		model.getServerModel(server).getProcessModel().addProcess("\\[iprt-VBoxTscThr\\]");
 		model.getServerModel(server).getProcessModel().addProcess("\\[kvm-irqfd-clean\\]");
