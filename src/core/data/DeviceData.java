@@ -9,6 +9,7 @@ public class DeviceData extends AData {
 	private String[]   macs;
 	private String     type;
 	private Boolean    throttled;
+	private Boolean    managed;
 	
 	public DeviceData(String label) {
 		super(label);
@@ -31,6 +32,7 @@ public class DeviceData extends AData {
 		}
 		
 		throttled = data.getString("throttle", "true").equals("true");
+		managed   = data.getString("managed", "false").equals("true");
 	}
 
 	public String getProperty(String property) {
@@ -47,6 +49,10 @@ public class DeviceData extends AData {
 	
 	public Boolean getThrottled() {
 		return this.throttled;
+	}
+
+	public Boolean getManaged() {
+		return this.managed;
 	}
 	
 }
