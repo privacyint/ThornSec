@@ -141,7 +141,7 @@ public class DNS extends AStructuredProfile {
 		units.addElement(new InstalledUnit("dns", "unbound"));
 
 		model.getServerModel(server).getUserModel().addUsername("unbound");
-		model.getServerModel(server).getProcessModel().addProcess("/usr/sbin/unbound$");
+		model.getServerModel(server).getProcessModel().addProcess("/usr/sbin/unbound -d$");
 
 		return units;
 	}
