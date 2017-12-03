@@ -695,7 +695,7 @@ public class Router extends AStructuredProfile {
 			units.addElement(new RunningUnit("ext_ppp", "ppp", "pppd-dns"));
 			units.addElement(model.getServerModel(server).getInterfaceModel().addPPPIface("router_ext_ppp_iface", model.getData().getProperty(server, "pppiface")));
 			model.getServerModel(server).getProcessModel().addProcess("/usr/sbin/pppd call provider$");
-			units.addElement(new FileUnit("resolv_conf", "proceed", "nameserver " + model.getServerModel(server).getIP(), "/etc/ppp/resolv.conf"));
+			units.addElement(new FileUnit("resolv_conf", "proceed", "nameserver 127.0.0.1", "/etc/ppp/resolv.conf"));
 		}
 		else if (model.getData().getExtConn(server).equals("dhcp")){
 			units.addElement(model.getServerModel(server).getInterfaceModel().addIface("router_ext_dhcp_iface", 
