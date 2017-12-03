@@ -136,6 +136,10 @@ public class Drupal8 extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_drupal", "drupal.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_packagist", "packagist.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_api_github", "api.github.com", new String[]{"80","443"});
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_github", "github.com", new String[]{"80","443"});
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_codeload_github", "codeload.github.com", new String[]{"80","443"});
 		units.addAll(webserver.getPersistentFirewall(server, model));
 
 		return units;
