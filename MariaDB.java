@@ -30,6 +30,9 @@ public class MariaDB extends AStructuredProfile {
 		
 		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "mariadb", "proceed", "deb http://mirror.sax.uk.as61049.net/mariadb/repo/10.2/debian stretch main", "keyserver.ubuntu.com", "0xF1656F24C74CD1D8");
 		
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_mariadb", "mirror.sax.uk.as61049.net", new String[]{"80","443"});
+
+		
 		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "mariadb_logs", "proceed", "/var/log/.mysql", "/var/log/mysql", "mysql", "mysql", "0755"));
 
 		//Generate a root password, if not already installed
