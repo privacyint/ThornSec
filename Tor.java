@@ -102,7 +102,7 @@ public class Tor extends AStructuredProfile {
 		proxyConfig += "    }\n";
 		proxyConfig += "\n";
 		proxyConfig += "    location / {\n";
-		proxyConfig += "      proxy_pass \\\"\\$scheme://" + model.getServerModel(model.getData().getProperty(server, "proxyto")).getIP() + "\\\";\n";
+		proxyConfig += "      proxy_pass \\\"\\$scheme://" + model.getServerModel(model.getData().getPropertyArray(server, "proxy")[0]).getIP() + "\\\";\n";
 		proxyConfig += "      proxy_http_version 1.1;\n";
 		proxyConfig += "      proxy_set_header Accept-Encoding \\\"\\\";\n";
 		proxyConfig += "      proxy_set_header Connection $connection_upgrade;\n";
@@ -137,6 +137,14 @@ public class Tor extends AStructuredProfile {
 		
 		units.addElement(new RunningUnit("tor", "tor", "/usr/bin/tor"));
 		model.getServerModel(server).getProcessModel().addProcess("/usr/bin/tor --defaults-torrc /usr/share/tor/tor-service-defaults-torrc -f /etc/tor/torrc --RunAsDaemon 0$");
+		
+		return units;
+	}
+	
+	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+		Vector<IUnit> units = new Vector<IUnit>();
+		
+		units.addAll(proxy.getPersistentFirewall(server, model));
 		
 		return units;
 	}
