@@ -27,7 +27,7 @@ public class Virtualisation extends AStructuredProfile {
 		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "virtualbox", "proceed", "deb http://download.virtualbox.org/virtualbox/debian stretch contrib", "keyserver.ubuntu.com", "0xa2f683c52980aecf");
 		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_virtualbox", "download.virtualbox.org", new String[]{"80"});
 
-		units.addElement(new InstalledUnit("metal_virtualbox", "virtualbox_gpg", "virtualbox-5.1"));
+		units.addElement(new InstalledUnit("metal_virtualbox", "virtualbox_gpg", "virtualbox-5.2"));
 		units.addElement(new InstalledUnit("metal_genisoimage", "genisoimage"));
 		units.addElement(new InstalledUnit("metal_rsync", "rsync"));
 		units.addElement(new InstalledUnit("metal_git", "git"));
