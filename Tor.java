@@ -145,6 +145,8 @@ public class Tor extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
+		//Allow the server to call out to torproject.org to download mainline
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_torproject", "deb.torproject.org", new String[]{"80","443"});
 		units.addAll(proxy.getPersistentFirewall(server, model));
 		
 		return units;
