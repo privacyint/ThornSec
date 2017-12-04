@@ -39,9 +39,9 @@ public class DrupalCommons extends AStructuredProfile {
 		units.addAll(drupal.getLiveConfig(server, model));
 
 		units.addElement(new SimpleUnit("commons_installed", "drupal_installed",
-				"sudo drush -y -r /media/data/www dl commons"
-				+ " && sudo drush si -y -r /media/data/www commons",
-				"sudo drush -r /media/data/www pm-info commons 2>&1 | grep 'Status' | awk '{print $3}'", "enabled", "pass"));
+				"sudo /media/data/drush/drush -y -r /media/data/www dl commons"
+				+ " && sudo /media/data/drush/drush si -y -r /media/data/www commons",
+				"sudo /media/data/drush/drush -r /media/data/www pm-info commons 2>&1 | grep 'Status' | awk '{print $3}'", "enabled", "pass"));
 
 		return units;
 	}
