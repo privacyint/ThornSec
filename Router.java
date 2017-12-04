@@ -331,7 +331,6 @@ public class Router extends AStructuredProfile {
 		
 		FirewallModel fm = model.getServerModel(server).getFirewallModel();
 
-		String intIface = model.getData().getIface(server);
 		String extIface = model.getData().getExtIface(server);
 
 		for (String device : model.getDeviceLabels()) {
