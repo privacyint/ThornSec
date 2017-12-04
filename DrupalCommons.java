@@ -28,7 +28,7 @@ public class DrupalCommons extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
-		units.addAll(drupal.getLiveConfig(server, model));
+		units.addAll(drupal.getPersistentConfig(server, model));
 		
 		return units;
 	}
