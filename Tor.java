@@ -39,8 +39,6 @@ public class Tor extends AStructuredProfile {
 		
 		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "tor", "tor_installed", "/media/metaldata/tor", "/media/data/tor", "debian-tor", "debian-tor", "0755"));
 
-		units.addAll(proxy.getPersistentConfig(server, model));
-		
 		//Configs here based on the eotk (c) Alec Muffet
 		//https://github.com/alecmuffett/eotk
 		//Released under GPL v3 https://github.com/alecmuffett/eotk/blob/master/LICENSE
@@ -60,7 +58,6 @@ public class Tor extends AStructuredProfile {
 		torConfig += "HiddenServicePort 443 unix:/media/data/tor/port-443.sock";
 
 		units.add(new FileUnit("tor_config", "tor_installed", torConfig, "/etc/tor/torrc"));
-		
 		
 		String proxyConfig = "";
 		proxyConfig += "http {\n";
@@ -138,7 +135,8 @@ public class Tor extends AStructuredProfile {
 		
 		units.addElement(new RunningUnit("tor", "tor", "/usr/bin/tor"));
 		model.getServerModel(server).getProcessModel().addProcess("/usr/bin/tor --defaults-torrc /usr/share/tor/tor-service-defaults-torrc -f /etc/tor/torrc --RunAsDaemon 0$");
-		
+		units.addAll(proxy.getLiveConfig(server, model));
+
 		return units;
 	}
 	
