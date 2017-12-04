@@ -122,7 +122,7 @@ public class Drupal extends AStructuredProfile {
 		
 		units.addElement(new SimpleUnit("drupal_installed", "drush_installed",
 				"sudo /media/data/drush/drush -y dl drupal-7 --destination=/media/data --drupal-project-rename=www"
-				+ " && sudo /media/data/drush/drush -y -r /media/data/www site-install --db-url=mysql://drupal:${DRUPAL_PASSWORD}@localhost:3306/drupal --db-prefix=drupal --account-pass=admin",
+				+ " && sudo /media/data/drush/drush -y -r /media/data/www site-install --db-url=mysql://drupal:${DRUPAL_PASSWORD}@localhost:3306/drupal --account-pass=admin",
 				"sudo /media/data/drush/drush status -r /media/data/www 2>&1 | grep 'Drupal root'", "", "fail",
 				"Couldn't install Drupal."));
 		
