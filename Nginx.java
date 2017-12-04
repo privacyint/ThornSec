@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import core.iface.IUnit;
+import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
@@ -89,10 +90,35 @@ public class Nginx extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.add(model.getServerModel(server).getFirewallModel().addFilterInput(server, "-p tcp --dport 80 -m state --state NEW,ESTABLISHED -j ACCEPT"));
-		units.add(model.getServerModel(server).getFirewallModel().addFilterInput(server, "-p tcp --dport 443 -m state --state NEW,ESTABLISHED -j ACCEPT"));
-		units.add(model.getServerModel(server).getFirewallModel().addFilterOutput(server, "-p tcp --sport 80 -m state --state ESTABLISHED -j ACCEPT"));
-		units.add(model.getServerModel(server).getFirewallModel().addFilterOutput(server, "-p tcp --sport 443 -m state --state ESTABLISHED -j ACCEPT"));
+		FirewallModel fm = model.getServerModel(server).getFirewallModel();
+		//Allow the box to tx/rx on :80&&:443
+		units.add(fm.addFilterInput(server,
+				"-p tcp"
+				+ " -m state --state NEW,ESTABLISHED"
+				+ " -m tcp -m multiport --dports 80,443"
+				+ " -j ACCEPT"));
+		units.add(fm.addFilterOutput(server,
+				"-p tcp"
+				+ " -m state --state ESTABLISHED,RELATED"
+				+ " -m tcp -m multiport --sports 80,443"
+				+ " -j ACCEPT"));
+		
+		for (String router : model.getRouters()) {
+			
+			FirewallModel routerFm = model.getServerModel(router).getFirewallModel();
+		
+			routerFm.addFilter(server + "_ingress_80_443_allow", server + "_ingress",
+					"-p tcp"
+					+ " -m state --state NEW,ESTABLISHED,RELATED"
+					+ " -m tcp -m multiport --dports 80,443"
+					+ " -j ACCEPT");
+			routerFm.addFilter(server + "_egress_80_443_allow", server + "_egress",
+					"-p tcp"
+					+ " -m state --state ESTABLISHED,RELATED"
+					+ " -m tcp -m multiport --sports 80,443"
+					+ " -j ACCEPT");
+		}
+		//Allow the server to call out to nginx.org to download mainline
 		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_nginx", "nginx.org", new String[]{"80","443"});
 
 		return units;

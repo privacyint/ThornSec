@@ -1,9 +1,9 @@
 package profile;
 
-import java.util.Iterator;
 import java.util.Vector;
 
 import core.iface.IUnit;
+import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.fs.DirUnit;
@@ -142,102 +142,82 @@ public class Webproxy extends AStructuredProfile {
 		
 		units.addAll(webserver.getPersistentFirewall(server, model));
 		
+		String[] proxyTo = model.getData().getPropertyArray(server, "proxy");
+		
+		//DNAT the external IP if it's given
 		if (model.getData().getExternalIp(server) != null) {
 			for (String router : model.getRouters()) {
-				String cleanLbName = server.replaceAll("-",  "_");
-				String lbIngressChain  = cleanLbName + "_ingress";
-				String lbEgressChain  = cleanLbName + "_egress";
+				FirewallModel fm = model.getServerModel(router).getFirewallModel();
 				
-				model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + model.getData().getExternalIp(server) + "_80",
-						"-d " + model.getData().getExternalIp(server) + " -p tcp --dport 80 -j DNAT --to-destination " + model.getServerModel(server).getIP() + ":80");
+				fm.addNatPrerouting("dnat_" + model.getData().getExternalIp(server) + "_80",
+						"-d " + model.getData().getExternalIp(server)
+						+ " -p tcp --dport 80"
+						+ " -j DNAT --to-destination " + model.getServerModel(server).getIP() + ":80");
 
-				model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + model.getData().getExternalIp(server) + "_443",
-						"-d " + model.getData().getExternalIp(server) + " -p tcp --dport 443 -j DNAT --to-destination " + model.getServerModel(server).getIP() + ":443");
-				
-				model.getServerModel(router).getFirewallModel().addFilter("accept_inbound_" + server.replaceAll("-", "_") + "_80",
-						lbIngressChain, "-p tcp --dport 80 -m state --state NEW,ESTABLISHED -j ACCEPT");
-
-				model.getServerModel(router).getFirewallModel().addFilter("accept_inbound_" + server.replaceAll("-", "_") + "_443",
-						lbIngressChain, "-p tcp --dport 443 -m state --state NEW,ESTABLISHED -j ACCEPT");
-
-				model.getServerModel(router).getFirewallModel().addFilter("accept_outbound_" + server.replaceAll("-", "_") + "_80",
-						lbEgressChain, "-p tcp --sport 80 -m state --state ESTABLISHED -j ACCEPT");
-
-				model.getServerModel(router).getFirewallModel().addFilter("accept_outbound_" + server.replaceAll("-", "_") + "_443",
-						lbEgressChain, "-p tcp --sport 443 -m state --state ESTABLISHED -j ACCEPT");
+				fm.addNatPrerouting("dnat_" + model.getData().getExternalIp(server) + "_443",
+						"-d " + model.getData().getExternalIp(server)
+						+ " -p tcp --dport 443"
+						+ " -j DNAT --to-destination " + model.getServerModel(server).getIP() + ":443");
 			}
 		}
+		//Otherwise, we're only DNATing internally, which is a slightly different set of rules
 		else {
 			for (String router : model.getRouters()) {
-				String[] proxies = model.getData().getPropertyArray(server, "proxy");
-				for (int i = 0; i < proxies.length; ++i) {
-					String backendCanonicalName      = proxies[i];
-					String backendIP                 = model.getServerModel(backendCanonicalName).getIP();
-					
-					String lbIP        = model.getServerModel(server).getIP();
+				for (String destination : proxyTo) {
+					String sourceIP      = model.getServerModel(server).getIP();
+					String destinationIP = model.getServerModel(destination).getIP();
 					
 					//DNAT all traffic to our lb
-					model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + backendCanonicalName + "_80",
-							"-d " + backendIP
-							+ " ! -s " + lbIP
+					model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + destination + "_80",
+							"-d " + destinationIP
+							+ " ! -s " + sourceIP //Make sure it doesn't end up in a DNAT loop!
 							+ " -p tcp"
 							+ " --dport 80"
-							+ " -j DNAT --to-destination " + lbIP + ":80");
+							+ " -j DNAT --to-destination " + destinationIP + ":80");
 		
-					model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + backendCanonicalName + "_443",
-							"-d " + backendIP
-							+ " ! -s " + lbIP
+					model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + destination + "_443",
+							"-d " + destinationIP
+							+ " ! -s " + sourceIP //Make sure it doesn't end up in a DNAT loop!
 							+ " -p tcp"
 							+ " --dport 443"
-							+ " -j DNAT --to-destination " + lbIP + ":443");
+							+ " -j DNAT --to-destination " + sourceIP + ":443");
 				}
 			}
 		}
 
-		Vector<String> routers = model.getRouters();
-		Iterator<String> itr = routers.iterator();
-		
-		String[] proxies = model.getData().getPropertyArray(server, "proxy");
-		
-		while (itr.hasNext()) {
-			String router = itr.next();
+		for (String router : model.getRouters()) {
 			
-			for (int i = 0; i < proxies.length; ++i) {
-				String backendCanonicalName      = proxies[i];
-				String backendIP                 = model.getServerModel(backendCanonicalName).getIP();
-				String cleanBackendCanonicalName = backendCanonicalName.replaceAll("-",  "_");
-				String backendFwdChain           = cleanBackendCanonicalName + "_fwd";
+			FirewallModel routerFm = model.getServerModel(router).getFirewallModel();
+			
+			for (String destination : proxyTo) {
+				String destinationIP       = model.getServerModel(destination).getIP();
+				String destinationFwdChain = destination + "_fwd";
 				
-				String lbName      = server;
-				String lbIP        = model.getServerModel(server).getIP();
-				String cleanLbName = lbName.replaceAll("-",  "_");
-				String lbFwdChain  = cleanLbName + "_fwd";
+				String source         = server;
+				String sourceIP       = model.getServerModel(server).getIP();
+				String sourceFwdChain = source + "_fwd";
 				
-				//Allow traffic to flow between our lb and backend
-				model.getServerModel(router).getFirewallModel().addFilter(cleanLbName + "_allow_lb_out_traffic_" + cleanBackendCanonicalName, lbFwdChain,
-						"-s " + lbIP
-						+ " -d " + backendIP
+				//Forward Chains
+				routerFm.addFilter(source + "_allow_lb_out_traffic_" + destination, sourceFwdChain,
+						"-d " + destinationIP
 						+ " -p tcp"
 						+ " --dport 80"
 						+ " -j ACCEPT");
 
-				model.getServerModel(router).getFirewallModel().addFilter(cleanLbName + "_allow_lb_reply_traffic_" + cleanBackendCanonicalName, lbFwdChain,
-						"-s " + backendIP
-						+ " -d " + lbIP
+				routerFm.addFilter(source + "_allow_lb_reply_traffic_" + destination, sourceFwdChain,
+						"-s " + destinationIP
 						+ " -p tcp"
 						+ " -m state --state ESTABLISHED,RELATED"
 						+ " -j ACCEPT");
 				
-				model.getServerModel(router).getFirewallModel().addFilter(cleanBackendCanonicalName + "_allow_lb_in_traffic_" + cleanLbName, backendFwdChain,
-						"-s " + lbIP
-						+ " -d " + backendIP
+				routerFm.addFilter(destination + "_allow_lb_in_traffic_" + source, destinationFwdChain,
+						"-s " + sourceIP
 						+ " -p tcp"
 						+ " --dport 80"
 						+ " -j ACCEPT");
 
-				model.getServerModel(router).getFirewallModel().addFilter(cleanBackendCanonicalName + "_allow_lb_reply_traffic_" + cleanLbName, backendFwdChain,
-						"-s " + backendIP
-						+ " -d " + lbIP
+				routerFm.addFilter(destination + "_allow_lb_reply_traffic_" + source, destinationFwdChain,
+						"-d " + sourceIP
 						+ " -p tcp"
 						+ " -m state --state ESTABLISHED,RELATED"
 						+ " -j ACCEPT");
