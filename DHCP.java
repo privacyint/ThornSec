@@ -111,7 +111,7 @@ public class DHCP extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addElement(model.getServerModel(server).getFirewallModel().addNatPostrouting("router_nat", "-j MASQUERADE"));
+		units.addElement(model.getServerModel(server).getFirewallModel().addNatPostrouting("router_nat", "-o " + model.getData().getExtIface(server) + " -j MASQUERADE"));
 
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterInput("dhcp_ipt_in",
 				"-i " + model.getData().getIface(server) + " -p udp --dport 67 -j ACCEPT"));
