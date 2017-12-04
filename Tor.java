@@ -128,7 +128,7 @@ public class Tor extends AStructuredProfile {
 		proxyConfig += "}";
 		
 		proxy.setLiveConfig(proxyConfig);
-		units.addAll(proxy.getLiveConfig(server, model));
+		units.addAll(proxy.getPersistentConfig(server, model));
 
 		return units;
 	}
