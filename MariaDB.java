@@ -90,6 +90,11 @@ public class MariaDB extends AStructuredProfile {
 	}
 	
 	public Vector<IUnit> createDb(String db, String username, String privileges, String passwordVariable) {
+		return createDb(db, db, username, privileges, passwordVariable);
+	}
+
+	
+	public Vector<IUnit> createDb(String db, String grantDb, String username, String privileges, String passwordVariable) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		//This is all in one unit test as it puts the database into a transient state for configuration. This is not a usual state which should be audited for.
@@ -102,7 +107,7 @@ public class MariaDB extends AStructuredProfile {
 						+ "CREATE USER '" + username + "'@'localhost' IDENTIFIED BY '${" + passwordVariable + "}';"
 						+ "CREATE DATABASE " + db + ";"
 						+ "GRANT " + privileges + " "
-						+ "ON " + db + ".* "
+						+ "ON " + grantDb + ".* "
 						+ "TO '" + username + "'@'localhost';"
 						+ "SET GLOBAL default_storage_engine = 'InnoDB';"
 						+ "SET GLOBAL innodb_large_prefix=on;"

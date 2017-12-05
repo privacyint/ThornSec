@@ -52,7 +52,7 @@ public class CiviCRM extends AStructuredProfile {
 				"echo $CIVICRM_PASSWORD", "", "fail",
 				"Couldn't set a password for CiviCRM's database user. The installation will fail."));
 		
-		units.addAll(db.createDb("civicrm", "civicrm", "SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES, TRIGGER, CREATE ROUTINE, ALTER ROUTINE, REFERENCES", "CIVICRM_PASSWORD"));
+		units.addAll(db.createDb("civicrm", "*", "civicrm", "SUPER", "CIVICRM_PASSWORD"));
 		
 		units.addElement(new SimpleUnit("civicrm_installed", "drupal_installed",
 				"sudo wget 'https://download.civicrm.org/civicrm-4.7.27-drupal.tar.gz' -O /media/data/www/sites/all/modules/civi.tar.gz"
