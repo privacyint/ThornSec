@@ -132,6 +132,10 @@ public class Webproxy extends AStructuredProfile {
 				webserver.addLiveConfig(canonicalName, nginxConf);
 			}
 		}
+		else {
+			webserver.addLiveConfig("default", this.liveConfig);
+		}
+		
 		units.addAll(webserver.getLiveConfig(server, model));
 
 		return units;
