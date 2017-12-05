@@ -49,6 +49,17 @@ public class DrupalCommons extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
+		String cleanName   = server.replaceAll("-",  "_");
+		String egressChain = cleanName + "_egress";
+		
+		//Allow email capability
+		for (String router : model.getRouters()) {
+			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_email", egressChain,
+				"-p tcp"
+				+ " --dport 25"
+				+ " -j ACCEPT");
+		}
+		
 		units.addAll(drupal.getPersistentFirewall(server, model));
 
 		return units;
