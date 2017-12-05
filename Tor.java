@@ -5,6 +5,7 @@ import java.util.Vector;
 import core.iface.IUnit;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
+import core.unit.SimpleUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
@@ -24,6 +25,13 @@ public class Tor extends AStructuredProfile {
 		
 		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "tor", "proceed", "deb http://deb.torproject.org/torproject.org jessie main", "keys.gnupg.net", "A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
 
+		units.addElement(new SimpleUnit("debian_tor_user", "proceed",
+				"sudo useradd -r -s /bin/false debian-tor",
+				"id debian-tor 2>&1", "id: ‘debian-tor’: no such user", "fail",
+				"The tor user couldn't be added.  This will cause all sorts of errors."));
+		
+		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "tor_logs", "proceed", "/var/log/.tor", "/var/log/tor", "debian-tor", "debian-tor", "0755"));
+		
 		units.addElement(new InstalledUnit("tor_keyring", "tor_gpg", "deb.torproject.org-keyring"));
 		units.addElement(new InstalledUnit("tor", "tor_keyring", "tor"));
 		
@@ -37,28 +45,36 @@ public class Tor extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "tor", "tor_installed", "/media/metaldata/tor", "/media/data/tor", "debian-tor", "debian-tor", "0755"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "tor", "tor_installed", "/media/metaldata/tor", "/media/data/tor", "debian-tor", "debian-tor", "0700"));
 
 		//Configs here based on the eotk (c) Alec Muffet
 		//https://github.com/alecmuffett/eotk
 		//Released under GPL v3 https://github.com/alecmuffett/eotk/blob/master/LICENSE
 		
 		String torConfig = "";
-		torConfig += "DataDirectory /media/data/tor/\n";
+		torConfig += "DataDirectory /var/lib/tor/\n";
 		torConfig += "ControlPort unix:/media/data/tor/tor-control.sock\n";
 		torConfig += "PidFile /media/data/tor/tor.pid\n";
-		torConfig += "Log info file /var/log/tor.log\n";
+		torConfig += "Log info file /var/log/tor/log\n";
 		torConfig += "SafeLogging 1\n";
 		torConfig += "HeartbeatPeriod 60 minutes\n";
 		torConfig += "LongLivedPorts 80,443\n";
 		torConfig += "RunAsDaemon 1\n";
 		torConfig += "SocksPort 0 # frankly we don't want SOCKS anyway\n";
-		torConfig += "HiddenServiceDir /media/data/tor/\n";
+		torConfig += "HiddenServiceDir /media/data/tor/dir\n";
 		torConfig += "HiddenServicePort 80 unix:/media/data/tor/port-80.sock\n";
 		torConfig += "HiddenServicePort 443 unix:/media/data/tor/port-443.sock";
 
 		units.add(new FileUnit("tor_config", "tor_installed", torConfig, "/etc/tor/torrc"));
-		
+
+		units.addAll(proxy.getPersistentConfig(server, model));
+
+		return units;
+	}
+
+	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+		Vector<IUnit> units = new Vector<IUnit>();
+
 		String proxyConfig = "";
 		proxyConfig += "http {\n";
 		proxyConfig += "  proxy_buffering on;\n";
@@ -125,13 +141,6 @@ public class Tor extends AStructuredProfile {
 		proxyConfig += "}";
 		
 		proxy.setLiveConfig(proxyConfig);
-		units.addAll(proxy.getPersistentConfig(server, model));
-
-		return units;
-	}
-
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addElement(new RunningUnit("tor", "tor", "/usr/bin/tor"));
 		model.getServerModel(server).getProcessModel().addProcess("/usr/bin/tor --defaults-torrc /usr/share/tor/tor-service-defaults-torrc -f /etc/tor/torrc --RunAsDaemon 0$");
