@@ -40,6 +40,7 @@ public class Service extends AStructuredProfile {
 		
 		model.getServerModel(server).getUserModel().addUsername("vboxadd");
 		model.getServerModel(server).getProcessModel().addProcess("\\[iprt-VBoxWQueue\\]$");
+		model.getServerModel(server).getProcessModel().addProcess("/usr/sbin/VBoxService --pidfile /var/run/vboxadd-service.sh$");
 		
 		return units;
 	}
