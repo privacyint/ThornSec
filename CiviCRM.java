@@ -26,6 +26,8 @@ public class CiviCRM extends AStructuredProfile {
 		
 		units.addAll(drupal.getInstalled(server, model));
 		
+		units.add(new InstalledUnit("php_imagemagick", "php_fpm_installed", "php-imagick"));
+		
 		return units;
 	}
 	
