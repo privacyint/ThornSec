@@ -88,6 +88,7 @@ public class Drupal extends AStructuredProfile {
 		nginxConf += "        fastcgi_pass unix:" + php.getSockPath() + ";\n";
 		nginxConf += "        fastcgi_param SCRIPT_FILENAME  \\$document_root\\$fastcgi_script_name;\n";
 		nginxConf += "        fastcgi_index index.php;\n";
+		nginxConf += "        fastcgi_read_timeout 300;\n";
 		nginxConf += "        include fastcgi_params;\n";
 		nginxConf += "    }\n";
 		nginxConf += "    location ~/sites/default/files/civicrm/ConfigAndLog {\n";
