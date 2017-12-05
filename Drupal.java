@@ -126,8 +126,10 @@ public class Drupal extends AStructuredProfile {
 				"sudo /media/data/drush/drush status -r /media/data/www 2>&1 | grep 'Drupal root'", "", "fail",
 				"Couldn't install Drupal."));
 		
-		units.addElement(new FileEditUnit("drupal_base_url", "drupal_installed", "\\# \\$base_url", "\\$base_url", "/media/data/www/sites/default/settings.php"));
-		units.addElement(new FileEditUnit("drupal_https", "drupal_installed", "\\x27http://www.example.com\\x27", "\"https://{\\$_SERVER\\[\\x27HTTP_HOST\\x27\\]}\"", "/media/data/www/sites/default/settings.php",
+		units.addElement(new FileEditUnit("drupal_base_url", "drupal_installed",
+				"^\\# \\$base_url = 'http:",
+				"\\$base_url = 'https:",
+				"/media/data/www/sites/default/settings.php",
 				"Couldn't set Drupal's URI to https. This could cause issues with hyperlinks in the installation."));
 		
 		return units;
