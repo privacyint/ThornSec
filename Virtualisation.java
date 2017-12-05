@@ -336,7 +336,7 @@ public class Virtualisation extends AStructuredProfile {
 		//Audio setup (switch it off)
 		units.addElement(new SimpleUnit(service + "_no_audio", service + "_exists",
 				"sudo -u " + user + " bash -c 'VBoxManage modifyvm " + service + " --audio none'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep audio'", "audio=\\\"none\\\"", "pass",
+				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep audio='", "audio=\\\"none\\\"", "pass",
 				"Couldn't switch off " + service + "'s audio.  No biggie."));
 		
 		//Shared folders setup
