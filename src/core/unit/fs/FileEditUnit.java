@@ -14,9 +14,9 @@ public class FileEditUnit extends SimpleUnit {
 	 */
 	public FileEditUnit(String name, String precondition, String needleText, String replacementText, String path) {
 		super(name + "_edited", precondition,
-				"sudo sed -i 's|" + needleText + "|" + replacementText + "|g' " + path,
-				"grep '" + replacementText + "' " + path + ";", "", "fail",
-				"Couldn't replace the text");
+				"sudo sed -i \"s|" + needleText + "|" + replacementText + "|g\" " + path,
+				"grep \"" + replacementText + "\" " + path + ";", "", "fail",
+				"Couldn't replace " + needleText + " with " + replacementText + " in file " + path);
 	}
 
 	/**
@@ -30,8 +30,8 @@ public class FileEditUnit extends SimpleUnit {
 	 */
 	public FileEditUnit(String name, String precondition, String needleText, String replacementText, String path, String message) {
 		super(name + "_edited", precondition,
-				"sudo sed -i 's|" + needleText + "|" + replacementText + "|g' " + path,
-				"grep '" + replacementText + "' " + path + ";", "", "fail",
+				"sudo sed -i \"s|" + needleText + "|" + replacementText + "|g\" " + path,
+				"grep \"" + replacementText + "\" " + path + ";", "", "fail",
 				message);
 	}
 }
