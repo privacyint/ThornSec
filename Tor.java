@@ -25,10 +25,6 @@ public class Tor extends AStructuredProfile {
 		
 		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "tor", "proceed", "deb http://deb.torproject.org/torproject.org jessie main", "keys.gnupg.net", "A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
 
-		units.addElement(new SimpleUnit("debian_tor_user", "proceed",
-				"sudo useradd -r -s /bin/false debian-tor",
-				"id debian-tor 2>&1", "id: ‘debian-tor’: no such user", "fail",
-				"The tor user couldn't be added.  This will cause all sorts of errors."));
 		
 		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "tor_logs", "proceed", "/var/log/.tor", "/var/log/tor", "debian-tor", "debian-tor", "0755"));
 		
