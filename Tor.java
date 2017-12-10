@@ -23,9 +23,7 @@ public class Tor extends AStructuredProfile {
 	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "tor", "proceed", "deb http://deb.torproject.org/torproject.org jessie main", "keys.gnupg.net", "A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
-
-		
+		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "tor", "proceed", "deb http://deb.torproject.org/torproject.org stretch main", "keys.gnupg.net", "A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
 		
 		units.addElement(new InstalledUnit("tor_keyring", "tor_gpg", "deb.torproject.org-keyring"));
 		units.addElement(new InstalledUnit("tor", "tor_keyring_installed", "tor"));
