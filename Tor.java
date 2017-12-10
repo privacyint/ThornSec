@@ -150,6 +150,13 @@ public class Tor extends AStructuredProfile {
 		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_torproject", "deb.torproject.org", new String[]{"80","443"});
 		units.addAll(proxy.getPersistentFirewall(server, model));
 		
+		for (String router : model.getRouters()) {
+			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_onion_out_traffic", server + "_egress",
+					"-p tcp"
+					+ " -m tcp -m multiport --dports 80,443"
+					+ " -j ACCEPT");
+		}
+		
 		return units;
 	}
 	
