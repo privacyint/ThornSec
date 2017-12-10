@@ -26,7 +26,6 @@ public class Tor extends AStructuredProfile {
 		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "tor", "proceed", "deb http://deb.torproject.org/torproject.org jessie main", "keys.gnupg.net", "A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
 
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "tor_logs", "proceed", "/var/log/.tor", "/var/log/tor", "debian-tor", "debian-tor", "0755"));
 		
 		units.addElement(new InstalledUnit("tor_keyring", "tor_gpg", "deb.torproject.org-keyring"));
 		units.addElement(new InstalledUnit("tor", "tor_keyring_installed", "tor"));
@@ -42,6 +41,7 @@ public class Tor extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "tor", "tor_installed", "/media/metaldata/tor", "/media/data/tor", "debian-tor", "debian-tor", "0700"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "tor_logs", "tor_installed", "/var/log/.tor", "/var/log/tor", "debian-tor", "debian-tor", "0755"));
 
 		//Configs here based on the eotk (c) Alec Muffet
 		//https://github.com/alecmuffett/eotk
