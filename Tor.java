@@ -29,7 +29,7 @@ public class Tor extends AStructuredProfile {
 		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "tor_logs", "proceed", "/var/log/.tor", "/var/log/tor", "debian-tor", "debian-tor", "0755"));
 		
 		units.addElement(new InstalledUnit("tor_keyring", "tor_gpg", "deb.torproject.org-keyring"));
-		units.addElement(new InstalledUnit("tor", "tor_keyring", "tor"));
+		units.addElement(new InstalledUnit("tor", "tor_keyring_installed", "tor"));
 		
 		model.getServerModel(server).getUserModel().addUsername("debian-tor");
 		
