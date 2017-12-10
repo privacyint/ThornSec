@@ -73,6 +73,7 @@ public class Git extends AStructuredProfile {
 		systemd += "[Service]\n";
 		systemd += "ExecStart=/etc/init.d/scm-server start\n";
 		systemd += "ExecStop=/etc/init.d/scm-server stop\n";
+		systemd += "Type=forking\n";
 		systemd += "Restart=always\n";
 		systemd += "\n";
 		systemd += "[Install]\n";
