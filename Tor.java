@@ -123,15 +123,15 @@ public class Tor extends AStructuredProfile {
 		proxyConfig += "    }\n";
 		proxyConfig += "  }\n";
 		proxyConfig += "\n";
-		proxyConfig += "  more_clear_headers \\\"Age\\\";\n";
-		proxyConfig += "  more_clear_headers \\\"Server\\\";\n";
-		proxyConfig += "  more_clear_headers \\\"Via\\\";\n";
-		proxyConfig += "  more_clear_headers \\\"X-From-Nginx\\\";\n";
-		proxyConfig += "  more_clear_headers \\\"X-NA\\\";\n";
-		proxyConfig += "  more_clear_headers \\\"X-Powered-By\\\";\n";
-		proxyConfig += "  more_clear_headers \\\"X-Request-Id\\\";\n";
-		proxyConfig += "  more_clear_headers \\\"X-Runtime\\\";\n";
-		proxyConfig += "  more_clear_headers \\\"X-Varnish\\\";\n";
+		//proxyConfig += "  more_clear_headers \\\"Age\\\";\n";
+		//proxyConfig += "  more_clear_headers \\\"Server\\\";\n";
+		//proxyConfig += "  more_clear_headers \\\"Via\\\";\n";
+		//proxyConfig += "  more_clear_headers \\\"X-From-Nginx\\\";\n";
+		//proxyConfig += "  more_clear_headers \\\"X-NA\\\";\n";
+		//proxyConfig += "  more_clear_headers \\\"X-Powered-By\\\";\n";
+		//proxyConfig += "  more_clear_headers \\\"X-Request-Id\\\";\n";
+		//proxyConfig += "  more_clear_headers \\\"X-Runtime\\\";\n";
+		//proxyConfig += "  more_clear_headers \\\"X-Varnish\\\";\n";
 		proxyConfig += "}";
 		
 		proxy.setLiveConfig(proxyConfig);
