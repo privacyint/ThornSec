@@ -56,6 +56,52 @@ public class OnionBalance extends AStructuredProfile {
 		units.add(new DirUnit("onionbalance_var_run", "onionbalance_installed", "/var/run/onionbalance"));
 		units.add(new DirOwnUnit("onionbalance_var_run", "onionbalance_var_run_created", "/var/run/onionbalance", "onionbalance"));
 		
+		String service = "";
+		service += "[Unit]\n";
+		service += "Description=OnionBalance - Tor Onion Service load balancer\n";
+		service += "Documentation=man:onionbalance\n";
+		service += "Documentation=file:///usr/share/doc/onionbalance/html/index.html\n";
+		service += "Documentation=https://github.com/DonnchaC/onionbalance\n";
+		service += "After=network.target, tor.target\n";
+		service += "Wants=network-online.target\n";
+		service += "ConditionPathExists=/etc/onionbalance/config.yaml\n";
+		service += "\n";
+		service += "[Service]\n";
+		service += "Type=simple\n";
+		service += "PIDFile=/run/onionbalance.pid\n";
+		service += "Environment=\"ONIONBALANCE_LOG_LOCATION=/var/log/onionbalance/log\"\n";
+		service += "ExecStartPre=/bin/chmod o+r /var/run/tor/control.authcookie\n";
+		service += "ExecStartPre=/bin/chmod o+r /var/run/tor/control\n";
+		service += "ExecStartPre=/bin/mkdir -p /var/run/onionbalance\n";
+		service += "ExecStartPre=/bin/chown -R onionbalance:onionbalance /var/run/onionbalance\n";
+		service += "ExecStart=/usr/sbin/onionbalance -c /etc/onionbalance/config.yaml\n";
+		service += "ExecReload=/usr/sbin/onionbalance reload\n";
+		service += "ExecStop=-/sbin/start-stop-daemon --quiet --stop --retry=TERM/5/KILL/5 --pidfile /run/onionbalance.pid\n";
+		service += "TimeoutStopSec=5\n";
+		service += "KillMode=mixed\n";
+		service += "\n";
+		service += "EnvironmentFile=-/etc/default/%p\n";
+		service += "User=onionbalance\n";
+		service += "PermissionsStartOnly=true\n";
+		service += "Restart=on-abnormal\n";
+		service += "RestartSec=2s\n";
+		service += "LimitNOFILE=65536\n";
+		service += "\n";
+		service += "NoNewPrivileges=yes\n";
+		service += "PrivateDevices=yes\n";
+		service += "PrivateTmp=yes\n";
+		service += "ProtectHome=yes\n";
+		service += "ProtectSystem=full\n";
+		service += "ReadOnlyDirectories=/\n";
+		service += "ReadWriteDirectories=-/proc\n";
+		service += "ReadWriteDirectories=-/var/log/onionbalance\n";
+		service += "ReadWriteDirectories=-/var/run\n";
+		service += "\n";
+		service += "[Install]\n";
+		service += "WantedBy=multi-user.target";
+
+		units.addElement(new FileUnit("onionbalance_service", "onionbalance_installed", service, "/lib/systemd/system/onionbalance.service"));
+		
 		return units;
 	}
 
