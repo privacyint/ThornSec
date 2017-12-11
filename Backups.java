@@ -47,6 +47,7 @@ public class Backups extends AStructuredProfile {
 		String backupScript = "";
 		backupScript += "#!/bin/sh\n";
 		backupScript += "echo \\\"=== Starting internal backup at \\`date\\` ===\\\"\n";
+		backupScript += "modprobe nbd max_part=15\n";
 		backupScript += "for dirPath in \\`pwd\\`/*/\n";
 		backupScript += "do\n";
 		backupScript += "    dirPath=\\${dirPath%*/}\n";
