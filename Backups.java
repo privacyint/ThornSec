@@ -55,7 +55,7 @@ public class Backups extends AStructuredProfile {
 		backupScript += "    if [ \"\\${vmName}\" != \"rsync-time-backup\" ]\n"; //Don't descend in here, it's not a VM!
 		backupScript += "    then\n";
 		backupScript += "        echo \\\"Backing up \\${vmName}\\\"\n";
-		backupScript += "        sudo -u vboxuser_\\${vmName} bash -c \\\"VBoxManage controlvm \\${vmName} poweroff\\\"\n";
+		backupScript += "        sudo -u vboxuser_\\${vmName} bash -c \\\"VBoxManage controlvm \\${vmName} acpipowerbutton\\\"\n";
 		backupScript += "        wait \\${!}\n";
         backupScript += "        qemu-nbd -c /dev/nbd0 \\${dirPath}/../../data/\\${vmName}/\\${vmName}_data.vdi\n";
 		backupScript += "        wait \\${!}\n";
