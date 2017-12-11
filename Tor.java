@@ -140,6 +140,26 @@ public class Tor extends AStructuredProfile {
 		model.getServerModel(server).getProcessModel().addProcess("/usr/bin/tor --defaults-torrc /usr/share/tor/tor-service-defaults-torrc -f /etc/tor/torrc --RunAsDaemon 0$");
 		units.addAll(proxy.getLiveConfig(server, model));
 
+		String service = "";
+		service += "[Unit]\n";
+		service += "Description=nginx - high performance web server\n";
+		service += "Documentation=http://nginx.org/en/docs/\n";
+		service += "After=network-online.target remote-fs.target nss-lookup.target\n";
+		service += "Wants=network-online.target\n";
+		service += "\n";
+		service += "[Service]\n";
+		service += "Type=forking\n";
+		service += "PIDFile=/var/run/nginx.pid\n";
+		service += "ExecStartPre=/bin/rm -f /media/data/www/port-80.sock /media/data/www/port-443.sock\n";
+		service += "ExecStart=/usr/sbin/nginx -c /etc/nginx/nginx.conf\n";
+		service += "ExecReload=/bin/kill -s HUP $MAINPID\n";
+		service += "ExecStop=/bin/kill -s TERM $MAINPID\n";
+		service += "\n";
+		service += "[Install]\n";
+		service += "WantedBy=multi-user.target";
+
+		units.addElement(new FileUnit("nginx_service", "nginx_installed", service, "/etc/systemd/system/multi-user.target.wants/nginx.service"));
+		
 		return units;
 	}
 	
