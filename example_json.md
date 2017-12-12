@@ -67,6 +67,8 @@
 		"debianisosha512":"697600a110c7a5a1471fbf45c8030dd99b3c570db612044730f09b4624aa49f2a3d79469d55f1c18610c2414e9fffde1533b9a6fab6f3af4b5ba7c2d59003dc1",		
 		//Debian mirror to be used for packages (default ftp.uk.debian.org)
 		"debianmirror":"ftp.uk.debian.org",
+		//Subdirectory to be used for pulling packages (default /debian)
+		"debiandirectory":"/debian",
 
 
 
@@ -90,8 +92,6 @@
 				"extiface":"ppp0",
 				//Physical external iface to negotiate ppp
 				"pppiface":"enp2s0",
-				//Physical iface to offer DHCP/DNS internally
-				"bridge":"phy",
 				//Physical internal iface
 				"iface":"enp3s0"
 			},
@@ -107,8 +107,6 @@
 				"extconnection":"dhcp",
 				//Declare the external iface to listen to
 				"extiface":"enp2s0",
-				//Physical iface to offer DHCP/DNS internally
-				"bridge":"phy",
 				//Physical internal iface
 				"iface":"enp3s0"
 			},
@@ -126,8 +124,6 @@
 				//Static configuration array
 				"extconfig":[ {"address":"123.321.123.321", "netmask":"255.255.255.224", "broadcast":"123.321.123.255", "gateway":"123.321.123.1"}
 				]
-				//Physical iface to offer DHCP/DNS internally
-				"bridge":"phy",
 				//Physical internal iface
 				"iface":"enp3s0"
 			},
@@ -140,8 +136,6 @@
 				"extiface":"enp3s0",
 				//This is the internal-facing iface (for VMs)
 				"iface":"enp3s0",
-				//We want to use virtual bridging here to keep the traffic off the physical iface
-				"bridge":"virt",
 				//Mac address of the physical iface
 				"mac":"de:ad:be:ef:ca:fe"
 			},
