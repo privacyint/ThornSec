@@ -31,7 +31,6 @@ public class ServerData extends AData {
 	private String vmBase;
 	private String[] profiles;
 	private String externalIp;
-	private String bridge;
 	private String debianMirror;
 	private String debianDirectory;
 	private String adminEmail;
@@ -96,7 +95,6 @@ public class ServerData extends AData {
 			}
 		}
 		externalIp = data.getString("externalip", null);
-		bridge = data.getString("bridge", null);
 		debianMirror = data.getString("debianmirror", null);
 		debianDirectory = data.getString("debiandirectory", null);
 		adminEmail = data.getString("adminemail", null);
@@ -224,10 +222,6 @@ public class ServerData extends AData {
 	
 	public String getExternalIp() {
 		return this.externalIp;
-	}
-	
-	public String getBridge() {
-		return this.bridge;
 	}
 	
 	public String getDebianMirror() {

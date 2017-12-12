@@ -383,15 +383,6 @@ public class NetworkData extends AData {
 		return val;
 	}
 
-	public String getBridge(String server) {
-		String val = this.servers.get(server).getBridge();
-		if (val == null) {
-			return this.defaultServerData.getBridge();
-		} else {
-			return val;
-		}
-	}
-	
 	public String getDebianMirror(String server) {
 		String val = this.servers.get(server).getDebianMirror();
 		if (val == null) {
