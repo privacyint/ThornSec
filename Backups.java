@@ -58,6 +58,9 @@ public class Backups extends AStructuredProfile {
 		backupScript += "        echo \\\"Backing up \\${vmName}\\\"\n";
 		backupScript += "        sudo -u vboxuser_\\${vmName} bash -c \\\"VBoxManage controlvm \\${vmName} acpipowerbutton\\\"\n";
 		backupScript += "        wait \\${!}\n";
+		backupScript += "        sleep 30s\n";
+		backupScript += "        sudo -u vboxuser_\\${vmName} bash -c \\\"VBoxManage controlvm \\${vmName} poweroff\\\"\n";
+		backupScript += "        wait \\${!}\n";
         backupScript += "        qemu-nbd -c /dev/nbd0 \\${dirPath}/../../data/\\${vmName}/\\${vmName}_data.vdi\n";
 		backupScript += "        wait \\${!}\n";
         backupScript += "        mount /dev/nbd0p1 /mnt\n";
