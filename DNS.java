@@ -149,6 +149,8 @@ public class DNS extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
+		Vector<String> userIfaces = new Vector<String>();
+		
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterInput("dns_ipt_in_udp",
 				"-p udp --dport 53 -j ACCEPT"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("dns_ipt_out_udp",
@@ -183,10 +185,23 @@ public class DNS extends AStructuredProfile {
 				"dnsd", "-i lo -j ACCEPT"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_loopback_out",
 				"dnsd", "-o lo -j ACCEPT"));
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_bridges_in",
-						"dnsd", "-i br+ -j ACCEPT"));
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_bridges_out",
-						"dnsd", "-o br+ -j ACCEPT"));
+
+		if (!model.getServerModel(server).isMetal()) {
+			userIfaces.addElement(model.getData().getIface(server) + ":2+");
+			if (!model.getData().getVpnOnly()) {
+				userIfaces.addElement(model.getData().getIface(server) + ":1+");
+			}
+		}
+		else {
+			userIfaces.addElement("br+");
+		}
+		
+		for (String iface : userIfaces) {
+			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_in",
+							"dnsd", "-i " + iface + " -j ACCEPT"));
+			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_bridges_out",
+							"dnsd", "-o " + iface + " -j ACCEPT"));
+		}
 		
 		return units;
 	}
