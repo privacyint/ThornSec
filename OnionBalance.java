@@ -83,8 +83,8 @@ public class OnionBalance extends AStructuredProfile {
 		service += "EnvironmentFile=-/etc/default/%p\n";
 		service += "User=onionbalance\n";
 		service += "PermissionsStartOnly=true\n";
-		service += "Restart=on-abnormal\n";
-		service += "RestartSec=2s\n";
+		service += "Restart=always\n";
+		service += "RestartSec=10s\n";
 		service += "LimitNOFILE=65536\n";
 		service += "\n";
 		service += "NoNewPrivileges=yes\n";
