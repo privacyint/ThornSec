@@ -8,6 +8,7 @@ public class ServerData extends AData {
 	private JsonObject data;
 	private String adminUser;
 	private String[] adminKeys;
+	private String[] adminIps;
 	private String adminFullName;
 	private String connection;
 	private String subnet;
@@ -51,6 +52,13 @@ public class ServerData extends AData {
 				adminKeys[i] = keys.getString(i);
 			}
 		}
+		JsonArray ips = data.getJsonArray("sshsource");
+		if (ips != null) {
+			adminIps = new String[ips.size()];
+			for (int i = 0; i < adminIps.length; i++) {
+				adminIps[i] = ips.getString(i);
+			}
+		}		
 		adminFullName = data.getString("adminname", null);
 		connection = data.getString("connection", "direct");
 		subnet = data.getString("subnet", null);
@@ -242,5 +250,9 @@ public class ServerData extends AData {
 
 	public String getDomain() {
 		return this.domain;
+	}
+
+	public String[] getSSHSources() {
+		return this.adminIps;
 	}
 }

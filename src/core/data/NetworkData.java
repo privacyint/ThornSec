@@ -173,6 +173,14 @@ public class NetworkData extends AData {
 	}
 	
 	// Can have default values
+	public String[] getAllowedSSHSource(String server) {
+		String[] val = this.servers.get(server).getSSHSources();
+		if (val == null) {
+			return this.defaultServerData.getSSHSources();
+		} else {
+			return val;
+		}
+	}
 	
 	public String getDomain(String server) {
 		String val = this.servers.get(server).getDomain();
