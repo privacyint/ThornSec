@@ -113,6 +113,7 @@ public class Virtualisation extends AStructuredProfile {
 		preseed += "\n";
 		preseed += "d-i debian-installer/locale string en_US\n";
 		preseed += "d-i keyboard-configuration/xkb-keymap select us\n";
+		preseed += "d-i clock-setup/ntp boolean false\n";
 		preseed += "d-i netcfg/target_network_config select ifupdown\n";
 		preseed += "d-i netcfg/choose_interface select auto\n";
 		preseed += "d-i netcfg/get_hostname string " + hostname + "\n";
@@ -143,6 +144,7 @@ public class Virtualisation extends AStructuredProfile {
 		preseed += "d-i apt-setup/cdrom/set-next boolean false\n";
 		preseed += "d-i apt-setup/cdrom/set-failed boolean false\n";
 		preseed += "d-i pkgsel/include string sudo openssh-server dkms gcc bzip2\n";
+		preseed += "openssh-server openssh-server/permit-root-login boolean false\n";
 		preseed += "discover discover/install_hw_packages multiselect virtualbox-ose-guest-x11\n";
 		preseed += "popularity-contest popularity-contest/participate boolean false\n";
 		preseed += "d-i grub-installer/only_debian boolean true\n";
