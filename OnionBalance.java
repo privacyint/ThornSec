@@ -62,7 +62,7 @@ public class OnionBalance extends AStructuredProfile {
 		service += "Documentation=man:onionbalance\n";
 		service += "Documentation=file:///usr/share/doc/onionbalance/html/index.html\n";
 		service += "Documentation=https://github.com/DonnchaC/onionbalance\n";
-		service += "After=network.target, tor.target\n";
+		service += "After=network.target, tor.service\n";
 		service += "Wants=network-online.target\n";
 		service += "ConditionPathExists=/etc/onionbalance/config.yaml\n";
 		service += "\n";
