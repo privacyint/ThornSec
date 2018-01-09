@@ -44,15 +44,6 @@ public class OnionBalance extends AStructuredProfile {
 		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "tor", "tor_installed", "/media/metaldata/tor", "/media/data/tor", "debian-tor", "debian-tor", "0700", "/media/metaldata"));
 		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "tor_logs", "tor_installed", "/var/log/.tor", "/var/log/tor", "debian-tor", "debian-tor", "0755", "/var/log"));
 
-		units.add(new FileEditUnit("onionbalanceconfig", "onionbalance_installed",
-				"/etc/onionbalance/config.yaml",
-				"/media/data/onionbalance/private_keys/config/master/config.yaml",
-				"/etc/init.d/onionbalance"));
-		units.add(new FileEditUnit("onionbalanceconfig", "onionbalance_installed",
-				"/etc/onionbalance/config.yaml",
-				"/media/data/onionbalance/private_keys/config/master/config.yaml",
-				"/lib/systemd/system/onionbalance.service"));
-
 		units.add(new DirUnit("onionbalance_var_run", "onionbalance_installed", "/var/run/onionbalance"));
 		units.add(new DirOwnUnit("onionbalance_var_run", "onionbalance_var_run_created", "/var/run/onionbalance", "onionbalance"));
 		
@@ -102,7 +93,19 @@ public class OnionBalance extends AStructuredProfile {
 
 		units.addElement(new FileUnit("onionbalance_service", "onionbalance_installed", service, "/lib/systemd/system/onionbalance.service"));
 		
-		units.addElement(new SimpleUnit("tor_service_enabled", "tor_config",
+		String torrc = "";
+		torrc += "Datadirectory /var/lib/tor\n";
+		torrc += "ControlPort 9051\n";
+		torrc += "CookieAuthentication 1";
+		torrc += "SocksPort 0\n";
+		torrc += "\n";
+		torrc += "RunAsDaemon 1\n";
+		torrc += "\n";
+		torrc += "FascistFirewall 1";
+
+		units.addElement(new FileUnit("torrc", "tor_installed", torrc, "/etc/tor/torrc"));
+
+		units.addElement(new SimpleUnit("tor_service_enabled", "torrc",
 				"sudo systemctl enable tor",
 				"sudo systemctl is-enabled tor", "enabled", "pass",
 				"Couldn't set tor to auto-start on boot.  You will need to manually start the service (\"sudo service tor start\") on reboot."));
@@ -117,6 +120,20 @@ public class OnionBalance extends AStructuredProfile {
 
 	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
+		
+		String onionbalanceConfig = "";
+		onionbalanceConfig += "REFRESH_INTERVAL: 600\n";
+		onionbalanceConfig += "services:\n";
+		onionbalanceConfig += "    - key: /media/data/onionbalance/private_key\n";
+		onionbalanceConfig += "      instances:\n";
+		
+		String[] backends = model.getData().getPropertyArray(server, "backend");
+		for (String backend : backends) {
+			onionbalanceConfig += "\n";
+			onionbalanceConfig += "        - address: " + backend;
+		}
+		
+		units.addElement(new FileUnit("onionbalance_config", "onionbalance_installed", onionbalanceConfig, "/etc/onionbalance/config.yaml"));
 		
 		units.addElement(new RunningUnit("tor", "tor", "/usr/bin/tor"));
 		model.getServerModel(server).getProcessModel().addProcess("/usr/bin/tor --defaults-torrc /usr/share/tor/tor-service-defaults-torrc -f /etc/tor/torrc --RunAsDaemon 0$");
