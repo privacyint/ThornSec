@@ -156,7 +156,7 @@ public class Tor extends AStructuredProfile {
 		proxyConfig += "    ssl_ecdh_curve secp384r1:prime256v1;\n";
 		proxyConfig += "\n";
 		proxyConfig += "    location / {\n";
-		proxyConfig += "        proxy_pass \\\"\\$scheme://" + model.getServerModel(model.getData().getPropertyArray(server, "proxy")[0]) + "\\\";\n";
+		proxyConfig += "        proxy_pass \\\"\\$scheme://" + model.getData().getPropertyArray(server, "proxy")[0] + "." + model.getData().getDomain((model.getData().getPropertyArray(server, "proxy")[0])) + "\\\";\n";
 		proxyConfig += "        proxy_http_version 1.1;\n";
 		proxyConfig += "        proxy_set_header Accept-Encoding \\\"identity\\\";\n";
 		proxyConfig += "        proxy_set_header Connection \\\"upgrade\\\";\n";
