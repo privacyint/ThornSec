@@ -61,6 +61,11 @@ public class Tor extends AStructuredProfile {
 
 		units.add(new FileUnit("tor_config", "tor_installed", torConfig, "/etc/tor/torrc"));
 
+		units.addElement(new SimpleUnit("tor_service_enabled", "tor_config",
+				"sudo systemctl enable tor",
+				"sudo systemctl is-enabled tor", "enabled", "pass",
+				"Couldn't set tor to auto-start on boot.  You will need to manually start the service (\"sudo service tor start\") on reboot."));
+		
 		units.addAll(proxy.getPersistentConfig(server, model));
 
 		return units;
