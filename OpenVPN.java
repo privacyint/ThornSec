@@ -42,7 +42,7 @@ public class OpenVPN extends AStructuredProfile {
 				"sudo adduser openvpn --system --shell=/bin/false --disabled-login --ingroup nogroup --no-create-home",
 				"id openvpn 2>&1", "id: openvpn: no such user", "fail"));
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "openvpn_keys", "openvpn_installed", "/media/metaldata/openvpn", "/media/data/openvpn", "openvpn", "nogroup", "0700"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "openvpn_keys", "openvpn_installed", "/media/metaldata/openvpn", "/media/data/openvpn", "openvpn", "nogroup", "0700", "/media/metaldata"));
 		
 		units.addElement(new SimpleUnit("openvpn_dh_params", "openssl_installed",
 				"sudo openssl dhparam -out /media/data/openvpn/dh4096.pem 4096",

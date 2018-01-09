@@ -56,9 +56,9 @@ public class Redmine extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "redmine_logs", "proceed", "/media/metaldata/redmine-logs", "/media/data/redmine-logs", "nginx", "nginx", "0644"));
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "redmine_files", "proceed", "/media/metaldata/redmine-files", "/media/data/redmine-files", "nginx", "nginx", "0755"));
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "redmine_data", "proceed", "/media/metaldata/redmine-data", "/media/data/redmine-data", "nginx", "nginx", "0755"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "redmine_logs", "proceed", "/media/metaldata/redmine-logs", "/media/data/redmine-logs", "nginx", "nginx", "0644", "/media/metaldata"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "redmine_files", "proceed", "/media/metaldata/redmine-files", "/media/data/redmine-files", "nginx", "nginx", "0755", "/media/metaldata"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "redmine_data", "proceed", "/media/metaldata/redmine-data", "/media/data/redmine-data", "nginx", "nginx", "0755", "/meia/metaldata"));
 
 		units.addElement(new SimpleUnit("logs_symlinked", "redmine_installed",
 				//Move over fresh installation if the files aren't already there

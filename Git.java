@@ -38,7 +38,7 @@ public class Git extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units =  new Vector<IUnit>();
 				
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "scm_base_dir", "proceed", "/media/metaldata/scm", "/media/data/scm", "scm", "scm", "0755"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "scm_base_dir", "proceed", "/media/metaldata/scm", "/media/data/scm", "scm", "scm", "0755", "/media/metaldata"));
 		
 		units.addElement(new FileEditUnit("scm_server_home", "scm_base_dir_mounted", "export SCM_HOME=/var/lib/scm", "export SCM_HOME=/media/data/scm", "/etc/default/scm-server",
 				"Couldn't change scm-manager's data directory.  Its data will be stored in the VM only."));
