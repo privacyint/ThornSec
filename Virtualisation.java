@@ -143,6 +143,7 @@ public class Virtualisation extends AStructuredProfile {
 		preseed += "d-i apt-setup/cdrom/set-next boolean false\n";
 		preseed += "d-i apt-setup/cdrom/set-failed boolean false\n";
 		preseed += "d-i pkgsel/include string sudo openssh-server dkms gcc bzip2\n";
+		preseed += "discover discover/install_hw_packages multiselect virtualbox-ose-guest-x11\n";
 		preseed += "popularity-contest popularity-contest/participate boolean false\n";
 		preseed += "d-i grub-installer/only_debian boolean true\n";
 		preseed += "d-i grub-installer/with_other_os boolean true\n";
