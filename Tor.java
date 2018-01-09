@@ -42,15 +42,15 @@ public class Tor extends AStructuredProfile {
 		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "tor_logs", "tor_installed", "/var/log/.tor", "/var/log/tor", "debian-tor", "debian-tor", "0755", "/var/log"));
 
 		units.addElement(new SimpleUnit("hostname_symlinked", "tor_mounted",
-				//Move over fresh installation if the files aren't already there
-				"sudo mv /var/lib/tor/hidden_service/hostname /media/data/tor/;"
+				//Touch the hostname file if it doesn't already exist
+				"sudo [ ! -f /media/data/tor/hostname ] && touch /media/data/tor/hostname;"
 				//Then symlink
 				+ "sudo ln -s /media/data/tor/hostname /var/lib/tor/hidden_service/hostname;",
 				"sudo [ -L /var/lib/tor/hidden_service/hostname ] && echo pass || echo fail", "pass", "pass"));
 
 		units.addElement(new SimpleUnit("private_key_symlinked", "tor_mounted",
-				//Move over fresh installation if the files aren't already there
-				"sudo mv /var/lib/tor/hidden_service/private_key /media/data/tor/;"
+				//Touch the private key if it doesn't already exist
+				"sudo [ ! -f /media/data/tor/private_key ] && touch /media/data/tor/private_key;"
 				//Then symlink
 				+ "sudo ln -s /media/data/tor/private_key /var/lib/tor/hidden_service/private_key;",
 				"sudo [ -L /var/lib/tor/hidden_service/private_key ] && echo pass || echo fail", "pass", "pass"));
