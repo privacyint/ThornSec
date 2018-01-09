@@ -32,7 +32,7 @@ public class BindFsModel extends AModel {
 	public Vector<IUnit> addBindPoint(String server, NetworkModel model, String name, String precondition, String baseDirectory, String bindPoint, String username, String group, String permissions, String mountAfter) {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		String requires = (mountAfter.equals("")) ? "" : ",x-systemd.requires=" + mountAfter;
+		String requires = (mountAfter.equals("")) ? "" : ",x-systemd.after=" + mountAfter;
 		
 		//Make sure the directory exists
 		units.addElement(new DirUnit(name + "_base_directory", precondition, baseDirectory));
