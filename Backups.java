@@ -139,6 +139,45 @@ public class Backups extends AStructuredProfile {
 		units.addElement(new FileOwnUnit("backup_recovery_script", "backup_recovery_script", model.getData().getVmBase(server) + "/recoveryscripts/recoverFromLatest.sh", "root"));
 		units.addElement(new FilePermsUnit("backup_recovery_script", "backup_recovery_script_chowned", model.getData().getVmBase(server) + "/recoveryscripts/recoverFromLatest.sh", "755"));
 		
+		String stopAllScript = "";
+		stopAllScript += "#!/bin/sh\n";
+		stopAllScript += "echo \\\"=== Stopping all VMs at \\`date\\` ===\\\"\n";
+		stopAllScript += "for dirPath in \\`pwd\\`/../backup/*/\n";
+		stopAllScript += "do\n";
+		stopAllScript += "    dirPath=\\${dirPath%*/}\n";
+		stopAllScript += "    vmName=\\${dirPath##*/}\n";
+		stopAllScript += "    if [ \"\\${vmName}\" != \"rsync-time-backup\" ]\n"; //Don't descend in here, it's not a VM!
+		stopAllScript += "    then\n";
+		stopAllScript += "        echo \\\"Stopping \\${vmName}\\\"\n";
+		stopAllScript += "        sudo -u vboxuser_\\${vmName} bash -c \\\"VBoxManage controlvm \\${vmName} poweroff\\\"\n";
+		stopAllScript += "        wait \\${!}\n";
+		stopAllScript += "    fi\n";
+		stopAllScript += "done\n";
+		stopAllScript += "echo \\\"=== Finished stopping all VMs at \\`date\\` ===\\\"";
+		
+		units.addElement(new FileUnit("stop_all_script", "proceed", stopAllScript, model.getData().getVmBase(server) + "/recoveryscripts/stopAll.sh"));
+		units.addElement(new FileOwnUnit("stop_all_script", "stop_all_script", model.getData().getVmBase(server) + "/recoveryscripts/stopAll.sh", "root"));
+		units.addElement(new FilePermsUnit("stop_all_script", "stop_all_script_chowned", model.getData().getVmBase(server) + "/recoveryscripts/stopAll.sh", "755"));
+
+		String startAllScript = "";
+		startAllScript += "#!/bin/sh\n";
+		startAllScript += "echo \\\"=== Starting all VMs at \\`date\\` ===\\\"\n";
+		startAllScript += "for dirPath in \\`pwd\\`/../backup/*/\n";
+		startAllScript += "do\n";
+		startAllScript += "    dirPath=\\${dirPath%*/}\n";
+		startAllScript += "    vmName=\\${dirPath##*/}\n";
+		startAllScript += "    if [ \"\\${vmName}\" != \"rsync-time-backup\" ]\n"; //Don't descend in here, it's not a VM!
+		startAllScript += "    then\n";
+		startAllScript += "        sudo -u vboxuser_\\${vmName} bash -c \\\"VBoxManage startvm \\${vmName} --type headless\\\"\n";
+		startAllScript += "        wait \\${!}\n";
+		startAllScript += "    fi\n";
+		startAllScript += "done\n";
+		startAllScript += "echo \\\"=== Finished starting all VMs at \\`date\\` ===\\\"";
+		
+		units.addElement(new FileUnit("start_all_script", "proceed", startAllScript, model.getData().getVmBase(server) + "/recoveryscripts/startAll.sh"));
+		units.addElement(new FileOwnUnit("start_all_script", "start_all_script", model.getData().getVmBase(server) + "/recoveryscripts/startAll.sh", "root"));
+		units.addElement(new FilePermsUnit("start_all_script", "start_all_script_chowned", model.getData().getVmBase(server) + "/recoveryscripts/startAll.sh", "755"));
+
 		return units;
 	}
 }
