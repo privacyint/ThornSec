@@ -51,35 +51,36 @@ public class Metal extends AStructuredProfile {
 
 		InterfaceModel im = model.getServerModel(server).getInterfaceModel();
 		
-		if (model.getServerModel(server).isRouter()) {
-			units.addElement(im.addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(server),
-									   "static",
-									   "br" + model.getData().getSubnet(server),
-									   "none",
-									   model.getServerModel(server).getGateway(),
-									   model.getData().getNetmask(),
-									   null,
-									   null));			
-			for (String service : model.getServerModel(server).getServices()) {
-				units.addElement(im.addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(service),
-									   "static",
-									   "br" + model.getData().getSubnet(service),
-									   "none",
-									   model.getServerModel(service).getGateway(),
-									   model.getData().getNetmask(),
-									   null,
-									   null));
-			}
+		//Routers build their own external ifaces.
+		//Next step will be to allow more than one iface on a non-Router HyperVisor, so we can do load balancing
+		if (!model.getServerModel(server).isRouter()) {
+			units.addElement(model.getServerModel(server).getInterfaceModel().addIface(server.replace("-", "_") + "_primary_iface",
+					   "static",
+					   model.getData().getIface(server),
+					   null,
+					   model.getServerModel(server).getIP(),
+					   model.getData().getNetmask(),
+					   null,
+					   model.getServerModel(server).getGateway()));
 		}
-		else {
-			units.addElement(im.addIface(server.replace("-", "_") + "_primary_iface",
-									   "static",
-									   model.getData().getIface(server),
-									   null,
-									   model.getServerModel(server).getIP(),
-									   model.getData().getNetmask(),
-									   null,
-									   model.getServerModel(server).getGateway()));
+		
+		units.addElement(im.addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(server),
+								   "static",
+								   "br" + model.getData().getSubnet(server),
+								   "none",
+								   model.getServerModel(server).getGateway(),
+								   model.getData().getNetmask(),
+								   null,
+								   null));			
+		for (String service : model.getServerModel(server).getServices()) {
+			units.addElement(im.addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(service),
+								   "static",
+								   "br" + model.getData().getSubnet(service),
+								   "none",
+								   model.getServerModel(service).getGateway(),
+								   model.getData().getNetmask(),
+								   null,
+								   null));
 		}
 
 		units.addAll(backups.getPersistentConfig(server, model));
@@ -114,13 +115,7 @@ public class Metal extends AStructuredProfile {
 					"echo $" + service.toUpperCase() + "_PASSWORD", "", "fail",
 					"Couldn't set the passphrase for " + service + ".  You won't be able to configure this service."));
 			
-			String bridge = "";
-			if (model.getServerModel(server).isRouter()) {
-				bridge = "br" + model.getData().getSubnet(service);
-			}
-			else {
-				bridge = model.getData().getIface(server);
-			}
+			String bridge = "br" + model.getData().getSubnet(service);
 			
 			units.addAll(hypervisor.buildIso(server, service, model, hypervisor.preseed(server, service, model, expirePasswords)));
 			units.addAll(hypervisor.buildVm(server, service, model, bridge));
