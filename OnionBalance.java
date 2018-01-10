@@ -96,7 +96,7 @@ public class OnionBalance extends AStructuredProfile {
 		String torrc = "";
 		torrc += "Datadirectory /var/lib/tor\n";
 		torrc += "ControlPort 9051\n";
-		torrc += "CookieAuthentication 1";
+		torrc += "CookieAuthentication 1\n";
 		torrc += "SocksPort 0\n";
 		torrc += "\n";
 		torrc += "RunAsDaemon 1\n";
