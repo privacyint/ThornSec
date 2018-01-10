@@ -137,7 +137,7 @@ public class Tor extends AStructuredProfile {
 		proxyConfig += "    server_name _ default;\n";
 		proxyConfig += "\n";
 		proxyConfig += "    listen unix:/media/data/www/port-80.sock;\n";
-		proxyConfig += "    return 307 https://$host$request_uri;\n";
+		proxyConfig += "    return 307 https://\\$host\\$request_uri;\n";
 		proxyConfig += "}\n";
 		proxyConfig += "\n";
 		proxyConfig += "server {\n";
