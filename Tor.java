@@ -105,6 +105,8 @@ public class Tor extends AStructuredProfile {
 	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 
+		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "torhs_tls_certs", "proceed", "/media/metaldata/tls", "/media/data/tls", "root", "root", "600", "/media/metaldata"));
+		
 		String proxyConfig = "";
 		proxyConfig += "proxy_buffering on;\n";
 		proxyConfig += "proxy_buffers 16 64k;\n";
