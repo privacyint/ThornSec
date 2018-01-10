@@ -125,7 +125,7 @@ public class OnionBalance extends AStructuredProfile {
 		onionbalanceConfig += "REFRESH_INTERVAL: 600\n";
 		onionbalanceConfig += "services:\n";
 		onionbalanceConfig += "    - key: /media/data/onionbalance/private_key\n";
-		onionbalanceConfig += "      instances:\n";
+		onionbalanceConfig += "      instances:";
 		
 		String[] backends = model.getData().getPropertyArray(server, "backend");
 		for (String backend : backends) {
