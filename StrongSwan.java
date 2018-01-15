@@ -30,46 +30,25 @@ public class StrongSwan extends AStructuredProfile {
 			String ingressChain = hostname + "_ingress";
 			String egressChain  = hostname + "_egress";
 			
-			model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + model.getData().getExternalIp(server) + "_1701",
+			model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + model.getData().getExternalIp(server),
 					"-p udp"
-					+ " --dport 1701"
+					+ " -m multiport"
+					+ " --dports 500,4500"
 					+ " -j DNAT"
-					+ " --to-destination " + ip + ":1701");
-			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_1701", fwdChain,
+					+ " --to-destination " + ip);
+			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_vpn_fwd", fwdChain,
 					"-p udp"
-					+ " --dport 1701"
+					+ " -m multiport"
+					+ " --dports 500,4500"
 					+ " -j ACCEPT");
-			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_1701", ingressChain,
+			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_vpn_internally", fwdChain,
 					"-p udp"
-					+ " --dport 1701"
+					+ " -m multiport"
+					+ " --sports 500,4500"
 					+ " -j ACCEPT");
-			
-			model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + model.getData().getExternalIp(server) + "_4500",
-					"-p udp "
-					+ "--dport 4500 "
-					+ "-j DNAT "
-					+ "--to-destination " + ip + ":4500");
-			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_4500", fwdChain,
+			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_vpn_in", ingressChain,
 					"-p udp"
-					+ " --dport 4500"
-					+ " -j ACCEPT");
-			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_4500", ingressChain,
-					"-p udp"
-					+ " --dport 4500"
-					+ " -j ACCEPT");
-		
-			model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + model.getData().getExternalIp(server) + "_500",
-					"-p udp "
-					+ "--dport 500 "
-					+ "-j DNAT "
-					+ "--to-destination " + ip + ":500");
-			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_500", fwdChain,
-					"-p udp"
-					+ " --dport 500"
-					+ " -j ACCEPT");
-			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_500", ingressChain,
-					"-p udp"
-					+ " --dport 500"
+					+ " --dports 500,4500"
 					+ " -j ACCEPT");
 
 			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_egress", egressChain,
