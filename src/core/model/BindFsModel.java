@@ -25,14 +25,26 @@ public class BindFsModel extends AModel {
 		return units;
 	}
 
+	public Vector<IUnit> addLogBindPoint(String server, NetworkModel model, String name, String precondition, String username, String permissions) {
+		return addBindPoint(server, model, name + "_log", precondition, "/var/log/." + name.replaceAll("-",  "_"), "/var/log/" + name.replaceAll("-",  "_"), username, username, permissions, "/var/log", true);
+	}
+
+	public Vector<IUnit> addDataBindPoint(String server, NetworkModel model, String name, String precondition, String username, String group, String permissions) {
+		return addBindPoint(server, model, name + "_data", precondition, "/media/metaldata/" + name.replaceAll("-",  "_"), "/media/data/" + name.replaceAll("-",  "_"), username, group, permissions, "/media/metaldata", false);
+	}
+	
 	public Vector<IUnit> addBindPoint(String server, NetworkModel model, String name, String precondition, String baseDirectory, String bindPoint, String username, String group, String permissions) {
-		return addBindPoint(server, model, name, precondition, baseDirectory, bindPoint, username, group, permissions, "");
+		return addBindPoint(server, model, name, precondition, baseDirectory, bindPoint, username, group, permissions, "", false);
 	}
 		
-	public Vector<IUnit> addBindPoint(String server, NetworkModel model, String name, String precondition, String baseDirectory, String bindPoint, String username, String group, String permissions, String mountAfter) {
+	public Vector<IUnit> addBindPoint(String server, NetworkModel model, String name, String precondition, String baseDirectory, String bindPoint, String username, String group, String permissions, String mountAfter, Boolean isNetDev) {
 		Vector<IUnit> units = new Vector<IUnit>();
 
 		String requires = (mountAfter.equals("")) ? "" : ",x-systemd.after=" + mountAfter;
+		
+		if (isNetDev) {
+			requires += ",_netdev";
+		}
 		
 		//Make sure the directory exists
 		units.addElement(new DirUnit(name + "_base_directory", precondition, baseDirectory));
