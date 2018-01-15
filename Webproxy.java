@@ -89,7 +89,7 @@ public class Webproxy extends AStructuredProfile {
 				String domain = model.getData().getDomain(canonicalName);
 				String nginxConf = "";
 			
-				units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, canonicalName + "_tls_certs", "proceed", "/media/metaldata/tls/" + canonicalName, "/media/data/tls/" + canonicalName, "root", "root", "600", "/media/metaldata"));
+				units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, canonicalName + "_tls_certs", "proceed", "/media/metaldata/tls/" + canonicalName, "/media/data/tls/" + canonicalName, "root", "root", "600", "/media/metaldata", false));
 								
 				//Generated from https://mozilla.github.io/server-side-tls/ssl-config-generator/ (Nginx/Modern) & https://cipherli.st/
 				nginxConf = "server {\n";

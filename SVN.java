@@ -47,7 +47,7 @@ public class SVN extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "apache_webroot", "proceed", "/media/metaldata/www", "/media/data/www", "www-data", "www-data", "0755", "/media/metaldata"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "www", "proceed", "www-data", "www-data", "0755"));
 		
 		units.addElement(new SimpleUnit("apache_mod_headers_enabled", "apache_installed",
 				"sudo a2enmod headers;",
@@ -88,10 +88,10 @@ public class SVN extends AStructuredProfile {
 				+ "sudo service apache2 restart; sudo service php5-fpm restart;",
 				"grep 'expose_php' /etc/php5/apache2/php.ini | awk '{ print $3 }'","Off","pass"));
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "svn_base_dir", "proceed", "/media/metaldata/svn", "/media/data/svn", "www-data", "www-data", "0755", "/media/metaldata"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "svn", "proceed", "www-data", "www-data", "0755"));
 
-		units.addElement(new DirUnit("svn_repo_dir", "svn_base_dir_mounted", "/media/data/svn/repos"));
-		units.addElement(new DirUnit("svn_credentials_dir", "svn_base_dir_mounted", "/media/data/svn/credentials"));
+		units.addElement(new DirUnit("svn_repo_dir", "svn_data_mounted", "/media/data/svn/repos"));
+		units.addElement(new DirUnit("svn_credentials_dir", "svn_data_mounted", "/media/data/svn/credentials"));
 		
 		units.addElement(new SimpleUnit("svn_admin_downloaded", "apache_installed",
 				"sudo wget 'http://downloads.sourceforge.net/project/ifsvnadmin/svnadmin-1.6.2.zip?ts=1479474964&use_mirror=kent' -O /root/svnadmin.zip;",

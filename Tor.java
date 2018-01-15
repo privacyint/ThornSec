@@ -38,15 +38,15 @@ public class Tor extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "tor", "tor_installed", "/media/metaldata/tor", "/media/data/tor", "debian-tor", "debian-tor", "0700", "/media/metaldata"));
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "tor_logs", "tor_installed", "/var/log/.tor", "/var/log/tor", "debian-tor", "debian-tor", "0755", "/var/log"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "tor", "tor_installed", "debian-tor", "debian-tor", "0700"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addLogBindPoint(server, model, "tor", "tor_installed", "debian-tor", "0755"));
 
-		units.addElement(new SimpleUnit("torhs_hostname", "tor_mounted",
+		units.addElement(new SimpleUnit("torhs_hostname", "tor_data_mounted",
 				//Copy over the new hostname file if one doesn't already exist, or replace the new hostname if we already have one
 				"sudo [ ! -f /media/data/tor/hostname ] && cp /var/lib/tor/hidden_service/hostname /media/data/tor/hostname || cp /media/data/tor/hostname /var/lib/tor/hidden_service/hostname",
 				"sudo cmp --silent /media/data/tor/hostname /var/lib/tor/hidden_service/hostname && echo pass || echo fail", "pass", "pass"));
 
-		units.addElement(new SimpleUnit("torhs_private_key", "tor_mounted",
+		units.addElement(new SimpleUnit("torhs_private_key", "tor_data_mounted",
 				//Copy over the new private key file if one doesn't already exist, or replace the new private key if we already have one
 				"sudo [ ! -f /media/data/tor/private_key ] && cp /var/lib/tor/hidden_service/private_key /media/data/tor/private_key || cp /media/data/tor/private_key /var/lib/tor/hidden_service/private_key",
 				"sudo cmp --silent /media/data/tor/private_key /var/lib/tor/hidden_service/private_key && echo pass || echo fail", "pass", "pass"));
@@ -105,7 +105,7 @@ public class Tor extends AStructuredProfile {
 	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "torhs_tls_certs", "proceed", "/media/metaldata/tls", "/media/data/tls", "root", "root", "600", "/media/metaldata"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "tls", "proceed", "root", "root", "600"));
 		
 		String proxyConfig = "";
 		proxyConfig += "proxy_buffering on;\n";

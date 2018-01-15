@@ -32,7 +32,7 @@ public class Owncloud extends AStructuredProfile {
 		units.addAll(php.getInstalled(server, model));
 		units.addAll(db.getInstalled(server, model));
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "owncloud_data", "proceed", "/media/metaldata/owncloud", "/media/data/owncloud", "nginx", "nginx", "0770", "/media/metaldata"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "owncloud", "proceed", "nginx", "nginx", "0770"));
 
 		units.addElement(new InstalledUnit("unzip", "proceed", "unzip"));
 		units.addElement(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
