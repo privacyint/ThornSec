@@ -109,6 +109,8 @@ public class Service extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		model.getServerModel(server).addRouterFirewallRule(server, model, "virtualbox", "download.virtualbox.org", new String[]{"80"});
+		model.getServerModel(server).addRouterFirewallRule(server, model, "debian_cdn", "cdn.debian.net", new String[]{"80"});
+		model.getServerModel(server).addRouterFirewallRule(server, model, "debian_security_cdn", "security-cdn.debian.org", new String[]{"80"});
 		
 		return units;
 	}
