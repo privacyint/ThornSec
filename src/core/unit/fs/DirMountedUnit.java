@@ -12,7 +12,7 @@ public class DirMountedUnit extends SimpleUnit {
 	 * @param dir          Directory to check/mount
 	 */
 	public DirMountedUnit(String name, String precondition, String dir) {
-		super(name + "_mounted", precondition, "sudo mount " + dir, "mount | grep '" + dir + "';", "", "fail", "Terribly sorry, I was unable to mount " + dir);
+		super(name + "_mounted", precondition, "sudo mount " + dir, "mount | grep '" + dir + "' 2>&1;", "", "fail", "Terribly sorry, I was unable to mount " + dir);
 	}
 	
 	/**
@@ -24,7 +24,7 @@ public class DirMountedUnit extends SimpleUnit {
 	 * @param message      Fail message
 	 */
 	public DirMountedUnit(String name, String precondition, String dir, String message) {
-		super(name + "_mounted", precondition, "sudo mount " + dir, "mount | grep '" + dir + "';", "", "fail", message);
+		super(name + "_mounted", precondition, "sudo mount " + dir, "mount | grep '" + dir + "' 2>&1;", "", "fail", message);
 	}
 	
 }
