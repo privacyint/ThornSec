@@ -38,10 +38,10 @@ public class Piwik extends AStructuredProfile {
 		units.addElement(new InstalledUnit("php_gd", "php_fpm_installed", "php-gd"));
 		units.addElement(new InstalledUnit("php_xml", "php_fpm_installed", "php-xml"));
 
-		units.addElement(new FileDownloadUnit("piwik", "proceed", "https://builds.piwik.org/piwik.zip", "/root/piwik.zip",
+		units.addElement(new FileDownloadUnit("piwik", "proceed", "https://builds.matomo.org/piwik.zip", "/root/piwik.zip",
 				"Couldn't download Piwik.  This could mean you ave no network connection, or that the specified download is no longer available."));
-		units.addElement(new FileChecksumUnit("piwik", "piwik_downloaded", "/root/piwik.zip", "4fb840ca1737f4004ebd9861b27e51b3e643185264f5f1bed45473ce86ff02b6bc8ee647183eaaa231052fedb7ad9cf10661d503624e75d0d294ef76f58b52f6",
-				"Piwik's checksum doesn't match.  This could indicate a failed download, MITM attack, or a newer version than our code supports.  OwnCloud's installation will fail."));
+		units.addElement(new FileChecksumUnit("piwik", "piwik_downloaded", "/root/piwik.zip", "449a91225b0f942f454bbccd5fba1ff9ea9d0459b37f69004d43060c24e3626b6303373c66711b316314ec72ed96fda3c76b4a4f6a930c1569a2a72ed6ff6a1f",
+				"Piwik's checksum doesn't match.  This could indicate a failed download, MITM attack, or a newer version than our code supports.  Piwik's installation will fail."));
 
 		units.addElement(new SimpleUnit("piwik_installed", "piwik_checksum",
 				"sudo unzip /root/piwik.zip -d /media/data/www",
@@ -116,6 +116,7 @@ public class Piwik extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addAll(webserver.getPersistentFirewall(server, model));
+		model.getServerModel(server).addRouterFirewallRule(server, model, "matomo", "builds.matomo.org", new String[]{"443"});
 
 		return units;
 	}
