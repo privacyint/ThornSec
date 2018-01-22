@@ -178,6 +178,48 @@ public class Backups extends AStructuredProfile {
 		units.addElement(new FileOwnUnit("start_all_script", "start_all_script", model.getData().getVmBase(server) + "/recoveryscripts/startAll.sh", "root"));
 		units.addElement(new FilePermsUnit("start_all_script", "start_all_script_chowned", model.getData().getVmBase(server) + "/recoveryscripts/startAll.sh", "755"));
 
+		String mountStorageScript = "";
+		mountStorageScript += "#!/bin/sh\n";
+		mountStorageScript += "if [ \\$# -eq 0 ]\n";
+		mountStorageScript += "then\n";
+		mountStorageScript += "	echo \\\"No parameter supplied.\\\nYou need to provide the name of the VM as a parameter\\\"\n";
+		mountStorageScript += "	exit 1;\n";
+		mountStorageScript += "fi\n";
+		mountStorageScript += "\n";
+		mountStorageScript += "vmName=\\${1}\n";
+		mountStorageScript += "\n";
+		mountStorageScript += "echo \\\"=== Mounting storage ===\\\"\n";
+		mountStorageScript += "modprobe -r nbd\n";
+		mountStorageScript += "modprobe nbd max_part=15\n";
+		mountStorageScript += "\n";
+		mountStorageScript += "dirPath=`pwd`\n";
+		mountStorageScript += "\n";
+		mountStorageScript += "echo \\\"This will mount the storage for \\${vmName} and chroot.\\\"\n";
+		mountStorageScript += "echo \\\"When you are finished, type exit to restart the VM\\\"\n";
+		mountStorageScript += "\n";
+		mountStorageScript += "echo \\\"Shutting down \\${vmName}\\\"\n";
+		mountStorageScript += "sudo -u vboxuser_\\${vmName} bash -c \\\"VBoxManage controlvm \\${vmName} acpipowerbutton\\\"\n";
+		mountStorageScript += "wait \\${!}\n";
+		mountStorageScript += "sleep 30s\n";
+		mountStorageScript += "sudo -u vboxuser_\\${vmName} bash -c \\\"VBoxManage controlvm \\${vmName} poweroff\\\"\n";
+		mountStorageScript += "wait \\${!}\n";
+		mountStorageScript += "qemu-nbd -c /dev/nbd0 \\${dirPath}/../storage/\\${vmName}/\\${vmName}_storage.vdi\n";
+		mountStorageScript += "wait \\${!}\n";
+		mountStorageScript += "mount /dev/nbd0p1 /mnt\n";
+		mountStorageScript += "wait \\${!}\n";
+		mountStorageScript += "chroot /mnt\n";
+		mountStorageScript += "wait \\${!}\n";
+		mountStorageScript += "umount /mnt\n";
+		mountStorageScript += "wait \\${!}\n";
+		mountStorageScript += "qemu-nbd --disconnect /dev/nbd0\n";
+		mountStorageScript += "wait \\${!}\n";
+		mountStorageScript += "sudo -u vboxuser_\\${vmName} bash -c \\\"VBoxManage startvm \\${vmName} --type headless\\\"\n";
+		mountStorageScript += "echo \\\"=== /fin/ ===\\\"";
+				
+		units.addElement(new FileUnit("mount_storage_script", "proceed", mountStorageScript, model.getData().getVmBase(server) + "/recoveryscripts/mountStorage.sh"));
+		units.addElement(new FileOwnUnit("mount_storage_script", "mount_storage_script", model.getData().getVmBase(server) + "/recoveryscripts/mountStorage.sh", "root"));
+		units.addElement(new FilePermsUnit("mount_storage_script", "mount_storage_script_chowned", model.getData().getVmBase(server) + "/recoveryscripts/mountStorage.sh", "755"));
+		
 		return units;
 	}
 }
