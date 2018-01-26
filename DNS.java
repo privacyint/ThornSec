@@ -1,6 +1,7 @@
 package profile;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -15,12 +16,14 @@ public class DNS extends AStructuredProfile {
 
 	private Vector<String> gateways;
 	private HashMap<String, Vector<String>> domainRecords;
+	private HashMap<String, String> poison;
 	
 	public DNS() {
 		super("dns");
 		
 		domainRecords = new HashMap<String, Vector<String>>();
 		gateways      = new Vector<String>();
+		poison        = new HashMap<String, String>();
 	}
 
 	private void addGateway(String ip) {
@@ -55,6 +58,10 @@ public class DNS extends AStructuredProfile {
 		}
 		
 		domainRecords.put(domain,  records);
+	}
+	
+	public void addPoison(String domain, String ip) {
+		poison.put(domain, ip);
 	}
 	
 	public Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
@@ -120,6 +127,9 @@ public class DNS extends AStructuredProfile {
 		}
 		for (String domain : domainRecords.keySet()) {
 			config += "    include: \\\"/etc/unbound/unbound.conf.d/" + domain + ".zone\\\"\n";
+		}
+		if (!poison.isEmpty()) {
+			config += "    include: \\\"/etc/unbound/unbound.conf.d/poison.zone\\\"\n";
 		}
 		//rDNS
 		config += "    local-zone: \\\"" + model.getServerModel(server).getGateway().split("\\.")[0] + ".in-addr.arpa.\\\" nodefault\n";
@@ -233,6 +243,15 @@ public class DNS extends AStructuredProfile {
 			}
 			
 			units.addElement(new FileUnit(domain.replaceAll("\\.", "_").replaceAll("-",  "_") + "_dns_internal_zone", "dns_installed", zoneConfig.replaceAll("\\s+$", ""), "/etc/unbound/unbound.conf.d/" + domain + ".zone"));
+		}
+		
+		if (!poison.isEmpty()) {
+			String poisonConfig = "";
+			for (Map.Entry<String, String> record : poison.entrySet()) {
+				poisonConfig += "\n    local-zone: \\\"" + record.getKey() + "\\\" redirect";
+				poisonConfig += "\n    local-data: \\\"" + record.getKey() + " A " + record.getValue() + "\\\"";
+			}
+			units.addElement(new FileUnit("dns_poison_zone", "dns_installed", poisonConfig.replaceAll("\\s+$", ""), "/etc/unbound/unbound.conf.d/poison.zone"));
 		}
 		
 		return units;
