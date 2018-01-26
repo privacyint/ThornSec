@@ -108,9 +108,12 @@ public class Service extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
+		model.getServerModel(server).addRouterPoison(server, model, "cdn.debian.net", "130.89.148.14", new String[] {"80"});
+		model.getServerModel(server).addRouterPoison(server, model, "security-cdn.debian.org", "151.101.0.204", new String[] {"80"});
+		
 		model.getServerModel(server).addRouterFirewallRule(server, model, "virtualbox", "download.virtualbox.org", new String[]{"80"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "debian_cdn", "cdn.debian.net", new String[]{"80"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "debian_security_cdn", "security-cdn.debian.org", new String[]{"80"});
+		//model.getServerModel(server).addRouterFirewallRule(server, model, "debian_cdn", "cdn.debian.net", new String[]{"80"});
+		//model.getServerModel(server).addRouterFirewallRule(server, model, "debian_security_cdn", "security-cdn.debian.org", new String[]{"80"});
 		
 		return units;
 	}
