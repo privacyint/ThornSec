@@ -14,6 +14,7 @@ import core.profile.AProfile;
 import core.unit.SimpleUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
+import profile.DNS;
 import profile.Metal;
 import profile.Router;
 import profile.SSH;
@@ -365,6 +366,34 @@ public class ServerModel extends AModel {
 		}
 		catch (UnknownHostException e) {
 			e.printStackTrace();
+		}
+	}
+
+	public void addRouterPoison(String server, NetworkModel model, String domain, String ip, String[] ports) {
+		String serverIp     = model.getServerModel(server).getIP();
+		String cleanName    = server.replaceAll("-",  "_");
+		String ingressChain = cleanName + "_ingress";
+		String egressChain  = cleanName + "_egress";
+		
+		for (String router : model.getRouters()) {
+			DNS dns = model.getServerModel(router).getRouter().getDNS();
+			
+			dns.addPoison(domain, ip);
+			
+			for (String port : ports) {
+				model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_in_" + port, ingressChain,
+						"-s " + ip
+						+ " -d " + serverIp
+						+ " -p tcp"
+						+ " --sport " + port
+						+ " -j ACCEPT");
+				model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_out_" + port, egressChain,
+						"-d " + ip
+						+ " -s " + serverIp
+						+ " -p tcp"
+						+ " --dport " + port
+						+ " -j ACCEPT");
+			}
 		}
 	}
 
