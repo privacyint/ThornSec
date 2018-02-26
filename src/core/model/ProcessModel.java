@@ -111,6 +111,7 @@ public class ProcessModel extends AModel {
 		processStrings.addElement("\\[xprtiod\\]$");
 		processStrings.addElement("/usr/sbin/blkmapd$");
 		processStrings.addElement("/sbin/rpcbind -f -w$");
+		processStrings.addElement("\\[ttm_swap\\]$");
 		//processStrings.addElement("");
 		//processStrings.addElement("");
 
