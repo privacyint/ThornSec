@@ -54,7 +54,7 @@ public class MariaDB extends AStructuredProfile {
 		
 		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "mysql", "mariadb_installed", "mysql", "mysql", "0755"));
 		
-		units.addElement(new SimpleUnit("mariadb_stopped", "mariadb_data_mounted",
+		units.addElement(new SimpleUnit("mariadb_stopped", "mysql_data_mounted",
 				stopMariaDb(),
 				"[ -f /var/run/mysqld/mysqld.pid ] && echo fail || echo pass", "pass", "pass"));
 
