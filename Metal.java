@@ -5,6 +5,7 @@ import java.util.regex.Pattern;
 
 import core.exec.PasswordExec;
 import core.iface.IUnit;
+import core.model.FirewallModel;
 import core.model.InterfaceModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
@@ -119,6 +120,22 @@ public class Metal extends AStructuredProfile {
 			
 			units.addAll(hypervisor.buildIso(server, service, model, hypervisor.preseed(server, service, model, expirePasswords)));
 			units.addAll(hypervisor.buildVm(server, service, model, bridge));
+		}
+		
+		return units;
+	}
+	
+	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+		Vector<IUnit> units = new Vector<IUnit>();
+		
+		for (String router : model.getRouters()) {
+			
+			FirewallModel routerFm = model.getServerModel(router).getFirewallModel();
+		
+			routerFm.addFilter(server + "_egress_25_allow", server + "_egress",
+					"-p tcp"
+					+ " --dport 25"
+					+ " -j ACCEPT");
 		}
 		
 		return units;
