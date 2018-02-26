@@ -90,9 +90,9 @@ public class Service extends AStructuredProfile {
 				+ "sudo mv /var/log/* /tmp/log;"
 				+ "sudo mount log;"
 				+ "sudo mv /tmp/log/* /var/log;",
-				"mount | grep 'log on /var/log type vboxsf (rw,nodev,relatime)' 2>&1", "", "fail",
+				"mount | grep 'log on /var/log' 2>&1", "log on /var/log type vboxsf (rw,nodev,relatime,_netdev)", "pass",
 				"Couldn't move & remount the logs.  This is usually caused by logs already being in the hypervisor, on the first config of a service.  This can be fixed by rebooting the service (though you will lose any logs from the installation)"));
-		
+
 		units.addElement(model.getServerModel(server).getInterfaceModel().addIface(server.replace("-", "_") + "_primary_iface",
 																				   "static",
 																				   model.getData().getIface(server),
