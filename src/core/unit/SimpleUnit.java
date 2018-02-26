@@ -70,7 +70,7 @@ public class SimpleUnit extends ComplexUnit {
 		String message = this.message;
 		
 		message = Pattern.quote(message); //Turn special characters into literal so they don't get parsed out
-		message = message.substring(2, message.length()-3).trim(); //Remove '\Q' and '\E' from beginning/end since we're not using this as a regex
+		message = message.substring(2, message.length()-2).trim(); //Remove '\Q' and '\E' from beginning/end since we're not using this as a regex
 		message = message.replace("\"", "\\\""); //Also, make sure quote marks are properly escaped!
 		
 		return message;
