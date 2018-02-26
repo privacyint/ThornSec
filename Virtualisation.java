@@ -223,7 +223,7 @@ public class Virtualisation extends AStructuredProfile {
 		units.addElement(new DirPermsUnit("backup_dir_" + service, "backup_dir_" + service + "_chowned", backupDir, "750"));
 		
 		//Mark the backup directory as a valid destination
-		units.addElement(new FileUnit(service + "_mark_backup_dir", "backup_dir_" + service + "_chmoded" , "What a nutkin.  MC don alisha.  Chicken nuggets!", backupDir + "/backup.marker"));
+		units.addElement(new FileUnit(service + "_mark_backup_dir", "backup_dir_" + service + "_chmoded" , "In memoriam Luke and Guy.  Miss you two!", backupDir + "/backup.marker"));
 		
 		//VM setup
 		units.addElement(new SimpleUnit(service + "_exists", "storage_dir_" + service + "_chmoded",
