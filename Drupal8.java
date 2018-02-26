@@ -6,7 +6,6 @@ import core.iface.IUnit;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
-import core.unit.fs.FileEditUnit;
 import core.unit.pkg.InstalledUnit;
 
 public class Drupal8 extends AStructuredProfile {
@@ -124,10 +123,11 @@ public class Drupal8 extends AStructuredProfile {
 				+ " && sudo /media/data/drush/drush -y -r /media/data/www site-install --db-url=mysql://drupal:${DRUPAL_PASSWORD}@localhost:3306/drupal --db-prefix=drupal --account-pass=admin",
 				"sudo /media/data/drush/drush status -r /media/data/www 2>&1 | grep 'Drupal root'", "", "fail",
 				"Couldn't install Drupal."));
-		
-		units.addElement(new FileEditUnit("drupal_base_url", "drupal_installed", "\\# \\$base_url", "\\$base_url", "/media/data/www/sites/default/settings.php"));
-		units.addElement(new FileEditUnit("drupal_https", "drupal_installed", "\\x27http://www.example.com\\x27", "\"https://{\\$_SERVER\\[\\x27HTTP_HOST\\x27\\]}\"", "/media/data/www/sites/default/settings.php",
-				"Couldn't set Drupal's URI to https. This could cause issues with hyperlinks in the installation."));
+	
+		//These units are tying to edit settings which no longer exist in Drupal8
+		//units.addElement(new FileEditUnit("drupal_base_url", "drupal_installed", "\\# \\$base_url", "\\$base_url", "/media/data/www/sites/default/settings.php"));
+		//units.addElement(new FileEditUnit("drupal_https", "drupal_installed", "\\x27http://www.example.com\\x27", "\"https://{\\$_SERVER\\[\\x27HTTP_HOST\\x27\\]}\"", "/media/data/www/sites/default/settings.php",
+		//		"Couldn't set Drupal's URI to https. This could cause issues with hyperlinks in the installation."));
 		
 		return units;
 	}
