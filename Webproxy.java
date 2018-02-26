@@ -146,6 +146,8 @@ public class Webproxy extends AStructuredProfile {
 		
 		units.addAll(webserver.getPersistentFirewall(server, model));
 		
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_tor_check", "check.torproject.org", new String[]{"80","443"});
+
 		String[] backends = model.getData().getPropertyArray(server, "proxy");
 		
 		//DNAT the external IP if it's given
