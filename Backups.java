@@ -192,7 +192,7 @@ public class Backups extends AStructuredProfile {
 		mountStorageScript += "modprobe -r nbd\n";
 		mountStorageScript += "modprobe nbd max_part=15\n";
 		mountStorageScript += "\n";
-		mountStorageScript += "dirPath=`pwd`\n";
+		mountStorageScript += "dirPath=\\`pwd\\`\n";
 		mountStorageScript += "\n";
 		mountStorageScript += "echo \\\"This will mount the storage for \\${vmName} and chroot.\\\"\n";
 		mountStorageScript += "echo \\\"When you are finished, type exit to restart the VM\\\"\n";
