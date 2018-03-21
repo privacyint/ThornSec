@@ -45,7 +45,7 @@ public class Backups extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 
 		String backupScript = "";
-		backupScript += "#!/bin/sh\n";
+		backupScript += "#!/bin/bash\n";
 		backupScript += "echo \\\"=== Starting internal backup at \\`date\\` ===\\\"\n";
 		backupScript += "modprobe -r nbd\n";
 		backupScript += "modprobe nbd max_part=15\n";
@@ -105,7 +105,7 @@ public class Backups extends AStructuredProfile {
 		
 		//Backup recovery scripts
 		String backupRecoveryScript = "";
-		backupRecoveryScript += "#!/bin/sh\n";
+		backupRecoveryScript += "#!/bin/bash\n";
 		backupRecoveryScript += "echo \\\"=== Restoring latest internal backup at \\`date\\` ===\\\"\n";
 		backupRecoveryScript += "for dirPath in \\`pwd\\`/../backup/*/\n";
 		backupRecoveryScript += "do\n";
@@ -140,7 +140,7 @@ public class Backups extends AStructuredProfile {
 		units.addElement(new FilePermsUnit("backup_recovery_script", "backup_recovery_script_chowned", model.getData().getVmBase(server) + "/recoveryscripts/recoverFromLatest.sh", "755"));
 		
 		String stopAllScript = "";
-		stopAllScript += "#!/bin/sh\n";
+		stopAllScript += "#!/bin/bash\n";
 		stopAllScript += "echo \\\"=== Stopping all VMs at \\`date\\` ===\\\"\n";
 		stopAllScript += "for dirPath in \\`pwd\\`/../backup/*/\n";
 		stopAllScript += "do\n";
@@ -160,7 +160,7 @@ public class Backups extends AStructuredProfile {
 		units.addElement(new FilePermsUnit("stop_all_script", "stop_all_script_chowned", model.getData().getVmBase(server) + "/recoveryscripts/stopAll.sh", "755"));
 
 		String startAllScript = "";
-		startAllScript += "#!/bin/sh\n";
+		startAllScript += "#!/bin/bash\n";
 		startAllScript += "echo \\\"=== Starting all VMs at \\`date\\` ===\\\"\n";
 		startAllScript += "for dirPath in \\`pwd\\`/../backup/*/\n";
 		startAllScript += "do\n";
@@ -179,7 +179,7 @@ public class Backups extends AStructuredProfile {
 		units.addElement(new FilePermsUnit("start_all_script", "start_all_script_chowned", model.getData().getVmBase(server) + "/recoveryscripts/startAll.sh", "755"));
 
 		String mountStorageScript = "";
-		mountStorageScript += "#!/bin/sh\n";
+		mountStorageScript += "#!/bin/bash\n";
 		mountStorageScript += "if [ \\$# -eq 0 ]\n";
 		mountStorageScript += "then\n";
 		mountStorageScript += "	echo \\\"No parameter supplied.\\\nYou need to provide the name of the VM as a parameter\\\"\n";
