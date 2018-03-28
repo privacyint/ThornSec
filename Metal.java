@@ -64,15 +64,17 @@ public class Metal extends AStructuredProfile {
 					   null,
 					   model.getServerModel(server).getGateway()));
 		}
+		else {
+			units.addElement(im.addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(server),
+					   "static",
+					   "br" + model.getData().getSubnet(server),
+					   "none",
+					   model.getServerModel(server).getGateway(),
+					   model.getData().getNetmask(),
+					   null,
+					   null));
+		}
 		
-		units.addElement(im.addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(server),
-								   "static",
-								   "br" + model.getData().getSubnet(server),
-								   "none",
-								   model.getServerModel(server).getGateway(),
-								   model.getData().getNetmask(),
-								   null,
-								   null));			
 		for (String service : model.getServerModel(server).getServices()) {
 			units.addElement(im.addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(service),
 								   "static",
