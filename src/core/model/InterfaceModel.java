@@ -41,7 +41,7 @@ public class InterfaceModel extends AModel {
 		stanzas.add(net);
 		ifaces.add(iface);
 		return new SimpleUnit(name, "proceed", "echo \\\"handled by model\\\";",
-				"grep \"" + address.replace(".", "\\.") + "\" /etc/network/interfaces;", "", "fail");
+				"grep \"" + iface + "\" /etc/network/interfaces;", "", "fail");
 	}
 
 	public SimpleUnit addPPPIface(String name, String iface) {
