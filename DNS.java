@@ -213,6 +213,11 @@ public class DNS extends AStructuredProfile {
 							"dnsd", "-o " + iface + " -j ACCEPT"));
 		}
 		
+		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_in",
+				"dnsd", "-i " + model.getData().getIface(server) + " -j ACCEPT"));
+		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_out",
+				"dnsd", "-o " + model.getData().getIface(server) + " -j ACCEPT"));
+		
 		return units;
 	}
 
