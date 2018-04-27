@@ -141,6 +141,7 @@ public class Metal extends AStructuredProfile {
 		}
 				
 		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_debian_cd_image", "gensho.ftp.acc.umu.se", new String[]{"443"});
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_github", "github.com", new String[]{"443"});
 		
 		return units;
 	}
