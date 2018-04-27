@@ -730,7 +730,7 @@ public class Router extends AStructuredProfile {
 				String address   = row.getString("address");
 				String netmask   = row.getString("netmask");
 				String gateway   = row.getString("gateway", null);
-				String broadcast = row.getString("broadcast");
+				String broadcast = row.getString("broadcast", null);
 				String iface     = model.getData().getExtIface(server);
 				
 				if (i > 0) {
