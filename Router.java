@@ -232,16 +232,24 @@ public class Router extends AStructuredProfile {
 			System.arraycopy(cnames,0,subdomains,1, cnames.length);
 
 			if (!model.getServerModel(server).isMetal()) {
+				String bridge = model.getData().getProperty(server, "bridge");
+
+				//If we're bridging to an actual iface, we need to declare it
+				if (bridge != null) {
+					units.addElement(im.addIface(hostname + "_bridge",
+						"manual", bridge, null, null, null, null, null));
+				}
+				
 				units.addElement(im.addIface(hostname + "_router_iface",
 										"static",
 										iface + ((!srv.equals(server)) ? ":0" + model.getData().getSubnet(srv) : ""),
-										null,
+										(srv.equals(server)) ? bridge : null,
 										gateway,
 										netmask,
 										null,
 										null));
 			}
-			
+
 			this.dns.addDomainRecord(domain, gateway, subdomains, ip);
 			
 			for (String device : model.getDeviceLabels()) {
