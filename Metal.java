@@ -75,16 +75,16 @@ public class Metal extends AStructuredProfile {
 					   null));
 		}
 		
-		for (String service : model.getServerModel(server).getServices()) {
-			units.addElement(im.addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(service),
-								   "static",
-								   "br" + model.getData().getSubnet(service),
-								   "none",
-								   model.getServerModel(service).getGateway(),
-								   model.getData().getNetmask(),
-								   null,
-								   null));
-		}
+		//for (String service : model.getServerModel(server).getServices()) {
+		//	units.addElement(im.addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(service),
+		//						   "static",
+		//						   "br" + model.getData().getSubnet(service),
+		//						   "none",
+		//						   model.getServerModel(service).getGateway(),
+		//						   model.getData().getNetmask(),
+		//						   null,
+		//						   null));
+		//}
 
 		units.addAll(backups.getPersistentConfig(server, model));
 	
@@ -118,7 +118,15 @@ public class Metal extends AStructuredProfile {
 					"echo $" + service.toUpperCase() + "_PASSWORD", "", "fail",
 					"Couldn't set the passphrase for " + service + ".  You won't be able to configure this service."));
 			
-			String bridge = "br" + model.getData().getSubnet(service);
+			String bridge = "";
+			//If we're also a router, bind to a bridge to keep the traffic off the external iface
+			if (model.getServerModel(server).isRouter()) {
+				bridge = "br" + model.getData().getSubnet(service);
+			}
+			//Otherwise, just bind to the physical iface
+			else {
+				bridge = model.getData().getIface(server);
+			}
 			
 			units.addAll(hypervisor.buildIso(server, service, model, hypervisor.preseed(server, service, model, expirePasswords)));
 			units.addAll(hypervisor.buildVm(server, service, model, bridge));
