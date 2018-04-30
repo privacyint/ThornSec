@@ -54,24 +54,25 @@ public class Redmine extends AStructuredProfile {
 		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "redmine_data", "proceed", "nginx", "nginx", "0755"));
 
 		units.addElement(new SimpleUnit("logs_symlinked", "redmine_installed",
-				//Move over fresh installation if the files aren't already there
-				"sudo mv /var/log/redmine/* /media/data/redmine-log;"
+				//We don't really care about logs at this point
+				"sudo mv /var/log/redmine/* /media/data/redmine_logs;"
 				//Then symlink
-				+ "sudo rm -R /var/log/redmine ; sudo ln -s /media/data/redmine-log /var/log/redmine;",
+				+ "sudo rm -R /var/log/redmine;"
+				+ "sudo ln -s /media/data/redmine_logs /var/log/redmine;",
 				"sudo [ -L /var/log/redmine ] && echo pass || echo fail", "pass", "pass"));
 		
 		units.addElement(new SimpleUnit("files_symlinked", "redmine_installed",
 				//Move over fresh installation if the files aren't already there
-				"if [ ! -d /media/data/redmine-files/default ] ; then sudo mv /var/lib/redmine/* /media/data/redmine-files ; fi ;"
+				"if [ ! -d /media/data/redmine_files/default ]; then sudo mv /var/lib/redmine/* /media/data/redmine_files ; fi ;"
 				//Then symlink
-				+ "sudo rm -R /var/lib/redmine ; sudo ln -s /media/data/redmine-files /var/lib/redmine;",
+				+ "sudo rm -R /var/lib/redmine ; sudo ln -s /media/data/redmine_files /var/lib/redmine;",
 				"[ -L /var/lib/redmine ] && echo pass || echo fail", "pass", "pass"));
 
 		units.addElement(new SimpleUnit("data_symlinked", "redmine_installed",
 				//Move over fresh installation if the files aren't already there
-				"if [ ! -d /media/data/redmine-data/config ] ; then sudo mv /usr/share/redmine/* /media/data/redmine-data ; fi ;"
+				"if [ ! -d /media/data/redmine_data/config ] ; then sudo mv /usr/share/redmine/* /media/data/redmine_data ; fi ;"
 				//Then symlink
-				+ "sudo rm -R /usr/share/redmine ; sudo ln -s /media/data/redmine-data /usr/share/redmine;",
+				+ "sudo rm -R /usr/share/redmine ; sudo ln -s /media/data/redmine_data /usr/share/redmine;",
 				"[ -L /usr/share/redmine ] && echo pass || echo fail", "pass", "pass"));
 
 		units.addElement(new FileOwnUnit("database_config", "redmine_installed", "/etc/redmine/default/database.yml", "nginx"));
