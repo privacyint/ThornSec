@@ -13,12 +13,14 @@ public class DHCP extends AStructuredProfile {
 
 	private Vector<String> classes;
 	private Vector<String> stanzas;
+	private Vector<String> listeningIfaces;
 	
 	public DHCP() {
 		super("dhcp");
 
-		classes = new Vector<String>();
-		stanzas = new Vector<String>();
+		classes         = new Vector<String>();
+		stanzas         = new Vector<String>();
+		listeningIfaces = new Vector<String>();
 	}
 	
 	public void addStanza(String stanza) {
@@ -29,12 +31,13 @@ public class DHCP extends AStructuredProfile {
 		classes.add(stanza);
 	}
 
+	public void addListeningIface(String iface) {
+		listeningIfaces.add(iface);
+	}
+
 	public Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		String defiface = "INTERFACES=\\\"";
-		String procString = "/usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf ";
-
 		//If our router is also a metal, then we only want to bind to bridges
 		if (model.getServerModel(server).isMetal()) {
 			units.addElement(new InstalledUnit("bridge_utils", "proceed", "bridge-utils"));
@@ -42,14 +45,20 @@ public class DHCP extends AStructuredProfile {
 			//DHCP listening interfaces
 			for (String service : model.getServerModel(server).getServices()) {
 				String subnet = model.getData().getSubnet(service);
-				defiface += "br" + subnet + " ";
-				procString += "br" + subnet + " ";
+				addListeningIface("br" + subnet);
 			}
 		}
 		//Otherwise, just bind to the internally-facing interface
 		else {
-			defiface += model.getData().getIface(server);
-			procString += model.getData().getIface(server);
+			addListeningIface(model.getData().getIface(server));
+		}
+
+		String defiface = "INTERFACES=\\\"";
+		String procString = "/usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf ";
+
+		for (String iface : listeningIfaces) {
+			defiface += iface + " ";
+			procString += iface + " ";
 		}
 
 		defiface = defiface.trim() + "\\\"";
