@@ -32,13 +32,6 @@ public class Redmine extends AStructuredProfile {
 		units.addAll(webserver.getInstalled(server, model));
 		units.addAll(db.getInstalled(server, model));
 				
-		units.addElement(new SimpleUnit("redmine_mysql_password", "proceed",
-				"REDMINE_PASSWORD=`sudo grep \"password\" /usr/share/redmine/instances/default/config/database.yml 2>/dev/null | grep -v \"[*#]\" | awk '{ print $2 }'`; [[ -z $REDMINE_PASSWORD ]] && REDMINE_PASSWORD=`openssl rand -hex 32`",
-				"echo $REDMINE_PASSWORD", "", "fail",
-				"Couldn't set the Redmine database user's password.  Redmine will be left in a broken state."));
-		
-		units.addAll(db.createDb("redmine", "redmine", "ALL", "REDMINE_PASSWORD"));
-		
 		units.addElement(new InstalledUnit("redmine", "proceed", "redmine-mysql"));
 		units.addElement(new InstalledUnit("thin", "redmine_installed", "thin"));
 		units.addElement(new InstalledUnit("sendmail", "proceed", "sendmail"));
@@ -84,6 +77,13 @@ public class Redmine extends AStructuredProfile {
 		units.addElement(new FileOwnUnit("database_config", "redmine_installed", "/etc/redmine/default/database.yml", "nginx"));
 		units.addElement(new FileOwnUnit("secret_key", "redmine_installed", "/etc/redmine/default/secret_key.txt", "nginx"));
 		
+		units.addElement(new SimpleUnit("redmine_mysql_password", "proceed",
+				"REDMINE_PASSWORD=`sudo grep \"password\" /usr/share/redmine/instances/default/config/database.yml 2>/dev/null | grep -v \"[*#]\" | awk '{ print $2 }'`; [[ -z $REDMINE_PASSWORD ]] && REDMINE_PASSWORD=`openssl rand -hex 32`",
+				"echo $REDMINE_PASSWORD", "", "fail",
+				"Couldn't set the Redmine database user's password.  Redmine will be left in a broken state."));
+		
+		units.addAll(db.createDb("redmine", "redmine", "ALL", "REDMINE_PASSWORD"));
+
 		String dbConfig = "";
 		dbConfig += "production:\n";
 		dbConfig += "  adapter: mysql2\n";
