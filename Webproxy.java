@@ -163,8 +163,20 @@ public class Webproxy extends AStructuredProfile {
 						+ " -j DNAT --to-destination " + model.getServerModel(server).getIP());
 			}
 		}
-		//Otherwise, we're only DNATing internally, which is a slightly different set of rules
-		else {
+		
+		//Do we have any users?
+		int users = 0;
+		for (String device : model.getDeviceLabels()) {
+			switch (model.getDeviceModel(device).getType()) {
+				case "superuser":
+				case "user":
+					++users;
+					break;
+			}
+		}
+		
+		//If so, they should be able to access these services internally, too, so DNAT accordingly
+		if (users > 0){
 			for (String router : model.getRouters()) {
 				for (String backend : backends) {
 					String lbIP      = model.getServerModel(server).getIP();
