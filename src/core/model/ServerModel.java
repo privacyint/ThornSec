@@ -53,31 +53,38 @@ public class ServerModel extends AModel {
 	public void init(NetworkModel model) {
 		this.networkModel = model;
 		this.services = new Vector<>();
-		String[] types = this.networkData.getTypes(this.getLabel());
-		for (int i = 0; i < types.length; i++) {
-			if (types[i].equals("router")) {
-				model.registerRouter(this.getLabel());
-				router = new Router();
-			} else if (types[i].equals("metal")) {
-				model.registerMetal(this.getLabel());
-			} else if (types[i].equals("service")) {
-				model.registerService(this.getLabel());
-				model.registerOnMetal(this.getLabel(), networkData.getMetal(this.getLabel()));
-			} else {
-				System.out.println("Unsupported type: " + types[i]);
+		
+		String   me    = this.getLabel();
+		String[] types = this.networkData.getTypes(me);
+		for (String type : types) {
+			switch (type) {
+				case "router":
+					model.registerRouter(me);
+					router = new Router();
+					break;
+				case "metal":
+					model.registerMetal(me);
+					break;
+				case "service":
+					model.registerService(me);
+					model.registerOnMetal(me, networkData.getMetal(me));
+					break;
+				default:
+					System.out.println("Unsupported type: " + type);
 			}
 		}
-		this.fm = new FirewallModel(this.getLabel());
+		
+		this.fm = new FirewallModel(me);
 		this.fm.init(model);
-		this.im = new InterfaceModel(this.getLabel());
+		this.im = new InterfaceModel(me);
 		this.im.init(model);
-		this.pm = new ProcessModel(this.getLabel());
+		this.pm = new ProcessModel(me);
 		this.pm.init(model);
-		this.bfm = new BindFsModel(this.getLabel());
+		this.bfm = new BindFsModel(me);
 		this.bfm.init(model);
-		this.aptm = new AptSourcesModel(this.getLabel());
+		this.aptm = new AptSourcesModel(me);
 		this.aptm.init(model);
-		this.um = new UserModel(this.getLabel());
+		this.um = new UserModel(me);
 		this.um.init(model);
 	}
 	
@@ -163,6 +170,7 @@ public class ServerModel extends AModel {
 				units.addAll(profileClass.getUnits(this.getLabel(), networkModel));
 			} catch (Exception e) {
 				System.err.println(profile);
+				System.err.println(e.getMessage());
 			}
 		}
 		
@@ -275,29 +283,17 @@ public class ServerModel extends AModel {
 	
 	public boolean isRouter() {
 		String[] types = this.networkData.getTypes(this.getLabel());
-		for (int i = 0; i < types.length; i++) {
-			if (types[i].equals("router"))
-				return true;
-		}
-		return false;
+		return Arrays.stream(types).anyMatch("router"::equals);
 	}
 
 	public boolean isMetal() {
 		String[] types = this.networkData.getTypes(this.getLabel());
-		for (int i = 0; i < types.length; i++) {
-			if (types[i].equals("metal"))
-				return true;
-		}
-		return false;
+		return Arrays.stream(types).anyMatch("metal"::equals);
 	}
 
 	public boolean isService() {
 		String[] types = this.networkData.getTypes(this.getLabel());
-		for (int i = 0; i < types.length; i++) {
-			if (types[i].equals("service"))
-				return true;
-		}
-		return false;
+		return Arrays.stream(types).anyMatch("service"::equals);
 	}
 	
 	public void addRouterFirewallRule(String server, NetworkModel model, String name, String hostname, String[] ports) {

@@ -115,7 +115,6 @@ public class ProcessModel extends AModel {
 		//processStrings.addElement("");
 		//processStrings.addElement("");
 
-	
 	}
 
 	public Vector<IUnit> getUnits() {

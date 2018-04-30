@@ -78,19 +78,19 @@ public class NetworkModel {
 				units.put(device, devices.get(device).getUnits());
 			}
 		}
-		for (int i = 0; i < services.size(); ++i) {
-			if (!units.containsKey(services.get(i))) {
-				units.put(services.get(i), servers.get(services.get(i)).getUnits());
+		for (String service : services) {
+			if (!units.containsKey(service)) {
+				units.put(service, servers.get(service).getUnits());
 			}
 		}
-		for (int i = 0; i < metals.size(); ++i) {
-			if (!units.containsKey(metals.get(i))) {
-				units.put(metals.get(i), servers.get(metals.get(i)).getUnits());
+		for (String metal : metals) {
+			if (!units.containsKey(metal)) {
+				units.put(metal, servers.get(metal).getUnits());
 			}
 		}
-		for (int i = 0; i < routers.size(); ++i) {
-			if (!units.containsKey(routers.get(i))) {
-				units.put(routers.get(i), servers.get(routers.get(i)).getUnits());
+		for (String router : routers) {
+			if (!units.containsKey(router)) {
+				units.put(router, servers.get(router).getUnits());
 			}
 		}
 	}
