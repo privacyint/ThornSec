@@ -360,7 +360,7 @@ public class NetworkData extends AData {
 		if (val == null) {
 			val = this.defaultServerData.getDebianIsoUrl();
 			if (val == null) {
-				return "cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-9.3.0-amd64-netinst.iso";
+				return "https://gensho.ftp.acc.umu.se/debian-cd/current/amd64/iso-cd/debian-9.4.0-amd64-netinst.iso";
 			}
 		}
 		
@@ -372,7 +372,7 @@ public class NetworkData extends AData {
 		if (val == null) {
 			val = this.defaultServerData.getDebianIsoSha512();
 			if (val == null) {
-				return "8775231d6f56a3d8f116eb64fe048f5cbd2ea0f8c092a1cb7608bcb4106f9c85cb69ce68f53bd381019ab40f1c0316843036daf3fd9107c81c58a240334cc747";
+				return "345c4e674dc10476e8c4f1571fbcdba4ce9788aa5584c5e2590ab3e89e7bb9acb370536f41a3ac740eb92b6aebe3cb8eb9734874dd1658c68875981b8351bc38";
 			}
 		}
 		
