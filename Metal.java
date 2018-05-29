@@ -151,6 +151,11 @@ public class Metal extends AStructuredProfile {
 		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_debian_cd_image", "gensho.ftp.acc.umu.se", new String[]{"443"});
 		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_github", "github.com", new String[]{"443"});
 		
+		model.getServerModel(server).addRouterPoison(server, model, "cdn.debian.net", "130.89.148.14", new String[] {"80"});
+		model.getServerModel(server).addRouterPoison(server, model, "security-cdn.debian.org", "151.101.0.204", new String[] {"80"});
+		model.getServerModel(server).addRouterPoison(server, model, "prod.debian.map.fastly.net", "151.101.36.204", new String[] {"80"});
+		model.getServerModel(server).addRouterPoison(server, model, "download.virtualbox.org", "2.19.60.219", new String[]{"80"});
+		
 		return units;
 	}
 }
