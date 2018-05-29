@@ -11,6 +11,8 @@ public class ManageExec {
 	private String pass;
 	private String cmd;
 	private OutputStream out;
+	private String sshIP;
+	private String sshPort;
 
 	public ManageExec(String server, NetworkModel network, String pass, String cmd, OutputStream out) {
 		this.server = server;
@@ -18,31 +20,30 @@ public class ManageExec {
 		this.pass = pass;
 		this.cmd = cmd;
 		this.out = out;
+
+		if (network.getData().getConnection(this.server).equals("direct")) {
+			if (network.getServerModel(server).isRouter()) {
+				this.sshIP = network.getServerModel(server).getGateway();
+			}
+			else {
+				this.sshIP = network.getServerModel(server).getIP();
+			}
+			
+			this.sshPort = network.getData().getAdminPort(this.server);
+		}
+		else if (network.getData().getConnection(this.server).equals("tunnelled")) {
+			this.sshIP = "127.0.0.1";
+			
+			this.sshPort = "65432";
+		}
+
 	}
 
-	public SSHExec runNonBlock() {
+	public SSHExec runScriptNonBlock() {
 		String[] tunnel;
 		String[] scriptOutput;
 		String[] scriptExecute;
-		String sshIP = "";
-		String sshPort = "";
 		
-		if (network.getData().getConnection(this.server).equals("direct")) {
-			if (network.getServerModel(server).isRouter()) {
-				sshIP = network.getServerModel(server).getGateway();
-			}
-			else {
-				sshIP = network.getServerModel(server).getIP();
-			}
-			
-			sshPort = network.getData().getAdminPort(this.server);
-		}
-		else if (network.getData().getConnection(this.server).equals("tunnelled")) {
-			sshIP = "127.0.0.1";
-			
-			sshPort = "65432";
-		}
-
 		tunnel = new String[] {
 			"ssh",
 			"-f",
@@ -96,8 +97,8 @@ public class ManageExec {
 		return scriptExecuteExec;
 	}
 
-	public void runBlock() {
-		SSHExec exec = runNonBlock();
+	public void runScriptBlock() {
+		SSHExec exec = runScriptNonBlock();
 		exec.waitFor();
 	}
 

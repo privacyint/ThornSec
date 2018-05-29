@@ -149,14 +149,14 @@ public class NetworkModel {
 	public void auditNonBlock(String server, OutputStream out, InputStream in, boolean quiet) {
 		ManageExec exec = getManageExec(server, "audit", out, quiet);
 		if (exec != null)
-			exec.runNonBlock();
+			exec.runScriptNonBlock();
 	}
 
 	public void auditAll(OutputStream out, InputStream in, boolean quiet) {
 		for (String server : this.servers.keySet()) {
 			ManageExec exec = getManageExec(server, "audit", out, quiet);
 			if (exec != null)
-				exec.runNonBlock();
+				exec.runScriptNonBlock();
 		}
 	}
 
@@ -175,13 +175,13 @@ public class NetworkModel {
 	public void configNonBlock(String server, OutputStream out, InputStream in) {
 		ManageExec exec = getManageExec(server, "config", out, false);
 		if (exec != null)
-			exec.runNonBlock();
+			exec.runScriptNonBlock();
 	}
 
 	public void dryrunNonBlock(String server, OutputStream out, InputStream in) {
 		ManageExec exec = getManageExec(server, "dryrun", out, false);
 		if (exec != null)
-			exec.runNonBlock();
+			exec.runScriptNonBlock();
 	}
 
 	private ManageExec getManageExec(String server, String action, OutputStream out, boolean quiet) {
