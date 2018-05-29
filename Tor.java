@@ -108,6 +108,7 @@ public class Tor extends AStructuredProfile {
 		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "tls", "proceed", "root", "root", "600"));
 		
 		String proxyConfig = "";
+		proxyConfig += "include /etc/nginx/includes/ssl_params;\n";
 		proxyConfig += "proxy_buffering on;\n";
 		proxyConfig += "proxy_buffers 16 64k;\n";
 		proxyConfig += "proxy_buffer_size 64k;\n";
