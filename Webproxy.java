@@ -50,36 +50,36 @@ public class Webproxy extends AStructuredProfile {
 	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
+		//First, build our ssl config
+		units.addElement(new DirUnit("nginx_ssl_include_dir", "proceed", "/etc/nginx/includes"));
+		
+		String sslConf = "";
+		sslConf += "    ssl_session_timeout 1d;\n";
+		sslConf += "    ssl_session_cache shared:SSL:10m;\n";
+		sslConf += "    ssl_session_tickets off;\n";
+		sslConf += "\n";
+		sslConf += "    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;\n";
+		sslConf += "    ssl_ciphers 'EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH';\n";
+		sslConf += "    ssl_prefer_server_ciphers on;\n";
+		sslConf += "    ssl_ecdh_curve auto;\n";
+		sslConf += "\n";
+		sslConf += "    add_header Strict-Transport-Security 'max-age=63072000; includeSubDomains; preload';\n";
+		sslConf += "\n";
+		sslConf += "    #ssl_stapling on;\n";
+		sslConf += "    #ssl_stapling_verify on;\n";
+		sslConf += "    resolver " + model.getData().getDNS() + " valid=300s;\n";
+		sslConf += "    resolver_timeout 5s;\n";
+		sslConf += "\n";
+		sslConf += "    add_header X-Frame-Options 'SAMEORIGIN' always;\n";
+		sslConf += "    add_header X-Content-Type-Options 'nosniff' always;\n";
+		sslConf += "    add_header X-XSS-Protection '1; mode=block' always;\n";
+		sslConf += "    add_header X-Robots-Tag 'none' always;\n";
+		sslConf += "    add_header X-Download-Options 'noopen' always;\n";
+		sslConf += "    add_header X-Permitted-Cross-Domain-Policies 'none' always;";
+	    
+		units.addElement(new FileUnit("nginx_ssl_config", "proceed", sslConf, "/etc/nginx/includes/ssl_params"));
+
 		if (this.liveConfig.equals("")) {
-			//First, build our ssl config
-			units.addElement(new DirUnit("nginx_ssl_include_dir", "proceed", "/etc/nginx/includes"));
-			
-			String sslConf = "";
-			sslConf += "    ssl_session_timeout 1d;\n";
-			sslConf += "    ssl_session_cache shared:SSL:10m;\n";
-			sslConf += "    ssl_session_tickets off;\n";
-			sslConf += "\n";
-			sslConf += "    ssl_protocols TLSv1.1 TLSv1.2;\n";
-			sslConf += "    ssl_ciphers 'EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH';\n";
-			sslConf += "    ssl_prefer_server_ciphers on;\n";
-			sslConf += "    ssl_ecdh_curve auto;\n";
-			sslConf += "\n";
-			sslConf += "    add_header Strict-Transport-Security 'max-age=63072000; includeSubDomains; preload';\n";
-			sslConf += "\n";
-			sslConf += "    #ssl_stapling on;\n";
-			sslConf += "    #ssl_stapling_verify on;\n";
-			sslConf += "    resolver " + model.getData().getDNS() + " valid=300s;\n";
-			sslConf += "    resolver_timeout 5s;\n";
-			sslConf += "\n";
-			sslConf += "    add_header X-Frame-Options 'SAMEORIGIN' always;\n";
-			sslConf += "    add_header X-Content-Type-Options 'nosniff' always;\n";
-			sslConf += "    add_header X-XSS-Protection '1; mode=block' always;\n";
-			sslConf += "    add_header X-Robots-Tag 'none' always;\n";
-			sslConf += "    add_header X-Download-Options 'noopen' always;\n";
-			sslConf += "    add_header X-Permitted-Cross-Domain-Policies 'none' always;";
-		    
-			units.addElement(new FileUnit("nginx_ssl_config", "proceed", sslConf, "/etc/nginx/includes/ssl_params"));
-			
 			//Now build per-host specific shit
 			String[] backends = model.getData().getPropertyArray(server, "proxy");
 			
