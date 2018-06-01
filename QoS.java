@@ -96,13 +96,13 @@ public class QoS extends AStructuredProfile {
 		units.addElement(fm.addMangleForward(name.replaceAll("-",  "_") + "_mark_large_uploads", 
 				"-s " + subnet
 				+ " -o " + extIface
-				+ " -m connbytes --connbytes " + markAfter + ": --connbytes-dir both --connbytes-mode bytes"
+				+ " -m connbytes --connbytes " + markAfter + ": --connbytes-dir original --connbytes-mode bytes"
 				+ " -j MARK --set-mark " + mark));
 		//Log any connection which has uploaded > markAfter bytes
         units.addElement(fm.addMangleForward(name.replaceAll("-",  "_") + "_log_large_uploads", 
 				"-s " + subnet
 				+ " -o " + extIface
-				+ " -m connbytes --connbytes " + markAfter + ": --connbytes-dir both --connbytes-mode bytes"
+				+ " -m connbytes --connbytes " + markAfter + ": --connbytes-dir original --connbytes-mode bytes"
 				+ " -m limit --limit 1/minute" //Poor, poor syslog!
 				+ " -j LOG --log-prefix \\\"ipt-" + name + "-throttled: \\\""));
 		
