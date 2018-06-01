@@ -304,6 +304,11 @@ public class QoS extends AStructuredProfile {
 				+ "control any potential exfiltration from your network."));
 		units.addElement(new FilePermsUnit("tc_init_script_perms", "tc_init_script_created", "/etc/init.d/tc.sh", "755"));
 
+		model.getServerModel(server).getFirewallModel().addFilter(server + "_egress_25_allow", server + "_egress",
+				"-p tcp"
+				+ " --dport 25"
+				+ " -j ACCEPT");
+
 		return units;
 	}
 	
