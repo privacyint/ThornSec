@@ -254,36 +254,36 @@ public class Router extends AStructuredProfile {
 			}
 
 			this.dns.addDomainRecord(domain, gateway, subdomains, ip);
-			
-			for (String device : model.getDeviceLabels()) {
-				String[] gateways = model.getDeviceModel(device).getGateways();
-				String[] ips      = model.getDeviceModel(device).getIPs();
-				
-				domain   = model.getData().getDomain(server);
-				String subnet   = gateways[0].split("\\.")[2];
-				
-				for (int i = 0; i < gateways.length; ++i) {
-					String subdomain = device + "." + model.getLabel() + ".lan." + i;
-					
-					units.addElement(im.addIface(device.replaceAll("-", "_") + "_router_iface_" + i,
-											"static",
-											iface + ":1" + subnet + i,
-											null,
-											gateways[i],
-											netmask,
-											null,
-											null));
-					
-					this.dns.addDomainRecord(domain, gateways[i], new String[] {subdomain}, ips[i]);
-				}
-			}
-			
-			units.addElement(new SimpleUnit("ifaces_up", "proceed",
-					"sudo service networking restart",
-					"sudo ip addr | grep " + iface, "", "fail",
-					"Couldn't bring your network interfaces up.  This can potentially be resolved by a restart (assuming you've had no other network-related errors)."));
 		}
+
+		for (String device : model.getDeviceLabels()) {
+			String[] gateways = model.getDeviceModel(device).getGateways();
+			String[] ips      = model.getDeviceModel(device).getIPs();
 			
+			String domain   = model.getData().getDomain(server); //We'll just assume all devices are on the same domain as the router
+			String subnet   = gateways[0].split("\\.")[2];
+			
+			for (int i = 0; i < gateways.length; ++i) {
+				String subdomain = device + "." + model.getLabel() + ".lan." + i;
+				
+				units.addElement(im.addIface(device.replaceAll("-", "_") + "_router_iface_" + i,
+										"static",
+										iface + ":1" + subnet + i,
+										null,
+										gateways[i],
+										netmask,
+										null,
+										null));
+				
+				this.dns.addDomainRecord(domain, gateways[i], new String[] {subdomain}, ips[i]);
+			}
+		}
+
+		units.addElement(new SimpleUnit("ifaces_up", "proceed",
+				"sudo service networking restart",
+				"sudo ip addr | grep " + iface, "", "fail",
+				"Couldn't bring your network interfaces up.  This can potentially be resolved by a restart (assuming you've had no other network-related errors)."));
+
 		return units;
 	}
 	
