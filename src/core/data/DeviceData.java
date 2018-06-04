@@ -38,7 +38,7 @@ public class DeviceData extends AData {
 			return properties;
 		}
 		else {
-			return null;
+			return new String[0];
 		}
 	}
 	

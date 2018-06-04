@@ -224,23 +224,11 @@ public class ServerModel extends AModel {
 	}
 
 	public String[] getProfiles() {
-		String[] profiles = this.networkData.getServerProfiles(this.getLabel());
-		
-		if (profiles == null) {
-			return new String[] {};
-		}
-		
-		return profiles;
+		return this.networkData.getServerProfiles(this.getLabel());
 	}
 	
 	public String[] getTypes() {
-		String[] types = this.networkData.getTypes(this.getLabel());
-		
-		if (types == null) {
-			return new String[] {};
-		}
-		
-		return types;
+		return this.networkData.getTypes(this.getLabel());
 	}
 
 	private String ipFromClass() {
