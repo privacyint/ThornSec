@@ -23,6 +23,7 @@ public class Router extends AStructuredProfile {
 	private DHCP dhcp;
 	private QoS qos;
 	private Vector<String> userIfaces;
+	private String invalidChars;
 	
 	public Router() {
 		super("router");
@@ -33,6 +34,8 @@ public class Router extends AStructuredProfile {
 		
 		userIfaces = new Vector<String>();
 		userIfaces.addElement(":2+");
+		
+		invalidChars = "[^[\\-a-zA-Z0-9]]";
 	}
 
 	public DHCP getDHCP() {
@@ -225,7 +228,7 @@ public class Router extends AStructuredProfile {
 			String ip       = model.getServerModel(srv).getIP();
 			String gateway  = model.getServerModel(srv).getGateway();
 			String domain   = model.getData().getDomain(srv);
-			String hostname = srv.replaceAll("-", "_");
+			String hostname = srv.replaceAll(invalidChars, "_");
 
 			String[] subdomains = new String[cnames.length + 1];
 			System.arraycopy(new String[] {model.getData().getHostname(srv)},0,subdomains,0, 1);
