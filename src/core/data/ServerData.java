@@ -36,6 +36,7 @@ public class ServerData extends AData {
 	private String debianDirectory;
 	private String adminEmail;
 	private String domain;
+	private String[] ports;
 	
 	public ServerData(String label) {
 		super(label);
@@ -74,6 +75,7 @@ public class ServerData extends AData {
 		debianDirectory = getProperty("debiandirectory", null);
 		adminEmail      = getProperty("adminemail", null);
 		domain          = getProperty("domain", null);
+		ports           = getPropertyArray("ports");
 	}
 
 	public String getProperty(String property, String defaultVal) {
@@ -221,5 +223,9 @@ public class ServerData extends AData {
 
 	public String[] getSSHSources() {
 		return this.adminIps;
+	}
+	
+	public String[] getPorts() {
+		return this.ports;
 	}
 }

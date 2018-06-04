@@ -111,4 +111,8 @@ public class DeviceModel extends AModel {
 	public Boolean isManaged() {
 		return this.networkData.getDeviceManaged(this.getLabel());
 	}
+	
+	public String[] getPorts() {
+		return this.networkData.getDevicePorts(this.getLabel());
+	}
 }

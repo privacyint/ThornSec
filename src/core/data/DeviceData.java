@@ -7,6 +7,7 @@ public class DeviceData extends AData {
 
 	private JsonObject data;
 	private String[]   macs;
+	private String[]   ports;
 	private String     type;
 	private Boolean    throttled;
 	private Boolean    managed;
@@ -22,6 +23,7 @@ public class DeviceData extends AData {
 		macs      = getPropertyArray("macs");
 		throttled = getProperty("throttle", "true").equals("true");
 		managed   = getProperty("managed", "false").equals("true");
+		ports     = getPropertyArray("ports");
 	}
 
 	public String[] getPropertyArray(String property) {
@@ -62,6 +64,10 @@ public class DeviceData extends AData {
 
 	public Boolean getManaged() {
 		return this.managed;
+	}
+	
+	public String[] getPorts() {
+		return this.ports;
 	}
 	
 }

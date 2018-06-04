@@ -171,6 +171,10 @@ public class NetworkData extends AData {
 	public String getMac(String server) {
 		return this.servers.get(server).getMac();
 	}
+
+	public String[] getPorts(String server) {
+		return this.servers.get(server).getPorts();
+	}
 	
 	// Can have default values
 	public String[] getAllowedSSHSource(String server) {
@@ -427,8 +431,12 @@ public class NetworkData extends AData {
 	public Boolean getDeviceThrottled(String device) {
 		return this.devices.get(device).getThrottled();
 	}
-
+	
 	public Boolean getDeviceManaged(String device) {
 		return this.devices.get(device).getManaged();
+	}
+
+	public String[] getDevicePorts(String device) {
+		return this.devices.get(device).getPorts();
 	}
 }
