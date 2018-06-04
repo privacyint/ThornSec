@@ -702,6 +702,10 @@ public class Router extends AStructuredProfile {
 			units.addElement(model.getServerModel(server).getInterfaceModel().addPPPIface("router_ext_ppp_iface", model.getData().getProperty(server, "pppiface")));
 			model.getServerModel(server).getProcessModel().addProcess("/usr/sbin/pppd call provider$");
 			units.addElement(new FileUnit("resolv_conf", "proceed", "nameserver 127.0.0.1", "/etc/ppp/resolv.conf"));
+			units.addElement(model.getServerModel(server).getFirewallModel().addMangleForward("clamp_mss_to_pmtu",
+					"-p tcp --tcp-flags SYN,RST SYN -m tcpmss" 
+					+ " --mss 1400:1536 -j TCPMSS --clamp-mss-to-pmtu" 
+					+ " -o ppp0"));
 		}
 		else if (model.getData().getExtConn(server).equals("dhcp")){
 			units.addElement(model.getServerModel(server).getInterfaceModel().addIface("router_ext_dhcp_iface", 
