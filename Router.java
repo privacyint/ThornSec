@@ -494,7 +494,64 @@ public class Router extends AStructuredProfile {
 					}
 				}
 			}
+			
+			//Does this user have ports which should be allowed internally?
+			//Configure, if so!
+			if (model.getDeviceModel(user).getPorts().length > 0) {
+				String[] ports = model.getDeviceModel(user).getPorts();
 				
+				//Firstly, allow all other users to talk to it on given ports
+				for (String iface : userIfaces) {
+					String otherUsersRule = "";
+					otherUsersRule += "-i " + intIface + iface;
+					otherUsersRule += " -p tcp";
+					otherUsersRule += " -s ";
+					
+					for (String u : users) {
+						otherUsersRule += model.getDeviceModel(u).getSubnets()[0] + "/30,";
+					}
+					
+					otherUsersRule = otherUsersRule.replaceAll(",$", ""); // Remove any trailing comma
+					otherUsersRule += " -m multiport";
+					otherUsersRule += " --dports ";
+					
+					for (int i = 0; i < ports.length; ++i) {
+						otherUsersRule += ports[i] + ",";
+					}
+					
+					otherUsersRule = otherUsersRule.replaceAll(",$", ""); // Remove any trailing comma
+					otherUsersRule += " -j ACCEPT";
+					
+					fm.addFilter("allow_user_ports_" + user, fwdChain, otherUsersRule);
+				}
+			}
+			
+			//Allow the user currently being configured to talk with other users on specified ports
+			for (String iface : userIfaces) {
+				for (String u : users) {
+					if (model.getDeviceModel(u).getPorts().length > 0) {
+						String[] ports = model.getDeviceModel(u).getPorts();
+						
+						String myRule = "";
+						myRule += "-i " + intIface + iface;
+						myRule += " -p tcp";
+						myRule += " -d " + model.getDeviceModel(u).getSubnets()[0] + "/24";
+						myRule += " -m state --state NEW";
+						myRule += " -m tcp -m multiport --dports ";
+
+						for (int i = 0; i < ports.length; ++i) {
+							myRule += ports[i] + ",";
+						}
+
+						myRule = myRule.replaceAll(",$", ""); // Remove any trailing comma
+						
+						myRule += " -j ACCEPT";
+						
+						fm.addFilter(cleanUserName + "_allow_talk_to_" + u.replaceAll("-",  "_"), fwdChain, myRule);
+					}
+				}
+			}
+			
 			//Configure what they can do with internal only devices
 			for (String iface : userIfaces) { 
 				String intOnlyRule = "";
