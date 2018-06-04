@@ -18,25 +18,34 @@ public class DeviceData extends AData {
 	public void read(JsonObject data) {
 		this.data = data;
 		
-		type = data.getString("type", null);
-
-		JsonArray jsonMacs = data.getJsonArray("macs");
-		if (jsonMacs != null) {
-			macs = new String[jsonMacs.size()];
-			for (int i = 0; i < macs.length; ++i) {
-				macs[i] = jsonMacs.getString(i);
-			}
-		}
-		else {
-			macs = new String[0];
-		}
-		
-		throttled = data.getString("throttle", "true").equals("true");
-		managed   = data.getString("managed", "false").equals("true");
+		type      = getProperty("type", null);
+		macs      = getPropertyArray("macs");
+		throttled = getProperty("throttle", "true").equals("true");
+		managed   = getProperty("managed", "false").equals("true");
 	}
 
-	public String getProperty(String property) {
-		return data.getString(property, null);
+	public String[] getPropertyArray(String property) {
+		JsonArray jsonProperties = getPropertyObjectArray(property);
+
+		if (jsonProperties != null) {
+			String[] properties = new String[jsonProperties.size()];
+			for (int i = 0; i < properties.length; ++i) {
+				properties[i] = jsonProperties.getString(i);
+			}
+			
+			return properties;
+		}
+		else {
+			return null;
+		}
+	}
+	
+	public JsonArray getPropertyObjectArray(String property) {
+		return data.getJsonArray(property);
+	}
+	
+	public String getProperty(String property, String defaultVal) {
+		return data.getString(property, defaultVal);
 	}
 	
 	public String[] getMacs() {

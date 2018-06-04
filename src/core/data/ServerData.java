@@ -44,77 +44,44 @@ public class ServerData extends AData {
 	public void read(JsonObject data) {
 		this.data = data;
 		
-		adminUser = data.getString("user", null);
-		JsonArray keys = data.getJsonArray("keys");
-		if (keys != null) {
-			adminKeys = new String[keys.size()];
-			for (int i = 0; i < adminKeys.length; i++) {
-				adminKeys[i] = keys.getString(i);
-			}
-		}
-		JsonArray ips = data.getJsonArray("sshsource");
-		if (ips != null) {
-			adminIps = new String[ips.size()];
-			for (int i = 0; i < adminIps.length; i++) {
-				adminIps[i] = ips.getString(i);
-			}
-		}		
-		adminFullName = data.getString("adminname", null);
-		connection = data.getString("connection", "direct");
-		subnet = data.getString("subnet", null);
-		adminPort = data.getString("adminport", null);
-		sshPort = data.getString("sshport", null);
-		update = data.getString("update", null);
-		hostname = data.getString("hostname", null);
-		JsonArray jsonTypes = data.getJsonArray("types");
-		if (jsonTypes != null) {
-			types = new String[jsonTypes.size()];
-			for (int i = 0; i < types.length; i++) {
-				types[i] = jsonTypes.getString(i);
-			}
-		}
-		iface = data.getString("iface", null);
-		extIface = data.getString("extiface", null);
-		metal = data.getString("metal", null);
-		ram = data.getString("ram", null);
-		diskSize = data.getString("disksize", null);
-		dataDiskSize = data.getString("datadisksize", null);
-		mac = data.getString("mac", null);
-		cpus = data.getString("cpus", null);
-		extConn = data.getString("extconnection", null);
-		JsonArray jsonCnames = data.getJsonArray("cnames");
-		if (jsonCnames != null) {
-			cnames = new String[jsonCnames.size()];
-			for (int i = 0; i < cnames.length; ++i) {
-				cnames[i] = jsonCnames.getString(i);
-			}
-		}
-		else {
-			cnames = new String[0];
-		}
-		debianIsoUrl = data.getString("debianisourl", null);
-		debianIsoSha512 = data.getString("debianisosha512", null);
-		vmBase = data.getString("vmbase", null);
-		JsonArray jsonProfiles = data.getJsonArray("profiles");
-		if (jsonProfiles != null) {
-			profiles = new String[jsonProfiles.size()];
-			for (int i = 0; i < profiles.length; i++) {
-				profiles[i] = jsonProfiles.getString(i);
-			}
-		}
-		externalIp = data.getString("externalip", null);
-		debianMirror = data.getString("debianmirror", null);
-		debianDirectory = data.getString("debiandirectory", null);
-		adminEmail = data.getString("adminemail", null);
-		domain = data.getString("domain", null);
+		adminUser       = getProperty("user", null);
+		adminKeys       = getPropertyArray("keys");
+		adminIps        = getPropertyArray("sshsource");
+		adminFullName   = getProperty("adminname", null);
+		connection      = getProperty("connection", "direct");
+		subnet          = getProperty("subnet", null);
+		adminPort       = getProperty("adminport", null);
+		sshPort         = getProperty("sshport", null);
+		update          = getProperty("update", null);
+		hostname        = getProperty("hostname", null);
+		types           = getPropertyArray("types");
+		iface           = getProperty("iface", null);
+		extIface        = getProperty("extiface", null);
+		metal           = getProperty("metal", null);
+		ram             = getProperty("ram", null);
+		diskSize        = getProperty("disksize", null);
+		dataDiskSize    = getProperty("datadisksize", null);
+		mac             = getProperty("mac", null);
+		cpus            = getProperty("cpus", null);
+		extConn         = getProperty("extconnection", null);
+		cnames          = getPropertyArray("cnames");
+		debianIsoUrl    = getProperty("debianisourl", null);
+		debianIsoSha512 = getProperty("debianisosha512", null);
+		vmBase          = getProperty("vmbase", null);
+		profiles        = getPropertyArray("profiles");
+		externalIp      = getProperty("externalip", null);
+		debianMirror    = getProperty("debianmirror", null);
+		debianDirectory = getProperty("debiandirectory", null);
+		adminEmail      = getProperty("adminemail", null);
+		domain          = getProperty("domain", null);
 	}
 
-	public String getProperty(String property) {
-		return data.getString(property, null);
+	public String getProperty(String property, String defaultVal) {
+		return data.getString(property, defaultVal);
 	}
 	
 	public String[] getPropertyArray(String property) {
-		JsonArray jsonProperties = data.getJsonArray(property);
+		JsonArray jsonProperties = getPropertyObjectArray(property);
 
 		if (jsonProperties != null) {
 			String[] properties = new String[jsonProperties.size()];
@@ -125,7 +92,7 @@ public class ServerData extends AData {
 			return properties;
 		}
 		else {
-			return null;
+			return new String[0];
 		}
 	}
 	

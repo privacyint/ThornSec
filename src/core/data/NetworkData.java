@@ -137,7 +137,7 @@ public class NetworkData extends AData {
 	// Have to be provided by server only
 	
 	public String getProperty(String server, String property) {
-		return this.servers.get(server).getProperty(property);
+		return this.servers.get(server).getProperty(property, null);
 	}
 
 	public String[] getPropertyArray(String server, String property) {
@@ -175,7 +175,7 @@ public class NetworkData extends AData {
 	// Can have default values
 	public String[] getAllowedSSHSource(String server) {
 		String[] val = this.servers.get(server).getSSHSources();
-		if (val == null) {
+		if (val.length == 0) {
 			return this.defaultServerData.getSSHSources();
 		} else {
 			return val;
@@ -217,7 +217,7 @@ public class NetworkData extends AData {
 
 	public String[] getUserKeys(String server) {
 		String[] val = this.servers.get(server).getUserKeys();
-		if (val == null) {
+		if (val.length == 0) {
 			return this.defaultServerData.getUserKeys();
 		} else {
 			return val;
