@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Vector;
 
 import core.data.NetworkData;
@@ -58,8 +59,8 @@ public class NetworkModel {
 		}
 
 		//Need to init them out here as they may depend on others
-		for (String server : data.getServerLabels()) {
-			servers.get(server).init(this);
+		for(Map.Entry<String, ServerModel> server : servers.entrySet()) {
+			server.getValue().init(this);
 		}
 		
 		for (String device : data.getDeviceLabels()) {

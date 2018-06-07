@@ -8,33 +8,35 @@ public class ServerData extends AData {
 	private JsonObject data;
 
 	private String[] adminUsers;
+	private String[] remoteAdminIps;
+	private String[] types;
+	private String[] cnames;
+	private String[] profiles;
+	private String[] ports;
+
 	private String connection;
+	private String mac;
 	private String subnet;
 	private String adminPort;
 	private String sshPort;
 	private String update;
 	private String hostname;
-	private String[] types;
 	private String iface;
 	private String extIface;
 	private String metal;
 	private String ram;
 	private String diskSize;
 	private String dataDiskSize;
-	private String mac;
 	private String cpus;
 	private String extConn;
-	private String[] cnames;
 	private String debianIsoUrl;
 	private String debianIsoSha512;
 	private String vmBase;
-	private String[] profiles;
 	private String externalIp;
 	private String debianMirror;
 	private String debianDirectory;
 	private String adminEmail;
 	private String domain;
-	private String[] ports;
 	
 	public ServerData(String label) {
 		super(label);

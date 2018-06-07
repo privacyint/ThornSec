@@ -64,15 +64,12 @@ public class NetworkData extends AData {
 	}
 
 	private void readServers(JsonObject jsonServers) {
-		//We've got to enforce the order here, or things may go a bit awry...
-		Object[] servers = jsonServers.keySet().toArray();
-		serverLabels = new String[servers.length];
+		String[] servers = jsonServers.keySet().toArray(new String[jsonServers.size()]);
 		
-		for (int i = 0; i < servers.length; ++i) {
-			ServerData net = new ServerData(servers[i].toString());
-			net.read(jsonServers.getJsonObject(servers[i].toString()));
-			this.servers.put(servers[i].toString(), net);
-			serverLabels[i] = servers[i].toString();
+		for (String server : servers) {
+			ServerData net = new ServerData(server);
+			net.read(jsonServers.getJsonObject(server));
+			this.servers.put(server, net);
 		}
 	}
 

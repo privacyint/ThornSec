@@ -52,7 +52,7 @@ public class ServerModel extends AModel {
 
 	public void init(NetworkModel model) {
 		this.networkModel = model;
-		this.services = new Vector<>();
+		this.services = new Vector<String>();
 		
 		String   me    = this.getLabel();
 		String[] types = this.networkData.getTypes(me);
