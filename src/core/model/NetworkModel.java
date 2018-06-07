@@ -9,7 +9,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Vector;
 
 import core.data.NetworkData;
@@ -23,7 +23,7 @@ public class NetworkModel {
 
 	private NetworkData data;
 
-	private HashMap<String, ServerModel> servers;
+	private LinkedHashMap<String, ServerModel> servers;
 
 	private Vector<String> routers;
 
@@ -31,9 +31,9 @@ public class NetworkModel {
 
 	private Vector<String> services;
 	
-	private HashMap<String, DeviceModel> devices;
+	private LinkedHashMap<String, DeviceModel> devices;
 	
-	private HashMap<String, Vector<IUnit>> units;
+	private LinkedHashMap<String, Vector<IUnit>> units;
 
 	public NetworkModel(String label) {
 		this.label = label;
@@ -44,12 +44,12 @@ public class NetworkModel {
 	}
 
 	public void init() {
-		servers = new HashMap<>();
+		servers = new LinkedHashMap<>();
 		routers = new Vector<String>();
 		metals = new Vector<String>();
 		services = new Vector<String>();
-		devices = new HashMap<>();
-		units = new HashMap<>();
+		devices = new LinkedHashMap<>();
+		units = new LinkedHashMap<>();
 		
 		for (String server : data.getServerLabels()) {
 			ServerModel sm = new ServerModel(server);

@@ -3,7 +3,6 @@ package core.data;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import javax.json.JsonArray;
@@ -23,7 +22,7 @@ public class NetworkData extends AData {
 
 	private ServerData defaultServerData;
 
-	private HashMap<String, ServerData> servers;
+	private LinkedHashMap<String, ServerData>  servers;
 	private LinkedHashMap<String, ADeviceData> devices;
 	
 	public NetworkData(String label) {
@@ -46,7 +45,7 @@ public class NetworkData extends AData {
 			this.vpnOnly = data.getString("vpnonly", "no");
 			defaultServerData = new ServerData("");
 			defaultServerData.read(data);
-			servers = new HashMap<String, ServerData>();
+			servers = new LinkedHashMap<String, ServerData>();
 			readServers(data.getJsonObject("servers"));
 			devices = new LinkedHashMap<String, ADeviceData>();
 			readInternalDevices(data.getJsonObject("internaldevices"));

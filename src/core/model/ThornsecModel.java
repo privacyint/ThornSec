@@ -1,8 +1,8 @@
 package core.model;
 
 import java.io.StringReader;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -12,12 +12,13 @@ import core.data.NetworkData;
 
 public class ThornsecModel {
 
-	private HashMap<String, NetworkModel> networks;
+	private LinkedHashMap<String, NetworkModel> networks;
 
 	public void read(String data) {
+		networks = new LinkedHashMap<String, NetworkModel>();
+
 		JsonReader reader = Json.createReader(new StringReader(data));
 		JsonObject nets = reader.readObject();
-		networks = new HashMap<String, NetworkModel>();
 		Iterator<?> iter = nets.keySet().iterator();
 		while (iter.hasNext()) {
 			String key = (String) iter.next();
