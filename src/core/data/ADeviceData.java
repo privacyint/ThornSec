@@ -1,31 +1,35 @@
 package core.data;
 
+import java.io.StringReader;
+
+import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonReader;
 
-public class DeviceData extends AData {
+public abstract class ADeviceData {
 
-	private JsonObject data;
-	private String[]   macs;
-	private String[]   ports;
-	private String     type;
-	private Boolean    throttled;
-	private Boolean    managed;
+	private String label;
 	
-	public DeviceData(String label) {
-		super(label);
+	protected JsonObject data;
+	protected String[]   macs;
+	protected String[]   ports;
+	protected Boolean    throttled;
+	protected Boolean    managed;
+
+	public ADeviceData(String label) {
+		this.label = label;
 	}
 
-	public void read(JsonObject data) {
-		this.data = data;
-		
-		type      = getProperty("type", null);
-		macs      = getPropertyArray("macs");
-		throttled = getProperty("throttle", "true").equals("true");
-		managed   = getProperty("managed", "false").equals("true");
-		ports     = getPropertyArray("ports");
+	public String getLabel() {
+		return this.label;
 	}
-
+	
+	public void read(String data) {
+		JsonReader reader = Json.createReader(new StringReader(data));
+		this.read(reader.readObject());
+	}
+	
 	public String[] getPropertyArray(String property) {
 		JsonArray jsonProperties = getPropertyObjectArray(property);
 
@@ -49,15 +53,11 @@ public class DeviceData extends AData {
 	public String getProperty(String property, String defaultVal) {
 		return data.getString(property, defaultVal);
 	}
-	
+
 	public String[] getMacs() {
 		return this.macs;
 	}
 
-	public String getType() {
-		return this.type;
-	}
-	
 	public Boolean getThrottled() {
 		return this.throttled;
 	}
@@ -70,4 +70,14 @@ public class DeviceData extends AData {
 		return this.ports;
 	}
 	
+	public abstract void read(JsonObject data);
+
+	public String getSSHKey() {
+		return null;
+	}
+	
+	public String getFullName() {
+		return null;
+	}
+
 }

@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -15,13 +16,8 @@ public class NetworkData extends AData {
 	private ServerData defaultServerData;
 
 	private HashMap<String, ServerData> servers;
+	private LinkedHashMap<String, ADeviceData> devices;
 	
-	private HashMap<String, DeviceData> devices;
-	
-	private String[] serverLabels;
-	
-	private String[] deviceLabels;
-
 	public NetworkData(String label) {
 		super(label);
 	}
@@ -44,8 +40,10 @@ public class NetworkData extends AData {
 			defaultServerData.read(data);
 			servers = new HashMap<String, ServerData>();
 			readServers(data.getJsonObject("servers"));
-			devices = new HashMap<String, DeviceData>();
-			readDevices(data.getJsonObject("devices"));
+			devices = new LinkedHashMap<String, ADeviceData>();
+			readInternalDevices(data.getJsonObject("internaldevices"));
+			readExternalDevices(data.getJsonObject("externaldevices"));
+			readUserDevices(data.getJsonObject("users"));
 		}
 	}
 
@@ -71,21 +69,34 @@ public class NetworkData extends AData {
 		}
 	}
 
-	private void readDevices(JsonObject jsonDevices) {
-		//We've got to enforce the order here, or things may go a bit awry...
-		Object[] devices = jsonDevices.keySet().toArray();
-		deviceLabels = new String[devices.length];
+	private void readExternalDevices(JsonObject jsonDevices) {
+		String[] devices = jsonDevices.keySet().toArray(new String[jsonDevices.size()]);
 		
-		for (int i = 0; i < devices.length; ++i) {
-			DeviceData dev = new DeviceData(devices[i].toString());
-			dev.read(jsonDevices.getJsonObject(devices[i].toString()));
-			this.devices.put(devices[i].toString(), dev);
-			deviceLabels[i] = devices[i].toString();
+		for (String device : devices) {
+			ExternalDeviceData dev = new ExternalDeviceData(device);
+			dev.read(jsonDevices.getJsonObject(device));
+			this.devices.put(device, dev);
+		}
+	}
+
+	private void readInternalDevices(JsonObject jsonDevices) {
+		String[] devices = jsonDevices.keySet().toArray(new String[jsonDevices.size()]);
+		
+		for (String device : devices) {
+			InternalDeviceData dev = new InternalDeviceData(device);
+			dev.read(jsonDevices.getJsonObject(device));
+			this.devices.put(device, dev);
 		}
 	}
 	
-	public String[] getDeviceLabels() {
-		return deviceLabels;
+	private void readUserDevices(JsonObject jsonDevices) {
+		String[] devices = jsonDevices.keySet().toArray(new String[jsonDevices.size()]);
+		
+		for (String device : devices) {
+			UserDeviceData dev = new UserDeviceData(device);
+			dev.read(jsonDevices.getJsonObject(device));
+			this.devices.put(device, dev);
+		}
 	}
 
 	public String[] getServerProfiles(String server) {
@@ -131,11 +142,10 @@ public class NetworkData extends AData {
 	}
 	
 	public String[] getServerLabels() {
-		return serverLabels;
+		return this.servers.keySet().toArray(new String[servers.size()]);
 	}
-	
+
 	// Have to be provided by server only
-	
 	public String getProperty(String server, String property) {
 		return this.servers.get(server).getProperty(property, null);
 	}
@@ -185,44 +195,15 @@ public class NetworkData extends AData {
 			return val;
 		}
 	}
-	
-	public String getDomain(String server) {
-		String val = this.servers.get(server).getDomain();
-		if (val == null) {
-			return this.defaultServerData.getDomain();
 		} else {
 			return val;
 		}
 	}
 	
-	public String getUser(String server) {
-		String val = this.servers.get(server).getUser();
+	public String getDomain(String server) {
+		String val = this.servers.get(server).getDomain();
 		if (val == null) {
-			val = this.defaultServerData.getUser();
-			if (val == null) {
-				return "thornsec";
-			}
-		}
-		
-		return val;
-	}
-	
-	public String getFullName(String server) {
-		String val = this.servers.get(server).getFullName();
-		if (val==null) {
-			val = this.defaultServerData.getFullName();
-			if (val == null) {
-				return "Thornsec Admin User";
-			}
-		}
-		
-		return val;
-	}
-
-	public String[] getUserKeys(String server) {
-		String[] val = this.servers.get(server).getUserKeys();
-		if (val.length == 0) {
-			return this.defaultServerData.getUserKeys();
+			return this.defaultServerData.getDomain();
 		} else {
 			return val;
 		}
@@ -420,14 +401,22 @@ public class NetworkData extends AData {
 	}
 	
 	//Device only stuff
+	public String[] getDeviceLabels() {
+		return this.devices.keySet().toArray(new String[devices.size()]);
+	}
+	
+	public String getSSHKey(String device) {
+		return this.devices.get(device).getSSHKey();
+	}
+	
+	public String getFullName(String device) {
+		return this.devices.get(device).getFullName();
+	}
+	
 	public String[] getDeviceMacs(String device) {
 		return this.devices.get(device).getMacs();
 	}
 
-	public String getDeviceType(String device) {
-		return this.devices.get(device).getType();
-	}
-	
 	public Boolean getDeviceThrottled(String device) {
 		return this.devices.get(device).getThrottled();
 	}
@@ -438,5 +427,9 @@ public class NetworkData extends AData {
 
 	public String[] getDevicePorts(String device) {
 		return this.devices.get(device).getPorts();
+	}
+	
+	public String getDeviceType(String device) {
+		return this.devices.get(device).getClass().getSimpleName().replace("DeviceData", "");
 	}
 }
