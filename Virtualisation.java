@@ -65,14 +65,14 @@ public class Virtualisation extends AStructuredProfile {
 	
 	public String preseed(String server, String service, NetworkModel model, Boolean expirePasswords) {
 
-		String   user            = model.getData().getUser(service);
-		String   sshDir          = "/home/" + user + "/.ssh";
-		String[] pubKeys         = model.getData().getUserKeys(service);
-		String   hostname        = model.getData().getHostname(service);
-		String   domain          = model.getData().getDomain(service);
-		String   fullName        = model.getData().getFullName(service);
-		String   debianMirror    = model.getData().getDebianMirror(service);
-		String   debianDirectory = model.getData().getDebianDirectory(service);
+		String user            = model.getData().getUser();
+		String sshDir          = "/home/" + user + "/.ssh";
+		String pubKey          = model.getData().getSSHKey(user);
+		String hostname        = model.getData().getHostname(service);
+		String domain          = model.getData().getDomain(service);
+		String fullName        = model.getData().getFullName(user);
+		String debianMirror    = model.getData().getDebianMirror(service);
+		String debianDirectory = model.getData().getDebianDirectory(service);
 
 		String preseed = "";
 		//Set up new box before rebooting. Sometimes you need to echo out in chroot;
@@ -81,10 +81,7 @@ public class Virtualisation extends AStructuredProfile {
 		//Echo out public keys, make sure it's all secured properly
 		preseed += "	in-target mkdir " + sshDir + ";";
 		preseed += "    in-target touch " + sshDir + "/authorized_keys;";
-
-		for (int i = 0; i < pubKeys.length; ++i) {
-			preseed += "	echo \\\"echo '" + pubKeys[i] + "' >> " + sshDir + "/authorized_keys; \\\" | chroot /target /bin/bash;";
-		}
+		preseed += "	echo \\\"echo '" + pubKey + "' >> " + sshDir + "/authorized_keys; \\\" | chroot /target /bin/bash;";
 		
 		preseed += "	in-target chmod 700 " + sshDir + ";";
 		preseed += "	in-target chmod 400 " + sshDir + "/authorized_keys;";

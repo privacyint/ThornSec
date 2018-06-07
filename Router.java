@@ -36,6 +36,11 @@ public class Router extends AStructuredProfile {
 		userIfaces.addElement(":2+");
 		
 		invalidChars = "[^[\\-a-zA-Z0-9]]";
+		
+		internalOnlyDevices = new Vector<String>();
+		externalOnlyDevices = new Vector<String>();
+		peripheralDevices   = new Vector<String>();
+		userDevices         = new Vector<String>();
 	}
 
 	public DHCP getDHCP() {
@@ -48,6 +53,29 @@ public class Router extends AStructuredProfile {
 	
 	public Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
+		
+		//Let's just get this out of the way up here rather than repeating over and over
+		//This class is difficult enough to follow already!! 
+		for (String device : model.getDeviceLabels()) {
+			switch (model.getDeviceModel(device).getType()) {
+				case "User":
+					userDevices.add(device);
+					break;
+				case "Internal":
+					internalOnlyDevices.add(device);
+					break;
+				case "External":
+					externalOnlyDevices.add(device);
+					break;
+				default:
+					//In theory, we should never get here. Theory is a fine thing.
+					System.out.println("Encountered an unsupported device type for " + device);
+			}
+		}
+		
+		//Also lump them together in one - we don't discriminate int/ext 99% of the time
+		peripheralDevices.addAll(internalOnlyDevices);
+		peripheralDevices.addAll(externalOnlyDevices);
 		
 		units.addAll(subnetConfigUnits(server, model));
 		
@@ -165,36 +193,31 @@ public class Router extends AStructuredProfile {
 		script += "#!/bin/bash\n";
 		
 		//Iterate through devicen first
-		for (String device : model.getDeviceLabels()) {
-			switch (model.getDeviceModel(device).getType()) {
-				//Email the user only
-				case "user":
-				case "superuser":
-					script += "\n\n";
-					script += buildDailyBandwidthEmail(model.getData().getAdminEmail(),
-													device + "@" + model.getData().getDomain(server),
-													"[" + device + "." + model.getData().getLabel() + "] Daily Bandwidth Digest",
-													device,
-													true);
-					break;
-				//This is a peripheral of some sort.  Just let the responsible person know.
-				case "intonly":
-				case "extonly":
-					script += "\n\n";
-					script += buildDailyBandwidthEmail(device + "@" + model.getData().getDomain(server),
-							model.getData().getAdminEmail(),
-							"[" + device + "." + model.getLabel() + "] Daily Bandwidth Digest",
-							device,
-							false);
-					break;
-				default:
-					//It'll default drop.
-			}
-
-			script += "iptables -Z " + device + "_ingress\n";
-			script += "iptables -Z " + device + "_egress";
+		for (String user : userDevices) {
+			//Email the user only
+			script += "\n\n";
+			script += buildDailyBandwidthEmail(model.getData().getAdminEmail(),
+											user + "@" + model.getData().getDomain(server),
+											"[" + user + "." + model.getData().getLabel() + "] Daily Bandwidth Digest",
+											user,
+											true);
+			script += "iptables -Z " + user + "_ingress\n";
+			script += "iptables -Z " + user + "_egress";
 		}
-		
+
+		for (String peripheral : peripheralDevices) {
+			//This is a peripheral of some sort.  Just let the responsible person know.
+			script += "\n\n";
+			script += buildDailyBandwidthEmail(peripheral + "@" + model.getData().getDomain(server),
+					model.getData().getAdminEmail(),
+					"[" + peripheral + "." + model.getLabel() + "] Daily Bandwidth Digest",
+					peripheral,
+					false);
+			
+			script += "iptables -Z " + peripheral + "_ingress\n";
+			script += "iptables -Z " + peripheral + "_egress";
+		}
+
 		//Then servers
 		for (String srv : model.getServerLabels()) {
 			script += "\n\n";
@@ -338,21 +361,9 @@ public class Router extends AStructuredProfile {
 	private Vector<IUnit> serverIptUnits(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		Vector<String> users = new Vector<String>();
-		
 		FirewallModel fm = model.getServerModel(server).getFirewallModel();
 
 		String extIface = model.getData().getExtIface(server);
-
-		for (String device : model.getDeviceLabels()) {
-			switch (model.getDeviceModel(device).getType()) {
-				case "superuser":
-				case "user":
-					users.add(device);
-					break;
-			}
-		}
-		
 		for (String srv : model.getServerLabels()) {
 			String serverSubnet    = model.getServerModel(srv).getSubnet() + "/30";
 			String cleanServerName = srv.replaceAll("-",  "_");
@@ -368,12 +379,23 @@ public class Router extends AStructuredProfile {
 						+ " --dport 25"
 						+ " -j ACCEPT");
 			}
+
+			//Allow admins to SSH to their server(s)
+			for (String admin : model.getData().getAdmins(srv)) {
+				//And if they're a superuser, they can SSH in, too
+				this.firewall.addFilter(cleanServerName + "_ssh_" + admin.replaceAll(invalidChars,  "_"), fwdChain,
+						"-s " + model.getDeviceModel(admin).getSubnets()[0] + "/24"
+						+ " -d " + serverSubnet
+						+ " -p tcp"
+						+ " --dport " + model.getData().getSSHPort(srv)
+						+ " -j ACCEPT");
+			}
 			
 			//Only actually do this if we have any users!
-			if (users.size() > 0) {
+			if (userDevices.size() > 0) {
 				String userRule = "";
 				userRule += "-s ";
-				for (String user : users) {
+				for (String user : userDevices) {
 					userRule += model.getDeviceModel(user).getSubnets()[0] + "/24,";
 				}
 				userRule = userRule.replaceAll(",$", ""); //Remove any trailing comma
@@ -383,19 +405,7 @@ public class Router extends AStructuredProfile {
 				userRule += " -m tcp -m multiport --dports 80,443";
 				userRule += " -j ACCEPT";
 				
-				fm.addFilter("allow_users_80_443_" + server, fwdChain, userRule);
-				
-				for (String user : users) {
-					//And if they're a superuser, they can SSH in, too
-					if (model.getDeviceModel(user).getType().equals("superuser" )) {
-						fm.addFilter(cleanServerName + "_ssh_" + user.replaceAll("-",  "_"), fwdChain,
-								"-s " + model.getDeviceModel(user).getSubnets()[0] + "/24"
-								+ " -d " + serverSubnet
-								+ " -p tcp"
-								+ " --dport " + model.getData().getSSHPort(srv)
-								+ " -j ACCEPT");
-					}
-				}
+				this.firewall.addFilter("allow_users_80_443_" + server, fwdChain, userRule);
 			}
 			
 			//And servers can talk back, if established/related traffic
@@ -428,26 +438,7 @@ public class Router extends AStructuredProfile {
 	private Vector<IUnit> userIptUnits(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		Vector<String> users   = new Vector<String>();
-		Vector<String> intOnly = new Vector<String>();
-		Vector<String> extOnly = new Vector<String>();
-
-		for (String device : model.getDeviceLabels()) {
-			switch (model.getDeviceModel(device).getType()) {
-				case "superuser":
-				case "user":
-					users.add(device);
-					break;
-				case "intonly":
-					intOnly.add(device);
-					break;
-				case "extonly":
-					extOnly.add(device);
-					break;
-			}
-		}
-		
-		for (String user : users) {
+		for (String user : userDevices) {
 			String cleanUserName = user.replace("-", "_");
 			String fwdChain      = cleanUserName + "_fwd";
 			String ingressChain  = cleanUserName + "_ingress";
@@ -481,9 +472,9 @@ public class Router extends AStructuredProfile {
 				fm.addFilter("allow_users_80_443_" + server, fwdChain, serverRule);
 			}
 			
-			//Allow superusers to SSH into our servers
-			if (model.getDeviceModel(user).getType().equals("superuser")) {
-				for (String srv : model.getServerLabels()) {
+			//Allow superusers to SSH into their servers
+			for (String srv : model.getServerLabels()) {
+				if (Arrays.asList(model.getData().getAdmins(srv)).contains(user)) {
 					for (String iface : userIfaces) {
 						fm.addFilter(cleanUserName + "_allow_ssh_traffic_" + srv.replaceAll("-",  "_"), fwdChain,
 								"-i " + intIface + iface
@@ -507,7 +498,7 @@ public class Router extends AStructuredProfile {
 					otherUsersRule += " -p tcp";
 					otherUsersRule += " -s ";
 					
-					for (String u : users) {
+					for (String u : userDevices) {
 						otherUsersRule += model.getDeviceModel(u).getSubnets()[0] + "/30,";
 					}
 					
@@ -528,7 +519,7 @@ public class Router extends AStructuredProfile {
 			
 			//Allow the user currently being configured to talk with other users on specified ports
 			for (String iface : userIfaces) {
-				for (String u : users) {
+				for (String u : userDevices) {
 					if (model.getDeviceModel(u).getPorts().length > 0) {
 						String[] ports = model.getDeviceModel(u).getPorts();
 						
@@ -558,7 +549,7 @@ public class Router extends AStructuredProfile {
 				intOnlyRule += "-i " + intIface + iface;
 				intOnlyRule += " -d ";
 
-				for (String device : intOnly) {
+				for (String device : internalOnlyDevices) {
 					intOnlyRule += model.getDeviceModel(device).getSubnets()[0] + "/30,";
 				}
 				
@@ -570,8 +561,13 @@ public class Router extends AStructuredProfile {
 			}
 
 			//Allow them to manage certain ext only devicen, if they're a superuser
-			if (model.getDeviceModel(user).getType().equals("superuser")) {
-				for (String device : extOnly) {
+			if (Arrays.asList(model.getData().getAdmins()).contains(user)) {
+				for (String device : externalOnlyDevices) {
+					//But only if they're managed.
+					if (!model.getDeviceModel(device).isManaged()) {
+						continue;
+					}
+					
 					for (String iface : userIfaces) {
 						fm.addFilter(cleanUserName + "_allow_managed_traffic_nonvpn_" + device.replaceAll("-",  "_"), fwdChain,
 								"-i " + intIface + iface
@@ -626,23 +622,8 @@ public class Router extends AStructuredProfile {
 	private Vector<IUnit> intOnlyIptUnits(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		Vector<String> users   = new Vector<String>();
-		Vector<String> intOnly = new Vector<String>();
-
-		for (String device : model.getDeviceLabels()) {
-			switch (model.getDeviceModel(device).getType()) {
-				case "superuser":
-				case "user":
-					users.add(device);
-					break;
-				case "intonly":
-					intOnly.add(device);
-					break;
-			}
-		}
-		
-		for (String device : intOnly) {
-			String cleanDeviceName = device.replace("-", "_");
+		for (String device : internalOnlyDevices) {
+			String cleanDeviceName = device.replace(invalidChars, "_");
 			String fwdChain        = cleanDeviceName + "_fwd";
 			String ingressChain    = cleanDeviceName + "_ingress";
 			String egressChain     = cleanDeviceName + "_egress";
@@ -673,7 +654,7 @@ public class Router extends AStructuredProfile {
 			intOnlyRule += "-d " + deviceSubnet;
 			intOnlyRule += " -s ";
 
-			for (String user : users) {
+			for (String user : userDevices) {
 				intOnlyRule += model.getDeviceModel(user).getSubnets()[0] + "/24,";
 			}
 			
@@ -695,21 +676,8 @@ public class Router extends AStructuredProfile {
 	private Vector<IUnit> extOnlyIptUnits(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		Vector<String> superusers = new Vector<String>();
-		Vector<String> extOnly    = new Vector<String>();
-
-		for (String device : model.getDeviceLabels()) {
-			switch (model.getDeviceModel(device).getType()) {
-				case "superuser":
-					superusers.add(device);
-				case "extonly":
-					extOnly.add(device);
-					break;
-			}
-		}
-		
-		for (String device : extOnly) {
-			String cleanDeviceName = device.replace("-", "_");
+		for (String device : externalOnlyDevices) {
+			String cleanDeviceName = device.replace(invalidChars, "_");
 			String fwdChain     = cleanDeviceName + "_fwd";
 			String ingressChain = cleanDeviceName + "_ingress";
 			String egressChain  = cleanDeviceName + "_egress";
@@ -733,12 +701,15 @@ public class Router extends AStructuredProfile {
 					+ " -j ACCEPT");
 			
 			if (model.getDeviceModel(device).isManaged()) {
-				for (String superuser : superusers) {
-					//And can accept established/related traffic from the outside world, too
-					fm.addFilter(cleanDeviceName + "_allow_management_traffic", fwdChain,
-							"-s " + model.getDeviceModel(superuser).getSubnets()[0] + "/24"
-							+ " -m state --state ESTABLISHED,RELATED"
-							+ " -j ACCEPT");
+				for (String user : userDevices) {
+					//Allow them to manage certain ext only devicen, if they're a superuser
+					if (Arrays.asList(model.getData().getAdmins()).contains(user)) {
+						//And can accept established/related traffic from the outside world, too
+						this.firewall.addFilter(cleanDeviceName + "_allow_management_traffic", fwdChain,
+								"-s " + model.getDeviceModel(user).getSubnets()[0] + "/24"
+								+ " -m state --state ESTABLISHED,RELATED"
+								+ " -j ACCEPT");
+					}
 				}
 			}
 			

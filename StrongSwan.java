@@ -63,15 +63,12 @@ public class StrongSwan extends AStructuredProfile {
 	
 	private Vector<IUnit> getDhcpConfig(NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
-
-		Vector<String> users = new Vector<String>();
 		
-		for (String device : model.getDeviceLabels()) {
-			switch (model.getDeviceModel(device).getType()) {
-				case "superuser":
-				case "user":
-					users.add(device);
-					break;
+		Vector<String> users = new Vector<String>();
+
+		for (String user : model.getData().getDeviceLabels()) {
+			if (model.getDeviceModel(user).getType().equals("User")) {
+					users.add(user);
 			}
 		}
 		

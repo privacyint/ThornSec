@@ -63,13 +63,12 @@ public class QoS extends AStructuredProfile {
 			
 			switch (model.getDeviceModel(device).getType()) {
 				//Email the user only
-				case "user":
-				case "superuser":
+				case "User":
 					markingUnits(server, model, device, deviceSubnet, userMark, userMarkAfter);
 			        break;
 				//This is a peripheral of some sort.  Just let the responsible person know.
-				case "intonly":
-				case "extonly":
+				case "Internal":
+				case "External":
 					markingUnits(server, model, device, deviceSubnet, deviceMark, deviceMarkAfter);
 					break;
 				default:
@@ -163,18 +162,16 @@ public class QoS extends AStructuredProfile {
 			
 			switch (model.getDeviceModel(device).getType()) {
 				//Email both the user && the responsible person
-				case "user":
-				case "superuser":
+				case "User":
 					ommail += buildThrottledEmailAction(ips, identifier, adminEmail, deviceEmail, "mailBodyUser");
 					ommail += buildThrottledEmailAction(ips, identifier, deviceEmail, adminEmail, "mailBodyTech");
 					break;
 				//This is a peripheral of some sort.  Just let the responsible person know.
-				case "intonly":
-				case "extonly":
+				case "Internal":
+				case "External":
 					ommail += buildThrottledEmailAction(ips, identifier, deviceEmail, adminEmail, "mailBodyTech");
 					break;
 				default:
-					//It'll default drop.
 			}
 		}
 		

@@ -133,14 +133,16 @@ public class SSH extends AStructuredProfile {
 				"awk '$5 <= 2000' /etc/ssh/moduli", "", "pass",
 				"Couldn't remove weak moduli from your SSH daemon.  This is undesirable, as it weakens your security.  Please re-run the script to try and get this to work."));
 
-		units.addElement(new DirUnit("sshd_dir", "sshd_config", "/home/" + model.getData().getUser(server) + "/.ssh"));
-
-		String keys = "";
-		for (String key : model.getData().getUserKeys(server)) {
-			keys += key + "\n";
+		for (String admin : model.getData().getAdmins(server)) {
+			units.addElement(new SimpleUnit("user_" + admin + "_created", "proceed",
+					"sudo useradd -G sudo -p secret -d /home/" + admin + " -m " + admin,
+					"id " + admin + " 2>&1", "id: ‘" + admin + "’: no such user", "fail",
+					"The nginx user couldn't be added.  This will cause all sorts of errors."));
+			
+			units.addElement(new DirUnit("sshd_dir_" + admin, "sshd_config", "/home/" + admin + "/.ssh"));
+			units.addElement(new FileUnit("sshd_key_" + admin, "sshd_dir_created", model.getData().getSSHKey(admin), "/home/" + admin + "/.ssh/authorized_keys"));
 		}
-		units.addElement(new FileUnit("sshd_keys", "sshd_dir_created", keys.trim(), "/home/" + model.getData().getUser(server) + "/.ssh/authorized_keys"));
-
+		
 		return units;
 	}
 
