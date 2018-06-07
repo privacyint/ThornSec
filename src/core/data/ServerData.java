@@ -6,10 +6,8 @@ import javax.json.JsonObject;
 public class ServerData extends AData {
 
 	private JsonObject data;
-	private String adminUser;
-	private String[] adminKeys;
-	private String[] adminIps;
-	private String adminFullName;
+
+	private String[] adminUsers;
 	private String connection;
 	private String subnet;
 	private String adminPort;
@@ -45,10 +43,8 @@ public class ServerData extends AData {
 	public void read(JsonObject data) {
 		this.data = data;
 		
-		adminUser       = getProperty("user", null);
-		adminKeys       = getPropertyArray("keys");
-		adminIps        = getPropertyArray("sshsource");
-		adminFullName   = getProperty("adminname", null);
+		adminUsers      = getPropertyArray("admins");
+		remoteAdminIps  = getPropertyArray("sshsource");
 		connection      = getProperty("connection", "direct");
 		subnet          = getProperty("subnet", null);
 		adminPort       = getProperty("adminport", null);
@@ -102,16 +98,8 @@ public class ServerData extends AData {
 		return data.getJsonArray(property);
 	}
 	
-	public String getUser() {
-		return this.adminUser;
-	}
-
-	public String getFullName() {
-		return this.adminFullName;
-	}
-	
-	public String[] getUserKeys() {
-		return this.adminKeys;
+	public String[] getAdmins() {
+		return this.adminUsers;
 	}
 
 	public String getConnection() {
@@ -222,7 +210,7 @@ public class ServerData extends AData {
 	}
 
 	public String[] getSSHSources() {
-		return this.adminIps;
+		return this.remoteAdminIps;
 	}
 	
 	public String[] getPorts() {

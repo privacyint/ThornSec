@@ -281,23 +281,21 @@ public class NetworkModel {
 	}
 	
 	public void genIsoServer(String server, String dir) {
-		String sshDir = "/home/" + getData().getUser(server) + "/.ssh";
-		String[] pubKeys = getData().getUserKeys(server);
+		String currentUser = getData().getUser();
+		String sshDir = "/home/" + currentUser + "/.ssh";
+		String sshKey = getData().getSSHKey(currentUser);
 
 		String preseed = "";
-
 		preseed += "d-i preseed/late_command string";
 		preseed += "	in-target mkdir " + sshDir + ";";
 		preseed += "    in-target touch " + sshDir + "/authorized_keys;";
-		for (int i = 0; i < pubKeys.length; ++i) {
-			preseed += "	echo \\\"echo \\\'" + pubKeys[i] + "\\\' >> " + sshDir + "/authorized_keys; \\\" | chroot /target /bin/bash;";
-		}
+		preseed += "	echo \\\"echo \\\'" + sshKey + "\\\' >> " + sshDir + "/authorized_keys; \\\" | chroot /target /bin/bash;";
 		
 		preseed += "	in-target chmod 700 " + sshDir + ";";
 		preseed += "	in-target chmod 400 " + sshDir + "/authorized_keys;";
-		preseed += "	in-target chown -R " + getData().getUser(server) + ":" + getData().getUser(server) + " " + sshDir + ";";
+		preseed += "	in-target chown -R " + currentUser + ":" + currentUser + " " + sshDir + ";";
 		//Force the user to change their passphrase on first login, lock the root account
-		preseed += "	in-target passwd -e " + getData().getUser(server) + ";";
+		preseed += "	in-target passwd -e " + currentUser + ";";
 		preseed += "	in-target passwd -l root;\n";
 		
 		preseed += "d-i debian-installer/locale string en_GB.UTF-8\n";
@@ -326,8 +324,8 @@ public class NetworkModel {
 		preseed += "d-i mirror/http/proxy string\n";
 		preseed += "d-i passwd/root-password password secret\n";
 		preseed += "d-i passwd/root-password-again password secret\n";
-		preseed += "d-i passwd/user-fullname string " + getData().getFullName(server) + "\n";
-		preseed += "d-i passwd/username string " + getData().getUser(server) + "\n";
+		preseed += "d-i passwd/user-fullname string " + getData().getFullName(currentUser) + "\n";
+		preseed += "d-i passwd/username string " + currentUser + "\n";
 		preseed += "d-i passwd/user-password password secret\n";
 		preseed += "d-i passwd/user-password-again password secret\n";
 		preseed += "d-i passwd/user-default-groups string sudo\n";

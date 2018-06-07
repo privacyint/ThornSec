@@ -52,7 +52,7 @@ public class ManageExec {
 			"-o ConnectTimeout=10",
 			"-L " + sshPort + ":" + network.getServerModel(server).getIP() + ":" + network.getData().getAdminPort(server),
 			"-p " + network.getData().getAdminPort(network.getRouters().firstElement()),
-			network.getData().getUser(network.getRouters().firstElement()) + "@" + network.getData().getIP(),
+			network.getData().getUser() + "@" + network.getData().getIP(),
 			"sleep 10" //Make it self close!
 		};
 							
@@ -61,7 +61,7 @@ public class ManageExec {
 				"ssh",
 				"-o ConnectTimeout=3",
 				"-p " + sshPort,
-				network.getData().getUser(server) + "@" + sshIP,
+				network.getData().getUser() + "@" + sshIP,
 				"cat > script.sh;",
 				"chmod +x script.sh;"		
 		};
@@ -73,7 +73,7 @@ public class ManageExec {
 				"-t", //No... 4rlysrs!
 				"-o ConnectTimeout=3",
 				"-p " + sshPort,
-				network.getData().getUser(server) + "@" + sshIP,
+				network.getData().getUser() + "@" + sshIP,
 				"./script.sh;",
 				"while [ -f ~/script.pid ]; do sleep 2; done;",
 				"rm script.sh;"					

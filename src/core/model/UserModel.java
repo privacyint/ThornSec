@@ -15,7 +15,11 @@ public class UserModel extends AModel {
 
 	public void init(NetworkModel model) {
 		this.usernames = new Vector<String>();
-	
+
+		for (String admin : model.getData().getAdmins(getLabel())) {
+			usernames.addElement(admin);
+		}
+		
 		usernames.addElement("root");
 		usernames.addElement("daemon");
 		usernames.addElement("bin");
@@ -41,7 +45,6 @@ public class UserModel extends AModel {
 		usernames.addElement("_apt");
 		usernames.addElement("messagebus");
 		usernames.addElement("sshd");
-		usernames.addElement(model.getData().getUser(getLabel()));
 		usernames.addElement("statd");
 //		usernames.addElement("");
 //		usernames.addElement("");

@@ -11,7 +11,15 @@ import javax.json.JsonObject;
 
 public class NetworkData extends AData {
 
-	private String ipClass, domain, dns, ip, adBlocking, gpg, autoGenPasswds, adminEmail, vpnOnly;
+	private String user;
+	private String ipClass;
+	private String dns;
+	private String ip;
+	private String adBlocking;
+	private String gpg;
+	private String autoGenPasswds;
+	private String adminEmail;
+	private String vpnOnly;
 
 	private ServerData defaultServerData;
 
@@ -27,8 +35,8 @@ public class NetworkData extends AData {
 		if (include != null) {
 			readInclude(include);
 		} else {
+			this.user = data.getString("myuser", null);
 			this.ipClass = data.getString("class", "a");
-//			this.domain = data.getString("domain", null);
 			this.dns = data.getString("dns", "8.8.8.8");
 			this.ip = data.getString("ip", null);
 			this.adBlocking = data.getString("adblocking", "no");
@@ -104,6 +112,9 @@ public class NetworkData extends AData {
 	}
 	
 	// Network only data
+	public String getUser() {
+		return user;
+	}
 	
 	public String getIPClass() {
 		return ipClass;
@@ -195,6 +206,15 @@ public class NetworkData extends AData {
 			return val;
 		}
 	}
+
+	public String[] getAdmins() {
+		return this.defaultServerData.getAdmins();
+	}
+
+	public String[] getAdmins(String server) {
+		String[] val = this.servers.get(server).getAdmins();
+		if (val.length == 0) {
+			return this.defaultServerData.getAdmins();
 		} else {
 			return val;
 		}

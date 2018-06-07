@@ -137,8 +137,8 @@ public class ServerModel extends AModel {
 		SSH ssh = new SSH();
 		units.addAll(ssh.getUnits(this.getLabel(), networkModel));
 
-		this.pm.addProcess("sshd: " + networkModel.getData().getUser(this.getLabel()) + " \\[priv\\]$");
-		this.pm.addProcess("sshd: " + networkModel.getData().getUser(this.getLabel()) + "@pts/0$");
+		this.pm.addProcess("sshd: " + networkModel.getData().getUser() + " \\[priv\\]$");
+		this.pm.addProcess("sshd: " + networkModel.getData().getUser() + "@pts/0$");
 		
 		//Useful packages
 		units.addElement(new InstalledUnit("sysstat", "proceed", "sysstat"));
