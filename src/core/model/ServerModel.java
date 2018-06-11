@@ -36,6 +36,8 @@ public class ServerModel extends AModel {
 	
 	private BindFsModel bfm;
 	
+	private ConfigFileModel configs;
+	
 	private UserModel um;
 	
 	private Vector<String> services;
@@ -86,6 +88,8 @@ public class ServerModel extends AModel {
 		this.aptm.init(model);
 		this.um = new UserModel(me);
 		this.um.init(model);
+		this.configs = new ConfigFileModel(me);
+		this.configs.init(model);
 	}
 	
 	public void registerService(String label) {
@@ -178,6 +182,7 @@ public class ServerModel extends AModel {
 		units.addAll(2, bfm.getUnits());
 		units.addAll(2, aptm.getUnits());
 		units.addAll(2, im.getUnits());
+		units.addAll(2, configs.getUnits());
 		units.addAll(pm.getUnits());
 		units.addAll(um.getUnits());
 		
@@ -213,6 +218,10 @@ public class ServerModel extends AModel {
 	
 	public UserModel getUserModel() {
 		return this.um;
+	}
+	
+	public ConfigFileModel getConfigsModel() {
+		return this.configs;
 	}
 	
 	public Router getRouter() {
