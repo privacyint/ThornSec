@@ -58,6 +58,8 @@ public class QoS extends AStructuredProfile {
 			
 			//If they're not throttled, don't bother
 			if (!model.getData().getDeviceThrottled(device)) { continue; }
+			//Or if they don't have an IP (i.e. not a network "internal" user)
+			if (model.getDeviceModel(device).getSubnets().length == 0) { continue; }
 			
 			String deviceSubnet = model.getDeviceModel(device).getSubnets()[0] + "/24";
 			
@@ -194,22 +196,25 @@ public class QoS extends AStructuredProfile {
 
 	private String buildThrottledEmailAction(String[] ips, String identifier, String fromEmail, String toEmail, String bodyTemplate) {
 		String action = "";
-		action += "    if \\$msg contains \\\"SRC=" + ips[0] + "\\\"";
-		
-		for (int i = 1; i < ips.length; ++i) {
-			action += " or \\$msg contains \\\"SRC=" + ips[i] + "\\\"";
+
+		if (ips.length > 0) {
+			action += "    if \\$msg contains \\\"SRC=" + ips[0] + "\\\"";
+			
+			for (int i = 1; i < ips.length; ++i) {
+				action += " or \\$msg contains \\\"SRC=" + ips[i] + "\\\"";
+			}
+			
+			action += " then {\n";
+			action += "        action(type=\\\"ommail\\\" server=\\\"localhost\\\" port=\\\"25\\\"\n";
+			action += "               mailfrom=\\\"" + fromEmail + "\\\"\n";
+			action += "               mailto=[\\\"" + toEmail + "\\\"]\n";
+			action += "               subject.text=\\\"[" + identifier + "] Upload bandwidth notification\\\"\n";
+			action += "               action.execonlyonceeveryinterval=\\\"3600\\\"\n";
+	        action += "               template=\\\"" + bodyTemplate + "\\\"\n";
+	        action += "               body.enable=\\\"on\\\"\n";
+			action += "        )\n";
+			action += "    }\n";
 		}
-		
-		action += " then {\n";
-		action += "        action(type=\\\"ommail\\\" server=\\\"localhost\\\" port=\\\"25\\\"\n";
-		action += "               mailfrom=\\\"" + fromEmail + "\\\"\n";
-		action += "               mailto=[\\\"" + toEmail + "\\\"]\n";
-		action += "               subject.text=\\\"[" + identifier + "] Upload bandwidth notification\\\"\n";
-		action += "               action.execonlyonceeveryinterval=\\\"3600\\\"\n";
-        action += "               template=\\\"" + bodyTemplate + "\\\"\n";
-        action += "               body.enable=\\\"on\\\"\n";
-		action += "        )\n";
-		action += "    }\n";
 		
 		return action;
 	}

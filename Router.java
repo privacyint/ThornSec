@@ -302,7 +302,7 @@ public class Router extends AStructuredProfile {
 			String[] gateways = model.getDeviceModel(device).getGateways();
 			String[] ips      = model.getDeviceModel(device).getIPs();
 			
-			String subnet   = gateways[0].split("\\.")[2];
+			String subnet = model.getDeviceModel(device).get3rdOctet();
 			
 			for (int i = 0; i < gateways.length; ++i) {
 				String subdomain = device + "." + model.getLabel() + ".lan." + i;
@@ -395,7 +395,9 @@ public class Router extends AStructuredProfile {
 
 			//Allow admins to SSH to their server(s)
 			for (String admin : model.getData().getAdmins(srv)) {
-				//And if they're a superuser, they can SSH in, too
+				//Not an "internal" user
+				if (model.getDeviceModel(admin).getSubnets().length == 0) { continue; }
+				
 				this.firewall.addFilter(cleanServerName + "_ssh_" + admin.replaceAll(invalidChars,  "_"), fwdChain,
 						"-s " + model.getDeviceModel(admin).getSubnets()[0] + "/24"
 						+ " -d " + serverSubnet
@@ -406,9 +408,12 @@ public class Router extends AStructuredProfile {
 			
 			//Only actually do this if we have any users!
 			if (userDevices.size() > 0) {
+				int actualUsers = 0;
 				String userRule = "";
 				userRule += "-s ";
 				for (String user : userDevices) {
+					if (model.getDeviceModel(user).getSubnets().length == 0) { continue; }
+					++actualUsers;
 					userRule += model.getDeviceModel(user).getSubnets()[0] + "/24,";
 				}
 				userRule = userRule.replaceAll(",$", ""); //Remove any trailing comma
@@ -418,7 +423,9 @@ public class Router extends AStructuredProfile {
 				userRule += " -m tcp -m multiport --dports 80,443";
 				userRule += " -j ACCEPT";
 				
-				this.firewall.addFilter("allow_users_80_443_" + server, fwdChain, userRule);
+				if (actualUsers > 0) {
+					this.firewall.addFilter("allow_users_80_443_" + server, fwdChain, userRule);
+				}
 			}
 			
 			//And servers can talk back, if established/related traffic
@@ -451,6 +458,9 @@ public class Router extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		for (String user : userDevices) {
+			//Not an "internal" user
+			if (model.getDeviceModel(user).getSubnets().length == 0) { continue; }
+			
 			String cleanUserName = user.replace("-", "_");
 			String fwdChain      = cleanUserName + "_fwd";
 			String ingressChain  = cleanUserName + "_ingress";
