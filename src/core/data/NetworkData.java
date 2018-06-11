@@ -74,26 +74,35 @@ public class NetworkData extends AData {
 	}
 
 	private void readExternalDevices(JsonObject jsonDevices) {
-		String[] devices = jsonDevices.keySet().toArray(new String[jsonDevices.size()]);
-		
-		for (String device : devices) {
-			ExternalDeviceData dev = new ExternalDeviceData(device);
-			dev.read(jsonDevices.getJsonObject(device));
-			this.devices.put(device, dev);
+		if (jsonDevices != null) {
+			String[] devices = jsonDevices.keySet().toArray(new String[jsonDevices.size()]);
+			
+			for (String device : devices) {
+				ExternalDeviceData dev = new ExternalDeviceData(device);
+				dev.read(jsonDevices.getJsonObject(device));
+				this.devices.put(device, dev);
+			}
 		}
 	}
 
 	private void readInternalDevices(JsonObject jsonDevices) {
-		String[] devices = jsonDevices.keySet().toArray(new String[jsonDevices.size()]);
-		
-		for (String device : devices) {
-			InternalDeviceData dev = new InternalDeviceData(device);
-			dev.read(jsonDevices.getJsonObject(device));
-			this.devices.put(device, dev);
+		if (jsonDevices != null) {
+			String[] devices = jsonDevices.keySet().toArray(new String[jsonDevices.size()]);
+			
+			for (String device : devices) {
+				InternalDeviceData dev = new InternalDeviceData(device);
+				dev.read(jsonDevices.getJsonObject(device));
+				this.devices.put(device, dev);
+			}
 		}
 	}
 	
 	private void readUserDevices(JsonObject jsonDevices) {
+		//We will *always* need user devices, or we will have no way to SSH in!
+		if (jsonDevices == null) {
+			System.out.println("You must specify at least one user!");
+		}
+		
 		String[] devices = jsonDevices.keySet().toArray(new String[jsonDevices.size()]);
 		
 		for (String device : devices) {
