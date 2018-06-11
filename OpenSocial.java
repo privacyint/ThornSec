@@ -170,7 +170,7 @@ public class OpenSocial extends AStructuredProfile {
 		opensocialConf += "\n";
 		opensocialConf += "\\$settings['install_profile'] = 'social';";
 
-		units.addElement(new FileUnit("opensocial_config", "opensocial_installed", opensocialConf, "/media/data/www/html/sites/default/settings.php"));
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("opensocial", "opensocial_installed", opensocialConf, "/media/data/www/html/sites/default/settings.php"));
 		
 		return units;
 	}

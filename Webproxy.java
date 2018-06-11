@@ -7,7 +7,6 @@ import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.fs.DirUnit;
-import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 
 public class Webproxy extends AStructuredProfile {
@@ -77,7 +76,7 @@ public class Webproxy extends AStructuredProfile {
 		sslConf += "    add_header X-Download-Options 'noopen' always;\n";
 		sslConf += "    add_header X-Permitted-Cross-Domain-Policies 'none' always;";
 	    
-		units.addElement(new FileUnit("nginx_ssl_config", "proceed", sslConf, "/etc/nginx/includes/ssl_params"));
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_ssl", "proceed", sslConf, "/etc/nginx/includes/ssl_params"));
 
 		if (this.liveConfig.equals("")) {
 			//Now build per-host specific shit

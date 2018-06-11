@@ -9,7 +9,6 @@ import core.unit.SimpleUnit;
 import core.unit.fs.FileChecksumUnit;
 import core.unit.fs.FileDownloadUnit;
 import core.unit.fs.FilePermsUnit;
-import core.unit.fs.FileUnit;
 import core.unit.fs.GitCloneUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
@@ -30,7 +29,7 @@ public class Etherpad extends AStructuredProfile {
 
 	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
-		
+
 		units.addAll(webserver.getInstalled(server, model));
 		units.addAll(php.getInstalled(server, model));
 		units.addAll(db.getInstalled(server, model));
@@ -149,7 +148,7 @@ public class Etherpad extends AStructuredProfile {
 		settings += "	\\\"loglevel\\\": \\\"INFO\\\",\n";
 		settings += "}";
 		
-		units.addElement(new FileUnit("etherpad_config", "etherpad_installed", settings, "/media/data/www/settings.json"));
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("etherpad", "etherpad_installed", settings, "/media/data/www/settings.json"));
 		
 		//https://github.com/ether/etherpad-lite/wiki/How-to-deploy-Etherpad-Lite-as-a-service
 		String serviceConf = "";
@@ -165,8 +164,8 @@ public class Etherpad extends AStructuredProfile {
 		serviceConf += "\n";
 		serviceConf += "[Install]\n";
 		serviceConf += "WantedBy=multi-user.target";
-        
-		units.addElement(new FileUnit("etherpad_service_config", "etherpad_installed", serviceConf, "/etc/systemd/system/etherpad-lite.service"));
+
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("etherpad_service", "etherpad_installed", serviceConf, "/etc/systemd/system/etherpad-lite.service"));
 
 		units.addElement(new SimpleUnit("etherpad_service_enabled", "etherpad_service_config",
 				"sudo systemctl enable etherpad-lite",

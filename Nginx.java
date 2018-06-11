@@ -9,7 +9,6 @@ import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
-import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
@@ -57,7 +56,7 @@ public class Nginx extends AStructuredProfile {
 		
 		if (liveConfig.size() > 0) {		
 			for (Map.Entry<String, String> entry : liveConfig.entrySet()) {
-				units.addElement(new FileUnit("nginx_live_config_" + entry.getKey(), "nginx_installed", entry.getValue(), "/etc/nginx/conf.d/" + entry.getKey() + ".conf"));
+				units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_live_" + entry.getKey(), "nginx_installed", entry.getValue(), "/etc/nginx/conf.d/" + entry.getKey() + ".conf"));
 			}
 		}
 		else {
@@ -77,7 +76,7 @@ public class Nginx extends AStructuredProfile {
 			conf += "    }\n";
 			conf += "}";
 			
-			units.addElement(new FileUnit("nginx_default_config", "nginx_installed", conf, "/etc/nginx/conf.d/default.conf"));
+			units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_default", "nginx_installed", conf, "/etc/nginx/conf.d/default.conf"));
 		}
 		
 		return units;

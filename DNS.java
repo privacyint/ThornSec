@@ -8,7 +8,6 @@ import java.util.Vector;
 import core.iface.IUnit;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
-import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
@@ -140,7 +139,7 @@ public class DNS extends AStructuredProfile {
 		config += "        name: \\\".\\\"\n";
 		config += "        forward-addr: " + model.getData().getDNS();
 		
-		units.addElement(new FileUnit("dns_persistent_config", "dns_installed", config, "/etc/unbound/unbound.conf"));
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("dns_persistent", "dns_installed", config, "/etc/unbound/unbound.conf"));
 		
 		return units;
 	}
@@ -234,7 +233,7 @@ public class DNS extends AStructuredProfile {
 			ifaceConfig += "    interface: " + gateway + "\n";
 		}
 		
-		units.addElement(new FileUnit("dns_listening_interfaces", "dns_installed", ifaceConfig.replaceAll("\\s+$", ""), "/etc/unbound/unbound.conf.d/interfaces.conf"));
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("dns_listening_faces", "dns_installed", ifaceConfig.replaceAll("\\s+$", ""), "/etc/unbound/unbound.conf.d/interfaces.conf"));
 
 		for (String domain : domainRecords.keySet()) {
 			String zoneConfig = "";
@@ -247,7 +246,7 @@ public class DNS extends AStructuredProfile {
 				zoneConfig += record;
 			}
 			
-			units.addElement(new FileUnit(domain.replaceAll("\\.", "_").replaceAll("-",  "_") + "_dns_internal_zone", "dns_installed", zoneConfig.replaceAll("\\s+$", ""), "/etc/unbound/unbound.conf.d/" + domain + ".zone"));
+			units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile(domain.replaceAll("\\.", "_").replaceAll("-",  "_") + "_dns_internal_zone", "dns_installed", zoneConfig.replaceAll("\\s+$", ""), "/etc/unbound/unbound.conf.d/" + domain + ".zone"));
 		}
 		
 		if (!poison.isEmpty()) {
@@ -256,7 +255,7 @@ public class DNS extends AStructuredProfile {
 				poisonConfig += "\n    local-zone: \\\"" + record.getKey() + "\\\" redirect";
 				poisonConfig += "\n    local-data: \\\"" + record.getKey() + " A " + record.getValue() + "\\\"";
 			}
-			units.addElement(new FileUnit("dns_poison_zone", "dns_installed", poisonConfig.replaceAll("\\s+$", ""), "/etc/unbound/unbound.conf.d/poison.zone"));
+			units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("dns_poison_zone", "dns_installed", poisonConfig.replaceAll("\\s+$", ""), "/etc/unbound/unbound.conf.d/poison.zone"));
 		}
 		
 		return units;

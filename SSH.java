@@ -63,7 +63,7 @@ public class SSH extends AStructuredProfile {
 		sshdconf += "UsePAM yes\n";
 		sshdconf += "Banner /etc/ssh/sshd_banner\n";
 		sshdconf += "MaxSessions 1";
-		units.addElement(new FileUnit("sshd_config", "proceed", sshdconf, "/etc/ssh/sshd_config"));
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("sshd", "proceed", sshdconf, "/etc/ssh/sshd_config"));
 
 		//This banner is taken from https://www.dedicatedukhosting.com/hosting/adding-ssh-welcome-and-warning-messages/
 		String banner = "";
@@ -78,7 +78,7 @@ public class SSH extends AStructuredProfile {
 				"required. Anyone using this system consents to these terms and the laws\n" + 
 				"of the United Kingdom and United States respectively.\n" + 
 				"************************NOTICE***********************";
-		units.addElement(new FileUnit("sshd_banner", "proceed", banner, "/etc/ssh/banner"));
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("sshd_banner", "proceed", banner, "/etc/ssh/banner"));
 		
 		units.addElement(new DirUnit("motd", "proceed", "/etc/update-motd.d/"));
 		
@@ -106,7 +106,7 @@ public class SSH extends AStructuredProfile {
 		motd += "echo\n";
 		motd += "echo \\\"HERE BE DRAGONS.\\\"\n";
 		motd += "echo";
-		units.addElement(new FileUnit("sshd_motd", "proceed", motd, "/etc/update-motd.d/00-motd"));
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("sshd_motd", "proceed", motd, "/etc/update-motd.d/00-motd"));
 		units.addElement(new FilePermsUnit("sshd_motd_perms", "sshd_motd", "/etc/update-motd.d/00-motd", "755"));
 		
 		units.addElement(new SimpleUnit("sshd_rsa", "sshd_config",

@@ -5,7 +5,6 @@ import java.util.Vector;
 import core.iface.IUnit;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
-import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
@@ -64,7 +63,8 @@ public class DHCP extends AStructuredProfile {
 		defiface = defiface.trim() + "\\\"";
 		procString = procString.trim() + "$";
 		
-		units.addElement(new FileUnit("dhcp_defiface", "dhcp_installed", defiface, "/etc/default/isc-dhcp-server"));
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("dhcp_defiface", "dhcp_installed", defiface, "/etc/default/isc-dhcp-server"));
+
 		model.getServerModel(server).getProcessModel().addProcess(procString);
 		
 		String dhcpconf  = "";
@@ -160,7 +160,7 @@ public class DHCP extends AStructuredProfile {
 		
 		dhcpconf += "\n}";
 
-		units.addElement(new FileUnit("dhcp_conf", "dhcp_installed", dhcpconf, "/etc/dhcp/dhcpd.conf"));
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("dhcp", "dhcp_installed", dhcpconf, "/etc/dhcp/dhcpd.conf"));
 
 		return units;
 	}	

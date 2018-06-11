@@ -10,7 +10,6 @@ import core.unit.SimpleUnit;
 import core.unit.fs.DirOwnUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileEditUnit;
-import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
@@ -91,7 +90,7 @@ public class OnionBalance extends AStructuredProfile {
 		service += "[Install]\n";
 		service += "WantedBy=multi-user.target";
 
-		units.addElement(new FileUnit("onionbalance_service", "onionbalance_installed", service, "/lib/systemd/system/onionbalance.service"));
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("onionbalance_service", "onionbalance_installed", service, "/lib/systemd/system/onionbalance.service"));
 		
 		String torrc = "";
 		torrc += "Datadirectory /var/lib/tor\n";
@@ -103,7 +102,7 @@ public class OnionBalance extends AStructuredProfile {
 		torrc += "\n";
 		torrc += "FascistFirewall 1";
 
-		units.addElement(new FileUnit("torrc", "tor_installed", torrc, "/etc/tor/torrc"));
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("torrc", "tor_installed", torrc, "/etc/tor/torrc"));
 
 		units.addElement(new SimpleUnit("tor_service_enabled", "torrc",
 				"sudo systemctl enable tor",
@@ -133,7 +132,7 @@ public class OnionBalance extends AStructuredProfile {
 			onionbalanceConfig += "        - address: " + backend;
 		}
 		
-		units.addElement(new FileUnit("onionbalance_config", "onionbalance_installed", onionbalanceConfig, "/etc/onionbalance/config.yaml"));
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("onionbalance", "onionbalance_installed", onionbalanceConfig, "/etc/onionbalance/config.yaml"));
 		
 		units.addElement(new RunningUnit("tor", "tor", "/usr/bin/tor"));
 		model.getServerModel(server).getProcessModel().addProcess("/usr/bin/tor --defaults-torrc /usr/share/tor/tor-service-defaults-torrc -f /etc/tor/torrc --RunAsDaemon 0$");
