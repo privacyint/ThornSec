@@ -138,6 +138,13 @@ public class ServerModel extends AModel {
 				"dpkg-query --status rdnssd | grep \"Status:\";", "Status: install ok installed", "fail",
 				"Couldn't uninstall rdnssd.  This is a package which attempts to be \"clever\" in DNS configuration and just breaks everything instead."), 6);
 		
+		//Verify our PAM modules haven't been tampered with
+		//https://www.trustedsec.com/2018/04/malware-linux/
+		units.insertElementAt(new SimpleUnit("pam_not_tampered", "proceed",
+				"",
+				"find /lib/$(uname -m)-linux-gnu/security/ | xargs dpkg -S | cut -d ':' -f 1 | uniq | xargs dpkg -V", "", "pass",
+				"There are unexpected/tampered PAM modules on this machine.  This is almost certainly an indicator that this machine has been compromised!"), 7);
+		
 		SSH ssh = new SSH();
 		units.addAll(ssh.getUnits(this.getLabel(), networkModel));
 
