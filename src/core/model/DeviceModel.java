@@ -35,7 +35,7 @@ public class DeviceModel extends AModel {
 	}
 
 	private String ipFromClass() {
-		String subnet = (subnetOffset + Arrays.asList(this.networkData.getDeviceLabels()).indexOf(getLabel())) + "";
+		String subnet = get3rdOctet();
 		
 		if (this.networkData.getIPClass().equals("c")) {
 			return "192.168." + subnet;
@@ -46,6 +46,10 @@ public class DeviceModel extends AModel {
 		} else {
 			return "0.0.0";
 		}
+	}
+	
+	public String get3rdOctet() {
+		return (subnetOffset + Arrays.asList(this.networkData.getDeviceLabels()).indexOf(getLabel())) + "";
 	}
 	
 	public String[] getSubnets() {
