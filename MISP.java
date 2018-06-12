@@ -56,7 +56,7 @@ public class MISP extends AStructuredProfile {
 		units.addElement(new InstalledUnit("redis_server", "proceed", "redis-server"));
 		units.addElement(new InstalledUnit("zip", "proceed", "zip"));
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "gnupg_home", "gnupg_agent_installed", "/media/metaldata/gpg", "/media/data/gpg", "nginx", "nginx", "0755"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "gnupg_home", "gnupg_agent_installed", "/media/metaldata/gpg", "/media/data/gpg", "nginx", "nginx", "0750"));
 		
 		//Install PHP dependencies
 		units.addElement(new InstalledUnit("php5_cli", "php5_fpm_installed", "php5-cli"));

@@ -47,7 +47,7 @@ public class SVN extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "www", "proceed", "www-data", "www-data", "0755"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "www", "proceed", "www-data", "www-data", "0750"));
 		
 		units.addElement(new SimpleUnit("apache_mod_headers_enabled", "apache_installed",
 				"sudo a2enmod headers;",
@@ -88,7 +88,7 @@ public class SVN extends AStructuredProfile {
 				+ "sudo service apache2 restart; sudo service php5-fpm restart;",
 				"grep 'expose_php' /etc/php5/apache2/php.ini | awk '{ print $3 }'","Off","pass"));
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "svn", "proceed", "www-data", "www-data", "0755"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "svn", "proceed", "www-data", "www-data", "0750"));
 
 		units.addElement(new DirUnit("svn_repo_dir", "svn_data_mounted", "/media/data/svn/repos"));
 		units.addElement(new DirUnit("svn_credentials_dir", "svn_data_mounted", "/media/data/svn/credentials"));

@@ -46,7 +46,7 @@ public class OpenSocial extends AStructuredProfile {
 		model.getServerModel(server).getUserModel().addUsername("smmpa");
 		model.getServerModel(server).getUserModel().addUsername("smmsp");
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "drush", "composer_installed", "nginx", "nginx", "0755"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "drush", "composer_installed", "nginx", "nginx", "0750"));
 		
 		units.addElement(new SimpleUnit("drush_installed", "composer_installed",
 				"sudo -u nginx bash -c 'composer create-project drush/drush /media/data/drush -n'",

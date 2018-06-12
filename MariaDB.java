@@ -31,7 +31,7 @@ public class MariaDB extends AStructuredProfile {
 		
 		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_mariadb", "mirror.sax.uk.as61049.net", new String[]{"80","443"});
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addLogBindPoint(server, model, "mysql", "proceed", "mysql", "0755"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addLogBindPoint(server, model, "mysql", "proceed", "mysql", "0750"));
 
 		//Generate a root password, if not already installed
 		units.addElement(new SimpleUnit("mariadb_generate_root_password", "openssl_installed",
@@ -51,7 +51,7 @@ public class MariaDB extends AStructuredProfile {
 		
 		units.addElement(new InstalledUnit("mariadb", "mariadb_rootpass_again", "mariadb-server"));
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "mysql", "mariadb_installed", "mysql", "mysql", "0755"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "mysql", "mariadb_installed", "mysql", "mysql", "0750"));
 		
 		return units;
 	}

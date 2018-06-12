@@ -37,9 +37,9 @@ public class OnionBalance extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "onionbalance", "onionbalance_installed", "onionbalance", "onionbalance", "0700"));
-		units.addAll(model.getServerModel(server).getBindFsModel().addLogBindPoint(server, model, "onionbalance", "onionbalance_installed", "onionbalance", "0755"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addLogBindPoint(server, model, "onionbalance", "onionbalance_installed", "onionbalance", "0750"));
 		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "tor", "tor_installed", "debian-tor", "debian-tor", "0700"));
-		units.addAll(model.getServerModel(server).getBindFsModel().addLogBindPoint(server, model, "tor", "tor_installed", "debian-tor", "0755"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addLogBindPoint(server, model, "tor", "tor_installed", "debian-tor", "0750"));
 
 		units.add(new DirUnit("onionbalance_var_run", "onionbalance_installed", "/var/run/onionbalance"));
 		units.add(new DirOwnUnit("onionbalance_var_run", "onionbalance_var_run_created", "/var/run/onionbalance", "onionbalance"));

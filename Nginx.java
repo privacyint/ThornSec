@@ -31,7 +31,7 @@ public class Nginx extends AStructuredProfile {
 		
 		model.getServerModel(server).getUserModel().addUsername("nginx");
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "www", "proceed", "nginx", "nginx", "0755"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "www", "proceed", "nginx", "nginx", "0750"));
 
 		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "nginx", "proceed", "deb http://nginx.org/packages/mainline/debian/ stretch nginx", "keyserver.ubuntu.com", "ABF5BD827BD9BF62");
 		units.addElement(new InstalledUnit("nginx", "nginx_gpg", "nginx"));

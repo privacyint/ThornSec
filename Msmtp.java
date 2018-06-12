@@ -17,7 +17,7 @@ public class Msmtp extends AStructuredProfile {
 	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addLogBindPoint(server, model, "msmtp", "proceed", "nginx", "0755"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addLogBindPoint(server, model, "msmtp", "proceed", "nginx", "0750"));
 
 		units.addElement(new InstalledUnit("msmtp", "proceed", "msmtp"));
 		units.addElement(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));

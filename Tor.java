@@ -39,7 +39,7 @@ public class Tor extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "tor", "tor_installed", "debian-tor", "debian-tor", "0700"));
-		units.addAll(model.getServerModel(server).getBindFsModel().addLogBindPoint(server, model, "tor", "tor_installed", "debian-tor", "0755"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addLogBindPoint(server, model, "tor", "tor_installed", "debian-tor", "0750"));
 
 		units.addElement(new SimpleUnit("torhs_hostname", "tor_data_mounted",
 				//Copy over the new hostname file if one doesn't already exist, or replace the new hostname if we already have one

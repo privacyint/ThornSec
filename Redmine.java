@@ -48,9 +48,9 @@ public class Redmine extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "redmine_logs", "proceed", "nginx", "nginx", "0644"));
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "redmine_files", "proceed", "nginx", "nginx", "0755"));
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "redmine_data", "proceed", "nginx", "nginx", "0755"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "redmine_logs", "proceed", "nginx", "nginx", "0640"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "redmine_files", "proceed", "nginx", "nginx", "0750"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "redmine_data", "proceed", "nginx", "nginx", "0750"));
 
 		units.addElement(new SimpleUnit("logs_symlinked", "redmine_installed",
 				//We don't really care about logs at this point
