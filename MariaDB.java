@@ -6,7 +6,6 @@ import core.iface.IUnit;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
-import core.unit.fs.FileEditUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
@@ -54,12 +53,16 @@ public class MariaDB extends AStructuredProfile {
 		
 		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "mysql", "mariadb_installed", "mysql", "mysql", "0755"));
 		
+		return units;
+	}
+	
+	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+		Vector<IUnit> units =  new Vector<IUnit>();
+
 		units.addElement(new SimpleUnit("mariadb_stopped", "mysql_data_mounted",
 				stopMariaDb(),
 				"[ -f /var/run/mysqld/mysqld.pid ] && echo fail || echo pass", "pass", "pass"));
 
-		units.addElement(new FileEditUnit("mariadb_data_dir_conf", "mariadb_stopped", "/var/lib/mysql", "/media/data/mysql", "/etc/mysql/my.cnf"));
-		
 		units.addElement(new SimpleUnit("mariadb_data_dir_moved", "mariadb_installed",
 				//We only want to move over the files if they don't already exist
 				"[ -d /media/data/mysql/mysql ] || sudo mv /var/lib/mysql/* /media/data/mysql/;"
@@ -68,13 +71,75 @@ public class MariaDB extends AStructuredProfile {
 				"[ -d /var/lib/mysql ] && echo fail || echo pass", "pass", "pass",
 				"Couldn't move MariaDB's data directory.  This means that the database files will be stored in the VM."));
 
-		units.addElement(new RunningUnit("mariadb", "mysql", "mysql"));
+		String conf = "";
+		conf += "[client]";
+		conf += "port                    = 3306";
+		conf += "socket                  = /var/run/mysqld/mysqld.sock";
+		conf += "";
+		conf += "[mysqld_safe]";
+		conf += "socket                  = /var/run/mysqld/mysqld.sock";
+		conf += "nice                    = 0";
+		conf += "";
+		conf += "[mysqld]";
+		conf += "user                    = mysql";
+		conf += "pid-file                = /var/run/mysqld/mysqld.pid";
+		conf += "socket                  = /var/run/mysqld/mysqld.sock";
+		conf += "port                    = 3306";
+		conf += "basedir                 = /usr";
+		conf += "datadir                 = /media/data/mysql";
+		conf += "tmpdir                  = /tmp";
+		conf += "lc_messages_dir         = /usr/share/mysql";
+		conf += "lc_messages             = en_US";
+		conf += "skip-external-locking";
+		conf += "bind-address            = 127.0.0.1";
+		conf += "max_connections         = 100";
+		conf += "connect_timeout         = 5";
+		conf += "wait_timeout            = 600";
+		conf += "max_allowed_packet      = 16M";
+		conf += "thread_cache_size       = 128";
+		conf += "sort_buffer_size        = 4M";
+		conf += "bulk_insert_buffer_size = 16M";
+		conf += "tmp_table_size          = 32M";
+		conf += "max_heap_table_size     = 32M";
+		conf += "myisam_recover_options  = BACKUP";
+		conf += "key_buffer_size         = 128M";
+		conf += "table_open_cache        = 400";
+		conf += "myisam_sort_buffer_size = 512M";
+		conf += "concurrent_insert       = 2";
+		conf += "read_buffer_size        = 2M";
+		conf += "read_rnd_buffer_size    = 1M";
+		conf += "query_cache_limit       = 128K";
+		conf += "query_cache_size        = 64M";
+		conf += "log_warnings            = 2";
+		conf += "slow_query_log_file     = /var/log/mysql/mariadb-slow.log";
+		conf += "long_query_time         = 10";
+		conf += "log_slow_verbosity      = query_plan";
+		conf += "log_bin                 = /var/log/mysql/mariadb-bin";
+		conf += "log_bin_index           = /var/log/mysql/mariadb-bin.index";
+		conf += "expire_logs_days        = 10";
+		conf += "max_binlog_size         = 100M";
+		conf += "default_storage_engine  = InnoDB";
+		conf += "innodb_buffer_pool_size = 256M";
+		conf += "innodb_log_buffer_size  = 8M";
+		conf += "innodb_file_per_table   = 1";
+		conf += "innodb_open_files       = 400";
+		conf += "innodb_io_capacity      = 400";
+		conf += "innodb_flush_method     = O_DIRECT";
+		conf += "";
+		conf += "[mysqldump]";
+		conf += "quick";
+		conf += "quote-names";
+		conf += "max_allowed_packet      = 16M";
+		conf += "";
+		conf += "[isamchk]";
+		conf += "key_buffer              = 16M";
+		conf += "";
+		conf += "!includedir /etc/mysql/conf.d/";
 		
-		return units;
-	}
-	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
-		Vector<IUnit> units =  new Vector<IUnit>();
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("mysql", "mariadb_installed", conf, "/etc/mysql/my.cnf"));
+		
+		units.addElement(new RunningUnit("mariadb", "mysql", "mysql"));
+
 		return units;
 	}
 
