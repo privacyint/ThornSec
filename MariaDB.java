@@ -152,6 +152,11 @@ public class MariaDB extends AStructuredProfile {
 		model.getServerModel(server).getProcessModel().addProcess("/usr/sbin/mysqld$");
 		model.getServerModel(server).getProcessModel().addProcess("logger -t mysqld -p daemon.error$");
 		
+		units.addElement(new SimpleUnit("mariadb_no_failed_logins", "mariadb_installed",
+				"",
+				"sudo grep \"[Warning] Access denied for user\" /var/log/syslog", "", "pass",
+				"There are failed logins to your mysql server.  This implies someone is trying to log in through the command line, and could be an indicator of compromise."));
+		
 		return units;
 	}
 	
