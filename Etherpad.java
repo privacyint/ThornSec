@@ -15,9 +15,9 @@ import core.unit.pkg.RunningUnit;
 
 public class Etherpad extends AStructuredProfile {
 	
-	Nginx webserver;
-	PHP php;
-	MariaDB db;
+	private Nginx webserver;
+	private PHP php;
+	private MariaDB db;
 	
 	public Etherpad() {
 		super("etherpad");

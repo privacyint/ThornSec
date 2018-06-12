@@ -6,14 +6,13 @@ import core.iface.IUnit;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
-import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 
 public class OpenSocial extends AStructuredProfile {
 	
-	Nginx webserver;
-	PHP php;
-	MariaDB db;
+	private Nginx webserver;
+	private PHP php;
+	private MariaDB db;
 	
 	public OpenSocial() {
 		super("opensocial");

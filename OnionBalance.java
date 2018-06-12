@@ -3,13 +3,11 @@ package profile;
 import java.util.Vector;
 
 import core.iface.IUnit;
-import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirOwnUnit;
 import core.unit.fs.DirUnit;
-import core.unit.fs.FileEditUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 

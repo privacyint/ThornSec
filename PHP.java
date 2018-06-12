@@ -1,12 +1,10 @@
 package profile;
 
 import java.util.Vector;
-import java.util.regex.Pattern;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
-import core.unit.fs.FileAppendUnit;
 import core.unit.fs.FileEditUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
