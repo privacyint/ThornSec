@@ -60,7 +60,7 @@ public class MariaDB extends AStructuredProfile {
 
 		units.addElement(new FileEditUnit("mariadb_data_dir_conf", "mariadb_stopped", "/var/lib/mysql", "/media/data/mysql", "/etc/mysql/my.cnf"));
 		
-		units.addElement(new SimpleUnit("mariadb_data_dir_moved", "mariadb_data_dir_conf_edited",
+		units.addElement(new SimpleUnit("mariadb_data_dir_moved", "mariadb_installed",
 				//We only want to move over the files if they don't already exist
 				"[ -d /media/data/mysql/mysql ] || sudo mv /var/lib/mysql/* /media/data/mysql/;"
 				//Either which way, remove the new ones
