@@ -117,6 +117,7 @@ public class Webproxy extends AStructuredProfile {
 				nginxConf += "        proxy_pass              http://" + model.getServerModel(canonicalName).getIP() + ";\n";
 				nginxConf += "        proxy_set_header        Host \\$host;\n";
 				nginxConf += "        proxy_set_header        X-Real-IP \\$remote_addr;\n";
+				nginxConf += "        proxy_set_header        X-Forwarded-For \\$remote_addr;\n";
 				nginxConf += "        proxy_request_buffering off;\n";
 				nginxConf += "        proxy_buffering         off;\n";
 				nginxConf += "        client_max_body_size    0;\n";
