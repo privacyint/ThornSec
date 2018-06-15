@@ -62,8 +62,7 @@ public class SSH extends AStructuredProfile {
 		sshdconf += "Subsystem sftp /usr/lib/openssh/sftp-server\n";
 		sshdconf += "UsePAM yes\n";
 		sshdconf += "Banner /etc/ssh/sshd_banner\n";
-		sshdconf += "MaxSessions 1\n";
-		sshdconf += "no-user-rc";
+		sshdconf += "MaxSessions 1";
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("sshd", "proceed", sshdconf, "/etc/ssh/sshd_config"));
 
 		//This banner is taken from https://www.dedicatedukhosting.com/hosting/adding-ssh-welcome-and-warning-messages/
