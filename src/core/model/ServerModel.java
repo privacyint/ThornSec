@@ -223,6 +223,21 @@ public class ServerModel extends AModel {
 				+ excludeKnownKeys,
 				"", "pass",
 				"There are unexpected SSH keys on this machine.  This is almost certainly an indicator that this machine has been compromised!"));
+
+		//Check for unexpected executables
+		if (isService()) {
+			units.addElement(new SimpleUnit("no_unexpected_executables", "proceed",
+					"",
+					"find /proc/*/exe -exec readlink {} + | xargs sudo dpkg -S 2>&1 | egrep -v \"/opt/VBoxGuestAdditions-[5-9]{1}\\\\.[0-9]{1,2}\\\\.[0-9]{1,2}/sbin/VBoxService\"", "", "pass",
+					"There are unexpected executables running on this machine.  This could be innocent, or could be a sign of compromise."));
+		}
+		else {
+			units.addElement(new SimpleUnit("no_unexpected_executables", "proceed",
+					"",
+					"find /proc/*/exe -exec readlink {} + | xargs sudo dpkg -S 2>&1", "", "pass",
+					"There are unexpected executables running on this machine.  This could be innocent, or could be a sign of compromise."));
+		}
+		
 		units.addElement(new SimpleUnit("delete_pid_file", "proceed",
 				"",
 				"rm ~/script.pid; [ -f ~/script.pid ] && echo fail || echo pass", "pass", "pass"));		
