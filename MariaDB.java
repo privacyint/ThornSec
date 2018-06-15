@@ -125,6 +125,10 @@ public class MariaDB extends AStructuredProfile {
 		conf += "innodb_open_files       = 400";
 		conf += "innodb_io_capacity      = 400";
 		conf += "innodb_flush_method     = O_DIRECT";
+		//These are *probably* default, but let's be explicit about it...
+		conf += "innodb_large_prefix     = true";
+		conf += "innodb_file_format      = barracuda";
+		conf += "innodb_file_per_table   = true";
 		conf += "";
 		conf += "[mysqldump]";
 		conf += "quick";
