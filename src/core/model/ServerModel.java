@@ -177,6 +177,8 @@ public class ServerModel extends AModel {
 		
 		for (String profile : this.getProfiles()) {
 			try {
+				if (profile.equals("")) { continue; }
+				
 				AProfile profileClass = (AProfile) Class.forName("profile." + profile).newInstance();
 				units.addAll(profileClass.getUnits(this.getLabel(), networkModel));
 			} catch (Exception e) {
