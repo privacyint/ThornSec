@@ -154,6 +154,7 @@ public class ServerModel extends AModel {
 		
 		//Useful packages
 		units.addElement(new InstalledUnit("sysstat", "proceed", "sysstat"));
+		units.addElement(new InstalledUnit("lsof", "proceed", "lsof"));
 		units.addElement(new InstalledUnit("net_tools", "proceed", "net-tools"));
 		units.addElement(new InstalledUnit("htop", "proceed", "htop"));
 		
@@ -196,6 +197,10 @@ public class ServerModel extends AModel {
 		units.addAll(pm.getUnits());
 		units.addAll(um.getUnits());
 		
+		units.addElement(new SimpleUnit("no_raw_sockets", "lsof_installed",
+				"",
+				"sudo lsof | grep RAW", "", "pass",
+				"There are raw sockets running on this machine.  This is almost certainly a sign of compromise."));
 		units.addElement(new SimpleUnit("delete_pid_file", "proceed",
 				"",
 				"rm ~/script.pid; [ -f ~/script.pid ] && echo fail || echo pass", "pass", "pass"));		
