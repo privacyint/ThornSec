@@ -144,6 +144,7 @@ public class ServerModel extends AModel {
 				"",
 				"find /lib/$(uname -m)-linux-gnu/security/ | xargs dpkg -S | cut -d ':' -f 1 | uniq | xargs dpkg -V", "", "pass",
 				"There are unexpected/tampered PAM modules on this machine.  This is almost certainly an indicator that this machine has been compromised!"), 7);
+		units.insertElementAt(new RunningUnit("syslog", "rsyslog", "rsyslog"), 7);
 		
 		SSH ssh = new SSH();
 		units.addAll(ssh.getUnits(this.getLabel(), networkModel));
