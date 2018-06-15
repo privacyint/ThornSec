@@ -191,7 +191,7 @@ public class ServerModel extends AModel {
 		units.addAll(2, bfm.getUnits());
 		units.addAll(2, aptm.getUnits());
 		units.addAll(2, im.getUnits());
-		units.addAll(2, configs.getUnits());
+		units.addAll(configs.getUnits());
 		units.addAll(pm.getUnits());
 		units.addAll(um.getUnits());
 		
