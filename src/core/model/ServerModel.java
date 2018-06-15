@@ -202,6 +202,27 @@ public class ServerModel extends AModel {
 				"",
 				"find /lib/$(uname -m)-linux-gnu/security/ | xargs dpkg -S | cut -d ':' -f 1 | uniq | xargs sudo dpkg -V", "", "pass",
 				"There are unexpected/tampered PAM modules on this machine.  This is almost certainly an indicator that this machine has been compromised!"));
+
+		//Check for random SSH keys
+		//https://security.stackexchange.com/a/151581
+		String excludeKnownKeys = "";
+
+		for (String admin : networkModel.getData().getAdmins(getLabel())) {
+			excludeKnownKeys += " | grep -v " + networkModel.getData().getSSHKey(admin);
+		}
+		
+		units.addElement(new SimpleUnit("no_additional_ssh_keys", "proceed",
+				"",
+				"for X in $(cut -f6 -d ':' /etc/passwd |sort |uniq); do"
+				+ "   for suffix in \"\" \"2\"; do"
+				+ "       if sudo [ -s \"${X}/.ssh/authorized_keys$suffix\" ]; then"
+				+ "           cat \"${X}/.ssh/authorized_keys$suffix\";"
+				+ "       fi;"
+				+ "   done;"
+				+ "done"
+				+ excludeKnownKeys,
+				"", "pass",
+				"There are unexpected SSH keys on this machine.  This is almost certainly an indicator that this machine has been compromised!"));
 		units.addElement(new SimpleUnit("delete_pid_file", "proceed",
 				"",
 				"rm ~/script.pid; [ -f ~/script.pid ] && echo fail || echo pass", "pass", "pass"));		
