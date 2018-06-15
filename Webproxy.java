@@ -167,11 +167,8 @@ public class Webproxy extends AStructuredProfile {
 		//Do we have any users?
 		int users = 0;
 		for (String device : model.getDeviceLabels()) {
-			switch (model.getDeviceModel(device).getType()) {
-				case "superuser":
-				case "user":
-					++users;
-					break;
+			if (model.getDeviceModel(device).getType().equals("User")) {
+				++users;
 			}
 		}
 		
