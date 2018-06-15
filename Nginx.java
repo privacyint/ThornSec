@@ -41,7 +41,39 @@ public class Nginx extends AStructuredProfile {
 	
 	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units =  new Vector<IUnit>();
-				
+		
+		String nginxConf = "";
+		nginxConf += "user nginx;\n";
+		nginxConf += "\n";
+		nginxConf += "worker_processes " + model.getData().getCpus(server) + ";\n";
+		nginxConf += "\n";
+		nginxConf += "error_log  /var/log/nginx/error.log warn;\n";
+		nginxConf += "pid        /var/run/nginx.pid;\n";
+		nginxConf += "\n";
+		nginxConf += "events {\n";
+		nginxConf += "    worker_connections $(ulimit -n);\n";
+		nginxConf += "    multi_accept       on;\n";
+		nginxConf += "}\n";
+		nginxConf += "\n";
+		nginxConf += "http {\n";                                                                                                                       
+		nginxConf += "    include       /etc/nginx/mime.types;\n";                                                                                     
+		nginxConf += "    default_type  application/octet-stream;\n";                                                                                  
+		nginxConf += "\n";		                                                                                                                             
+		nginxConf += "    log_format  main  '\\$remote_addr - \\$remote_user [\\$time_local] \"\\$request\" '\n";                                                
+		nginxConf += "                      '\\$status \\$body_bytes_sent \"\\$http_referer\" '\n";
+		nginxConf += "                      '\"\\$http_user_agent\" \"\\$http_x_forwarded_for\"';\n";
+		nginxConf += "\n";
+		nginxConf += "    access_log  /var/log/nginx/access.log main buffer=16k;\n";
+		nginxConf += "\n";
+		nginxConf += "    sendfile on;\n";
+		nginxConf += "\n";
+		nginxConf += "    keepalive_timeout 65;\n";
+		nginxConf += "\n";
+		nginxConf += "    include /etc/nginx/conf.d/*.conf;\n";
+		nginxConf += "}";
+		
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_conf", "nginx_installed", nginxConf, "/etc/nginx/nginx.conf"));
+		
 		return units;
 	}
 
