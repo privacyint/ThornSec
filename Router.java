@@ -50,7 +50,7 @@ public class Router extends AStructuredProfile {
 		userIfaces = new Vector<String>();
 		userIfaces.addElement(":2+");
 		
-		invalidChars = "[^[\\-a-zA-Z0-9]]";
+		invalidChars = "[^\\-a-zA-Z0-9]";
 		
 		internalOnlyDevices = new Vector<String>();
 		externalOnlyDevices = new Vector<String>();
