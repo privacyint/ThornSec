@@ -15,6 +15,7 @@ public class ConfigFileModel extends AModel {
 	}
 
 	public void init(NetworkModel model) {
+		this.configFiles = new Vector<String>();
 	}
 
 	public Vector<IUnit> getUnits() {
