@@ -229,34 +229,45 @@ public class Router extends AStructuredProfile {
 			script += "iptables -Z " + user + "_egress";
 		}
 
+		script += "\n\n";
+
+		script += "echo -e \\\"";
+		script += "subject: [" + model.getData().getLabel() + "." + model.getData().getDomain(server) + "] Daily Bandwidth Digest\\n";
+		script += "from:" + server + "@" + model.getData().getDomain(server) + "\\n";
+		script += "recipients:" + model.getData().getAdminEmail() + "\\n";
+
+		//Iterate through everything which should be reported back to admins.
+		//This used to be an individual email per device/server, but this is useless as it just spams the admins
 		for (String peripheral : peripheralDevices) {
-			//This is a peripheral of some sort.  Just let the responsible person know.
-			script += "\n\n";
-			script += buildDailyBandwidthEmail(peripheral + "@" + model.getData().getDomain(server),
-					model.getData().getAdminEmail(),
-					"[" + peripheral + "." + model.getLabel() + "] Daily Bandwidth Digest",
-					peripheral,
-					false);
-			
-			script += "iptables -Z " + peripheral + "_ingress\n";
-			script += "iptables -Z " + peripheral + "_egress";
+			script += "\\n\\n";
+			script += "Digest for " + peripheral + ":\\n";
+			script += "UL: \\`iptables -L " + peripheral + "_egress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
+			script += "DL: \\`iptables -L " + peripheral + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`";
 		}
 
 		//Then servers
 		for (String srv : model.getServerLabels()) {
-			script += "\n\n";
-			script += buildDailyBandwidthEmail(srv + "@" + model.getData().getDomain(srv),
-					model.getData().getAdminEmail(),
-					"[" + srv + "." + model.getLabel() + "] Daily Bandwidth Digest",
-					srv,
-					false);
-
-			script += "iptables -Z " + srv + "_ingress\n";
-			script += "iptables -Z " + srv + "_egress";		
+			script += "\\n\\n";
+			script += "Digest for " + srv + ":\\n";
+			script += "UL: \\`iptables -L " + srv + "_egress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
+			script += "DL: \\`iptables -L " + srv + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`";
 		}
 
+		script += "\\\"";
+		script += "|sendmail \"" + model.getData().getAdminEmail() + "\"\n\n";
+		
+		for (String peripheral : peripheralDevices) {
+			script += "\niptables -Z " + peripheral + "_ingress";
+			script += "\niptables -Z " + peripheral + "_egress";
+		}
+
+		for (String srv : model.getServerLabels()) {
+			script += "\niptables -Z " + srv + "_ingress\n";
+			script += "\niptables -Z " + srv + "_egress";
+		}
+		
 		units.addElement(new FileUnit("daily_bandwidth_alert_script_created", "proceed", script, "/etc/cron.daily/bandwidth", "I couldn't create the bandwidth digest script.  This means you and your users won't receive daily updates on bandwidth use"));
-		units.addElement(new FilePermsUnit("daily_bandwidth_alert_script", "daily_bandwidth_alert_script_created", "/etc/cron.daily/bandwidth", "755", "I couldn't set the bandwidth digest script to be executable.  This means you and your users won't receive daily updates on bandwidth use"));
+		units.addElement(new FilePermsUnit("daily_bandwidth_alert_script", "daily_bandwidth_alert_script_created", "/etc/cron.daily/bandwidth", "750", "I couldn't set the bandwidth digest script to be executable.  This means you and your users won't receive daily updates on bandwidth use"));
 		
 		return units;
 	}
