@@ -6,7 +6,10 @@ import core.iface.IUnit;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
+import core.unit.fs.DirOwnUnit;
+import core.unit.fs.DirPermsUnit;
 import core.unit.fs.DirUnit;
+import core.unit.fs.FileOwnUnit;
 import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
@@ -134,13 +137,23 @@ public class SSH extends AStructuredProfile {
 				"Couldn't remove weak moduli from your SSH daemon.  This is undesirable, as it weakens your security.  Please re-run the script to try and get this to work."));
 
 		for (String admin : model.getData().getAdmins(server)) {
+			String sshDir = "/home/" + admin + "/.ssh";
+			String keys   = sshDir + "/authorized_keys";
+			
 			units.addElement(new SimpleUnit("user_" + admin + "_created", "proceed",
 					"sudo useradd -G sudo -p secret -d /home/" + admin + " -m " + admin,
 					"id " + admin + " 2>&1", "id: ‘" + admin + "’: no such user", "fail",
 					"The nginx user couldn't be added.  This will cause all sorts of errors."));
 			
-			units.addElement(new DirUnit("sshd_dir_" + admin, "sshd_config", "/home/" + admin + "/.ssh"));
-			units.addElement(new FileUnit("sshd_key_" + admin, "sshd_dir_created", model.getData().getSSHKey(admin), "/home/" + admin + "/.ssh/authorized_keys"));
+			//Create the .ssh dir for the user, with the correct permissions
+			units.addElement(new DirUnit("ssh_dir_" + admin, "sshd_config", sshDir));
+			units.addElement(new DirOwnUnit("ssh_dir_" + admin, "ssh_dir_" + admin + "_created", sshDir, admin));
+			units.addElement(new DirPermsUnit("ssh_dir_" + admin, "ssh_dir_" + admin + "_chowned", sshDir, "755"));
+
+			//Create the authorized_keys file, with root permissions (we don't want users to be able to add arbitrary keys)
+			units.addElement(new FileUnit("ssh_key_" + admin, "ssh_dir_" + admin + "_created", model.getData().getSSHKey(admin), keys));
+			units.addElement(new FileOwnUnit("ssh_key_" + admin, "ssh_key_" + admin, keys, "root"));
+			units.addElement(new FilePermsUnit("ssh_key_" + admin, "ssh_key_" + admin + "_chowned", keys, "644"));
 		}
 		
 		return units;
