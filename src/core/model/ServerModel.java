@@ -102,13 +102,14 @@ public class ServerModel extends AModel {
 
 	public Vector<IUnit> getUnits() {		
 		Vector<IUnit> units = new Vector<IUnit>();
+		int i = 0;
 		
 		units.insertElementAt(new SimpleUnit("create_pid_file", "proceed",
 				"",
-				"touch ~/script.pid; [ -f ~/script.pid ] && echo pass || echo fail", "pass", "pass"), 0);
+				"touch ~/script.pid; [ -f ~/script.pid ] && echo pass || echo fail", "pass", "pass"), i);
 		
 		units.insertElementAt(new SimpleUnit("host", "proceed", "echo \"ERROR: Configuring with hostname mismatch\";",
-				"sudo -S hostname;", networkData.getHostname(this.getLabel()), "pass"), 1);
+				"sudo -S hostname;", networkData.getHostname(this.getLabel()), "pass"), ++i);
 		String configcmd = "";
 		if (networkData.getUpdate(this.getLabel()).equals("true")) {
 			configcmd = "sudo apt-get --assume-yes upgrade;";
@@ -118,27 +119,29 @@ public class ServerModel extends AModel {
 		units.insertElementAt(new SimpleUnit("update", "proceed", configcmd,
 				"sudo apt-get update > /dev/null; sudo apt-get --assume-no upgrade | grep \"[0-9] upgraded, [0-9] newly installed, [0-9] to remove and [0-9] not upgraded.\";",
 				"0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.", "pass",
-				"There are `sudo apt-get upgrade -s |grep -P '^\\\\d+ upgraded'|cut -d\" \" -f1` updates available, of which `sudo apt-get upgrade -s | grep ^Inst | grep Security | wc -l` are security updates\""), 2);
+				"There are `sudo apt-get upgrade -s |grep -P '^\\\\d+ upgraded'|cut -d\" \" -f1` updates available, of which `sudo apt-get upgrade -s | grep ^Inst | grep Security | wc -l` are security updates\""), ++i);
 
-		//haveged is not perfect, but according to
-		//https://security.stackexchange.com/questions/34523/is-it-appropriate-to-use-haveged-as-a-source-of-entropy-on-virtual-machines
-		//is OK for producing entropy in VMs.
-		//It is also recommended by novell for VM entropy http://www.novell.com/support/kb/doc.php?id=7011351
-		units.insertElementAt(new InstalledUnit("entropy_generator", "proceed", "haveged"), 3);
-		units.insertElementAt(new RunningUnit("entropy_generator", "haveged", "haveged"), 4);
-		units.insertElementAt(new SimpleUnit("enough_entropy_available", "entropy_generator_installed",
-				"while [ `cat /proc/sys/kernel/random/entropy_avail` -le 600 ]; do sleep 2; done;",
-				"(($(cat /proc/sys/kernel/random/entropy_avail) > 600)) && echo pass || echo fail", "pass", "pass"), 5);
-		
-		this.pm.addProcess("/usr/sbin/haveged --Foreground --verbose=1 -w 1024$");
+		if (isService()) {
+			//haveged is not perfect, but according to
+			//https://security.stackexchange.com/questions/34523/is-it-appropriate-to-use-haveged-as-a-source-of-entropy-on-virtual-machines
+			//is OK for producing entropy in VMs.
+			//It is also recommended by novell for VM entropy http://www.novell.com/support/kb/doc.php?id=7011351
+			units.insertElementAt(new InstalledUnit("entropy_generator", "proceed", "haveged"), ++i);
+			units.insertElementAt(new RunningUnit("entropy_generator", "haveged", "haveged"), ++i);
+			units.insertElementAt(new SimpleUnit("enough_entropy_available", "entropy_generator_installed",
+					"while [ `cat /proc/sys/kernel/random/entropy_avail` -le 600 ]; do sleep 2; done;",
+					"(($(cat /proc/sys/kernel/random/entropy_avail) > 600)) && echo pass || echo fail", "pass", "pass"), ++i);
+			
+			this.pm.addProcess("/usr/sbin/haveged --Foreground --verbose=1 -w 1024$");
+		}
 		
 		//Remove rdnssd (problematic as hell...)
 		units.insertElementAt(new SimpleUnit("rdnssd_uninstalled", "proceed",
 				"sudo apt remove rdnssd --purge -y;",
 				"dpkg-query --status rdnssd | grep \"Status:\";", "Status: install ok installed", "fail",
-				"Couldn't uninstall rdnssd.  This is a package which attempts to be \"clever\" in DNS configuration and just breaks everything instead."), 6);
+				"Couldn't uninstall rdnssd.  This is a package which attempts to be \"clever\" in DNS configuration and just breaks everything instead."), ++i);
 		
-		units.insertElementAt(new RunningUnit("syslog", "rsyslog", "rsyslog"), 7);
+		units.insertElementAt(new RunningUnit("syslog", "rsyslog", "rsyslog"), ++i);
 		
 		SSH ssh = new SSH();
 		units.addAll(ssh.getUnits(this.getLabel(), networkModel));
