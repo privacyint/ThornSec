@@ -4,7 +4,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Vector;
 
@@ -12,6 +11,8 @@ import core.data.NetworkData;
 import core.iface.IUnit;
 import core.profile.AProfile;
 import core.unit.SimpleUnit;
+import core.unit.fs.FilePermsUnit;
+import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 import profile.DNS;
@@ -154,6 +155,7 @@ public class ServerModel extends AModel {
 		units.addElement(new InstalledUnit("lsof", "proceed", "lsof"));
 		units.addElement(new InstalledUnit("net_tools", "proceed", "net-tools"));
 		units.addElement(new InstalledUnit("htop", "proceed", "htop"));
+		units.addElement(new InstalledUnit("sendmail", "proceed", "sendmail"));
 		
 		for (String type : this.getTypes()) {
 			switch (type) {
@@ -240,6 +242,67 @@ public class ServerModel extends AModel {
 					"find /proc/*/exe -exec readlink {} + | xargs sudo dpkg -S 2>&1", "", "pass",
 					"There are unexpected executables running on this machine.  This could be innocent, or could be a sign of compromise."));
 		}
+		
+		String emailOnPAM = "";
+		emailOnPAM += "#!/bin/bash\n";
+		emailOnPAM += "\n";
+		emailOnPAM += "host=\\\"`hostname`\\\"\n";
+		emailOnPAM += "domain=\\\"" + "" + "\\\"\n";
+		emailOnPAM += "sender=\\\"\\$host@\\$domain\\\"\n";
+		emailOnPAM += "recipients=(";
+		
+		for (String admin : networkModel.getData().getAdmins()) {
+			emailOnPAM += "\\\"" + admin + "@" + networkModel.getLabel() + "\\\"";
+		}
+		
+		emailOnPAM += ")\n";
+		emailOnPAM += "message=\\\"`env`\\\"\n";
+		emailOnPAM += "\n";
+		emailOnPAM += "for recipient in \\\"\\${recipients[@]}\\\"\n";
+		emailOnPAM += "do\n";
+		emailOnPAM += "    case \\\"\\$PAM_SERVICE\\\" in\n";
+		emailOnPAM += "        sshd)\n";
+		emailOnPAM += "            if [ \\$PAM_TYPE = \\\"open_session\\\" ] ; then\n";
+		emailOnPAM += "                subject=\\\"SSH on \\$host: \\$PAM_USER has connected from \\$PAM_RHOST\\\"\n";
+		emailOnPAM += "            else\n";
+		emailOnPAM += "                subject=\\\"SSH on \\$host: \\$PAM_USER has disconnected\\\"\n";
+		emailOnPAM += "            fi\n";
+		emailOnPAM += "            ;;\n";
+		emailOnPAM += "        sudo)\n";
+		emailOnPAM += "            if [ \\$PAM_TYPE = \\\"open_session\\\" ] ; then\n";
+		emailOnPAM += "                subject=\\\"SSH on \\$host: \\$PAM_RUSER has sudo'd to \\$PAM_USER\\\"\n";
+		emailOnPAM += "            else\n";
+		emailOnPAM += "                subject=\\\"SSH on \\$host: \\$PAM_USER has disconnected\\\"\n";
+		emailOnPAM += "            fi\n";
+		emailOnPAM += "            ;;\n";
+		emailOnPAM += "    esac\n";
+		emailOnPAM += "\n";
+		emailOnPAM += "    (echo \\\"Subject: \\$subject\\\"; echo \\\"\\$message\\\") | sendmail -f\\\"\\$sender\\\" \\\"\\$recipient\\\"\n";
+		emailOnPAM += "done";
+		
+		units.addElement(new FileUnit("email_on_pam_script_created", "proceed", emailOnPAM, "/etc/pamEmails.sh",
+				"I couldn't output the file for emailing on SSH login or sudo.  This means you won't receive alerts."));
+		units.addElement(new FilePermsUnit("email_on_pam_script_perms", "email_on_pam_script_created", "/etc/pamEmails.sh", "755"));
+		
+		String sshdPAM = "";
+		sshdPAM += "@include common-auth\n";
+		sshdPAM += "account    required     pam_nologin.so\n";
+		sshdPAM += "@include common-account\n";
+		sshdPAM += "session [success=ok ignore=ignore module_unknown=ignore default=bad]        pam_selinux.so close\n";
+		sshdPAM += "session    required     pam_loginuid.so\n";
+		sshdPAM += "session    optional     pam_keyinit.so force revoke\n";
+		sshdPAM += "@include common-session\n";
+		sshdPAM += "session    optional     pam_motd.so  motd=/run/motd.dynamic\n";
+		sshdPAM += "session    optional     pam_motd.so noupdate\n";
+		sshdPAM += "session    optional     pam_mail.so standard noenv\n";
+		sshdPAM += "session    required     pam_limits.so\n";
+		sshdPAM += "session    required     pam_env.so\n";
+		sshdPAM += "session    required     pam_env.so user_readenv=1 envfile=/etc/default/locale\n";
+		sshdPAM += "session [success=ok ignore=ignore module_unknown=ignore default=bad]        pam_selinux.so open\n";
+		sshdPAM += "@include common-password\n";
+		sshdPAM += "session optional pam_exec.so seteuid /etc/pamEmails.sh";
+		
+		units.addElement(networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFile("pam_sshd_script_created", "email_on_pam_script_created", sshdPAM, "/etc/pam.d/sshd"));
 		
 		units.addElement(new SimpleUnit("delete_pid_file", "proceed",
 				"",
