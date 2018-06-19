@@ -178,7 +178,7 @@ public class PHP extends AStructuredProfile {
 		poolConf += "pm.min_spare_servers = 1\n";
 		poolConf += "pm.max_spare_servers = 3\n";
 		poolConf += "env[PATH] = /usr/local/bin:/usr/bin:/bin";
-		poolConf += "php_admin_value\\\\[max_execution_time\\\\] = 300";
+		poolConf += "php_admin_value[max_execution_time] = 300";
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("php_www_pool", "php_fpm_installed", poolConf, poolPath));
 
 		return units;
