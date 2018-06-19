@@ -168,7 +168,7 @@ public class Router extends AStructuredProfile {
 		return units;
 	}
 	
-	private String buildDailyBandwidthEmail(String sender, String recipient, String subject, String username, boolean includeBlurb) {
+	private String buildUserDailyBandwidthEmail(String sender, String recipient, String subject, String username, boolean includeBlurb) {
 		String email = "";
 		email += "echo -e \\\"";
 		
@@ -216,11 +216,11 @@ public class Router extends AStructuredProfile {
 		String script = "";
 		script += "#!/bin/bash\n";
 		
-		//Iterate through devicen first
+		//Iterate through users first; they need alerting individually
 		for (String user : userDevices) {
 			//Email the user only
 			script += "\n\n";
-			script += buildDailyBandwidthEmail(model.getData().getAdminEmail(),
+			script += buildUserDailyBandwidthEmail(model.getData().getAdminEmail(),
 											user + "@" + model.getData().getDomain(server),
 											"[" + user + "." + model.getData().getLabel() + "] Daily Bandwidth Digest",
 											user,
