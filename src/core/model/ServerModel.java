@@ -187,6 +187,8 @@ public class ServerModel extends AModel {
 				System.err.println(e.getMessage());
 			}
 		}
+
+		units.addAll(serverConfig());
 		
 		units.addAll(2, fm.getUnits());
 		units.addAll(2, bfm.getUnits());
@@ -195,6 +197,19 @@ public class ServerModel extends AModel {
 		units.addAll(configs.getUnits());
 		units.addAll(pm.getUnits());
 		units.addAll(um.getUnits());
+		
+		units.addElement(new SimpleUnit("delete_pid_file", "proceed",
+				"",
+				"rm ~/script.pid; [ -f ~/script.pid ] && echo fail || echo pass", "pass", "pass"));		
+		
+		//Make sure we have no duplication in our unit tests (this can happen occasionally)
+		units = new Vector<IUnit>(new LinkedHashSet<IUnit>(units));
+		
+		return units;
+	}
+	
+	private Vector<IUnit> serverConfig() {
+		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addElement(new SimpleUnit("no_raw_sockets", "lsof_installed",
 				"",
@@ -303,14 +318,7 @@ public class ServerModel extends AModel {
 		sshdPAM += "session optional pam_exec.so seteuid /etc/pamEmails.sh";
 		
 		units.addElement(networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFile("pam_sshd_script_created", "email_on_pam_script_created", sshdPAM, "/etc/pam.d/sshd"));
-		
-		units.addElement(new SimpleUnit("delete_pid_file", "proceed",
-				"",
-				"rm ~/script.pid; [ -f ~/script.pid ] && echo fail || echo pass", "pass", "pass"));		
-		
-		//Make sure we have no duplication in our unit tests (this can happen occasionally)
-		units = new Vector<IUnit>(new LinkedHashSet<IUnit>(units));
-		
+
 		return units;
 	}
 
