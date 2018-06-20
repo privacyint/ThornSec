@@ -213,7 +213,7 @@ public class ServerModel extends AModel {
 		String excludeKnownKeys = "";
 
 		for (String admin : networkModel.getData().getAdmins(getLabel())) {
-			excludeKnownKeys += " | grep -v \\\"" + networkModel.getData().getSSHKey(admin) + "\\\"";
+			excludeKnownKeys += " | grep -v \"" + networkModel.getData().getSSHKey(admin) + "\"";
 		}
 		
 		units.addElement(new SimpleUnit("no_additional_ssh_keys", "proceed",
@@ -246,17 +246,17 @@ public class ServerModel extends AModel {
 		String emailOnPAM = "";
 		emailOnPAM += "#!/bin/bash\n";
 		emailOnPAM += "\n";
-		emailOnPAM += "host=\\\"`hostname`\\\"\n";
-		emailOnPAM += "domain=\\\"" + "" + "\\\"\n";
+		emailOnPAM += "host=\\\"\\`hostname\\`\\\"\n";
+		emailOnPAM += "domain=\\\"" + networkModel.getData().getDomain(getLabel()) + "\\\"\n";
 		emailOnPAM += "sender=\\\"\\$host@\\$domain\\\"\n";
 		emailOnPAM += "recipients=(";
 		
 		for (String admin : networkModel.getData().getAdmins()) {
-			emailOnPAM += "\\\"" + admin + "@" + networkModel.getLabel() + "\\\"";
+			emailOnPAM += "\\\"" + admin + "@\\$domain\\\" ";
 		}
 		
 		emailOnPAM += ")\n";
-		emailOnPAM += "message=\\\"`env`\\\"\n";
+		emailOnPAM += "message=\\\"\\`env\\`\\\"\n";
 		emailOnPAM += "\n";
 		emailOnPAM += "for recipient in \\\"\\${recipients[@]}\\\"\n";
 		emailOnPAM += "do\n";
