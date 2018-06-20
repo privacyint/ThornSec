@@ -213,7 +213,7 @@ public class ServerModel extends AModel {
 		String excludeKnownKeys = "";
 
 		for (String admin : networkModel.getData().getAdmins(getLabel())) {
-			excludeKnownKeys += " | grep -v " + networkModel.getData().getSSHKey(admin);
+			excludeKnownKeys += " | grep -v \\\"" + networkModel.getData().getSSHKey(admin) + "\\\"";
 		}
 		
 		units.addElement(new SimpleUnit("no_additional_ssh_keys", "proceed",
