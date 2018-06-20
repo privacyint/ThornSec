@@ -141,7 +141,14 @@ public class SSH extends AStructuredProfile {
 			String keys   = sshDir + "/authorized_keys";
 			
 			units.addElement(new SimpleUnit("user_" + admin + "_created", "proceed",
-					"sudo useradd -G sudo -p secret -d /home/" + admin + " -m " + admin,
+					"sudo useradd"
+					+ " -m " + admin //Username
+					+ " -c \"" + model.getData().getFullName(admin) + "\"" //Full name
+					+ " -G sudo" //Groups
+					+ " -s /bin/bash;"
+					+ "echo " + admin + ":secret | sudo chpasswd;" //Set their password to "secret"
+					+ "sudo passwd -e " + admin //Expire their password immediately
+					,
 					"id " + admin + " 2>&1", "id: ‘" + admin + "’: no such user", "fail",
 					"The user " + admin + " couldn't be created on this machine."));
 			
