@@ -143,7 +143,7 @@ public class SSH extends AStructuredProfile {
 			units.addElement(new SimpleUnit("user_" + admin + "_created", "proceed",
 					"sudo useradd -G sudo -p secret -d /home/" + admin + " -m " + admin,
 					"id " + admin + " 2>&1", "id: ‘" + admin + "’: no such user", "fail",
-					"The nginx user couldn't be added.  This will cause all sorts of errors."));
+					"The user " + admin + " couldn't be created on this machine."));
 			
 			//Create the .ssh dir for the user, with the correct permissions
 			units.addElement(new DirUnit("ssh_dir_" + admin, "sshd_config", sshDir));
