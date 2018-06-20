@@ -12,7 +12,6 @@ import core.model.InterfaceModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
-import core.unit.fs.FileAppendUnit;
 import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
@@ -103,15 +102,14 @@ public class Router extends AStructuredProfile {
 		
 		units.addAll(subnetConfigUnits(server, model));
 		
-		units.addElement(new FileAppendUnit("router_fwd", "proceed", "net.ipv4.ip_forward=1", "/etc/sysctl.conf",
-				"Couldn't set IPv4 forwarding to on.  This will mean that your router won't work.  Sorry about that."));
-		units.addElement(new FileAppendUnit("router_disable_all_ipv6", "proceed", "net.ipv6.conf.all.disable_ipv6=1", "/etc/sysctl.conf",
-				"Couldn't disable IPv6 on your router.  This isn't great, but will probably not cause too many dramas."));
-		units.addElement(new FileAppendUnit("router_disable_default_ipv6", "proceed", "net.ipv6.conf.default.disable_ipv6=1", "/etc/sysctl.conf",
-				"Couldn't disable IPv6 on your router.  This isn't great, but will probably not cause too many dramas."));
-		units.addElement(new FileAppendUnit("router_disable_lo_ipv6", "proceed", "net.ipv6.conf.lo.disable_ipv6=1", "/etc/sysctl.conf",
-				"Couldn't disable IPv6 on your router.  This isn't great, but will probably not cause too many dramas."));
+		String sysctl = "";
+		sysctl += "net.ipv4.ip_forward=1\n";
+		sysctl += "net.ipv6.conf.all.disable_ipv6=1\n";
+		sysctl += "net.ipv6.conf.default.disable_ipv6=1\n";
+		sysctl += "net.ipv6.conf.lo.disable_ipv6=1";
 
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("sysctl", "proceed", sysctl, "/etc/sysctl.conf"));
+		
 		units.addAll(dhcp.getPersistentConfig(server, model));
 		units.addAll(dns.getPersistentConfig(server, model));
 		units.addAll(qos.getPersistentConfig(server, model));
