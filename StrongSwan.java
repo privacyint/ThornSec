@@ -48,6 +48,7 @@ public class StrongSwan extends AStructuredProfile {
 					+ " -j ACCEPT");
 			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_vpn_in", ingressChain,
 					"-p udp"
+					+ " -m multiport"
 					+ " --dports 500,4500"
 					+ " -j ACCEPT");
 
