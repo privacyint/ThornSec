@@ -35,13 +35,16 @@ public class ConfigFileModel extends AModel {
 	}
 
 	public IUnit addConfigFile(String name, String precondition, String config, String path, String message) {
-
-		configFiles.addElement(path);
+		addConfigFilePath(path);
 		
 		return new FileUnit(name + "_config", precondition, config, path, message);
 	}
 	
 	public IUnit addConfigFile(String name, String precondition, String config, String path) {
 		return addConfigFile(name, precondition, config, path, "Couldn't write out the config file at " + path);
+	}
+	
+	public void addConfigFilePath(String path) {
+		configFiles.addElement(path);
 	}
 }
