@@ -750,6 +750,9 @@ public class Router extends AStructuredProfile {
 			units.addElement(this.interfaces.addPPPIface("router_ext_ppp_iface", model.getData().getProperty(server, "pppiface")));
 			model.getServerModel(server).getProcessModel().addProcess("/usr/sbin/pppd call provider$");
 			
+			model.getServerModel(server).getConfigsModel().addConfigFilePath("/etc/ppp/peers/dsl-provider$");
+			model.getServerModel(server).getConfigsModel().addConfigFilePath("/etc/ppp/options$");
+			
 			units.addElement(new FileUnit("resolv_conf", "proceed", "nameserver 127.0.0.1", "/etc/ppp/resolv.conf"));
 			
 			units.addElement(this.firewall.addMangleForward("clamp_mss_to_pmtu",
