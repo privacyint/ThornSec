@@ -18,13 +18,13 @@ import core.unit.pkg.InstalledUnit;
 public class Metal extends AStructuredProfile {
 	
 	private Virtualisation hypervisor;
-	private Backups backups;
+	private HypervisorScripts backups;
 	
 	public Metal() {
 		super("metal");
 		
 		hypervisor = new Virtualisation();
-		backups = new Backups();
+		backups = new HypervisorScripts();
 	}
 
 	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
