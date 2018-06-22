@@ -252,7 +252,7 @@ public class Router extends AStructuredProfile {
 		}
 
 		script += "\\\"";
-		script += "|sendmail \"" + model.getData().getAdminEmail() + "\"\n\n";
+		script += "|sendmail \"" + model.getData().getAdminEmail() + "\"\n";
 		
 		for (String peripheral : peripheralDevices) {
 			script += "\niptables -Z " + peripheral + "_ingress";
@@ -260,7 +260,7 @@ public class Router extends AStructuredProfile {
 		}
 
 		for (String srv : model.getServerLabels()) {
-			script += "\niptables -Z " + srv + "_ingress\n";
+			script += "\niptables -Z " + srv + "_ingress";
 			script += "\niptables -Z " + srv + "_egress";
 		}
 		
