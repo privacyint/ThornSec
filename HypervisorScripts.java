@@ -253,9 +253,9 @@ public class HypervisorScripts extends AStructuredProfile {
 		stopAllScript += "done\n";
 		stopAllScript += "echo \\\"=== Finished stopping all VMs at \\`date\\` ===\\\"";
 		
-		units.addElement(new FileUnit("stop_all_script", "proceed", stopAllScript, recoveryScriptsBase + "/stopAll.sh"));
-		units.addElement(new FileOwnUnit("stop_all_script", "stop_all_script", recoveryScriptsBase + "/stopAll.sh", "root"));
-		units.addElement(new FilePermsUnit("stop_all_script", "stop_all_script_chowned", recoveryScriptsBase + "/stopAll.sh", "750"));
+		units.addElement(new FileUnit("stop_all_script", "proceed", stopAllScript, controlScriptsBase + "/stopAll.sh"));
+		units.addElement(new FileOwnUnit("stop_all_script", "stop_all_script", controlScriptsBase + "/stopAll.sh", "root"));
+		units.addElement(new FilePermsUnit("stop_all_script", "stop_all_script_chowned", controlScriptsBase + "/stopAll.sh", "750"));
 
 		String startAllScript = "";
 		startAllScript += "#!/bin/bash\n";
@@ -269,9 +269,9 @@ public class HypervisorScripts extends AStructuredProfile {
 		startAllScript += "done\n";
 		startAllScript += "echo \\\"=== Finished starting all VMs at \\`date\\` ===\\\"";
 		
-		units.addElement(new FileUnit("start_all_script", "proceed", startAllScript, recoveryScriptsBase + "/startAll.sh"));
-		units.addElement(new FileOwnUnit("start_all_script", "start_all_script", recoveryScriptsBase + "/startAll.sh", "root"));
-		units.addElement(new FilePermsUnit("start_all_script", "start_all_script_chowned", recoveryScriptsBase + "/startAll.sh", "750"));
+		units.addElement(new FileUnit("start_all_script", "proceed", startAllScript, controlScriptsBase + "/startAll.sh"));
+		units.addElement(new FileOwnUnit("start_all_script", "start_all_script", controlScriptsBase + "/startAll.sh", "root"));
+		units.addElement(new FilePermsUnit("start_all_script", "start_all_script_chowned", controlScriptsBase + "/startAll.sh", "750"));
 
 		String deleteVmScript = "";
 		deleteVmScript += "#!/bin/bash\n";
@@ -297,9 +297,9 @@ public class HypervisorScripts extends AStructuredProfile {
 		deleteVmScript += "userdel -r -f vboxuser_\\${vmName} 2>/dev/null\n";
 		deleteVmScript += "echo \\\"=== /fin/ ===\\\"";
 
-		units.addElement(new FileUnit("delete_vm_script", "proceed", deleteVmScript, recoveryScriptsBase + "/deleteVm.sh"));
-		units.addElement(new FileOwnUnit("delete_vm_script", "delete_vm_script", recoveryScriptsBase + "/deleteVm.sh", "root"));
-		units.addElement(new FilePermsUnit("delete_vm_script", "delete_vm_script_chowned", recoveryScriptsBase + "/deleteVm.sh", "750"));
+		units.addElement(new FileUnit("delete_vm_script", "proceed", deleteVmScript, controlScriptsBase + "/deleteVm.sh"));
+		units.addElement(new FileOwnUnit("delete_vm_script", "delete_vm_script", controlScriptsBase + "/deleteVm.sh", "root"));
+		units.addElement(new FilePermsUnit("delete_vm_script", "delete_vm_script_chowned", controlScriptsBase + "/deleteVm.sh", "750"));
 		
 		return units;
 	}
