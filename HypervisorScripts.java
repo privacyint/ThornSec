@@ -113,7 +113,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		isUpScript += "\n";
 		isUpScript += "                counterPath=\\${statusPath}/\\${vmName}\n";
 		isUpScript += "\n";
-		isUpScript += "                if [[ -z \\$(printf '%s\n' \\\"\\${blacklist[@]}\\\" | grep -w \\${vmName}) ]]\n";
+		isUpScript += "                if [[ -z \\$(printf '%s\\n' \\\"\\${blacklist[@]}\\\" | grep -w \\${vmName}) ]]\n";
 		isUpScript += "                then\n";
 		isUpScript += "                        counter=\\$(<\\${counterPath})\n";
 		isUpScript += "\n";
@@ -124,7 +124,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		isUpScript += "                                if (( \\${counter} >= 2 ))\n";
 		isUpScript += "                                then\n";
 		isUpScript += "                                        (\n";
-		isUpScript += "                                        echo \\\"Forcibly restarting \\${vmName}\n\\\";\n";
+		isUpScript += "                                        echo \\\"Forcibly restarting \\${vmName}\\n\\\";\n";
 		isUpScript += "                                        sudo -u vboxuser_\\${vmName} VBoxManage controlvm \\${vmName} poweroff;\n";
 		isUpScript += "                                        wait \\${!};\n";
 		isUpScript += "                                        sudo -u vboxuser_\\${vmName} VBoxManage startvm \\${vmName} --type headless;\n";
@@ -140,7 +140,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		isUpScript += "        done\n";
 		isUpScript += "\n";
 		isUpScript += "        sleep 1200\n";
-		isUpScript += "done\n";
+		isUpScript += "done";
 
 		units.addElement(new FileUnit("uptime_watchdog_script", "proceed", isUpScript, watchdogScriptsBase + "/isUp.sh"));
 		units.addElement(new FileOwnUnit("uptime_watchdog_script", "uptime_watchdog_script", watchdogScriptsBase + "/isUp.sh", "root"));
@@ -294,7 +294,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		deleteVmScript += "rm -R " + model.getData().getVmBase(server) + "/log/\\${vmName} 2>/dev/null\n";
 		deleteVmScript += "\n";
 		deleteVmScript += "echo \\\"Deleting \\${vmName}'s user\\\"\n";
-		deleteVmScript += "userdel -r -f vboxuser_${vmName} 2>/dev/null\n";
+		deleteVmScript += "userdel -r -f vboxuser_\\${vmName} 2>/dev/null\n";
 		deleteVmScript += "echo \\\"=== /fin/ ===\\\"";
 
 		units.addElement(new FileUnit("delete_vm_script", "proceed", deleteVmScript, recoveryScriptsBase + "/deleteVm.sh"));
@@ -318,18 +318,17 @@ public class HypervisorScripts extends AStructuredProfile {
 		backupRecoveryScript += "    echo \\\"Restoring \\${vmName} from latest backup\\\"\n";
 		backupRecoveryScript += "    sudo -u vboxuser_\\${vmName} VBoxManage controlvm \\${vmName} poweroff\n";
 		backupRecoveryScript += "    wait \\${!}\n";
-		backupRecoveryScript += "        qemu-nbd -c /dev/nbd0 \\${dirPath}/\\${vmName}/\\${vmName}_data.vdi\n";
-		backupRecoveryScript += "        wait \\${!}\n";
-		backupRecoveryScript += "        mount /dev/nbd0p1 /mnt\n";
-		backupRecoveryScript += "        wait \\${!}\n";
-		backupRecoveryScript += "        cp -R " + model.getData().getVmBase(server) + "/backup/\\${vmName}/latest/* /mnt/\n";
-		backupRecoveryScript += "        wait \\${!}\n";
-		backupRecoveryScript += "        umount /mnt\n";
-		backupRecoveryScript += "        wait \\${!}\n";
-		backupRecoveryScript += "        qemu-nbd --disconnect /dev/nbd0\n";
-		backupRecoveryScript += "        wait \\${!}\n";
-		backupRecoveryScript += "        sudo -u vboxuser_\\${vmName} VBoxManage startvm \\${vmName} --type headless\n";
-		backupRecoveryScript += "    fi\n";
+		backupRecoveryScript += "    qemu-nbd -c /dev/nbd0 \\${dirPath}/\\${vmName}/\\${vmName}_data.vdi\n";
+		backupRecoveryScript += "    wait \\${!}\n";
+		backupRecoveryScript += "    mount /dev/nbd0p1 /mnt\n";
+		backupRecoveryScript += "    wait \\${!}\n";
+		backupRecoveryScript += "    cp -R " + model.getData().getVmBase(server) + "/backup/\\${vmName}/latest/* /mnt/\n";
+		backupRecoveryScript += "    wait \\${!}\n";
+		backupRecoveryScript += "    umount /mnt\n";
+		backupRecoveryScript += "    wait \\${!}\n";
+		backupRecoveryScript += "    qemu-nbd --disconnect /dev/nbd0\n";
+		backupRecoveryScript += "    wait \\${!}\n";
+		backupRecoveryScript += "    sudo -u vboxuser_\\${vmName} VBoxManage startvm \\${vmName} --type headless\n";
 		backupRecoveryScript += "done\n";
 		backupRecoveryScript += "echo \\\"=== Finished restoring latest backup at \\`date\\` ===\\\"";
 		
@@ -342,8 +341,8 @@ public class HypervisorScripts extends AStructuredProfile {
 		mountStorageScript += "#!/bin/bash\n";
 		mountStorageScript += "if [ \\$# -eq 0 ]\n";
 		mountStorageScript += "then\n";
-		mountStorageScript += "	echo \\\"No parameter supplied.\\\nYou need to provide the name of the VM as a parameter\\\"\n";
-		mountStorageScript += "	exit 1;\n";
+		mountStorageScript += "	   echo \\\"No parameter supplied.\\\nYou need to provide the name of the VM as a parameter\\\"\n";
+		mountStorageScript += "	   exit 1;\n";
 		mountStorageScript += "fi\n";
 		mountStorageScript += "\n";
 		mountStorageScript += "vmName=\\${1}\n";
