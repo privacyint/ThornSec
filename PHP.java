@@ -75,6 +75,9 @@ public class PHP extends AStructuredProfile {
 		iniConf += "allow_url_fopen = On\n";
 		iniConf += "allow_url_include = Off\n";
 		iniConf += "default_socket_timeout = 60\n";
+		iniConf += "emergency_restart_threshold 10\n"; //If 10 child processes exit...
+		iniConf += "emergency_restart_interval 1m\n"; //...within a minute, restart PHP-FPM. 
+		iniConf += "process_control_timeout 10s\n"; //Allow 10 seconds for our child procs to get a response
 		iniConf += "\n";
 		iniConf += "[CLI Server]\n";
 		iniConf += "cli_server.color = On\n";
