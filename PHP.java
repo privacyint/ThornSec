@@ -165,6 +165,16 @@ public class PHP extends AStructuredProfile {
 		iniConf += "ldap.max_links = -1";
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("php_ini", "php_base_installed", iniConf, iniPath));
 
+		//This is approximate, and very(!!!) generous(!!!) to give the box some breathing room.
+		//On most VMs I have configured, it's usually below 40M.
+		int mbRamPerProcess = 75;
+		int serverTotalRam  = Integer.parseInt(model.getData().getRam(server));
+		
+		int maxChildren     = serverTotalRam / mbRamPerProcess; 
+		int minSpareServers = maxChildren / 3;
+		int maxSpareServers = minSpareServers * 2;
+		int startServers    = (minSpareServers + (maxSpareServers - minSpareServers)) / 2;
+		
 		String poolConf = "";
 		poolConf += "[www]\n";
 		poolConf += "user = nginx\n";
@@ -173,11 +183,12 @@ public class PHP extends AStructuredProfile {
 		poolConf += "listen.owner = nginx\n";
 		poolConf += "listen.group = nginx\n";
 		poolConf += "pm = dynamic\n";
-		poolConf += "pm.max_children = 5\n";
-		poolConf += "pm.start_servers = 2\n";
-		poolConf += "pm.min_spare_servers = 1\n";
-		poolConf += "pm.max_spare_servers = 3\n";
-		poolConf += "env[PATH] = /usr/local/bin:/usr/bin:/bin";
+		poolConf += "pm.max_children = " + maxChildren + "\n";
+		poolConf += "pm.start_servers = " + startServers + "\n";
+		poolConf += "pm.min_spare_servers = " + minSpareServers + "\n";
+		poolConf += "pm.max_spare_servers = " + maxSpareServers + "\n";
+		poolConf += "pm.max_requests = 200\n";
+		poolConf += "env[PATH] = /usr/local/bin:/usr/bin:/bin\n";
 		poolConf += "php_admin_value[max_execution_time] = 300";
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("php_www_pool", "php_fpm_installed", poolConf, poolPath));
 
