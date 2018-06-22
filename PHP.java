@@ -61,7 +61,7 @@ public class PHP extends AStructuredProfile {
 		iniConf += "request_order = \\\"GP\\\"\n";
 		iniConf += "register_argc_argv = Off\n";
 		iniConf += "auto_globals_jit = On\n";
-		iniConf += "post_max_size = 8M\n";
+		iniConf += "post_max_size = 500M\n";
 		iniConf += "auto_prepend_file =\n";
 		iniConf += "auto_append_file =\n";
 		iniConf += "default_mimetype = \\\"text/html\\\"\n";
@@ -70,7 +70,7 @@ public class PHP extends AStructuredProfile {
 		iniConf += "user_dir =\n";
 		iniConf += "enable_dl = Off\n";
 		iniConf += "file_uploads = On\n";
-		iniConf += "upload_max_filesize = 2M\n";
+		iniConf += "upload_max_filesize = 500M\n";
 		iniConf += "max_file_uploads = 20\n";
 		iniConf += "allow_url_fopen = On\n";
 		iniConf += "allow_url_include = Off\n";
