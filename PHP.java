@@ -61,7 +61,7 @@ public class PHP extends AStructuredProfile {
 		iniConf += "request_order = \\\"GP\\\"\n";
 		iniConf += "register_argc_argv = Off\n";
 		iniConf += "auto_globals_jit = On\n";
-		iniConf += "post_max_size = 8M\n";
+		iniConf += "post_max_size = 500M\n";
 		iniConf += "auto_prepend_file =\n";
 		iniConf += "auto_append_file =\n";
 		iniConf += "default_mimetype = \\\"text/html\\\"\n";
@@ -70,11 +70,14 @@ public class PHP extends AStructuredProfile {
 		iniConf += "user_dir =\n";
 		iniConf += "enable_dl = Off\n";
 		iniConf += "file_uploads = On\n";
-		iniConf += "upload_max_filesize = 2M\n";
+		iniConf += "upload_max_filesize = 500M\n";
 		iniConf += "max_file_uploads = 20\n";
 		iniConf += "allow_url_fopen = On\n";
 		iniConf += "allow_url_include = Off\n";
 		iniConf += "default_socket_timeout = 60\n";
+		iniConf += "emergency_restart_threshold 10\n"; //If 10 child processes exit...
+		iniConf += "emergency_restart_interval 1m\n"; //...within a minute, restart PHP-FPM. 
+		iniConf += "process_control_timeout 10s\n"; //Allow 10 seconds for our child procs to get a response
 		iniConf += "\n";
 		iniConf += "[CLI Server]\n";
 		iniConf += "cli_server.color = On\n";
@@ -165,6 +168,16 @@ public class PHP extends AStructuredProfile {
 		iniConf += "ldap.max_links = -1";
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("php_ini", "php_base_installed", iniConf, iniPath));
 
+		//This is approximate, and very(!!!) generous(!!!) to give the box some breathing room.
+		//On most VMs I have configured, it's usually below 40M.
+		int mbRamPerProcess = 75;
+		int serverTotalRam  = Integer.parseInt(model.getData().getRam(server));
+		
+		int maxChildren     = serverTotalRam / mbRamPerProcess; 
+		int minSpareServers = maxChildren / 3;
+		int maxSpareServers = minSpareServers * 2;
+		int startServers    = (minSpareServers + (maxSpareServers - minSpareServers)) / 2;
+		
 		String poolConf = "";
 		poolConf += "[www]\n";
 		poolConf += "user = nginx\n";
@@ -173,11 +186,12 @@ public class PHP extends AStructuredProfile {
 		poolConf += "listen.owner = nginx\n";
 		poolConf += "listen.group = nginx\n";
 		poolConf += "pm = dynamic\n";
-		poolConf += "pm.max_children = 5\n";
-		poolConf += "pm.start_servers = 2\n";
-		poolConf += "pm.min_spare_servers = 1\n";
-		poolConf += "pm.max_spare_servers = 3\n";
-		poolConf += "env[PATH] = /usr/local/bin:/usr/bin:/bin";
+		poolConf += "pm.max_children = " + maxChildren + "\n";
+		poolConf += "pm.start_servers = " + startServers + "\n";
+		poolConf += "pm.min_spare_servers = " + minSpareServers + "\n";
+		poolConf += "pm.max_spare_servers = " + maxSpareServers + "\n";
+		poolConf += "pm.max_requests = 200\n";
+		poolConf += "env[PATH] = /usr/local/bin:/usr/bin:/bin\n";
 		poolConf += "php_admin_value[max_execution_time] = 300";
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("php_www_pool", "php_fpm_installed", poolConf, poolPath));
 

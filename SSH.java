@@ -110,7 +110,7 @@ public class SSH extends AStructuredProfile {
 		motd += "echo \\\"HERE BE DRAGONS.\\\"\n";
 		motd += "echo";
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("sshd_motd", "proceed", motd, "/etc/update-motd.d/00-motd"));
-		units.addElement(new FilePermsUnit("sshd_motd_perms", "sshd_motd", "/etc/update-motd.d/00-motd", "755"));
+		units.addElement(new FilePermsUnit("sshd_motd_perms", "sshd_motd_config", "/etc/update-motd.d/00-motd", "755"));
 		
 		units.addElement(new SimpleUnit("sshd_rsa", "sshd_config",
 				"echo -e \"y\\n\" | sudo ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N \"\" -t rsa -b 4096",
