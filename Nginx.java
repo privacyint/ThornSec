@@ -69,6 +69,8 @@ public class Nginx extends AStructuredProfile {
 		nginxConf += "\n";
 		nginxConf += "    keepalive_timeout 65;\n";
 		nginxConf += "\n";
+		nginxConf += "    server_tokens off;\n";
+		nginxConf += "\n";
 		nginxConf += "    include /etc/nginx/conf.d/*.conf;\n";
 		nginxConf += "}";
 		
