@@ -56,7 +56,7 @@ public class Etherpad extends AStructuredProfile {
 		//https://github.com/ether/etherpad-lite/issues/3074
 		units.addElement(new FileDownloadUnit("nodejs", "build_essential_installed", "https://deb.nodesource.com/setup_6.x", "/root/nodejs.sh",
 				"nodejs couldn't be downloaded.  Etherpad's installation will fail."));
-		units.addElement(new FileChecksumUnit("nodejs", "nodejs_downloaded", "/root/nodejs.sh", "f7c4ded2bfa6e104c561e8223bf74e763f77fa94612bb0b593c55607164269a645642e0fd58eb2e616d6c371990a838623a59c8ad9c917c89c6901aea82c857a",
+		units.addElement(new FileChecksumUnit("nodejs", "nodejs_downloaded", "/root/nodejs.sh", "2c452c34f146a5e06017e0f1030735ea4ad3bbaf8d2c17ea7ccfd6cc98b13423e2148c544dcf58ef49830b3927d254ba9a65a2f09dc8f35c7f1ed93bb8821798",
 				"nodejs's checksum doesn't match.  This could indicate a failed download, MITM attack, or a newer version than our code supports.  Etherpad's installation will fail."));
 		units.addElement(new FilePermsUnit("nodejs_is_executable", "nodejs_checksum", "/root/nodejs.sh", "755", "nodejs couldn't be set to be executable.  Etherpad's installation will fail."));
 		
