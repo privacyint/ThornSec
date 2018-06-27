@@ -125,11 +125,21 @@ public class NetworkModel {
 	}
 
 	public ServerModel getServerModel(String server) {
-		return servers.get(server);
+		if (servers.containsKey(server)) {
+			return servers.get(server);
+		}
+		else {
+			return null;
+		}
 	}
 	
 	public DeviceModel getDeviceModel(String device) {
-		return devices.get(device);
+		if (devices.containsKey(device)) {
+			return devices.get(device);
+		}
+		else {
+			return null;
+		}
 	}
 
 	public String[] getServerLabels() {
