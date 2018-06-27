@@ -1,5 +1,6 @@
 package profile;
 
+import java.util.Objects;
 import java.util.Vector;
 
 import core.iface.IUnit;
@@ -49,6 +50,9 @@ public class Webproxy extends AStructuredProfile {
 	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
+		//Should we pass through real IPs?
+		boolean passThroughIps = (Objects.equals(model.getData().getProperty(server, "passrealips"), "true"));
+		
 		//First, build our ssl config
 		units.addElement(new DirUnit("nginx_ssl_include_dir", "proceed", "/etc/nginx/includes"));
 		
@@ -77,6 +81,18 @@ public class Webproxy extends AStructuredProfile {
 		headersConf += "    add_header X-Download-Options                'noopen' always;\n";
 		headersConf += "    add_header X-Permitted-Cross-Domain-Policies 'none' always;\n";
 		headersConf += "    add_header Content-Security-Policy           'upgrade-insecure-requests; block-all-mixed-content; reflected-xss block;' always;";
+		
+		if (passThroughIps) {
+			headersConf += "\n";
+			headersConf += "#These headers pass real IP addresses to the backend - this may not be desired behaviour\n";
+			headersConf += "    proxy_set_header Host               \\$host;\n";
+			headersConf += "    proxy_set_header X-Real-IP          \\$remote_addr;\n";
+			headersConf += "    proxy_set_header X-Forwarded-For    \\$proxy_add_x_forwarded_for;\n";
+			headersConf += "    proxy_set_header X-Forwarded-Host   \\$host:\\$server_port;\n";
+			headersConf += "    proxy_set_header X-Forwarded-Server \\$host;\n";
+			headersConf += "    proxy_set_header X-Forwarded-Port   \\$server_port;\n";
+			headersConf += "    proxy_set_header X-Forwarded-Proto  https;";
+		}
 		
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_headers", "proceed", headersConf, "/etc/nginx/includes/header_params"));
 
