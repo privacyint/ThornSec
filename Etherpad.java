@@ -210,6 +210,10 @@ public class Etherpad extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addAll(webserver.getPersistentFirewall(server, model));
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_github", "github.com", new String[]{"80","443"});
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_etherpad", "etherpad.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_beta_etherpad", "beta.etherpad.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_deb_nodesource", "deb.nodesource.com", new String[]{"80","443"});
 
 		return units;
 	}
