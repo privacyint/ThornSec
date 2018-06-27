@@ -102,6 +102,10 @@ public class Webproxy extends AStructuredProfile {
 			boolean isDefault = true;
 			
 			for (String backend : backends) {
+				if (Objects.equals(model.getServerModel(backend), null)) {
+					System.out.println("Server " + backend + " doesn't exist.  " + server + " cannot proxy to it...");
+					continue; //Skip to the next
+				}
 				
 				String[] cnames = model.getData().getCnames(backend);
 				String domain = model.getData().getDomain(backend);
