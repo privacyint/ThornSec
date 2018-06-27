@@ -216,15 +216,17 @@ public class Router extends AStructuredProfile {
 		
 		//Iterate through users first; they need alerting individually
 		for (String user : userDevices) {
-			//Email the user only
-			script += "\n\n";
-			script += buildUserDailyBandwidthEmail(model.getData().getAdminEmail(),
-											user + "@" + model.getData().getDomain(server),
-											"[" + user + "." + model.getData().getLabel() + "] Daily Bandwidth Digest",
-											user,
-											true);
-			script += "iptables -Z " + user + "_ingress\n";
-			script += "iptables -Z " + user + "_egress";
+			if (model.getData().getDeviceMacs(user).length > 0) { //But only if they're an internal user 
+				//Email the user only
+				script += "\n\n";
+				script += buildUserDailyBandwidthEmail(model.getData().getAdminEmail(),
+												user + "@" + model.getData().getDomain(server),
+												"[" + user + "." + model.getData().getLabel() + "] Daily Bandwidth Digest",
+												user,
+												true);
+				script += "iptables -Z " + user + "_ingress\n";
+				script += "iptables -Z " + user + "_egress";
+			}
 		}
 
 		script += "\n\n";
