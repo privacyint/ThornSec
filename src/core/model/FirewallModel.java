@@ -1,8 +1,8 @@
 package core.model;
 
-import java.util.Hashtable;
-import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Vector;
 
 import core.iface.IUnit;
@@ -13,35 +13,37 @@ import core.unit.pkg.InstalledUnit;
 
 public class FirewallModel extends AModel {
 
-	private Hashtable<String, Hashtable<String, Vector<String>>> tables;
+	private LinkedHashMap<String, LinkedHashMap<String, Vector<String>>> iptTables;
 
 	public FirewallModel(String label) {
 		super(label);
 	}
 
 	public void init(NetworkModel model) {
-		this.tables = new Hashtable<>();
+		iptTables = new LinkedHashMap<>();
 
-		tables.put("mangle", new Hashtable<String, Vector<String>>());
-		Hashtable<String, Vector<String>> tab = tables.get("mangle");
-		tab.put("PREROUTING", new Vector<String>());
-		tab.put("INPUT", new Vector<String>());
-		tab.put("FORWARD", new Vector<String>());
-		tab.put("OUTPUT", new Vector<String>());
-		tab.put("POSTROUTING", new Vector<String>());
+		iptTables.put("mangle", new LinkedHashMap<String, Vector<String>>());
+		iptTables.put("nat", new LinkedHashMap<String, Vector<String>>());
+		iptTables.put("filter", new LinkedHashMap<String, Vector<String>>());
+
+		LinkedHashMap<String, Vector<String>> mangleTable = iptTables.get("mangle");
+		LinkedHashMap<String, Vector<String>> natTable    = iptTables.get("nat");
+		LinkedHashMap<String, Vector<String>> filterTable = iptTables.get("filter");
+
+		mangleTable.put("PREROUTING", new Vector<String>());
+		mangleTable.put("INPUT", new Vector<String>());
+		mangleTable.put("FORWARD", new Vector<String>());
+		mangleTable.put("OUTPUT", new Vector<String>());
+		mangleTable.put("POSTROUTING", new Vector<String>());
 		
-		tables.put("nat", new Hashtable<String, Vector<String>>());
-		tab = tables.get("nat");
-		tab.put("PREROUTING", new Vector<String>());
-		tab.put("INPUT", new Vector<String>());
-		tab.put("OUTPUT", new Vector<String>());
-		tab.put("POSTROUTING", new Vector<String>());
+		natTable.put("PREROUTING", new Vector<String>());
+		natTable.put("INPUT", new Vector<String>());
+		natTable.put("OUTPUT", new Vector<String>());
+		natTable.put("POSTROUTING", new Vector<String>());
 
-		tables.put("filter", new Hashtable<String, Vector<String>>());
-		tab = tables.get("filter");
-		tab.put("INPUT", new Vector<String>());
-		tab.put("FORWARD", new Vector<String>());
-		tab.put("OUTPUT", new Vector<String>());
+		filterTable.put("INPUT", new Vector<String>());
+		filterTable.put("FORWARD", new Vector<String>());
+		filterTable.put("OUTPUT", new Vector<String>());
 
 		this.addFilterInput("iptables_in_tcp", "-p tcp -j ACCEPT");
 		this.addFilterInput("iptables_in_udp", "-p udp -j ACCEPT");
@@ -58,13 +60,18 @@ public class FirewallModel extends AModel {
 
 	public Vector<IUnit> getUnits() {
 		Vector<IUnit> units = new Vector<IUnit>();
-		units.addElement(new InstalledUnit("iptables", "iptables"));
+		
+		units.addElement(new InstalledUnit("iptables", "iptables", "proceed", "I was unable to install your firewall. This is bad."));
 		units.addElement(new InstalledUnit("iptables_xsltproc", "xsltproc"));
 		units.addElement(new DirUnit("iptables_dir", "proceed", "/etc/iptables"));
+		
 		units.addElement(new SimpleUnit("iptables_conf_persist", "iptables_dir_created",
-				"echo \"" + getPersistent() + "\" | sudo tee /etc/iptables/iptables.conf; sudo iptables-restore < /etc/iptables/iptables.conf;",
+				"echo \"" + getPersistent() + "\" | sudo tee /etc/iptables/iptables.conf;"
+				+ "sudo iptables-restore < /etc/iptables/iptables.conf;",
 				"cat /etc/iptables/iptables.conf;", getPersistent(), "pass"));
-		String iptxslt = "<?xml version=\\\"1.0\\\" encoding=\\\"ISO-8859-1\\\"?>\n";
+		
+		String iptxslt = "";
+		iptxslt += "<?xml version=\\\"1.0\\\" encoding=\\\"ISO-8859-1\\\"?>\n";
 		iptxslt += "<xsl:transform version=\\\"1.0\\\" xmlns:xsl=\\\"http://www.w3.org/1999/XSL/Transform\\\">\n";
 		iptxslt += "  <xsl:output method = \\\"text\\\" />\n";
 		iptxslt += "  <xsl:strip-space elements=\\\"*\\\" />\n";
@@ -211,11 +218,11 @@ public class FirewallModel extends AModel {
 	}
 
 	public SimpleUnit addChain(String name, String table, String chain) {
-		Hashtable<String, Vector<String>> tab = tables.get(table);
+		LinkedHashMap<String, Vector<String>> tab = iptTables.get(table);
 		if (tab == null) {
-			tables.put(table, new Hashtable<String, Vector<String>>());
+			iptTables.put(table, new LinkedHashMap<String, Vector<String>>());
 		}
-		tab = tables.get(table);
+		tab = iptTables.get(table);
 		Vector<String> ch = tab.get(chain);
 		if (ch == null) {
 			tab.put(chain, new Vector<String>());
@@ -253,15 +260,15 @@ public class FirewallModel extends AModel {
 		ipt += ":FORWARD ACCEPT [0:0]\n";
 		ipt += ":OUTPUT ACCEPT [0:0]\n";
 		ipt += ":POSTROUTING ACCEPT [0:0]\n";
-		ipt += getMangle();
+		ipt += getMangleForward();
 		ipt += "COMMIT\n";
 		ipt += "*nat\n";
 		ipt += ":PREROUTING ACCEPT [0:0]\n";
-		ipt += getForward();
+		ipt += getNatPrerouting();
 		ipt += ":INPUT ACCEPT [0:0]\n";
 		ipt += ":OUTPUT ACCEPT [0:0]\n";
 		ipt += ":POSTROUTING ACCEPT [0:0]\n";
-		ipt += getNat();
+		ipt += getNatPostrouting();
 		ipt += "COMMIT\n";
 		ipt += "*filter\n";
 		ipt += getFilter();
@@ -269,68 +276,70 @@ public class FirewallModel extends AModel {
 		return ipt;
 	}
 
-	private String getNat() {
-		//Vector<String> chain = this.getChain("nat", "POSTROUTING");
+	private String getNatPostrouting() {
 		Vector<String> chain = new Vector<String>(new LinkedHashSet<String>(this.getChain("nat", "POSTROUTING")));
 
-		String nat = "";
-		for (int i = 0; i < chain.size(); i++) {
-			nat += "-A POSTROUTING " + chain.elementAt(chain.size() - 1 - i) + "\n";
+		String natPostrouting = "";
+
+		for (int i = chain.size() - 1; i > 0; --i) { //Loop through backwards
+			natPostrouting += "-A POSTROUTING " + chain.elementAt(i) + "\n";
 		}
-		return nat;
+		
+		return natPostrouting;
 	}
 
-	private String getMangle() {
-		//Vector<String> chain = this.getChain("nat", "POSTROUTING");
+	private String getMangleForward() {
 		Vector<String> chain = new Vector<String>(new LinkedHashSet<String>(this.getChain("mangle", "FORWARD")));
 
-		String nat = "";
-		for (int i = 0; i < chain.size(); i++) {
-			nat += "-A FORWARD " + chain.elementAt(chain.size() - 1 - i) + "\n";
+		String mangleForward = "";
+
+		for (int i = chain.size() - 1; i > 0; --i) { //Loop through backwards
+			mangleForward += "-A FORWARD " + chain.elementAt(i) + "\n";
 		}
-		return nat;
+		return mangleForward;
 	}
 	
-	private String getForward() {
-		//Vector<String> chain = this.getChain("nat", "PREROUTING");
+	private String getNatPrerouting() {
 		Vector<String> chain = new Vector<String>(new LinkedHashSet<String>(this.getChain("nat", "PREROUTING")));
 
-		String nat = "";
-		for (int i = 0; i < chain.size(); i++) {
-			nat += "-A PREROUTING " + chain.elementAt(chain.size() - 1 - i) + "\n";
+		String natPrerouting = "";
+		
+		for (int i = chain.size() - 1; i > 0; --i) { //Loop through backwards
+			natPrerouting += "-A PREROUTING " + chain.elementAt(i) + "\n";
 		}
-		return nat;
+		
+		return natPrerouting;
 	}
 
 	private String getFilter() {
-		String policy = "";
-		String filter = "";
-		policy += ":INPUT ACCEPT [0:0]\n";
-		policy += ":FORWARD ACCEPT [0:0]\n";
-		policy += ":OUTPUT ACCEPT [0:0]\n";
-		Hashtable<String, Vector<String>> tab = tables.get("filter");
-		Iterator<String> iter = tab.keySet().iterator();
-		while (iter.hasNext()) {
-			String val = iter.next();
-			if (!val.equals("INPUT") && !val.equals("FORWARD") && !val.equals("OUTPUT"))
-				policy += ":" + val + " - [0:0]\n";
+		LinkedHashMap<String, Vector<String>> filterTable = iptTables.get("filter");
+
+		String policies = "";
+		String filters  = "";
+		
+		policies += ":INPUT ACCEPT [0:0]\n";
+		policies += ":FORWARD ACCEPT [0:0]\n";
+		policies += ":OUTPUT ACCEPT [0:0]\n";
+		
+		for (String policy : filterTable.keySet()) {
+			if (!Objects.equals(policy, "INPUT") && !Objects.equals(policy, "FORWARD") && !Objects.equals(policy, "OUTPUT"))
+				policies += ":" + policy + " - [0:0]\n";
 			
-			//Vector<String> chain = this.getChain("filter", val);
-			Vector<String> chain = new Vector<String>(new LinkedHashSet<String>(this.getChain("filter", val)));
+			Vector<String> chain = new Vector<String>(new LinkedHashSet<String>(this.getChain("filter", policy)));
 			for (int j = 0; j < chain.size(); j++) {
-				filter += "-A " + val + " " + chain.elementAt(chain.size() - j - 1) + "\n";
+				filters += "-A " + policy + " " + chain.elementAt(chain.size() - j - 1) + "\n";
 			}
 		}
-		return policy + filter;
+		return policies + filters;
 	}
 
 	private Vector<String> getChain(String table, String chain) {
-		Vector<String> ch = tables.get(table).get(chain);
+		Vector<String> ch = iptTables.get(table).get(chain);
 		if (ch == null) {
 			addChain("auto_create_chain_" + chain, table, chain);
 		}
 		
-		return tables.get(table).get(chain);
+		return iptTables.get(table).get(chain);
 	}
 
 }
