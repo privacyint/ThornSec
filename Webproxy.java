@@ -67,16 +67,18 @@ public class Webproxy extends AStructuredProfile {
 		sslConf += "    ssl_stapling on;\n";
 		sslConf += "    ssl_stapling_verify on;\n";
 		sslConf += "    resolver " + model.getData().getDNS() + " valid=300s;\n";
-		sslConf += "    resolver_timeout 5s;\n";
-		sslConf += "\n";
-		sslConf += "    add_header X-Frame-Options 'SAMEORIGIN' always;\n";
-		sslConf += "    add_header X-Content-Type-Options 'nosniff' always;\n";
-		sslConf += "    add_header X-XSS-Protection '1; mode=block' always;\n";
-		sslConf += "    add_header X-Robots-Tag 'none' always;\n";
-		sslConf += "    add_header X-Download-Options 'noopen' always;\n";
-		sslConf += "    add_header X-Permitted-Cross-Domain-Policies 'none' always;";
-	    
+		sslConf += "    resolver_timeout 5s;";
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_ssl", "proceed", sslConf, "/etc/nginx/includes/ssl_params"));
+		
+		String headersConf = "";
+		headersConf += "    add_header X-Frame-Options                   'SAMEORIGIN' always;\n";
+		headersConf += "    add_header X-Content-Type-Options            'nosniff' always;\n";
+		headersConf += "    add_header X-XSS-Protection                  '1; mode=block' always;\n";
+		headersConf += "    add_header X-Download-Options                'noopen' always;\n";
+		headersConf += "    add_header X-Permitted-Cross-Domain-Policies 'none' always;\n";
+		headersConf += "    add_header Content-Security-Policy           'upgrade-insecure-requests; block-all-mixed-content; reflected-xss block;' always;";
+		
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_headers", "proceed", headersConf, "/etc/nginx/includes/header_params"));
 
 		if (this.liveConfig.equals("")) {
 			//Now build per-host specific shit
@@ -112,6 +114,7 @@ public class Webproxy extends AStructuredProfile {
 				nginxConf += "    ssl_certificate /media/data/tls/" + canonicalName + "/fullchain.pem;\n"; 
 				nginxConf += "    ssl_certificate_key /media/data/tls/" + canonicalName + "/privkey.pem;\n";
 				nginxConf += "    ssl_trusted_certificate /media/data/tls/" + canonicalName + "/stapling.pem;\n";
+				nginxConf += "    include /etc/nginx/includes/header_params;\n";
 				nginxConf += "\n";
 				nginxConf += "    location / {\n";
 				nginxConf += "        proxy_pass              http://" + model.getServerModel(canonicalName).getIP() + ";\n";
