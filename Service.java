@@ -38,6 +38,17 @@ public class Service extends AStructuredProfile {
 				"lsmod | grep vboxsf", "", "fail",
 				"Couldn't get the VirtualBox additions to install/load.  This will stop external logging from working."));
 		
+		units.addElement(new SimpleUnit("guest_additions_are_latest", "guest_additions_installed",
+				"sudo mount /dev/sr1 /mnt;"
+				+ "sudo /mnt/VBoxLinuxAdditions.run;"
+				+ "sudo umount /mnt;",
+				"sudo mount /dev/sr1 /mnt &>/dev/null;grep -a 'INSTALLATION_VER=' /mnt/VBoxLinuxAdditions.run | tr -d \"\\\"[A-Z]\\=_\";sudo umount /mnt &>/dev/null;", 
+				//This is the currently running version, which isn't useful if it has already been updated pending reboot
+				//"lsmod | grep -io vboxguest | xargs sudo modinfo | grep -iw version | awk '{ print $2 }'",
+				"ls /opt | tr -d \"[A-Za-z\\-]\"",
+				"pass",
+				"This server is running an outdated version of the guest additions.  If you're running a configuration, this can be fixed by restarting the VM."));
+		
 		model.getServerModel(server).getUserModel().addUsername("vboxadd");
 		model.getServerModel(server).getProcessModel().addProcess("\\[iprt-VBoxWQueue\\]$");
 		model.getServerModel(server).getProcessModel().addProcess("/usr/sbin/VBoxService --pidfile /var/run/vboxadd-service.sh$");
