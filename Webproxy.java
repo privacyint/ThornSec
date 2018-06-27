@@ -99,24 +99,26 @@ public class Webproxy extends AStructuredProfile {
 		if (this.liveConfig.equals("")) {
 			//Now build per-host specific shit
 			String[] backends = model.getData().getPropertyArray(server, "proxy");
+			boolean isDefault = true;
 			
-			for (int i = 0; i < backends.length; ++i) {
-				String canonicalName = backends[i];
-				String[] cnames = model.getData().getCnames(canonicalName);
-				String domain = model.getData().getDomain(canonicalName);
+			for (String backend : backends) {
+				
+				String[] cnames = model.getData().getCnames(backend);
+				String domain = model.getData().getDomain(backend);
 				String nginxConf = "";
 			
-				units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, canonicalName + "_tls_certs", "proceed", "/media/metaldata/tls/" + canonicalName, "/media/data/tls/" + canonicalName, "root", "root", "600", "/media/metaldata", false));
+				units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, backend + "_tls_certs", "proceed", "/media/metaldata/tls/" + backend, "/media/data/tls/" + backend, "root", "root", "600", "/media/metaldata", false));
 								
 				//Generated from https://mozilla.github.io/server-side-tls/ssl-config-generator/ (Nginx/Modern) & https://cipherli.st/
 				nginxConf = "server {\n";
 				nginxConf += "    listen 443 ssl http2";
-				if (i == 0) {
+				if (isDefault) {
 					nginxConf += " default"; //We need this to be here, or it'll crap out :'(
+					isDefault = false;
 				}
 				nginxConf += ";\n";
 
-				nginxConf += "    server_name " + canonicalName + "." + domain;
+				nginxConf += "    server_name " + backend + "." + domain;
 				
 				for (String cname : cnames) {
 					nginxConf += (cname.equals("")) ? " " : " " + cname + ".";
@@ -127,16 +129,13 @@ public class Webproxy extends AStructuredProfile {
 			
 				//We use the Let's Encrypt naming convention here, in case we want to install it later
 				nginxConf += "    include /etc/nginx/includes/ssl_params;\n";
-				nginxConf += "    ssl_certificate /media/data/tls/" + canonicalName + "/fullchain.pem;\n"; 
-				nginxConf += "    ssl_certificate_key /media/data/tls/" + canonicalName + "/privkey.pem;\n";
-				nginxConf += "    ssl_trusted_certificate /media/data/tls/" + canonicalName + "/stapling.pem;\n";
 				nginxConf += "    include /etc/nginx/includes/header_params;\n";
+				nginxConf += "    ssl_certificate /media/data/tls/" + backend + "/fullchain.pem;\n"; 
+				nginxConf += "    ssl_certificate_key /media/data/tls/" + backend + "/privkey.pem;\n";
+				nginxConf += "    ssl_trusted_certificate /media/data/tls/" + backend + "/stapling.pem;\n";
 				nginxConf += "\n";
 				nginxConf += "    location / {\n";
-				nginxConf += "        proxy_pass              http://" + model.getServerModel(canonicalName).getIP() + ";\n";
-				nginxConf += "        proxy_set_header        Host \\$host;\n";
-				nginxConf += "        proxy_set_header        X-Real-IP \\$remote_addr;\n";
-				nginxConf += "        proxy_set_header        X-Forwarded-For \\$remote_addr;\n";
+				nginxConf += "        proxy_pass              http://" + model.getServerModel(backend).getIP() + ";\n";
 				nginxConf += "        proxy_request_buffering off;\n";
 				nginxConf += "        proxy_buffering         off;\n";
 				nginxConf += "        client_max_body_size    0;\n";
@@ -148,7 +147,7 @@ public class Webproxy extends AStructuredProfile {
 				nginxConf += "    }\n";
 				nginxConf += "}";
 				
-				webserver.addLiveConfig(canonicalName, nginxConf);
+				webserver.addLiveConfig(backend, nginxConf);
 			}
 		}
 		else {
