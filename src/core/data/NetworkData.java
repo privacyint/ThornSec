@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.LinkedHashMap;
+import java.util.Objects;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -150,11 +151,11 @@ public class NetworkData extends AData {
 	}
 	
 	public boolean getAdBlocking() {
-		return adBlocking.equals("yes");
+		return Objects.equals(adBlocking, "yes");
 	}
 
 	public boolean getVpnOnly() {
-		return vpnOnly.equals("yes");
+		return Objects.equals(vpnOnly, "yes");
 	}
 	
 	public String[] getServerLabels() {

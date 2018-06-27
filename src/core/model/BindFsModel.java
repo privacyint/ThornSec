@@ -1,5 +1,6 @@
 package core.model;
 
+import java.util.Objects;
 import java.util.Vector;
 
 import core.iface.IUnit;
@@ -40,7 +41,7 @@ public class BindFsModel extends AModel {
 	public Vector<IUnit> addBindPoint(String server, NetworkModel model, String name, String precondition, String baseDirectory, String bindPoint, String username, String group, String permissions, String mountAfter, Boolean isNetDev) {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		String requires = (mountAfter.equals("")) ? "" : ",x-systemd.after=" + mountAfter;
+		String requires = (Objects.equals(mountAfter, "")) ? "" : ",x-systemd.after=" + mountAfter;
 		
 		if (isNetDev) {
 			requires += ",_netdev";

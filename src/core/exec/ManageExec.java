@@ -1,6 +1,7 @@
 package core.exec;
 
 import java.io.OutputStream;
+import java.util.Objects;
 
 import core.model.NetworkModel;
 
@@ -21,7 +22,7 @@ public class ManageExec {
 		this.cmd = cmd;
 		this.out = out;
 
-		if (network.getData().getConnection(this.server).equals("direct")) {
+		if (Objects.equals(network.getData().getConnection(this.server), "direct")) {
 			if (network.getServerModel(server).isRouter()) {
 				this.sshIP = network.getServerModel(server).getGateway();
 			}
@@ -31,7 +32,7 @@ public class ManageExec {
 			
 			this.sshPort = network.getData().getAdminPort(this.server);
 		}
-		else if (network.getData().getConnection(this.server).equals("tunnelled")) {
+		else if (Objects.equals(network.getData().getConnection(this.server), "tunnelled")) {
 			this.sshIP = "127.0.0.1";
 			
 			this.sshPort = "65432";
@@ -79,7 +80,7 @@ public class ManageExec {
 				"rm script.sh;"					
 		};
 		
-		if (network.getData().getConnection(this.server).equals("tunnelled")) {
+		if (Objects.equals(network.getData().getConnection(this.server), "tunnelled")) {
 			SSHExec tunnelExec = new SSHExec(tunnel);
 			System.out.println(tunnelExec.getOutput());
 			System.out.println(tunnelExec.getError());

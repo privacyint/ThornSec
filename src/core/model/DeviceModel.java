@@ -2,6 +2,7 @@ package core.model;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Vector;
 
 import core.data.NetworkData;
@@ -35,13 +36,14 @@ public class DeviceModel extends AModel {
 	}
 
 	private String ipFromClass() {
-		String subnet = get3rdOctet();
+		String subnet  = get3rdOctet();
+		String ipClass = networkData.getIPClass();
 		
-		if (this.networkData.getIPClass().equals("c")) {
+		if (Objects.equals(ipClass,"c")) {
 			return "192.168." + subnet;
-		} else if (this.networkData.getIPClass().equals("b")) {
+		} else if (Objects.equals(ipClass, "b")) {
 			return "172.16." + subnet;
-		} else if (this.networkData.getIPClass().equals("a")) {
+		} else if (Objects.equals(ipClass, "a")) {
 			return "10.0." + subnet;
 		} else {
 			return "0.0.0";

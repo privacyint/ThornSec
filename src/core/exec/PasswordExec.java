@@ -1,5 +1,7 @@
 package core.exec;
 
+import java.util.Objects;
+
 import core.model.NetworkModel;
 
 public class PasswordExec {
@@ -15,7 +17,7 @@ public class PasswordExec {
 	public Boolean init() {
 		OutputExec checkInit = new OutputExec("pass");
 
-		if (checkInit.getOutput().equals("Error: password store is empty. Try \"pass init\".")) {
+		if (Objects.equals(checkInit.getOutput(), "Error: password store is empty. Try \"pass init\".")) {
 			System.out.println("\nPassword store is empty.  Creating you a new one.");
 			System.out.println(new OutputExec("pass init " + network.getData().getGPG()).getOutput());
 		}
@@ -27,9 +29,9 @@ public class PasswordExec {
 		OutputExec passwordGetExec = new OutputExec("pass Thornsec/" + network.getData().getDomain(server) + "/" + network.getLabel() + "/" + server);
 		String password = passwordGetExec.getOutput();
 	
-		if (password.equals("") || password.equals("Error: Thornsec/" + network.getData().getDomain(server) + "/" + network.getLabel() + "/" + server +" is not in the password store.")) {
+		if (Objects.equals(password, "") || Objects.equals(password, "Error: Thornsec/" + network.getData().getDomain(server) + "/" + network.getLabel() + "/" + server +" is not in the password store.")) {
 			System.out.println("\nPassword for " + server + " isn't stored.");
-			if (network.getData().getAutoGenPasswds().equals("true")) {
+			if (Objects.equals(network.getData().getAutoGenPasswds(), "true")) {
 				System.out.println("\nGenerating you a password for " + server);
 				OutputExec passwordSetExec = new OutputExec("pass generate Thornsec/" + network.getData().getDomain(server) + "/" + network.getLabel() + "/" + server + " 31 | tail -n1");
 				password = passwordSetExec.getOutput();
