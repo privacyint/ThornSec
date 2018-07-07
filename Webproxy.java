@@ -81,17 +81,18 @@ public class Webproxy extends AStructuredProfile {
 		headersConf += "    add_header X-Download-Options                'noopen' always;\n";
 		headersConf += "    add_header X-Permitted-Cross-Domain-Policies 'none' always;\n";
 		headersConf += "    add_header Content-Security-Policy           'upgrade-insecure-requests; block-all-mixed-content; reflected-xss block;' always;";
+		headersConf += "\n";
+		headersConf += "    proxy_set_header Host               \\$host;\n";
+		headersConf += "    proxy_set_header X-Forwarded-Host   \\$host:\\$server_port;\n";
+		headersConf += "    proxy_set_header X-Forwarded-Server \\$host;\n";
+		headersConf += "    proxy_set_header X-Forwarded-Port   \\$server_port;\n";
+		headersConf += "    proxy_set_header X-Forwarded-Proto  https;\n";
 		
 		if (passThroughIps) {
 			headersConf += "\n";
 			headersConf += "#These headers pass real IP addresses to the backend - this may not be desired behaviour\n";
-			headersConf += "    proxy_set_header Host               \\$host;\n";
-			headersConf += "    proxy_set_header X-Real-IP          \\$remote_addr;\n";
 			headersConf += "    proxy_set_header X-Forwarded-For    \\$proxy_add_x_forwarded_for;\n";
-			headersConf += "    proxy_set_header X-Forwarded-Host   \\$host:\\$server_port;\n";
-			headersConf += "    proxy_set_header X-Forwarded-Server \\$host;\n";
-			headersConf += "    proxy_set_header X-Forwarded-Port   \\$server_port;\n";
-			headersConf += "    proxy_set_header X-Forwarded-Proto  https;";
+			headersConf += "    proxy_set_header X-Real-IP          \\$remote_addr;";
 		}
 		
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_headers", "proceed", headersConf, "/etc/nginx/includes/header_params"));
