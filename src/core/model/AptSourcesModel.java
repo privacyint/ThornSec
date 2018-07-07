@@ -38,6 +38,13 @@ public class AptSourcesModel extends AModel {
 						 "Couldn't install dirmngr.  Anything which requires a GPG key to be downloaded and installed won't work. "
 						 + "You can possibly fix this by reconfiguring the service."));
 		
+		//Give it 3 seconds before timing out
+		String timeoutConf = "";
+		timeoutConf += "Acquire::http::Timeout \"3\";\n"; 
+		timeoutConf += "Acquire::ftp::Timeout \"3\";";
+		
+		units.addElement(new FileUnit("decrease_apt_timeout", "proceed", timeoutConf, "/etc/apt/apt.conf.d/99timeout"));
+		
 		units.addAll(gpg);
 		units.addAll(sources);
 		
