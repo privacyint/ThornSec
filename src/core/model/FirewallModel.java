@@ -61,7 +61,7 @@ public class FirewallModel extends AModel {
 	public Vector<IUnit> getUnits() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addElement(new InstalledUnit("iptables", "iptables", "proceed", "I was unable to install your firewall. This is bad."));
+		units.addElement(new InstalledUnit("iptables", "proceed", "iptables", "I was unable to install your firewall. This is bad."));
 		units.addElement(new InstalledUnit("iptables_xsltproc", "xsltproc"));
 		units.addElement(new DirUnit("iptables_dir", "proceed", "/etc/iptables"));
 		
