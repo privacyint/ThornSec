@@ -64,7 +64,7 @@ public class Webproxy extends AStructuredProfile {
 		sslConf += "    ssl_protocols TLSv1.2 TLSv1.3;\n";
 		sslConf += "    ssl_ciphers 'EECDH+CHACHA20:EECDH+AESGCM:EECDH+AES256';\n";
 		sslConf += "    ssl_prefer_server_ciphers on;\n";
-		sslConf += "    ssl_ecdh_curve x25519:secp521r1:secp384r1;\n";
+		sslConf += "    ssl_ecdh_curve auto;\n";
 		sslConf += "\n";
 		sslConf += "    add_header Strict-Transport-Security 'max-age=63072000; includeSubDomains; preload';\n";
 		sslConf += "\n";
