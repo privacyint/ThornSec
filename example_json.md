@@ -5,7 +5,7 @@
 		/****************************************************************************
 		* Mandatory, per-network, cannot be declared/overridden on per-server basis *
 		****************************************************************************/
-		//External IP of the network
+		//Configuration IP for the network
 		"ip":"10.0.1.1",
 		//Domain to use on the network
 		"domain":"myorganisation.org",
@@ -29,20 +29,10 @@
 		"vmbase":"/media/VMs",		
 
 		/****************************************************************************
-		* Mandatory, server defaults, can be overridden on a per-server basis       *
-		****************************************************************************/
-		"keys":[
-			"ssh-ed25519 ABCDEFGHIJKLMNOPQRSTUVWXYZ example-nonvalid-pubkey",
-			"ssh-ed25519 ZYXWVUTSRQPONMLKJIHGFEDCBA second-example-nonvalid-pubkey"
-		],
-
-		/****************************************************************************
 		* Optional, server defaults, can be overridden on a per-server basis        *
 		****************************************************************************/
-		//*nix user name (default thornsec)
-		"user":"thornsec",
-		//Full name of the admin account (default Thornsec Admin User)
-		"adminname":"Dr McNuggets",
+		//*nix login user name (default thornsec)
+		"myuser":"thornsec",
 		//Default SSH connection type (default direct)
 		"connection":"direct",
 		//Default SSH connection port (default 22)
@@ -69,6 +59,8 @@
 		"debianmirror":"ftp.uk.debian.org",
 		//Subdirectory to be used for pulling packages (default /debian)
 		"debiandirectory":"/debian",
+		//Admins (accounts to create on our services)
+		"admins":["admin1", "admin2"],
 
 
 
@@ -171,7 +163,9 @@
 				"metal":"hypervisor",
 				"mac":"de:ad:be:ef:ca:fe",
 				"profiles":["Etherpad"],
-				"cnames":["pads"]
+				"cnames":["pads"],
+				//We want a different set of admins on this machine
+				"admins":["admin2", "admin3"]
 			},
 			"vpn":{
 				"types":["service"],
@@ -193,20 +187,45 @@
 		/****************************************************************************
 		* Device definitions; superusers, users, internal and external-only devicen *
 		****************************************************************************/
-		"devices":{
-			//For devices which represent an individual's device, use their email username so they can receive emails (domain comes from network-level settings)
-			//Setting throttle to true will enable QoS against this device
-			//Access to internal stuff (including ability to SSH) & interwebs
-			"superuser": {"macs":["de:ad:be:ef:ca:fe", "de:ad:be:ef:ca:fe"], "throttle":"true", "type":"superuser"},
-			//Access to internal stuff & interwebs
-			"user_a": {"macs":["de:ad:be:ef:ca:fe", "de:ad:be:ef:ca:fe"], "throttle":"true", "type":"user"},
-			"user_b": {"macs":["de:ad:be:ef:ca:fe", "de:ad:be:ef:ca:fe"], "throttle":"true", "type":"user"},
-			//For other devices, just use a useful identifier as it'll never receive email
+		//Setting "throttle" to "false" switches off QoS throttling
+		//Manage will open up :80 for devices which are managed via a web browser
+
+
+		"internaldevices":{
 			//Internal connections only
-			"printer": {"macs":["de:ad:be:ef:ca:fe"], "throttle":"true", "type":"intonly"},
+			"printer": {"macs":["de:ad:be:ef:ca:fe"], "throttle":"true", "managed":"true"},
+		},
+		
+		"externaldevices":{
 			//Interwebs only
-			"guest_wifi": {"macs":["de:ad:be:ef:ca:fe"], "throttle":"false", "type":"extonly"},
-			"staff_wifi": {"macs":["de:ad:be:ef:ca:fe"], "throttle":"true", "type":"extonly"}
+			"guest_wifi": {"macs":["de:ad:be:ef:ca:fe"], "throttle":"false"},
+			"staff_wifi": {"macs":["de:ad:be:ef:ca:fe"]}
+		},
+		
+		"users":{
+			"admin1":{
+				"fullname":"Dr McNuggets",
+				"macs":["de:ad:be:ef:ca:fe", "de:ad:be:ef:ca:fe"],
+				"sshkey":"ssh-ed25519 abcdefghijklmnopqrstuvwxyzzyxwvutsrqponmlkjihgfedcba fake-ssh-key"
+			},
+			"admin2":{
+				"fullname":"The Incredible Mr Hong",
+				"macs":["de:ad:be:ef:ca:fe", "de:ad:be:ef:ca:fe"],
+				"sshkey":"ssh-ed25519 abcdefghijklmnopqrstuvwxyzzyxwvutsrqponmlkjihgfedcba fake-ssh-key"
+			},
+			"admin3":{
+				"fullname":"SemanticX",
+				"macs":["de:ad:be:ef:ca:fe", "de:ad:be:ef:ca:fe"],
+				"sshkey":"ssh-ed25519 abcdefghijklmnopqrstuvwxyzzyxwvutsrqponmlkjihgfedcba fake-ssh-key"
+			},
+			"user1":{"macs":["de:ad:be:ef:ca:fe"]},
+			"user2":{"macs":["de:ad:be:ef:ca:fe"]},
+			"user3":{"macs":["de:ad:be:ef:ca:fe"]},
+			"user4":{"macs":["de:ad:be:ef:ca:fe"]},
+			"user5":{"macs":["de:ad:be:ef:ca:fe"]},
+			"user6":{"macs":["de:ad:be:ef:ca:fe"]},
+			"user7":{"macs":["de:ad:be:ef:ca:fe"]},
+			"user8":{"macs":["de:ad:be:ef:ca:fe"]}
 		}
 	}
 }
