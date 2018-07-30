@@ -19,8 +19,10 @@
 		****************************************************************************/
 		//IP address class ({a,b,c}, default a)
 		"class":"a",
-		//External DNS server IP (default 8.8.8.8)
-		"dns":"8.8.8.8",
+		//External DNS server IP (default 1.1.1.1/1.0.0.1)
+		"dns":["1.1.1.1", "1.0.0.1"],
+		//DNS over TLS? (default false)
+		"dtls":"true",
 		//Whether to ad-block at the router. Rather blunt, use wisely. (default no)
 		"adblocking":"no",
 		//Whether to auto-generate secure passphrases for VMs if they don't already have one in the password store. (default false)

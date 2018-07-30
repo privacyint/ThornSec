@@ -319,7 +319,7 @@ public class NetworkModel {
 			preseed += "d-i netcfg/get_ipaddress string " + getData().getProperty(server, "externaladdress") + "\n";
 			preseed += "d-i netcfg/get_netmask string " + getData().getProperty(server, "externalnetmask") + "\n";
 			preseed += "d-i netcfg/get_gateway string " + getData().getProperty(server, "externalgateway") + "\n";
-			preseed += "d-i netcfg/get_nameservers string " + getData().getDNS() + "\n";
+			preseed += "d-i netcfg/get_nameservers string " + getData().getDNS()[0] + "\n"; //Use the first DNS server
 			preseed += "d-i netcfg/confirm_static boolean true\n";
 		}
 		else {

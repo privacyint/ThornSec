@@ -13,7 +13,6 @@ public class NetworkData extends AData {
 
 	private String user;
 	private String ipClass;
-	private String dns;
 	private String dtls;
 	private String ip;
 	private String adBlocking;
@@ -22,6 +21,8 @@ public class NetworkData extends AData {
 	private String adminEmail;
 	private String vpnOnly;
 
+	private String[] dns;
+	
 	private ServerData defaultServerData;
 
 	private LinkedHashMap<String, ServerData>  servers;
@@ -38,11 +39,11 @@ public class NetworkData extends AData {
 		} else {
 			this.user = data.getString("myuser", null);
 			this.ipClass = data.getString("class", "a");
-			this.dns = data.getString("dns", "8.8.8.8");
 			this.dtls = data.getString("dtls", "false");
 			this.ip = data.getString("ip", null);
 			this.adBlocking = data.getString("adblocking", "no");
 			this.gpg = data.getString("gpg", null);
+			this.dns            = getPropertyArray(data, "dns");
 			this.autoGenPasswds = data.getString("autogenpasswds", "false"); //Default to false
 			this.adminEmail = data.getString("adminemail", null);
 			this.vpnOnly = data.getString("vpnonly", "no");
@@ -128,7 +129,7 @@ public class NetworkData extends AData {
 		return ipClass;
 	}
 
-	public String getDNS() {
+	public String[] getDNS() {
 		return dns;
 	}
 
