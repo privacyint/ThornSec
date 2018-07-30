@@ -17,6 +17,8 @@ public class DNS extends AStructuredProfile {
 	private HashMap<String, Vector<String>> domainRecords;
 	private HashMap<String, String> poison;
 	
+	private boolean useDtls;
+	
 	public DNS() {
 		super("dns");
 		
@@ -64,6 +66,8 @@ public class DNS extends AStructuredProfile {
 	}
 	
 	public Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+		useDtls       = model.getData().getDTLS();
+		
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		//Config taken from https://calomel.org/unbound_dns.html
@@ -135,9 +139,15 @@ public class DNS extends AStructuredProfile {
 		config += "    stub-zone:\n";
 		config += "        name: \\\"" + model.getServerModel(server).getGateway().split("\\.")[0] + ".in-addr.arpa.\\\"\n";
 		config += "        stub-addr: " + model.getServerModel(server).getGateway() + "\n";
+		//External DNS servers
 		config += "    forward-zone:\n";
 		config += "        name: \\\".\\\"\n";
+		//Is our upstream TLS?
+		config += (useDtls) ? "        forward-ssl-upstream: yes\n" : "";
 		config += "        forward-addr: " + model.getData().getDNS();
+		//Over TLS?
+		config += (useDtls) ? "@853" : "";
+		
 		
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("dns_persistent", "dns_installed", config, "/etc/unbound/unbound.conf"));
 		
@@ -160,33 +170,35 @@ public class DNS extends AStructuredProfile {
 		
 		Vector<String> userIfaces = new Vector<String>();
 		
+		int dnsPort = (useDtls) ? 853 : 53;
+		
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterInput("dns_ipt_in_udp",
-				"-p udp --dport 53 -j ACCEPT"));
+				"-p udp --dport " + dnsPort + " -j ACCEPT"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("dns_ipt_out_udp",
-				"-p udp --sport 53 -j ACCEPT"));
+				"-p udp --sport " + dnsPort + " -j ACCEPT"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterInput("dns_ipt_in_tcp",
-				"-p tcp --dport 53 -j ACCEPT"));
+				"-p tcp --dport " + dnsPort + " -j ACCEPT"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("dns_ipt_out_tcp",
-				"-p tcp --sport 53 -j ACCEPT"));
+				"-p tcp --sport " + dnsPort + " -j ACCEPT"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("dns_ipt_out_tcp_lo",
-				"-p tcp --dport 53 -j ACCEPT"));
+				"-p tcp --dport " + dnsPort + " -j ACCEPT"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addChain("dns_ipt_chain", "filter", "dnsd"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext", "dnsd", "-j DROP"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_log", "dnsd",
 				"-j LOG --log-prefix \\\"ipt-dnsd: \\\""));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterInput("dns_ext_in",
-				"-p udp --sport 53 -j dnsd"));
+				"-p udp --sport " + dnsPort + " -j dnsd"));
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("dns_ext_out",
-				"-p udp --sport 53 -j dnsd"));
+				"-p udp --sport " + dnsPort + " -j dnsd"));
 		
 		int count = 1;
 		StringTokenizer str = new StringTokenizer(model.getData().getDNS());
 		while (str.hasMoreTokens()) {
 			String ip = str.nextToken(";");
 			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_server_in_" + count,
-					"dnsd", "-s " + ip + " -p udp --sport 53 -j ACCEPT"));
+					"dnsd", "-s " + ip + " -p udp --sport " + dnsPort + " -j ACCEPT"));
 			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_server_out_" + count,
-					"dnsd", "-d " + ip + " -p udp --dport 53 -j ACCEPT"));
+					"dnsd", "-d " + ip + " -p udp --dport " + dnsPort + " -j ACCEPT"));
 			count++;
 		}
 
