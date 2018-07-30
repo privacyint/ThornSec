@@ -346,7 +346,7 @@ public class Router extends AStructuredProfile {
 		String fwdChain     = cleanName + "_fwd";
 		String ingressChain = cleanName + "_ingress";
 		String egressChain  = cleanName + "_egress";
-
+		
 		//Create our egress chain for bandwidth (exfil?) tracking
 		//In future, we could perhaps do some form of traffic blocking malarky here?
 		this.firewall.addChain(cleanName + "_egress_chain", "filter", egressChain);
@@ -580,7 +580,10 @@ public class Router extends AStructuredProfile {
 			}
 			
 			//Configure what they can do with internal only devices
-			for (String iface : userIfaces) { 
+			for (String iface : userIfaces) {
+				
+				if (internalOnlyDevices.size() == 0) { continue; }
+				
 				String intOnlyRule = "";
 				intOnlyRule += "-i " + this.internalIface + iface;
 				intOnlyRule += " -d ";
