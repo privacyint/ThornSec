@@ -487,6 +487,9 @@ public class Router extends AStructuredProfile {
 			baseIptConfig(server, model, user, userSubnet);
 
 			for (String iface : userIfaces) {
+				//First make sure we actually *have* servers (thanks, Chris...)
+				if (model.getServerLabels().length == 0) { continue; }
+				
 				//They can talk to our servers on :80 && :443
 				String serverRule = "";
 				serverRule += "-i " + this.internalIface + iface;
