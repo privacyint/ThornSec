@@ -382,6 +382,11 @@ public class Router extends AStructuredProfile {
 				"-s " + subnet
 				+ " -j ACCEPT");
 
+		//Masquerade on the external iface
+		this.firewall.addNatPostrouting(cleanName + "_masquerade_external",
+				"-o " + externalIface
+				+ " -j MASQUERADE");
+		
 		return units;
 	}
 	
