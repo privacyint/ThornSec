@@ -767,7 +767,7 @@ public class Router extends AStructuredProfile {
 			units.addElement(this.firewall.addMangleForward("clamp_mss_to_pmtu",
 					"-p tcp --tcp-flags SYN,RST SYN -m tcpmss" 
 					+ " --mss 1400:1536 -j TCPMSS --clamp-mss-to-pmtu" 
-					+ " -o ppp0"));
+					+ " -o " + externalIface));
 		}
 		else if (model.getData().getExtConn(server).equals("dhcp")){
 			units.addElement(this.interfaces.addIface("router_ext_dhcp_iface", 
