@@ -734,7 +734,6 @@ public class Router extends AStructuredProfile {
 						//And can accept established/related traffic from the outside world, too
 						this.firewall.addFilter(cleanDeviceName + "_allow_management_traffic", fwdChain,
 								"-s " + model.getDeviceModel(user).getSubnets()[0] + "/24"
-								+ " -m state --state ESTABLISHED,RELATED"
 								+ " -j ACCEPT");
 					}
 				}
