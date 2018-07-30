@@ -2,7 +2,6 @@ package profile;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.StringTokenizer;
 import java.util.Vector;
 
 import core.iface.IUnit;
@@ -141,14 +140,15 @@ public class DNS extends AStructuredProfile {
 		config += "        stub-addr: " + model.getServerModel(server).getGateway() + "\n";
 		//External DNS servers
 		config += "    forward-zone:\n";
-		config += "        name: \\\".\\\"\n";
+		config += "        name: \\\".\\\"";
 		//Is our upstream TLS?
-		config += (useDtls) ? "        forward-ssl-upstream: yes\n" : "";
-		config += "        forward-addr: " + model.getData().getDNS();
-		//Over TLS?
-		config += (useDtls) ? "@853" : "";
-		
-		
+		config += (useDtls) ? "\n        forward-ssl-upstream: yes" : "";
+		for (String upstream : model.getData().getDNS()) {
+			config += "\n        forward-addr: " + upstream;
+			//Over TLS?
+			config += (useDtls) ? "@853" : "";
+		}
+			
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("dns_persistent", "dns_installed", config, "/etc/unbound/unbound.conf"));
 		
 		return units;
@@ -191,15 +191,17 @@ public class DNS extends AStructuredProfile {
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("dns_ext_out",
 				"-p udp --sport " + dnsPort + " -j dnsd"));
 		
-		int count = 1;
-		StringTokenizer str = new StringTokenizer(model.getData().getDNS());
-		while (str.hasMoreTokens()) {
-			String ip = str.nextToken(";");
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_server_in_" + count,
-					"dnsd", "-s " + ip + " -p udp --sport " + dnsPort + " -j ACCEPT"));
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_server_out_" + count,
-					"dnsd", "-d " + ip + " -p udp --dport " + dnsPort + " -j ACCEPT"));
-			count++;
+		for (String upstream : model.getData().getDNS()) {
+			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_server_" + upstream + "_in", "dnsd",
+					"-s " + upstream
+					+ " -p udp"
+					+ " --sport " + dnsPort
+					+ " -j ACCEPT"));
+			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_server_" + upstream + "_out", "dnsd",
+					"-d " + upstream
+					+ " -p udp"
+					+ " --dport " + dnsPort
+					+ " -j ACCEPT"));
 		}
 
 		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_loopback_in",

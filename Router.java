@@ -802,7 +802,6 @@ public class Router extends AStructuredProfile {
 					+ " -j ACCEPT"));
 			units.addElement(this.firewall.addFilterOutput("router_ext_dhcp_ipt_out", 
 					"-o " + this.externalIface
-					+ " -d " + model.getData().getDNS()
 					+ " -p udp"
 					+ " --dport 67"
 					+ " --sport 68"
