@@ -14,6 +14,7 @@ public class NetworkData extends AData {
 	private String user;
 	private String ipClass;
 	private String dns;
+	private String dtls;
 	private String ip;
 	private String adBlocking;
 	private String gpg;
@@ -38,6 +39,7 @@ public class NetworkData extends AData {
 			this.user = data.getString("myuser", null);
 			this.ipClass = data.getString("class", "a");
 			this.dns = data.getString("dns", "8.8.8.8");
+			this.dtls = data.getString("dtls", "false");
 			this.ip = data.getString("ip", null);
 			this.adBlocking = data.getString("adblocking", "no");
 			this.gpg = data.getString("gpg", null);
@@ -128,6 +130,10 @@ public class NetworkData extends AData {
 
 	public String getDNS() {
 		return dns;
+	}
+
+	public boolean getDTLS() {
+		return Objects.equals(dtls, "true");
 	}
 	
 	public String getGPG() {
