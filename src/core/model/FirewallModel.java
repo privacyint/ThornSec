@@ -277,40 +277,29 @@ public class FirewallModel extends AModel {
 	}
 
 	private String getNatPostrouting() {
-		Vector<String> chain = new Vector<String>(new LinkedHashSet<String>(this.getChain("nat", "POSTROUTING")));
-
-		String natPostrouting = "";
-
-		for (int i = chain.size() - 1; i > 0; --i) { //Loop through backwards
-			natPostrouting += "-A POSTROUTING " + chain.elementAt(i) + "\n";
-		}
-		
-		return natPostrouting;
+		return getRules("nat", "POSTROUTING");
 	}
 
 	private String getMangleForward() {
-		Vector<String> chain = new Vector<String>(new LinkedHashSet<String>(this.getChain("mangle", "FORWARD")));
-
-		String mangleForward = "";
-
-		for (int i = chain.size() - 1; i > 0; --i) { //Loop through backwards
-			mangleForward += "-A FORWARD " + chain.elementAt(i) + "\n";
-		}
-		return mangleForward;
+		return getRules("mangle", "FORWARD");
 	}
 	
 	private String getNatPrerouting() {
-		Vector<String> chain = new Vector<String>(new LinkedHashSet<String>(this.getChain("nat", "PREROUTING")));
-
-		String natPrerouting = "";
-		
-		for (int i = chain.size() - 1; i > 0; --i) { //Loop through backwards
-			natPrerouting += "-A PREROUTING " + chain.elementAt(i) + "\n";
-		}
-		
-		return natPrerouting;
+		return getRules("nat", "PREROUTING");
 	}
 
+	private String getRules(String tableName, String chainName) {
+		Vector<String> chain = new Vector<String>(new LinkedHashSet<String>(this.getChain(tableName, chainName)));
+
+		String rules = "";
+		
+		for (int i = chain.size() - 1; i >= 0; --i) { //Loop through backwards
+			rules += "-A " + chainName +  " " + chain.elementAt(i) + "\n";
+		}
+		
+		return rules;
+	}
+	
 	private String getFilter() {
 		LinkedHashMap<String, Vector<String>> filterTable = iptTables.get("filter");
 
