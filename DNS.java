@@ -192,12 +192,12 @@ public class DNS extends AStructuredProfile {
 				"-p udp --sport " + dnsPort + " -j dnsd"));
 		
 		for (String upstream : model.getData().getDNS()) {
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_server_" + upstream + "_in", "dnsd",
+			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_server_" + upstream.replaceAll("\\.", "_") + "_in", "dnsd",
 					"-s " + upstream
 					+ " -p udp"
 					+ " --sport " + dnsPort
 					+ " -j ACCEPT"));
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_server_" + upstream + "_out", "dnsd",
+			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_server_" + upstream.replaceAll("\\.", "_") + "_out", "dnsd",
 					"-d " + upstream
 					+ " -p udp"
 					+ " --dport " + dnsPort
