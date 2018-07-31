@@ -245,18 +245,14 @@ public class FirewallModel extends AModel {
 		this.getChain(table, chain).add(position, rule);
 		return new SimpleUnit(name, "proceed", "echo \\\"handled by model\\\";",
 				"cat /etc/iptables/iptables.conf | iptables-xml | xsltproc --stringparam table " + table
-						+ " /etc/iptables/iptables.xslt - | " + "grep \"" + chain + " " + rule.replaceAll("-", "\\\\-")
-						+ "\"",
-				"-A " + chain + " " + rule, "pass");
+				+ " /etc/iptables/iptables.xslt - | " + "grep -F \"" + chain + " " + rule + "\"",
+				"", "fail");
 	}
 
 	private SimpleUnit add(String name, String table, String chain, String rule) {
-		this.getChain(table, chain).add(rule);
-		return new SimpleUnit(name, "proceed", "echo \\\"handled by model\\\";",
-				"cat /etc/iptables/iptables.conf | iptables-xml | xsltproc --stringparam table " + table
-						+ " /etc/iptables/iptables.xslt - | " + "grep \"" + chain + " " + rule.replaceAll("-", "\\\\-")
-						+ "\"",
-				"-A " + chain + " " + rule, "pass");
+		int position = this.getChain(table, chain).size();
+		
+		return add(name, table, chain, position, rule);
 	}
 
 	private String getPersistent() {
