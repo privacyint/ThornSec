@@ -5,6 +5,7 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Vector;
 
 import core.data.NetworkData;
@@ -211,9 +212,18 @@ public class ServerModel extends AModel {
 	private Vector<IUnit> serverConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
+		//Shouldn't /really/ be doing this out here, but these should be the only RAW sockets, in the only circumstances, in a TS network...
+		String excludeKnownRaw = "";
+		if (this.isRouter()) {
+			excludeKnownRaw += " | grep -v \"dhcpd\"";
+			if (Objects.equals(this.getExtConn(), "ppp")) {
+				excludeKnownRaw += " | grep -v \"pppd\"";
+			}
+		}
+		
 		units.addElement(new SimpleUnit("no_raw_sockets", "lsof_installed",
 				"",
-				"sudo lsof | grep RAW", "", "pass",
+				"sudo lsof | grep RAW" + excludeKnownRaw, "", "pass",
 				"There are raw sockets running on this machine.  This is almost certainly a sign of compromise."));
 		
 		//Verify our PAM modules haven't been tampered with
