@@ -65,7 +65,12 @@ public class FirewallModel extends AModel {
 		units.addElement(new InstalledUnit("iptables_xsltproc", "xsltproc"));
 		units.addElement(new DirUnit("iptables_dir", "proceed", "/etc/iptables"));
 		
-		units.addElement(new SimpleUnit("iptables_conf_persist", "iptables_dir_created",
+		units.addElement(new SimpleUnit("iptables_running_conf_backup", "iptables_dir_created",
+				"echo 'iptables-save > /etc/iptables/iptables.conf.bak' | sudo bash",
+				"find /etc/iptables/iptables.conf.bak -cmin -1", "", "fail",
+				"Couldn't take a backup of the currently running iptables rules.  I won't apply the new ones as a precaution."));
+		
+		units.addElement(new SimpleUnit("iptables_conf_persist", "iptables_running_conf_backup",
 				"echo \"" + getPersistent() + "\" | sudo tee /etc/iptables/iptables.conf;"
 				+ "sudo iptables-restore < /etc/iptables/iptables.conf;",
 				"cat /etc/iptables/iptables.conf;", getPersistent(), "pass"));
