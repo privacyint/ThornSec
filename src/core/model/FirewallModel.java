@@ -72,7 +72,9 @@ public class FirewallModel extends AModel {
 		
 		units.addElement(new SimpleUnit("iptables_conf_persist", "iptables_running_conf_backup",
 				"echo \"" + getPersistent() + "\" | sudo tee /etc/iptables/iptables.conf;"
-				+ "sudo iptables-restore < /etc/iptables/iptables.conf;",
+				+ " sudo iptables-restore --test < /etc/iptables/iptables.conf"
+				+ " &&"
+				+ " sudo iptables-restore < /etc/iptables/iptables.conf;",
 				"cat /etc/iptables/iptables.conf;", getPersistent(), "pass"));
 		
 		String iptxslt = "";
