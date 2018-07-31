@@ -258,16 +258,16 @@ public class ServerModel extends AModel {
 		if (isService()) {
 			units.addElement(new SimpleUnit("no_unexpected_executables", "proceed",
 					"",
-					"find /proc/*/exe -exec readlink {} + | xargs sudo dpkg -S 2>&1 | egrep -v \"/opt/VBoxGuestAdditions-[5-9]{1}\\\\.[0-9]{1,2}\\\\.[0-9]{1,2}/sbin/VBoxService\"", "", "pass",
-					"There are unexpected executables running on this machine.  This could be innocent, or could be a sign of compromise."));
+					"find /proc/*/exe -exec readlink {} + | xargs sudo dpkg -S 2>&1 | egrep -v \"/opt/VBoxGuestAdditions-[5-9]{1}\\\\.[0-9]{1,2}\\\\.[0-9]{1,2}/sbin/VBoxService\" | grep 'no path' | grep -v 'deleted'", "", "pass",
+					"There are unexpected executables running on this machine.  This could be innocent, but is probably a sign of compromise."));
 		}
 		else {
 			units.addElement(new SimpleUnit("no_unexpected_executables", "proceed",
 					"",
-					"find /proc/*/exe -exec readlink {} + | xargs sudo dpkg -S 2>&1", "", "pass",
-					"There are unexpected executables running on this machine.  This could be innocent, or could be a sign of compromise."));
+					"find /proc/*/exe -exec readlink {} + | xargs sudo dpkg -S 2>&1 | grep 'no path' | grep -v 'deleted'", "", "pass",
+					"There are unexpected executables running on this machine.  This could be innocent, but is probably a sign of compromise."));
 		}
-		
+
 		String emailOnPAM = "";
 		emailOnPAM += "#!/bin/bash\n";
 		emailOnPAM += "\n";
