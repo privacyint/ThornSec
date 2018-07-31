@@ -768,9 +768,7 @@ public class Router extends AStructuredProfile {
 			units.addElement(new FileUnit("resolv_conf", "proceed", "nameserver 127.0.0.1", "/etc/ppp/resolv.conf"));
 			
 			units.addElement(this.firewall.addMangleForward("clamp_mss_to_pmtu",
-					"-p tcp --tcp-flags SYN,RST SYN -m tcpmss" 
-					+ " --mss 1400:1536 -j TCPMSS --clamp-mss-to-pmtu" 
-					+ " -o " + externalIface));
+					"-p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1400:1536 -j TCPMSS --clamp-mss-to-pmtu"));
 		}
 		else if (model.getData().getExtConn(server).equals("dhcp")){
 			units.addElement(this.interfaces.addIface("router_ext_dhcp_iface", 
