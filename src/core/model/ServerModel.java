@@ -8,6 +8,8 @@ import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Vector;
 
+import javax.json.JsonArray;
+import javax.json.JsonObject;
 import core.data.NetworkData;
 import core.iface.IUnit;
 import core.profile.AProfile;
@@ -329,6 +331,18 @@ public class ServerModel extends AModel {
 		
 		units.addElement(networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFile("pam_sshd_script_created", "email_on_pam_script_created", sshdPAM, "/etc/pam.d/sshd"));
 
+		JsonArray egress = (JsonArray) networkModel.getData().getPropertyObjectArray(this.getLabel(), "allowegress");
+		if (egress != null) {
+			for (int i = 0; i < egress.size(); ++i) {
+				JsonObject row = egress.getJsonObject(i);
+				
+				String   destination = row.getString("destination");
+				String[] ports       = row.getString("ports").split(",;");
+				
+				addRouterFirewallRule(this.getLabel(), networkModel, destination, destination, ports);
+			}
+		}
+		
 		return units;
 	}
 
@@ -469,26 +483,27 @@ public class ServerModel extends AModel {
 			
 			String serverIp     = model.getServerModel(server).getIP();
 			String cleanName    = server.replaceAll("-",  "_");
-			String ingressChain = cleanName + "_ingress";
+			//String ingressChain = cleanName + "_ingress";
 			String egressChain  = cleanName + "_egress";
 			
 			for (String router : model.getRouters()) {
 				for (InetAddress ip : ips) {
 					if (!ip.getHostAddress().contains(":")) { //no IPv6, please
-						for (String port : ports) {
-							model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_in_" + port, ingressChain,
-									"-s " + ip.getHostAddress()
-									+ " -d " + serverIp
-									+ " -p tcp"
-									+ " --sport " + port
-									+ " -j ACCEPT");
-							model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_out_" + port, egressChain,
-									"-d " + ip.getHostAddress()
-									+ " -s " + serverIp
-									+ " -p tcp"
-									+ " --dport " + port
-									+ " -j ACCEPT");
-						}
+							//We don't need this, as our firewall is stateful...
+							//model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_in_" + port, ingressChain,
+							//		"-s " + ip.getHostAddress()
+							//		+ " -d " + serverIp
+							//		+ " -p tcp"
+							//		+ " --sport " + port
+							//		+ " -j ACCEPT");
+						model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_out_" + hostname.replaceAll("\\.", "_"), egressChain,
+								"-d " + ip.getHostAddress()
+								+ " -s " + serverIp
+								+ " -p tcp"
+								+ " -m state --state NEW,ESTABLISHED,RELATED"
+								+ " -m tcp -m multiport"
+								+ " --dports " + String.join(",", ports)
+								+ " -j ACCEPT");
 					}
 				}
 			}
