@@ -37,27 +37,46 @@ public class NetworkData extends AData {
 		if (include != null) {
 			readInclude(include);
 		} else {
-			this.user = data.getString("myuser", null);
-			this.ipClass = data.getString("class", "a");
-			this.dtls = data.getString("dtls", "false");
-			this.ip = data.getString("ip", null);
-			this.adBlocking = data.getString("adblocking", "no");
-			this.gpg = data.getString("gpg", null);
+			this.user           = data.getString("myuser", null);
+			this.ipClass        = data.getString("class", "a");
 			this.dns            = getPropertyArray(data, "dns");
+			this.dtls           = data.getString("dtls", "false");
+			this.ip             = data.getString("ip", null);
+			this.adBlocking     = data.getString("adblocking", "false");
+			this.gpg            = data.getString("gpg", null);
 			this.autoGenPasswds = data.getString("autogenpasswds", "false"); //Default to false
-			this.adminEmail = data.getString("adminemail", null);
-			this.vpnOnly = data.getString("vpnonly", "no");
+			this.adminEmail     = data.getString("adminemail", null);
+			this.vpnOnly        = data.getString("vpnonly", "false");
+			
 			defaultServerData = new ServerData("");
 			defaultServerData.read(data);
+			
 			servers = new LinkedHashMap<String, ServerData>();
-			readServers(data.getJsonObject("servers"));
 			devices = new LinkedHashMap<String, ADeviceData>();
+
+			readServers(data.getJsonObject("servers"));
 			readInternalDevices(data.getJsonObject("internaldevices"));
 			readExternalDevices(data.getJsonObject("externaldevices"));
 			readUserDevices(data.getJsonObject("users"));
 		}
 	}
 
+	private String[] getPropertyArray(JsonObject data, String property) {
+		JsonArray jsonProperties = data.getJsonArray(property);
+
+		if (jsonProperties != null) {
+			String[] properties = new String[jsonProperties.size()];
+			for (int i = 0; i < properties.length; ++i) {
+				properties[i] = jsonProperties.getString(i);
+			}
+			
+			return properties;
+		}
+		else {
+			return new String[0];
+		}
+	}
+	
 	private void readInclude(String include) {
 		try {
 			String text = new String(Files.readAllBytes(Paths.get(include)), StandardCharsets.UTF_8);
@@ -158,11 +177,11 @@ public class NetworkData extends AData {
 	}
 	
 	public boolean getAdBlocking() {
-		return Objects.equals(adBlocking, "yes");
+		return Objects.equals(adBlocking, "true");
 	}
 
 	public boolean getVpnOnly() {
-		return Objects.equals(vpnOnly, "yes");
+		return Objects.equals(vpnOnly, "true");
 	}
 	
 	public String[] getServerLabels() {
