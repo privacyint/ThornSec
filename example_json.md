@@ -167,7 +167,11 @@
 				"profiles":["Etherpad"],
 				"cnames":["pads"],
 				//We want a different set of admins on this machine
-				"admins":["admin2", "admin3"]
+				"admins":["admin2", "admin3"],
+				//This machine needs to be able to call out to some other destinations, because reasons
+				"allowegress":[{"destination":"1.2.3.4", "ports":"22,80,443"},
+				               {"destination":"google.com", "ports":"443"}
+				 ]
 			},
 			"vpn":{
 				"types":["service"],
