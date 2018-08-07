@@ -12,6 +12,7 @@ import core.model.InterfaceModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
+import core.unit.fs.FileOwnUnit;
 import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
@@ -117,6 +118,8 @@ public class Router extends AStructuredProfile {
 		units.addAll(extConnConfigUnits(server, model));
 		
 		units.addAll(dailyBandwidthEmailDigestUnits(server, model));
+		
+		units.addAll(routerScript(server, model));
 		
 		return units;
 	}
@@ -831,6 +834,170 @@ public class Router extends AStructuredProfile {
 											gateway));
 			}
 		}
+		
+		return units;
+	}
+	
+	protected Vector<IUnit> routerScript(String server, NetworkModel model) {
+		Vector<IUnit> units = new Vector<IUnit>();
+		
+		String admin = "";
+		admin += "#!/bin/bash\n";
+		admin += "\n";
+		admin += "RED='\\\\033[0;31m'\n"; 
+		admin += "GREEN='\\\\033[0;32m'\n"; 
+		admin += "NC='\\\\033[0m'\n";
+		admin += "\n";
+		admin += "function checkInternets {\n"; 
+		admin += "        clear\n";
+		admin += "\n";
+		admin += "        echo \\\"Checking your internet connectivity, please wait...\\\"\n"; 
+		admin += "        echo \n";
+		admin += "        echo \\\"1/3 (8.8.8.8 - Google DNS)     : \\$(ping -q -w 1 -c 1 8.8.8.8 &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
+		admin += "        echo \\\"2/3 (208.67.222.222 - OpenDNS) : \\$(ping -q -w 1 -c 1 208.67.222.222 &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
+		admin += "        echo \\\"3/3 (1.1.1.1 - Cloudflare DNS) : \\$(ping -q -w 1 -c 1 1.1.1.1 &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
+		admin += "        echo \n";
+		admin += "        read -n 1 -s -r -p \\\"Press any key to return to the main menu...\\\"\n";
+		admin += "}\n";
+		admin += "\n";
+		admin += "function checkDNS {\n";
+		admin += "        clear\n";
+		admin += "\n";
+		admin += "        echo \\\"Checking your external DNS server is resolving correctly\\\"\n";
+		admin += "        echo \n";
+		admin += "        echo \\\"Getting the DNS record for Google.com : \\$( dig +short google.com. &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
+		admin += "        echo \n";
+		admin += "        read -n 1 -s -r -p \\\"Press any key to return to the main menu...\\\"\n";
+		admin += "}\n";
+		admin += "\n";
+		admin += "function restartUnbound {\n";
+		admin += "        clear\n";
+		admin += "\n";
+		admin += "        echo \\\"Restarting the DNS Server - please wait...\\\"\n";
+		admin += "        echo \n";
+		admin += "        echo \\\"Stopping DNS Server : \\$(service unbound stop &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
+		admin += "        echo \\\"Starting DNS Server : \\$(service unbound start &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
+		admin += "        echo \n";
+		admin += "        read -n 1 -s -r -p \\\"Press any key to return to the main menu...\\\"\n";
+		admin += "}\n";
+		admin += "\n";
+		admin += "function restartDHCP {\n";
+		admin += "        clear\n";
+		admin += "\n";
+		admin += "        echo \\\"Restarting the DHCP Server - please wait...\\\"\n";
+		admin += "        echo \n";
+		admin += "        echo \\\"Stopping DHCP Server : \\$(service isc-dhcp-server stop &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
+		admin += "        echo \\\"Starting DHCP Server : \\$(service isc-dhcp-server start &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
+		admin += "        echo \n";
+		admin += "        read -n 1 -s -r -p \\\"Press any key to return to the main menu...\\\"\n"; 
+		admin += "}\n";
+		admin += "\n";
+		if (model.getData().getExtConn(server).contains("ppp")) {
+			admin += "function restartPPPoE {\n";
+			admin += "        clear\n";
+			admin += "\n";
+			admin += "        echo \\\"Restarting the PPPoE Client - please wait...\\\"\n";
+			admin += "        echo \n";
+			admin += "        echo \\\"Stopping PPPoE Client : \\$(poff &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
+			admin += "        echo \\\"Starting PPPoE Client : \\$(pon &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
+			admin += "        echo \n";
+			admin += "        sleep 2\n";
+			admin += "        checkInternets\n";
+			admin += "}\n";
+			admin += "\n";
+		}
+		admin += "function reloadIPT {\n";
+		admin += "        clear\n";
+		admin += "\n";
+		admin += "        echo \\\"Reloading the firewall - please wait...\\\"\n";
+		admin += "        echo \n";
+		admin += "        echo \\\"Flushing firewall rules  : \\$(iptables -F &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
+		admin += "        echo \\\"Reloading firewall rules : \\$(iptables-restore < /etc/iptables/iptables.conf &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
+		admin += "        echo \n";
+		admin += "        read -n 1 -s -r -p \\\"Press any key to return to the main menu...\\\"\n";
+		admin += "}\n";
+		admin += "\n";
+		admin += "function tracert {\n";
+		admin += "        clear\n";
+		admin += "\n";
+		admin += "        echo \\\"Conducting a traceroute between the router and Google.com - please wait...\\\"\n";
+		admin += "        echo \n";
+		admin += "        traceroute google.com\n";
+		admin += "        echo \n";
+		admin += "        read -n 1 -s -r -p \\\"Press any key to return to the main menu...\\\"\n";
+		admin += "}\n";
+		admin += "\n";
+		if (model.getData().getExtConn(server).contains("ppp")) {
+			admin += "function configurePPPoE {\n";
+			admin += "        correct=\\\"false\\\"\n";
+			admin += "        \n";
+			admin += "        while [ \\\"\\${correct}\\\" = \\\"false\\\" ]; do\n";
+			admin += "            clear\n";
+			admin += "            \n";
+			admin += "            echo \\\"Enter your ISP's login username and press [ENTER]\\\"\n";
+			admin += "            read -r username\n";
+			admin += "            echo \\\"Enter your ISP's login password and press [ENTER]\\\"\n";
+			admin += "            read -r password\n";
+			admin += "            \n";
+			admin += "            clear\n";
+			admin += "            \n";
+			admin += "            echo -e \\\"Username: \\${GREEN}\\${username}\\${NC}\\\"\n";
+			admin += "            echo -e \\\"Password: \\${GREEN\\}${password}\\${NC}\\\"\n";
+			admin += "            \n";
+			admin += "            read -r -p \\\"Are the above credentials correct? [Y/n]\\\" yn\n";
+			admin += "            \n";
+			admin += "            case \\\"\\${yn}\\\" in\n";
+			admin += "                [nN]* ) correct=\\\"false\\\";;\n";
+			admin += "                    * ) correct=\\\"true\\\";\n";
+			admin += "                        printf \\\"\\\"%s\\\"      *      \\\"%s\\\"\\\" \\\"\\${username}\\\" \\\"\\${password}\\\" > /etc/ppp/chap-secrets;;\n";
+			admin += "			esac\n";
+			admin += "		done\n";
+			admin += "      \n";
+			admin += "      read -n 1 -s -r -p \\\"Press any key to return to the main menu...\\\"\n";
+			admin += "\n";
+			admin += "}\n";
+			admin += "\n";
+		}
+		admin += "if [ \\\"\\${EUID}\\\" -ne 0 ]\n";
+		admin += "    then echo -e \\\"\\${RED}This script requires running as root.  Please sudo and try again.\\${NC}\\\"\n";
+		admin += "    exit\n";
+		admin += "fi\n";
+		admin += "\n";
+		admin += "while true; do\n";
+		admin += "        clear\n";
+		admin += "        echo \\\"Choose an option:\\\"\n";
+		admin += "        echo \\\"1) Check Internet Connectivity\\\"\n";
+		admin += "        echo \\\"2) Check External DNS\\\"\n";
+		admin += "        echo \\\"3) Restart Internal DNS Server\\\"\n";
+		admin += "        echo \\\"4) Restart Internal DHCP Server\\\"\n";
+		admin += "        echo \\\"5) Flush & Reload Firewall\\\"\n";
+		admin += "        echo \\\"6) Traceroute\\\"\n";
+		if (model.getData().getExtConn(server).contains("ppp")) {
+			admin += "        echo \\\"7) Restart PPPoE (Internet) Connection\\\"\n";
+			admin += "        echo \\\"C) Configure PPPoE credentials\\\"\n";
+		}
+		admin += "        echo \\\"R) Reboot Router\\\"\n";
+		admin += "        echo \\\"Q) Quit\\\"\n";
+		admin += "        read -r -p \\\"Select your option: \\\" opt\n";
+		admin += "        case \\\"\\${opt}\\\" in\n";
+		admin += "                1   ) checkInternets;;\n";
+		admin += "                2   ) checkDNS;;\n";
+		admin += "                3   ) restartUnbound;;\n";
+		admin += "                4   ) restartDHCP;;\n";
+		admin += "                5   ) reloadIPT;;\n";
+		admin += "                6   ) tracert;;\n";
+		if (model.getData().getExtConn(server).contains("ppp")) {
+			admin += "                7   ) restartPPPoE;;\n";
+			admin += "                c|C ) configurePPPoE;;\n";
+		}
+		admin += "                r|R ) reboot;;\n";
+		admin += "                q|Q ) exit;;\n";
+		admin += "        esac\n";
+		admin += "done";
+
+		units.addElement(new FileUnit("router_admin", "proceed", admin, "/root/admin.sh"));
+		units.addElement(new FileOwnUnit("router_admin", "router_admin", "/root/admin.sh", "root"));
+		units.addElement(new FilePermsUnit("router_admin", "router_admin_chowned", "/root/admin.sh", "500"));
 		
 		return units;
 	}
