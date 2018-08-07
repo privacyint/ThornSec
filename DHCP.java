@@ -14,12 +14,16 @@ public class DHCP extends AStructuredProfile {
 	private Vector<String> stanzas;
 	private Vector<String> listeningIfaces;
 	
+	private String invalidChars;
+	
 	public DHCP() {
 		super("dhcp");
 
 		classes         = new Vector<String>();
 		stanzas         = new Vector<String>();
 		listeningIfaces = new Vector<String>();
+		
+		invalidChars = "[^\\-a-zA-Z0-9]";
 	}
 	
 	public void addStanza(String stanza) {
@@ -73,7 +77,7 @@ public class DHCP extends AStructuredProfile {
 			if (!model.getServerModel(srv).isRouter()) {
 				dhcpconf = "\n\n";
 				dhcpconf += "\tsubnet " + model.getServerModel(srv).getSubnet() + " netmask " + model.getData().getNetmask() + " {\n";
-				dhcpconf += "\t\thost " + srv + " {\n";
+				dhcpconf += "\t\thost " + srv .replaceAll(invalidChars, "_")+ " {\n";
 				dhcpconf += "\t\t\thardware ethernet " + model.getServerModel(srv).getMac() + ";\n";
 				dhcpconf += "\t\t\tfixed-address " + model.getServerModel(srv).getIP() + ";\n";
 				dhcpconf += "\t\t\toption routers " + model.getServerModel(srv).getGateway() + ";\n";
@@ -95,7 +99,7 @@ public class DHCP extends AStructuredProfile {
 			for (int i = 0; i < subnets.length; ++i) {
 				dhcpconf = "\n\n";
 				dhcpconf += "\tsubnet " + subnets[i] + " netmask " + netmask + " {\n";
-				dhcpconf += "\t\thost " + device + "_" + i + " {\n";
+				dhcpconf += "\t\thost " + device.replaceAll(invalidChars, "_") + "_" + i + " {\n";
 				dhcpconf += "\t\t\thardware ethernet " + macs[i] + ";\n";
 				dhcpconf += "\t\t\tfixed-address " + ips[i] + ";\n";
 				dhcpconf += "\t\t\toption routers " + gateways[i] + ";\n";

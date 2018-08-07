@@ -224,8 +224,8 @@ public class Router extends AStructuredProfile {
 												"[" + user + "." + model.getData().getLabel() + "] Daily Bandwidth Digest",
 												user,
 												true);
-				script += "iptables -Z " + user + "_ingress\n";
-				script += "iptables -Z " + user + "_egress";
+				script += "iptables -Z " + user.replaceAll(invalidChars, "_") + "_ingress\n";
+				script += "iptables -Z " + user.replaceAll(invalidChars, "_") + "_egress";
 			}
 		}
 
@@ -257,13 +257,13 @@ public class Router extends AStructuredProfile {
 		script += "|sendmail \"" + model.getData().getAdminEmail() + "\"\n";
 		
 		for (String peripheral : peripheralDevices) {
-			script += "\niptables -Z " + peripheral + "_ingress";
-			script += "\niptables -Z " + peripheral + "_egress";
+			script += "\niptables -Z " + peripheral.replaceAll(invalidChars, "_") + "_ingress";
+			script += "\niptables -Z " + peripheral.replaceAll(invalidChars, "_") + "_egress";
 		}
 
 		for (String srv : model.getServerLabels()) {
-			script += "\niptables -Z " + srv + "_ingress";
-			script += "\niptables -Z " + srv + "_egress";
+			script += "\niptables -Z " + srv.replaceAll(invalidChars, "_") + "_ingress";
+			script += "\niptables -Z " + srv.replaceAll(invalidChars, "_") + "_egress";
 		}
 		
 		units.addElement(new FileUnit("daily_bandwidth_alert_script_created", "proceed", script, "/etc/cron.daily/bandwidth", "I couldn't create the bandwidth digest script.  This means you and your users won't receive daily updates on bandwidth use"));
@@ -316,9 +316,9 @@ public class Router extends AStructuredProfile {
 			String subnet = model.getDeviceModel(device).get3rdOctet();
 			
 			for (int i = 0; i < gateways.length; ++i) {
-				String subdomain = device + "." + model.getLabel() + ".lan." + i;
+				String subdomain = device.replaceAll(invalidChars, "-") + "." + model.getLabel() + ".lan." + i;
 				
-				units.addElement(this.interfaces.addIface(device.replaceAll("-", "_") + "_router_iface_" + i,
+				units.addElement(this.interfaces.addIface(device.replaceAll(invalidChars + "-", "_") + "_router_iface_" + i,
 										"static",
 										this.internalIface + ":1" + subnet + i,
 										null,
@@ -395,7 +395,7 @@ public class Router extends AStructuredProfile {
 		
 		for (String srv : model.getServerLabels()) {
 			String serverSubnet    = model.getServerModel(srv).getSubnet() + "/30";
-			String cleanServerName = srv.replaceAll("-",  "_");
+			String cleanServerName = srv.replaceAll(invalidChars, "_");
 			String fwdChain        = cleanServerName + "_fwd";
 			String egressChain     = cleanServerName + "_egress";
 			String ingressChain    = cleanServerName + "_ingress";
@@ -477,7 +477,7 @@ public class Router extends AStructuredProfile {
 			//Not an "internal" user
 			if (model.getDeviceModel(user).getSubnets().length == 0) { continue; }
 			
-			String cleanUserName = user.replace("-", "_");
+			String cleanUserName = user.replace(invalidChars, "_");
 			String fwdChain      = cleanUserName + "_fwd";
 			String ingressChain  = cleanUserName + "_ingress";
 			String egressChain   = cleanUserName + "_egress";
@@ -662,7 +662,7 @@ public class Router extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		for (String device : internalOnlyDevices) {
-			String cleanDeviceName = device.replace(invalidChars, "_");
+			String cleanDeviceName = device.replaceAll(invalidChars, "_");
 			String fwdChain        = cleanDeviceName + "_fwd";
 			String ingressChain    = cleanDeviceName + "_ingress";
 			String egressChain     = cleanDeviceName + "_egress";

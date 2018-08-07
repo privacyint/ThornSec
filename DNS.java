@@ -18,12 +18,16 @@ public class DNS extends AStructuredProfile {
 	
 	private boolean useDtls;
 	
+	private String invalidChars;
+	
 	public DNS() {
 		super("dns");
 		
 		domainRecords = new HashMap<String, Vector<String>>();
 		gateways      = new Vector<String>();
 		poison        = new HashMap<String, String>();
+		
+		invalidChars = "[^\\-a-zA-Z0-9]";
 	}
 
 	private void addGateway(String ip) {
@@ -43,12 +47,14 @@ public class DNS extends AStructuredProfile {
 		records = domainRecords.get(domain);
 
 		//subdomains[0] *should always* be the canonical hostname...
-		records.addElement("    local-data-ptr: \\\"" + ip + " " + subdomains[0] + "." + domain + "\\\"");
-		records.addElement("    local-data-ptr: \\\"" + gatewayIp + " router." + subdomains[0] + "." + domain + "\\\"");
+		records.addElement("    local-data-ptr: \\\"" + ip + " " + subdomains[0].replaceAll(invalidChars, "-") + "." + domain + "\\\"");
+		records.addElement("    local-data-ptr: \\\"" + gatewayIp + " router." + subdomains[0].replaceAll(invalidChars, "-") + "." + domain + "\\\"");
 
 		for (String subdomain : subdomains) {
 			//If you're trying to have a cname which is just the domain, it craps out unless you do this...
 			if (!subdomain.equals("")) {
+				subdomain = subdomain.replaceAll(invalidChars, "-");
+
 				records.addElement("    local-data: \\\"" + subdomain + " A " + ip + "\\\"");
 				records.addElement("    local-data: \\\"" + subdomain + "." + domain + " A " + ip + "\\\"");
 			}
