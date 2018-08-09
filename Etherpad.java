@@ -52,11 +52,9 @@ public class Etherpad extends AStructuredProfile {
 		units.addAll(db.getPersistentConfig(server, model));
 		units.addAll(php.getPersistentConfig(server, model));	
 		
-		//Can't use node >= 7 just yet...
-		//https://github.com/ether/etherpad-lite/issues/3074
-		units.addElement(new FileDownloadUnit("nodejs", "build_essential_installed", "https://deb.nodesource.com/setup_6.x", "/root/nodejs.sh",
+		units.addElement(new FileDownloadUnit("nodejs", "build_essential_installed", "https://deb.nodesource.com/setup_9.x", "/root/nodejs.sh",
 				"nodejs couldn't be downloaded.  Etherpad's installation will fail."));
-		units.addElement(new FileChecksumUnit("nodejs", "nodejs_downloaded", "/root/nodejs.sh", "41b304696198364ad174e3799674496261c2093800b88314c796aebea16a6428127354b46f943493c8104edaf13fe9ad4c308b37c414d0639d765f8c56f093f4",
+		units.addElement(new FileChecksumUnit("nodejs", "nodejs_downloaded", "/root/nodejs.sh", "2c1214b1f1fa873419a409a53878f6427703c9fbe14021a9dc68fa0a3ded7ad55c14aef8de75c780bcbf3a5dbb4017b8496bd269b4961d8fa746e55093940cbe",
 				"nodejs's checksum doesn't match.  This could indicate a failed download, MITM attack, or a newer version than our code supports.  Etherpad's installation will fail."));
 		units.addElement(new FilePermsUnit("nodejs_is_executable", "nodejs_checksum", "/root/nodejs.sh", "755", "nodejs couldn't be set to be executable.  Etherpad's installation will fail."));
 		
