@@ -401,16 +401,23 @@ class CustomServerIconRenderer extends DefaultTreeCellRenderer {
 		super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
 		Object nodeObj = ((DefaultMutableTreeNode)value).getUserObject();
 
-/*		if (model.getServerModel(nodeObj.toString()).isRouter()) {
-			setIcon(routerIcon);
+		String node = nodeObj.toString();
+		
+		if (row > 0) {
+			if (model.getServerModel(node).isRouter()) {
+				setIcon(routerIcon);
+			}
+			else if (model.getServerModel(node).isMetal()) {
+				setIcon(metalIcon);
+			}
+			else if (model.getServerModel(node).isService()) {
+				setIcon(serviceIcon);
+			}
 		}
-		else if (model.getServerModel(nodeObj.toString()).isMetal()) {
-			setIcon(metalIcon);
+		else {
+			setIcon(null);
 		}
-		else if (model.getServerModel(nodeObj.toString()).isService()) {
-			setIcon(serviceIcon);
-		}
-*/
+
 		return this;
 	}
 }
