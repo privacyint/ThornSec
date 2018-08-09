@@ -72,6 +72,7 @@ public class Webproxy extends AStructuredProfile {
 		sslConf += "    ssl_stapling_verify on;\n";
 		sslConf += "    resolver " + model.getData().getDNS()[0] + " valid=300s;\n";
 		sslConf += "    resolver_timeout 5s;";
+		
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_ssl", "proceed", sslConf, "/etc/nginx/includes/ssl_params"));
 		
 		String headersConf = "";
@@ -86,11 +87,11 @@ public class Webproxy extends AStructuredProfile {
 		headersConf += "    proxy_set_header X-Forwarded-Host   \\$host:\\$server_port;\n";
 		headersConf += "    proxy_set_header X-Forwarded-Server \\$host;\n";
 		headersConf += "    proxy_set_header X-Forwarded-Port   \\$server_port;\n";
-		headersConf += "    proxy_set_header X-Forwarded-Proto  https;\n";
+		headersConf += "    proxy_set_header X-Forwarded-Proto  https;";
 		
 		if (passThroughIps) {
 			headersConf += "\n";
-			headersConf += "#These headers pass real IP addresses to the backend - this may not be desired behaviour\n";
+			headersConf += "\n#These headers pass real IP addresses to the backend - this may not be desired behaviour\n";
 			headersConf += "    proxy_set_header X-Forwarded-For    \\$proxy_add_x_forwarded_for;\n";
 			headersConf += "    proxy_set_header X-Real-IP          \\$remote_addr;";
 		}
