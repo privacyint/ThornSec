@@ -481,7 +481,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		adminScript += "    echo \\\"Choose a VM to stop:\\\"\n";
 		adminScript += "    echo \\\"\\\"\n";
 		adminScript += "\n";
-		adminScript += "    select vm in \\\"\\${vms}\\\" \\\"all\\\" \\\"Back to main menu\\\" \\\"Quit to command line\\\";\n";
+		adminScript += "    select vm in \\${vms} \\\"all\\\" \\\"Back to main menu\\\" \\\"Quit to command line\\\";\n";
 		adminScript += "    do\n";
 		adminScript += "        case \\\"\\${vm}\\\" in\n";
 		adminScript += "            \\\"Back to main menu\\\")\n";
@@ -501,9 +501,9 @@ public class HypervisorScripts extends AStructuredProfile {
 		adminScript += "    clear\n";
 		adminScript += "\n";
 		adminScript += "    echo \\\"Choose a VM to start:\\\"\n";
-		adminScript += "    echo \\\"\\\"\n";
+		adminScript += "    echo \n";
 		adminScript += "\n";
-		adminScript += "    select vm in \\\"\\${vms}\\\" \\\"all\\\" \\\"Back to main menu\\\" \\\"Quit to command line\\\";\n";
+		adminScript += "    select vm in \\${vms} \\\"all\\\" \\\"Back to main menu\\\" \\\"Quit to command line\\\";\n";
 		adminScript += "    do\n";
 		adminScript += "        case \\\"\\${vm}\\\" in\n";
 		adminScript += "            \\\"Back to main menu\\\")\n";
@@ -533,7 +533,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		adminScript += "    echo \\\"Choose a VM to delete:\\\"\n";
 		adminScript += "    echo \n";
 		adminScript += "\n";
-		adminScript += "    select vm in \\\"\\${vms}\\\" \\\"Back to main menu\\\" \\\"Quit to command line\\\";\n";
+		adminScript += "    select vm in \\${vms} \\\"Back to main menu\\\" \\\"Quit to command line\\\";\n";
 		adminScript += "    do\n";
 		adminScript += "        case \\\"\\${vm}\\\" in\n";
 		adminScript += "            \\\"Back to main menu\\\")\n";
@@ -580,7 +580,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		adminScript += "    echo \\\"Choose a VM to restore from the latest backup:\\\"\n";
 		adminScript += "    echo \n";
 		adminScript += "\n";
-		adminScript += "    select vm in \\\"\\${vms}\\\" \\\"Back to main menu\\\" \\\"Quit to command line\\\";\n";
+		adminScript += "    select vm in \\${vms} \\\"Back to main menu\\\" \\\"Quit to command line\\\";\n";
 		adminScript += "    do\n";
 		adminScript += "        case \\\"\\$vm\\\" in\n";
 		adminScript += "            \\\"Back to main menu\\\")\n";
