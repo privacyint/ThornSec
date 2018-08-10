@@ -333,7 +333,6 @@ public class HypervisorScripts extends AStructuredProfile {
 		deleteVmScript += "echo \\\"Deleting \\${vmName}'s files\\\"\n";
 		deleteVmScript += "rm -R \\\"" + model.getData().getVmBase(server) + "/storage/\\${vmName}\\\" 2>/dev/null\n";
 		deleteVmScript += "rm -R \\\"" + model.getData().getVmBase(server) + "/iso/\\${vmName}\\\" 2>/dev/null\n";
-		deleteVmScript += "rm -R \\\"" + model.getData().getVmBase(server) + "/data/\\${vmName}\\\" 2>/dev/null\n";
 		deleteVmScript += "rm -R \\\"" + model.getData().getVmBase(server) + "/log/\\${vmName}\\\" 2>/dev/null\n";
 		deleteVmScript += "\n";
 		deleteVmScript += "echo \\\"Deleting \\${vmName}'s user\\\"\n";
