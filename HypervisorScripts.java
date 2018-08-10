@@ -268,9 +268,8 @@ public class HypervisorScripts extends AStructuredProfile {
 		stopScript += "    vm=\\\"\\${1}\\\"\n";
 		stopScript += "\n";
 		stopScript += "    echo \\\"Stopping \\${vm}\\\"\n";
-		stopScript += "    sudo -u \\\"vboxuser_\\${vm}\\\" \\\"VBoxManage controlvm \\${vm} poweroff\\\"\n";
+		stopScript += "    sudo -u vboxuser_\\\"\\${vm}\\\" VBoxManage controlvm \\\"\\${vm}\\\" poweroff\n";
 		stopScript += "    wait \\${!}\n";
-		stopScript += "\n";
 		stopScript += "}\n";
 		stopScript += "\n";
 		stopScript += "function stopAll {\n";
@@ -306,7 +305,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		startScript += "function startVm {\n";
 		startScript += "    vm=\\\"\\${1}\\\"\n";
 		startScript += "\n";
-		startScript += "    sudo -u \\\"vboxuser_\\${vm}\\\" \\\"VBoxManage startvm \\${vm} --type headless\\\"\n";
+		startScript += "    sudo -u vboxuser_\\\"\\${vm}\\\" VBoxManage startvm \\\"\\${vm}\\\" --type headless\n";
 		startScript += "    wait \\${!}\n";
 		startScript += "\n";
 		startScript += "}\n";
@@ -342,7 +341,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		deleteVmScript += "vmName=\\${1}\n";
 		deleteVmScript += "\n";
 		deleteVmScript += "echo \\\"Shutting down \\${vmName}\\\"\n";
-		deleteVmScript += "sudo -u \\\"vboxuser_\\${vmName}\\\" \\\"VBoxManage controlvm \\${vmName} poweroff\\\"\n";
+		deleteVmScript += "sudo -u vboxuser_\\\"\\${vmName}\\\" VBoxManage controlvm \\\"\\${vmName}\\\" poweroff\n";
 		deleteVmScript += "wait\n";
 		deleteVmScript += "\n";
 		deleteVmScript += "echo \\\"Deleting \\${vmName}'s files\\\"\n";
@@ -351,7 +350,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		deleteVmScript += "rm -R \\\"" + logDirBase + "/log/\\${vmName}\\\" 2>/dev/null\n";
 		deleteVmScript += "\n";
 		deleteVmScript += "echo \\\"Deleting \\${vmName}'s user\\\"\n";
-		deleteVmScript += "userdel -r -f \\\"vboxuser_\\${vmName}\\\" 2>/dev/null\n";
+		deleteVmScript += "userdel -r -f vboxuser_\\\"\\${vmName}\\\" 2>/dev/null\n";
 		deleteVmScript += "echo \\\"=== /fin/ ===\\\"";
 
 		units.addElement(new FileUnit("delete_vm_script", "proceed", deleteVmScript, controlScriptsBase + "/deleteVm.sh"));
@@ -379,7 +378,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		backupRecoveryScript += "modprobe nbd max_part=15\n";
 		backupRecoveryScript += "\n";
 		backupRecoveryScript += "echo \\\"=== Restoring latest internal backup of ${vm} at \\$(date) ===\\\"\n";
-		backupRecoveryScript += "sudo -u \\\"vboxuser_\\${vm}\\\" \\\"VBoxManage controlvm \\${vm} poweroff\\\"\n";
+		backupRecoveryScript += "sudo -u vboxuser_\\\"\\${vm}\\\" VBoxManage controlvm \\\"\\${vm}\\\" poweroff\n";
 		backupRecoveryScript += "sleep 5\n";
 		backupRecoveryScript += "qemu-nbd -c /dev/nbd0 \\\"" + dataDirBase + "/\\${vm}/\\${vm}_data.vdi\\\"\n";
 		backupRecoveryScript += "sleep 5\n";
@@ -391,7 +390,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		backupRecoveryScript += "sleep 5\n";
 		backupRecoveryScript += "qemu-nbd --disconnect /dev/nbd0\n";
 		backupRecoveryScript += "sleep 5\n";
-		backupRecoveryScript += "sudo -u \\\"vboxuser_\\${vm}\\\" \\\"VBoxManage startvm \\${vm} --type headless\\\"\n";
+		backupRecoveryScript += "sudo -u vboxuser_\\\"\\${vm}\\\" VBoxManage startvm \\\"\\${vm}\\\" --type headless\n";
 		backupRecoveryScript += "echo \\\"=== Finished restoring latest internal backup of ${vm} at \\$(date) ===\\\"";
 		
 		units.addElement(new FileUnit("backup_recovery_script", "proceed", backupRecoveryScript, recoveryScriptsBase + "/recoverFromLatest.sh"));
@@ -418,10 +417,10 @@ public class HypervisorScripts extends AStructuredProfile {
 		mountStorageScript += "echo \\\"When you are finished, type exit to restart the VM\\\"\n";
 		mountStorageScript += "\n";
 		mountStorageScript += "echo \\\"Shutting down \\${vmName}\\\"\n";
-		mountStorageScript += "sudo -u vboxuser_\\${vmName} VBoxManage controlvm \\${vmName} acpipowerbutton\n";
+		mountStorageScript += "sudo -u vboxuser_\\\"\\${vmName}\\\" VBoxManage controlvm \\\"\\${vmName}\\\" acpipowerbutton\n";
 		mountStorageScript += "wait \\${!}\n";
 		mountStorageScript += "sleep 30s\n";
-		mountStorageScript += "sudo -u vboxuser_\\${vmName} VBoxManage controlvm \\${vmName} poweroff\n";
+		mountStorageScript += "sudo -u vboxuser_\\\"\\${vmName}\\\" VBoxManage controlvm \\\"\\${vmName}\\\" poweroff\n";
 		mountStorageScript += "wait \\${!}\n";
 		mountStorageScript += "qemu-nbd -c /dev/nbd0 \\\"\\${storageDirPath}\\\"/\\${vmName}/\\\"\\${vmName}\\\"_storage.vdi\n";
 		mountStorageScript += "wait \\${!}\n";
@@ -433,7 +432,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		mountStorageScript += "wait \\${!}\n";
 		mountStorageScript += "qemu-nbd --disconnect /dev/nbd0\n";
 		mountStorageScript += "wait \\${!}\n";
-		mountStorageScript += "sudo -u vboxuser_\\${vmName} VBoxManage startvm \\${vmName} --type headless\n";
+		mountStorageScript += "sudo -u vboxuser_\\\"\\${vmName}\\\" VBoxManage startvm \\\"\\${vmName}\\\" --type headless\n";
 		mountStorageScript += "echo \\\"=== /fin/ ===\\\"";
 				
 		units.addElement(new FileUnit("mount_storage_script", "proceed", mountStorageScript, recoveryScriptsBase + "/mountStorage.sh"));
