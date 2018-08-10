@@ -76,17 +76,20 @@ public class Tor extends AStructuredProfile {
 		//Released under GPL v3 https://github.com/alecmuffett/eotk/blob/master/LICENSE
 		
 		String torConfig = "";
-		torConfig += "SocksPort 0\n";
+		torConfig += "DataDirectory /var/lib/tor\n";
+		torConfig += "ControlPort unix:/var/lib/tor/tor-control.sock\n";
+		torConfig += "PidFile /var/lib/tor/tor.pid\n";
+		torConfig += "SafeLogging 1\n";
+		torConfig += "LongLivedPorts 80,443\n";
+		torConfig += "HeartbeatPeriod 60 minutes\n";
 		torConfig += "RunAsDaemon 1\n";
 		torConfig += "\n";
-		torConfig += "DataDirectory /var/lib/tor\n";
+		torConfig += "SocksPort 0\n";
 		torConfig += "\n";
 		torConfig += "HiddenServiceDir /var/lib/tor/hidden_service/\n";
-		torConfig += "\n";
-		torConfig += "HeartbeatPeriod 60 minutes\n";
-		torConfig += "LongLivedPorts 80,443\n";
 		torConfig += "HiddenServicePort 80 unix:/var/lib/tor/port-80.sock\n";
 		torConfig += "HiddenServicePort 443 unix:/var/lib/tor/port-443.sock\n";
+		torConfig += "HiddenServiceNumIntroductionPoints 3\n";
 		torConfig += "\n";
 		torConfig += "FascistFirewall 1";
 
