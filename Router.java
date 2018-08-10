@@ -995,9 +995,9 @@ public class Router extends AStructuredProfile {
 		admin += "        esac\n";
 		admin += "done";
 
-		units.addElement(new FileUnit("router_admin", "proceed", admin, "/root/admin.sh"));
-		units.addElement(new FileOwnUnit("router_admin", "router_admin", "/root/admin.sh", "root"));
-		units.addElement(new FilePermsUnit("router_admin", "router_admin_chowned", "/root/admin.sh", "500"));
+		units.addElement(new FileUnit("router_admin", "proceed", admin, "/root/routerAdmin.sh"));
+		units.addElement(new FileOwnUnit("router_admin", "router_admin", "/root/routerAdmin.sh", "root"));
+		units.addElement(new FilePermsUnit("router_admin", "router_admin_chowned", "/root/routerAdmin.sh", "500"));
 		
 		return units;
 	}
