@@ -51,7 +51,7 @@ public class Tor extends AStructuredProfile {
 				"sudo [ ! -f /media/data/tor/private_key ] && cp /var/lib/tor/hidden_service/private_key /media/data/tor/private_key || cp /media/data/tor/private_key /var/lib/tor/hidden_service/private_key",
 				"sudo cmp --silent /media/data/tor/private_key /var/lib/tor/hidden_service/private_key && echo pass || echo fail", "pass", "pass"));
 		
-		String service = "";
+/*		String service = "";
 		service += "[Unit]\n";
 		service += "Description=nginx - high performance web server\n";
 		service += "Documentation=http://nginx.org/en/docs/\n";
@@ -70,7 +70,7 @@ public class Tor extends AStructuredProfile {
 		service += "WantedBy=multi-user.target";
 
 		units.addElement(new FileUnit("nginx_service", "nginx_installed", service, "/etc/systemd/system/multi-user.target.wants/nginx.service"));
-		
+*/	
 		//Configs here loosely based on the eotk (c) Alec Muffet
 		//https://github.com/alecmuffett/eotk
 		//Released under GPL v3 https://github.com/alecmuffett/eotk/blob/master/LICENSE
