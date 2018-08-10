@@ -165,6 +165,7 @@ public class Tor extends AStructuredProfile {
 		proxyConfig += "        proxy_set_header Connection \\\"upgrade\\\";\n";
 		proxyConfig += "        proxy_set_header Upgrade \\\"upgrade\\\";\n";
 		proxyConfig += "        proxy_ssl_server_name on;\n";
+		proxyConfig += "        proxy_set_header Host $host;\n";
 		proxyConfig += "    }\n";
 		proxyConfig += "}";
 		
