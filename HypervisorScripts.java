@@ -17,10 +17,18 @@ import core.unit.pkg.InstalledUnit;
 
 public class HypervisorScripts extends AStructuredProfile {
 	
+	private String vmBase;
+	private String dataDirBase;
+	private String backupDirBase;
+	private String storageDirBase;
+	private String isoDirBase;
+	private String logDirBase;
+
+	private String scriptsBase;
 	private String recoveryScriptsBase;
 	private String backupScriptsBase;
 	private String controlScriptsBase;
-	private String watchdogScriptsBase; 
+	private String watchdogScriptsBase;
 	
 	public HypervisorScripts() {
 		super("hypervisorscripts");
@@ -29,8 +37,15 @@ public class HypervisorScripts extends AStructuredProfile {
 	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		String scriptsBase = model.getData().getVmBase(server) + "/scripts";
-		
+		vmBase      = model.getData().getVmBase(server);
+		scriptsBase = vmBase + "/scripts";
+
+		dataDirBase    = vmBase + "/data";
+		backupDirBase  = vmBase + "/backup";
+		storageDirBase = vmBase + "/storage";
+		isoDirBase     = vmBase + "/iso";
+		logDirBase     = vmBase + "/log";
+
 		recoveryScriptsBase = scriptsBase + "/recovery";
 		backupScriptsBase   = scriptsBase + "/backup";
 		controlScriptsBase  = scriptsBase + "/vm";
@@ -181,9 +196,9 @@ public class HypervisorScripts extends AStructuredProfile {
 		backupScript += "modprobe -r nbd\n";
 		backupScript += "modprobe nbd max_part=15\n";
 		backupScript += "\n";
-		backupScript += "backupBase=" + model.getData().getVmBase(server) + "/backup\n";
+		backupScript += "backupBase=" + backupDirBase + "\n";
 		backupScript += "\n";
-		backupScript += "for dirPath in " + model.getData().getVmBase(server) + "/data/*/\n";
+		backupScript += "for dirPath in " + dataDirBase + "/*/\n";
 		backupScript += "do\n";
 		backupScript += "    dirPath=\\\"\\${dirPath%*/}\\\"\n";
 		backupScript += "    vmName=\\\"\\${dirPath##*/}\\\"\n";
@@ -260,7 +275,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		stopScript += "\n";
 		stopScript += "function stopAll {\n";
 		stopScript += "    echo \\\"=== Stopping all VMs at \\$(date) ===\\\"\n";
-		stopScript += "    for dirPath in /media/VMs/data/*/\n";
+		stopScript += "    for dirPath in " + dataDirBase + "/*/\n";
 		stopScript += "    do\n";
 		stopScript += "        dirPath=\\\"\\${dirPath%*/}\\\"\n";
 		stopScript += "        vm=\\\"\\${dirPath##*/}\\\"\n";
@@ -298,7 +313,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		startScript += "\n";
 		startScript += "function startAll {\n";
 		startScript += "    echo \\\"=== Starting all VMs at \\$(date) ===\\\"\n";
-		startScript += "    for dirPath in /media/VMs/data/*/\n";
+		startScript += "    for dirPath in " + dataDirBase + "/*/\n";
 		startScript += "    do\n";
 		startScript += "        dirPath=\\\"\\${dirPath%*/}\\\"\n";
 		startScript += "        vm=\\\"\\${dirPath##*/}\\\"\n";
@@ -331,9 +346,9 @@ public class HypervisorScripts extends AStructuredProfile {
 		deleteVmScript += "wait\n";
 		deleteVmScript += "\n";
 		deleteVmScript += "echo \\\"Deleting \\${vmName}'s files\\\"\n";
-		deleteVmScript += "rm -R \\\"" + model.getData().getVmBase(server) + "/storage/\\${vmName}\\\" 2>/dev/null\n";
-		deleteVmScript += "rm -R \\\"" + model.getData().getVmBase(server) + "/iso/\\${vmName}\\\" 2>/dev/null\n";
-		deleteVmScript += "rm -R \\\"" + model.getData().getVmBase(server) + "/log/\\${vmName}\\\" 2>/dev/null\n";
+		deleteVmScript += "rm -R \\\"" + storageDirBase + "/storage/\\${vmName}\\\" 2>/dev/null\n";
+		deleteVmScript += "rm -R \\\"" + isoDirBase + "/iso/\\${vmName}\\\" 2>/dev/null\n";
+		deleteVmScript += "rm -R \\\"" + logDirBase + "/log/\\${vmName}\\\" 2>/dev/null\n";
 		deleteVmScript += "\n";
 		deleteVmScript += "echo \\\"Deleting \\${vmName}'s user\\\"\n";
 		deleteVmScript += "userdel -r -f \\\"vboxuser_\\${vmName}\\\" 2>/dev/null\n";
@@ -366,11 +381,11 @@ public class HypervisorScripts extends AStructuredProfile {
 		backupRecoveryScript += "echo \\\"=== Restoring latest internal backup of ${vm} at \\$(date) ===\\\"\n";
 		backupRecoveryScript += "sudo -u \\\"vboxuser_\\${vm}\\\" \\\"VBoxManage controlvm \\${vm} poweroff\\\"\n";
 		backupRecoveryScript += "sleep 5\n";
-		backupRecoveryScript += "qemu-nbd -c /dev/nbd0 \\\"" + model.getData().getVmBase(server) + "/data/\\${vm}/\\${vm}_data.vdi\\\"\n";
+		backupRecoveryScript += "qemu-nbd -c /dev/nbd0 \\\"" + dataDirBase + "/\\${vm}/\\${vm}_data.vdi\\\"\n";
 		backupRecoveryScript += "sleep 5\n";
 		backupRecoveryScript += "mount /dev/nbd0p1 /mnt\n";
 		backupRecoveryScript += "sleep 5\n";
-		backupRecoveryScript += "cp -R \\\"" + model.getData().getVmBase(server) + "/backup/\\${vm}/latest/*\\\" /mnt/\n";
+		backupRecoveryScript += "cp -R \\\"" + backupDirBase + "/\\${vm}/latest/*\\\" /mnt/\n";
 		backupRecoveryScript += "sleep 5\n";
 		backupRecoveryScript += "umount /mnt\n";
 		backupRecoveryScript += "sleep 5\n";
@@ -397,7 +412,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		mountStorageScript += "modprobe -r nbd\n";
 		mountStorageScript += "modprobe nbd max_part=15\n";
 		mountStorageScript += "\n";
-		mountStorageScript += "dirPath=" + model.getData().getVmBase(server) + "\n";
+		mountStorageScript += "storageDirPath=" + storageDirBase + "\n";
 		mountStorageScript += "\n";
 		mountStorageScript += "echo \\\"This will mount the storage for \\${vmName} and chroot.\\\"\n";
 		mountStorageScript += "echo \\\"When you are finished, type exit to restart the VM\\\"\n";
@@ -408,7 +423,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		mountStorageScript += "sleep 30s\n";
 		mountStorageScript += "sudo -u vboxuser_\\${vmName} VBoxManage controlvm \\${vmName} poweroff\n";
 		mountStorageScript += "wait \\${!}\n";
-		mountStorageScript += "qemu-nbd -c /dev/nbd0 \\${dirPath}/storage/\\${vmName}/\\${vmName}_storage.vdi\n";
+		mountStorageScript += "qemu-nbd -c /dev/nbd0 \\\"\\${storageDirPath}\\\"/\\${vmName}/\\\"\\${vmName}\\\"_storage.vdi\n";
 		mountStorageScript += "wait \\${!}\n";
 		mountStorageScript += "mount /dev/nbd0p1 /mnt\n";
 		mountStorageScript += "wait \\${!}\n";
@@ -428,7 +443,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		String prevToVbox = "";
 		prevToVbox += "#!/bin/bash\n";
 		prevToVbox += "echo \\\"=== Restoring all vbox-prev files ===\\\"\n";
-		prevToVbox += "for dirPath in " + model.getData().getVmBase(server) + "/data/*/\n";
+		prevToVbox += "for dirPath in " + dataDirBase + "/*/\n";
 		prevToVbox += "do\n";
 		prevToVbox += "    dirPath=\\${dirPath%*/}\n";
 		prevToVbox += "    vm=${dirPath##*/}\n";
