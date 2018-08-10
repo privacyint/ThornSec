@@ -192,7 +192,10 @@ public class Webproxy extends AStructuredProfile {
 		int users = 0;
 		for (String device : model.getDeviceLabels()) {
 			if (model.getDeviceModel(device).getType().equals("User")) {
-				++users;
+				//Are they internal users...?
+				if (model.getDeviceModel(device).getMacs().length > 0) {
+					++users;
+				}
 			}
 		}
 		
