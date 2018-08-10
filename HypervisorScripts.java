@@ -351,9 +351,9 @@ public class HypervisorScripts extends AStructuredProfile {
 		deleteVmScript += "wait\n";
 		deleteVmScript += "\n";
 		deleteVmScript += "echo \\\"Deleting \\${vmName}'s files\\\"\n";
-		deleteVmScript += "rm -R \\\"" + storageDirBase + "/storage/\\${vmName}\\\" 2>/dev/null\n";
-		deleteVmScript += "rm -R \\\"" + isoDirBase + "/iso/\\${vmName}\\\" 2>/dev/null\n";
-		deleteVmScript += "rm -R \\\"" + logDirBase + "/log/\\${vmName}\\\" 2>/dev/null\n";
+		deleteVmScript += "rm -R \\\"" + storageDirBase + "/\\${vmName}\\\" 2>/dev/null\n";
+		deleteVmScript += "rm -R \\\"" + isoDirBase + "/\\${vmName}\\\" 2>/dev/null\n";
+		deleteVmScript += "rm -R \\\"" + logDirBase + "/\\${vmName}\\\" 2>/dev/null\n";
 		deleteVmScript += "rm -R \\\"/home/vboxuser_\\${vmName}/VirtualBox VMs\\\" 2>/dev/null\n";
 		deleteVmScript += "\n";
 		deleteVmScript += "#echo \\\"Deleting \\${vmName}'s user\\\"\n";
