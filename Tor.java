@@ -82,11 +82,11 @@ public class Tor extends AStructuredProfile {
 		torConfig += "DataDirectory /var/lib/tor\n";
 		torConfig += "\n";
 		torConfig += "HiddenServiceDir /var/lib/tor/hidden_service/\n";
-		torConfig += "HiddenServicePort 80 unix:/media/data/www/port-80.sock\n";
-		torConfig += "HiddenServicePort 443 unix:/media/data/www/port-443.sock";
 		torConfig += "\n";
 		torConfig += "HeartbeatPeriod 60 minutes\n";
 		torConfig += "LongLivedPorts 80,443\n";
+		torConfig += "HiddenServicePort 80 unix:/var/lib/tor/port-80.sock\n";
+		torConfig += "HiddenServicePort 443 unix:/var/lib/tor/port-443.sock\n";
 		torConfig += "\n";
 		torConfig += "FascistFirewall 1";
 
@@ -133,14 +133,16 @@ public class Tor extends AStructuredProfile {
 		proxyConfig += "server {\n";
 		proxyConfig += "    server_name _ default;\n";
 		proxyConfig += "\n";
-		proxyConfig += "    listen unix:/media/data/www/port-80.sock;\n";
+		//proxyConfig += "    listen unix:/media/data/www/port-80.sock;\n";
+		proxyConfig += "    listen unix:/var/lib/tor/port-80.sock;\n";
 		proxyConfig += "    return 307 https://\\$host\\$request_uri;\n";
 		proxyConfig += "}\n";
 		proxyConfig += "\n";
 		proxyConfig += "server {\n";
 		proxyConfig += "    server_name _ default;\n";
 		proxyConfig += "\n";
-		proxyConfig += "    listen unix:/media/data/www/port-443.sock ssl;\n";
+		//proxyConfig += "    listen unix:/media/data/www/port-443.sock ssl;\n";
+		proxyConfig += "    listen unix:/var/lib/tor/port-443.sock ssl;\n";
 		proxyConfig += "\n";
 		proxyConfig += "    ssl_certificate /media/data/tls/fullchain.pem;\n"; 
 		proxyConfig += "    ssl_certificate_key /media/data/tls/privkey.pem;\n";
