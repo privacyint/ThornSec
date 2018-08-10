@@ -107,7 +107,7 @@ public class OnionBalance extends AStructuredProfile {
 				"sudo systemctl is-enabled tor", "enabled", "pass",
 				"Couldn't set tor to auto-start on boot.  You will need to manually start the service (\"sudo service tor start\") on reboot."));
 		
-		units.addElement(new SimpleUnit("onionbalance_service_enabled", "onionbalance_service",
+		units.addElement(new SimpleUnit("onionbalance_service_enabled", "onionbalance_service_config",
 				"sudo systemctl enable onionbalance",
 				"sudo systemctl is-enabled onionbalance", "enabled", "pass",
 				"Couldn't set onionbalance to auto-start on boot.  You will need to manually start the service (\"sudo service onionbalance start\") on reboot."));
