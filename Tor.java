@@ -117,8 +117,6 @@ public class Tor extends AStructuredProfile {
 		proxyConfig += "proxy_temp_file_write_size 64k;\n";
 		proxyConfig += "proxy_temp_path \\\"/tmp\\\";\n";
 		proxyConfig += "\n";
-		proxyConfig += "server_tokens off;\n";
-		proxyConfig += "\n";
 		proxyConfig += "allow \\\"unix:\\\";\n";
 		proxyConfig += "deny all;\n";
 		proxyConfig += "\n";
