@@ -346,13 +346,18 @@ public class HypervisorScripts extends AStructuredProfile {
 		deleteVmScript += "sudo -u vboxuser_\\\"\\${vmName}\\\" VBoxManage controlvm \\\"\\${vmName}\\\" poweroff\n";
 		deleteVmScript += "wait\n";
 		deleteVmScript += "\n";
+		deleteVmScript += "echo \\\"Unregistering the \\${vmName} VM\\\"\n";
+		deleteVmScript += "sudo -u vboxuser_\\\"\\${vmName}\\\" VBoxManage unregistervm \\\"\\${vmName}\\\"\n";
+		deleteVmScript += "wait\n";
+		deleteVmScript += "\n";
 		deleteVmScript += "echo \\\"Deleting \\${vmName}'s files\\\"\n";
 		deleteVmScript += "rm -R \\\"" + storageDirBase + "/storage/\\${vmName}\\\" 2>/dev/null\n";
 		deleteVmScript += "rm -R \\\"" + isoDirBase + "/iso/\\${vmName}\\\" 2>/dev/null\n";
 		deleteVmScript += "rm -R \\\"" + logDirBase + "/log/\\${vmName}\\\" 2>/dev/null\n";
+		deleteVmScript += "rm -R \\\"/home/vboxuser_\\${vmName}/VirtualBox VMs\\\" 2>/dev/null\n";
 		deleteVmScript += "\n";
-		deleteVmScript += "echo \\\"Deleting \\${vmName}'s user\\\"\n";
-		deleteVmScript += "userdel -r -f vboxuser_\\\"\\${vmName}\\\" 2>/dev/null\n";
+		deleteVmScript += "#echo \\\"Deleting \\${vmName}'s user\\\"\n";
+		deleteVmScript += "#userdel -r -f vboxuser_\\\"\\${vmName}\\\" 2>/dev/null\n";
 		deleteVmScript += "echo \\\"=== /fin/ ===\\\"";
 
 		units.addElement(new FileUnit("delete_vm_script", "proceed", deleteVmScript, controlScriptsBase + "/deleteVm.sh"));
