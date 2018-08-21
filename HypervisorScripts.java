@@ -29,6 +29,7 @@ public class HypervisorScripts extends AStructuredProfile {
 	private String backupScriptsBase;
 	private String controlScriptsBase;
 	private String watchdogScriptsBase;
+	private String helperScriptsBase;
 	
 	public HypervisorScripts() {
 		super("hypervisorscripts");
@@ -66,6 +67,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		backupScriptsBase   = scriptsBase + "/backup";
 		controlScriptsBase  = scriptsBase + "/vm";
 		watchdogScriptsBase = scriptsBase + "/watchdog";
+		helperScriptsBase   = scriptsBase + "/helper";
 		
 		units.addElement(new DirUnit("recovery_scripts_dir", "proceed", recoveryScriptsBase));
 		units.addElement(new DirOwnUnit("recovery_scripts_dir", "recovery_scripts_dir_created", recoveryScriptsBase, "root"));
@@ -83,12 +85,17 @@ public class HypervisorScripts extends AStructuredProfile {
 		units.addElement(new DirOwnUnit("watchdog_scripts_dir", "watchdog_scripts_dir_created", watchdogScriptsBase, "root"));
 		units.addElement(new DirPermsUnit("watchdog_scripts_dir", "watchdog_scripts_dir_chowned", watchdogScriptsBase, "400"));
 
+		units.addElement(new DirUnit("helper_scripts_dir", "proceed", helperScriptsBase));
+		units.addElement(new DirOwnUnit("helper_scripts_dir", "helper_scripts_dir_created", helperScriptsBase, "root"));
+		units.addElement(new DirPermsUnit("helper_scripts_dir", "helper_scripts_dir_chowned", helperScriptsBase, "400"));
+
 		//This is for our internal backups
 		units.addElement(new GitCloneUnit("backup_script", "metal_git_installed",
 				"https://github.com/JohnKaul/rsync-time-backup.git",
 				backupScriptsBase + "/rsync-time-backup",
 				"The backup script couldn't be retrieved from github.  Backups won't work."));
 		
+		units.addAll(helperScripts(server, model));
 		units.addAll(recoveryScripts(server, model));
 		units.addAll(backupScripts(server, model));
 		units.addAll(vmControlScripts(server, model));
@@ -99,13 +106,53 @@ public class HypervisorScripts extends AStructuredProfile {
 		return units;
 	}
 
+	private Vector<IUnit> helperScripts(String server, NetworkModel model) {
+		Vector<IUnit> units = new Vector<IUnit>();
+		
+		String mountVdiScript = "";
+		mountVdiScript += "#!/bin/bash\n";
+		mountVdiScript += "if [ \\$# -eq 0 ]\n";
+		mountVdiScript += "then\n";
+		mountVdiScript += "    echo \\\"No parameter supplied. You need to provide the full path of the VDI as a parameter\\\"\n";
+		mountVdiScript += "    exit 1;\n";
+		mountVdiScript += "fi\n";
+		mountVdiScript += "\n";
+		mountVdiScript += "vdi=\\\"\\${1}\\\"\n";
+		mountVdiScript += "\n";
+		mountVdiScript += "modprobe -r nbd\n";
+		mountVdiScript += "modprobe nbd max_part=15\n";
+		mountVdiScript += "\n";
+		mountVdiScript += "echo \\\"=== Mounting ${vdi} to /mnt ===\\\"\n";
+		mountVdiScript += "qemu-nbd -c /dev/nbd0 \\\"\\${vdi}\\\"\n";
+		mountVdiScript += "sleep 5\n";
+		mountVdiScript += "mount /dev/nbd0p1 /mnt\n";
+		mountVdiScript += "echo \\\"=== Done! ===\\\"";
+		
+		units.addElement(new FileUnit("mount_vdi_script", "proceed", mountVdiScript, helperScriptsBase + "/mountVdi.sh"));
+		units.addElement(new FileOwnUnit("mount_vdi_script", "mount_vdi_script", helperScriptsBase + "/mountVdi.sh", "root"));
+		units.addElement(new FilePermsUnit("mount_vdi_script", "mount_vdi_script_chowned", helperScriptsBase + "/mountVdi.sh", "750"));
+		
+		String unmountVdiScript = "";
+		unmountVdiScript += "#!/bin/bash\n";
+		unmountVdiScript += "echo \\\"=== Unmounting ===\\\"\n";
+		unmountVdiScript += "umount /mnt\n";
+		unmountVdiScript += "sleep 5\n";
+        unmountVdiScript += "qemu-nbd --disconnect /dev/nbd0\n";
+		unmountVdiScript += "echo \\\"=== Done! ===\\\"";
+		
+		units.addElement(new FileUnit("unmount_vdi_script", "proceed", unmountVdiScript, helperScriptsBase + "/unmountVdi.sh"));
+		units.addElement(new FileOwnUnit("unmount_vdi_script", "unmount_vdi_script", helperScriptsBase + "/unmountVdi.sh", "root"));
+		units.addElement(new FilePermsUnit("unmount_vdi_script", "unmount_vdi_script_chowned", helperScriptsBase + "/unmountVdi.sh", "750"));
+		
+		return units;
+	}
 	private Vector<IUnit> watchdogScripts(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		String isUpScript = "";
 		isUpScript += "#!/bin/bash\n";
 		isUpScript += "statusPath=" + watchdogScriptsBase + "/.status\n";
-		isUpScript += "logPath=" + model.getData().getVmBase(server) + "/log/*/\n";
+		isUpScript += "logPath=" + logDirBase + "/*/\n";
 		isUpScript += "emailTo=" + model.getData().getAdminEmail() + "\n";
 		isUpScript += "emailFrom=" + server + "." + model.getLabel() + "@" + model.getData().getDomain(server) + "\n";
 		isUpScript += "emailFromRealName=\\\"ThornSec Server Daemon™ on " + server + "\\\"\n";
