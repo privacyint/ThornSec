@@ -306,6 +306,8 @@ public class HypervisorScripts extends AStructuredProfile {
 		stopScript += "    vm=\\\"\\${1}\\\"\n";
 		stopScript += "\n";
 		stopScript += "    echo \\\"Stopping \\${vm}\\\"\n";
+		stopScript += "    sudo -u vboxuser_\\\"\\${vm}\\\" VBoxManage controlvm \\\"\\${vm}\\\" acpipowerbutton\n";
+		stopScript += "    sleep 30\n";
 		stopScript += "    sudo -u vboxuser_\\\"\\${vm}\\\" VBoxManage controlvm \\\"\\${vm}\\\" poweroff\n";
 		stopScript += "    wait \\${!}\n";
 		stopScript += "}\n";
