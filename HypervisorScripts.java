@@ -473,7 +473,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		prevToVbox += "done\n";
 		prevToVbox += "echo \\\"=== Finished ===\\\"";
 
-		units.addElement(new FileUnit("prev_to_vbox_script", "proceed", mountStorageScript, recoveryScriptsBase + "/prevToVbox.sh"));
+		units.addElement(new FileUnit("prev_to_vbox_script", "proceed", prevToVbox, recoveryScriptsBase + "/prevToVbox.sh"));
 		units.addElement(new FileOwnUnit("prev_to_vbox_script", "prev_to_vbox_script", recoveryScriptsBase + "/prevToVbox.sh", "root"));
 		units.addElement(new FilePermsUnit("prev_to_vbox_script", "prev_to_vbox_script_chowned", recoveryScriptsBase + "/prevToVbox.sh", "750"));
 
