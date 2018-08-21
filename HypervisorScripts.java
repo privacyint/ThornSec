@@ -37,6 +37,22 @@ public class HypervisorScripts extends AStructuredProfile {
 	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 
+		units.addElement(new InstalledUnit("metal_git", "git"));
+		units.addElement(new InstalledUnit("metal_duplicity", "duplicity"));
+
+		units.addElement(new SimpleUnit("metal_qemu_nbd_enabled", "metal_qemu_utils_installed",
+				"sudo modprobe nbd",
+				"sudo lsmod | grep nbd", "", "fail",
+				"The nbd kernel module couldn't be loaded.  Backups won't work."));
+		
+		model.getServerModel(server).getUserModel().addUsername("nbd");
+		
+		return units;
+	}
+	
+	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+		Vector<IUnit> units = new Vector<IUnit>();
+
 		vmBase      = model.getData().getVmBase(server);
 		scriptsBase = vmBase + "/scripts";
 
@@ -50,26 +66,6 @@ public class HypervisorScripts extends AStructuredProfile {
 		backupScriptsBase   = scriptsBase + "/backup";
 		controlScriptsBase  = scriptsBase + "/vm";
 		watchdogScriptsBase = scriptsBase + "/watchdog";
-		
-		units.addElement(new InstalledUnit("metal_git", "git"));
-		units.addElement(new InstalledUnit("metal_duplicity", "duplicity"));
-
-		units.addElement(new SimpleUnit("metal_qemu_nbd_enabled", "metal_qemu_utils_installed",
-				"sudo modprobe nbd",
-				"sudo lsmod | grep nbd", "", "fail",
-				"The nbd kernel module couldn't be loaded.  Backups won't work."));
-		
-		model.getServerModel(server).getUserModel().addUsername("nbd");
-		
-		//This is for our internal backups
-		units.addElement(new GitCloneUnit("backup_script", "metal_git_installed", "https://github.com/JohnKaul/rsync-time-backup.git", backupScriptsBase + "/rsync-time-backup",
-				"The backup script couldn't be retrieved from github.  Backups won't work."));
-
-		return units;
-	}
-	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addElement(new DirUnit("recovery_scripts_dir", "proceed", recoveryScriptsBase));
 		units.addElement(new DirOwnUnit("recovery_scripts_dir", "recovery_scripts_dir_created", recoveryScriptsBase, "root"));
@@ -86,6 +82,12 @@ public class HypervisorScripts extends AStructuredProfile {
 		units.addElement(new DirUnit("watchdog_scripts_dir", "proceed", watchdogScriptsBase));
 		units.addElement(new DirOwnUnit("watchdog_scripts_dir", "watchdog_scripts_dir_created", watchdogScriptsBase, "root"));
 		units.addElement(new DirPermsUnit("watchdog_scripts_dir", "watchdog_scripts_dir_chowned", watchdogScriptsBase, "400"));
+
+		//This is for our internal backups
+		units.addElement(new GitCloneUnit("backup_script", "metal_git_installed",
+				"https://github.com/JohnKaul/rsync-time-backup.git",
+				backupScriptsBase + "/rsync-time-backup",
+				"The backup script couldn't be retrieved from github.  Backups won't work."));
 		
 		units.addAll(recoveryScripts(server, model));
 		units.addAll(backupScripts(server, model));
