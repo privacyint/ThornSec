@@ -339,7 +339,7 @@ public class ServerModel extends AModel {
 				String   destination = row.getString("destination");
 				String[] ports       = row.getString("ports").split(",;");
 				
-				addRouterFirewallRule(this.getLabel(), networkModel, destination, destination, ports);
+				addRouterEgressFirewallRule(this.getLabel(), networkModel, destination, destination, ports);
 			}
 		}
 		
@@ -443,7 +443,7 @@ public class ServerModel extends AModel {
 		return Arrays.stream(types).anyMatch("service"::equals);
 	}
 	
-	public void addRouterFirewallRule(String server, NetworkModel model, String name, String hostname, String[] ports) {
+	public void addRouterEgressFirewallRule(String server, NetworkModel model, String name, String hostname, String[] ports) {
 		try {
 			InetAddress ips[] = InetAddress.getAllByName(hostname);
 			

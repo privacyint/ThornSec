@@ -26,8 +26,8 @@ public class AptSourcesModel extends AModel {
 		
 		model.getServerModel(this.getLabel()).getProcessModel().addProcess("dirmngr --daemon --homedir /tmp/apt-key-gpghome.[a-zA-Z0-9]*$");
 
-		model.getServerModel(this.getLabel()).addRouterFirewallRule(this.getLabel(), model, "base_debian", repo, new String[]{"80"});
-		model.getServerModel(this.getLabel()).addRouterFirewallRule(this.getLabel(), model, "security_debian", "security.debian.org", new String[]{"80"});
+		model.getServerModel(this.getLabel()).addRouterEgressFirewallRule(this.getLabel(), model, "base_debian", repo, new String[]{"80"});
+		model.getServerModel(this.getLabel()).addRouterEgressFirewallRule(this.getLabel(), model, "security_debian", "security.debian.org", new String[]{"80"});
 	}
 
 	public Vector<IUnit> getUnits() {
@@ -54,7 +54,7 @@ public class AptSourcesModel extends AModel {
 	public void addAptSource(String server, NetworkModel model, String name, String precondition, String sourceLine, String keyserver, String fingerprint) {
 		sources.addElement(new FileUnit("source_" + name, precondition, sourceLine, "/etc/apt/sources.list.d/" + name + ".list"));
 		
-		model.getServerModel(server).addRouterFirewallRule(server, model, name, keyserver, new String[]{"11371"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, name, keyserver, new String[]{"11371"});
 		
 		addGpgKey(name, keyserver, fingerprint);
 	}
