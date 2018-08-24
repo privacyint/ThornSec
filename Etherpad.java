@@ -65,7 +65,9 @@ public class Etherpad extends AStructuredProfile {
 
 		units.addElement(new InstalledUnit("nodejs", "nodejs_setup_environment", "nodejs"));
 		
-		units.addElement(new GitCloneUnit("etherpad", "nginx_installed", "git://github.com/ether/etherpad-lite.git", "/root/etherpad-lite",
+		units.addElement(new GitCloneUnit("etherpad", "nginx_installed",
+				"https://github.com/ether/etherpad-lite.git",
+				"/root/etherpad-lite",
 				"Etherpad couldn't be downloaded.  Its installation will, therefore, fail."));
 		
 		units.addElement(new SimpleUnit("etherpad_install_dependencies", "etherpad_cloned",
