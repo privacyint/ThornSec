@@ -8,19 +8,6 @@ public class FileUnit extends SimpleUnit {
 	private String path;
 
 	/**
-	 * Unit test for creating/modifying a whole file, with default fail message
-	 * @param name         Name of unit test
-	 * @param precondition Precondition unit test name
-	 * @param text         Text to put into the file
-	 * @param path         Path to the file
-	 */
-	public FileUnit(String name, String precondition, String text, String path) {
-		super(name, precondition, "", "sudo cat " + path + ";", text, "pass", "Couldn't create " + path + ".  This is a pretty serious problem!");
-		this.text = text;
-		this.path = path;
-	}
-
-	/**
 	 * Unit test for creating/modifying a whole file, with custom fail message
 	 * @param name         Name of unit test
 	 * @param precondition Precondition unit test name
@@ -32,6 +19,17 @@ public class FileUnit extends SimpleUnit {
 		super(name, precondition, "", "sudo cat " + path + ";", text, "pass", message);
 		this.text = text;
 		this.path = path;
+	}
+
+	/**
+	 * Unit test for creating/modifying a whole file, with default fail message
+	 * @param name         Name of unit test
+	 * @param precondition Precondition unit test name
+	 * @param text         Text to put into the file
+	 * @param path         Path to the file
+	 */
+	public FileUnit(String name, String precondition, String text, String path) {
+		this(name, precondition, text, path, "Couldn't create " + path + ".  This is a pretty serious problem!");
 	}
 	
 	public String getConfig() {
