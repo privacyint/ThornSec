@@ -208,10 +208,14 @@ public class Etherpad extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addAll(webserver.getPersistentFirewall(server, model));
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_github", "github.com", new String[]{"80","443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_etherpad", "etherpad.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_beta_etherpad", "beta.etherpad.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_deb_nodesource", "deb.nodesource.com", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_github", "github.com", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_etherpad", "etherpad.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_beta_etherpad", "beta.etherpad.org", new String[]{"80","443"});
+		
+		model.getServerModel(server).addRouterPoison(server, model, "code.jquery.com", "205.185.208.52", new String[]{"443"});
+		model.getServerModel(server).addRouterPoison(server, model, "deb.nodesource.com", "52.222.225.13", new String[]{"443"});
+		model.getServerModel(server).addRouterPoison(server, model, "npmjs.org", "34.208.205.7", new String[]{"443"});
+		model.getServerModel(server).addRouterPoison(server, model, "registry.npmjs.org", "138.197.224.240", new String[]{"443"});
 
 		return units;
 	}

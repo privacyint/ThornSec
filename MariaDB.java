@@ -29,7 +29,7 @@ public class MariaDB extends AStructuredProfile {
 		
 		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "mariadb", "proceed", "deb http://mirror.sax.uk.as61049.net/mariadb/repo/10.2/debian stretch main", "keyserver.ubuntu.com", "0xF1656F24C74CD1D8");
 		
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_mariadb", "mirror.sax.uk.as61049.net", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_mariadb", "mirror.sax.uk.as61049.net", new String[]{"80","443"});
 		
 		units.addAll(model.getServerModel(server).getBindFsModel().addLogBindPoint(server, model, "mysql", "proceed", "mysql", "0750"));
 

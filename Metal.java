@@ -148,8 +148,8 @@ public class Metal extends AStructuredProfile {
 					+ " -j ACCEPT");
 		}
 				
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_debian_cd_image", "gensho.ftp.acc.umu.se", new String[]{"443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_github", "github.com", new String[]{"443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_debian_cd_image", "gensho.ftp.acc.umu.se", new String[]{"443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_github", "github.com", new String[]{"443"});
 		
 		model.getServerModel(server).addRouterPoison(server, model, "cdn.debian.net", "130.89.148.14", new String[] {"80"});
 		model.getServerModel(server).addRouterPoison(server, model, "security-cdn.debian.org", "151.101.0.204", new String[] {"80"});

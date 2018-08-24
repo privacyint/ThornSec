@@ -99,7 +99,7 @@ public class Git extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_scm", "maven.scm-manager.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_scm", "maven.scm-manager.org", new String[]{"80","443"});
 
 		units.addAll(webserver.getPersistentFirewall(server, model));
 

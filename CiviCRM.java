@@ -73,10 +73,10 @@ public class CiviCRM extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_civicrm", "download.civicrm.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_civicrm_updates", "latest.civicrm.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_civicrm_extensions", "civicrm.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_google", "storage.googleapis.com", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_civicrm", "download.civicrm.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_civicrm_updates", "latest.civicrm.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_civicrm_extensions", "civicrm.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_google", "storage.googleapis.com", new String[]{"80","443"});
 		
 		units.addAll(drupal.getPersistentFirewall(server, model));
 

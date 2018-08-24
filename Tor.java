@@ -182,7 +182,7 @@ public class Tor extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		//Allow the server to call out to torproject.org to download mainline
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_torproject", "deb.torproject.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_torproject", "deb.torproject.org", new String[]{"80","443"});
 		units.addAll(proxy.getPersistentFirewall(server, model));
 		
 		for (String router : model.getRouters()) {

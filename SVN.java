@@ -203,6 +203,8 @@ public class SVN extends AStructuredProfile {
 		units.add(model.getServerModel(server).getFirewallModel().addFilterOutput(server, "-p tcp --sport 80 -m state --state ESTABLISHED -j ACCEPT"));
 		units.add(model.getServerModel(server).getFirewallModel().addFilterOutput(server, "-p tcp --sport 443 -m state --state ESTABLISHED -j ACCEPT"));
 
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_sourceforge", "downloads.sourceforge.net", new String[]{"80","443"});
+		
 		return units;
 	}
 

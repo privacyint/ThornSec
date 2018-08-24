@@ -56,7 +56,7 @@ public class ChrootJessie extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		model.getServerModel(server).addRouterFirewallRule(server, model, "debian_debs", "deb.debian.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "debian_debs", "deb.debian.org", new String[]{"80","443"});
 
 		return units;
 	}

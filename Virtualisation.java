@@ -25,7 +25,7 @@ public class Virtualisation extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "virtualbox", "proceed", "deb http://download.virtualbox.org/virtualbox/debian stretch contrib", "keyserver.ubuntu.com", "0xa2f683c52980aecf");
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_virtualbox", "download.virtualbox.org", new String[]{"80"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_virtualbox", "download.virtualbox.org", new String[]{"80"});
 
 		units.addElement(new InstalledUnit("build_essential", "build-essential"));
 		units.addElement(new InstalledUnit("linux_headers", "build_essential_installed", "linux-headers-$(uname -r)"));
