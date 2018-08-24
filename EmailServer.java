@@ -46,7 +46,7 @@ public class EmailServer extends AStructuredProfile {
 			fm.addFilter(server + "_egress_email_allow", server + "_egress",
 					"-p tcp"
 					+ " -m state --state ESTABLISHED,RELATED"
-					+ " -m tcp -m multiport --sports 25,465,993"
+					+ " -m tcp -m multiport --dport 25"
 					+ " -j ACCEPT");
 			
 			//Allow users to resolve/use internally
