@@ -6,9 +6,7 @@ import core.iface.IUnit;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
-import core.unit.fs.FileChecksumUnit;
 import core.unit.fs.FileDownloadUnit;
-import core.unit.fs.FileEditUnit;
 import core.unit.pkg.InstalledUnit;
 
 public class Nextcloud extends AStructuredProfile {
@@ -204,11 +202,11 @@ public class Nextcloud extends AStructuredProfile {
 				+ " -j ACCEPT");
 		}
 		
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_nextcloud", "www.nextcloud.com", new String[]{"80","443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_nextcloud_apps", "apps.nextcloud.com", new String[]{"80","443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_nextcloud_download", "download.nextcloud.com", new String[]{"443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_nextcloud_updates_download", "updates.nextcloud.com", new String[]{"443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_github_download", "www.github.com", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_nextcloud", "www.nextcloud.com", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_nextcloud_apps", "apps.nextcloud.com", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_nextcloud_download", "download.nextcloud.com", new String[]{"443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_nextcloud_updates_download", "updates.nextcloud.com", new String[]{"443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_github_download", "www.github.com", new String[]{"80","443"});
 
 		units.addAll(webserver.getPersistentFirewall(server, model));
 
