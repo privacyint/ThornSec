@@ -14,6 +14,8 @@ public class GitCloneUnit extends SimpleUnit {
 	 */
 	public GitCloneUnit(String name, String precondition, String url, String path, String message) {
 		super(name + "_cloned", precondition,
+				"sudo git config --global http.lowSpeedLimit 1000;"
+				+ "sudo git config --global http.lowSpeedTime 10;"
 				+ "sudo git clone " + url + " " + path,
 				"[[ -d " + path + "/.git ]] && echo pass || echo fail", "pass", "pass",
 				message);
