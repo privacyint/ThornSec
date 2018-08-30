@@ -28,8 +28,6 @@ public class Router extends AStructuredProfile {
 	
 	private Vector<String> userIfaces;
 	
-	private String invalidChars;
-	
 	private String internalIface;
 	private String externalIface;
 	private String netmask;
@@ -49,8 +47,6 @@ public class Router extends AStructuredProfile {
 		
 		userIfaces = new Vector<String>();
 		userIfaces.addElement(":2+");
-		
-		invalidChars = "[^\\-a-zA-Z0-9]";
 		
 		internalOnlyDevices = new Vector<String>();
 		externalOnlyDevices = new Vector<String>();
@@ -177,8 +173,8 @@ public class Router extends AStructuredProfile {
 		email += "from:" + sender + "\\n";
 		email += "recipients:" + recipient + "\\n";
 		email += "\\n";
-		email += "UL: \\`iptables -L " + username + "_egress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
-		email += "DL: \\`iptables -L " + username + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`";
+		email += "UL: \\`iptables -L " + cleanString(username) + "_egress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
+		email += "DL: \\`iptables -L " + cleanString(username) + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`";
 		
 		if (includeBlurb) {
 			email += "\\n";
@@ -227,8 +223,8 @@ public class Router extends AStructuredProfile {
 												"[" + user + "." + model.getData().getLabel() + "] Daily Bandwidth Digest",
 												user,
 												true);
-				script += "iptables -Z " + user.replaceAll(invalidChars, "_") + "_ingress\n";
-				script += "iptables -Z " + user.replaceAll(invalidChars, "_") + "_egress";
+				script += "iptables -Z " + cleanString(user) + "_ingress\n";
+				script += "iptables -Z " + cleanString(user) + "_egress";
 			}
 		}
 
@@ -244,29 +240,29 @@ public class Router extends AStructuredProfile {
 		for (String peripheral : peripheralDevices) {
 			script += "\\n\\n";
 			script += "Digest for " + peripheral + ":\\n";
-			script += "UL: \\`iptables -L " + peripheral + "_egress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
-			script += "DL: \\`iptables -L " + peripheral + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`";
+			script += "UL: \\`iptables -L " + cleanString(peripheral) + "_egress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
+			script += "DL: \\`iptables -L " + cleanString(peripheral) + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`";
 		}
 
 		//Then servers
 		for (String srv : model.getServerLabels()) {
 			script += "\\n\\n";
 			script += "Digest for " + srv + ":\\n";
-			script += "UL: \\`iptables -L " + srv + "_egress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
-			script += "DL: \\`iptables -L " + srv + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`";
+			script += "UL: \\`iptables -L " + cleanString(srv) + "_egress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
+			script += "DL: \\`iptables -L " + cleanString(srv) + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`";
 		}
 
 		script += "\\\"";
 		script += "|sendmail \"" + model.getData().getAdminEmail() + "\"\n";
 		
 		for (String peripheral : peripheralDevices) {
-			script += "\niptables -Z " + peripheral.replaceAll(invalidChars, "_") + "_ingress";
-			script += "\niptables -Z " + peripheral.replaceAll(invalidChars, "_") + "_egress";
+			script += "\niptables -Z " + cleanString(peripheral) + "_ingress";
+			script += "\niptables -Z " + cleanString(peripheral) + "_egress";
 		}
 
 		for (String srv : model.getServerLabels()) {
-			script += "\niptables -Z " + srv.replaceAll(invalidChars, "_") + "_ingress";
-			script += "\niptables -Z " + srv.replaceAll(invalidChars, "_") + "_egress";
+			script += "\niptables -Z " + cleanString(srv) + "_ingress";
+			script += "\niptables -Z " + cleanString(srv) + "_egress";
 		}
 		
 		units.addElement(new FileUnit("daily_bandwidth_alert_script_created", "proceed", script, "/etc/cron.daily/bandwidth", "I couldn't create the bandwidth digest script.  This means you and your users won't receive daily updates on bandwidth use"));
@@ -284,7 +280,8 @@ public class Router extends AStructuredProfile {
 			String ip       = model.getServerModel(srv).getIP();
 			String gateway  = model.getServerModel(srv).getGateway();
 			String domain   = model.getData().getDomain(srv);
-			String hostname = srv.replaceAll(invalidChars, "_");
+			
+			String hostname = cleanString(srv);
 
 			String[] subdomains = new String[cnames.length + 1];
 			System.arraycopy(new String[] {model.getData().getHostname(srv)},0,subdomains,0, 1);
@@ -319,9 +316,9 @@ public class Router extends AStructuredProfile {
 			String subnet = model.getDeviceModel(device).get3rdOctet();
 			
 			for (int i = 0; i < gateways.length; ++i) {
-				String subdomain = device.replaceAll(invalidChars, "-") + "." + model.getLabel() + ".lan." + i;
+				String subdomain = cleanString(device).replace('_', '-') + "." + model.getLabel() + ".lan." + i;
 				
-				units.addElement(this.interfaces.addIface(device.replaceAll(invalidChars + "-", "_") + "_router_iface_" + i,
+				units.addElement(this.interfaces.addIface(cleanString(device).replace('-', '_') + "_router_iface_" + i,
 										"static",
 										this.internalIface + ":1" + subnet + i,
 										null,
@@ -345,7 +342,8 @@ public class Router extends AStructuredProfile {
 	private Vector<IUnit> baseIptConfig(String server, NetworkModel model, String name, String subnet) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		String cleanName    = name.replace(invalidChars, "_");
+		String cleanName    = cleanString(name);
+		
 		String fwdChain     = cleanName + "_fwd";
 		String ingressChain = cleanName + "_ingress";
 		String egressChain  = cleanName + "_egress";
@@ -398,7 +396,9 @@ public class Router extends AStructuredProfile {
 		
 		for (String srv : model.getServerLabels()) {
 			String serverSubnet    = model.getServerModel(srv).getSubnet() + "/30";
-			String cleanServerName = srv.replaceAll(invalidChars, "_");
+			
+			String cleanServerName = cleanString(srv);
+			
 			String fwdChain        = cleanServerName + "_fwd";
 			String egressChain     = cleanServerName + "_egress";
 			String ingressChain    = cleanServerName + "_ingress";
@@ -417,7 +417,7 @@ public class Router extends AStructuredProfile {
 				//Not an "internal" user
 				if (model.getDeviceModel(admin).getSubnets().length == 0) { continue; }
 				
-				this.firewall.addFilter(cleanServerName + "_ssh_" + admin.replaceAll(invalidChars,  "_"), fwdChain,
+				this.firewall.addFilter(cleanServerName + "_ssh_" + cleanString(admin), fwdChain,
 						"-s " + model.getDeviceModel(admin).getSubnets()[0] + "/24"
 						+ " -d " + serverSubnet
 						+ " -p tcp"
@@ -480,7 +480,8 @@ public class Router extends AStructuredProfile {
 			//Not an "internal" user
 			if (model.getDeviceModel(user).getSubnets().length == 0) { continue; }
 			
-			String cleanUserName = user.replace(invalidChars, "_");
+			String cleanUserName = cleanString(user);
+			
 			String fwdChain      = cleanUserName + "_fwd";
 			String ingressChain  = cleanUserName + "_ingress";
 			String egressChain   = cleanUserName + "_egress";
@@ -665,7 +666,8 @@ public class Router extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		for (String device : internalOnlyDevices) {
-			String cleanDeviceName = device.replaceAll(invalidChars, "_");
+			String cleanDeviceName = cleanString(device);
+			
 			String fwdChain        = cleanDeviceName + "_fwd";
 			String ingressChain    = cleanDeviceName + "_ingress";
 			String egressChain     = cleanDeviceName + "_egress";
@@ -714,7 +716,8 @@ public class Router extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		for (String device : externalOnlyDevices) {
-			String cleanDeviceName = device.replace(invalidChars, "_");
+			String cleanDeviceName = cleanString(device);
+			
 			String fwdChain     = cleanDeviceName + "_fwd";
 			String ingressChain = cleanDeviceName + "_ingress";
 			String egressChain  = cleanDeviceName + "_egress";
@@ -942,14 +945,14 @@ public class Router extends AStructuredProfile {
 			admin += "            clear\n";
 			admin += "            \n";
 			admin += "            echo -e \\\"Username: \\${GREEN}\\${username}\\${NC}\\\"\n";
-			admin += "            echo -e \\\"Password: \\${GREEN\\}${password}\\${NC}\\\"\n";
+			admin += "            echo -e \\\"Password: \\${GREEN}\\${password}\\${NC}\\\"\n";
 			admin += "            \n";
 			admin += "            read -r -p \\\"Are the above credentials correct? [Y/n]\\\" yn\n";
 			admin += "            \n";
 			admin += "            case \\\"\\${yn}\\\" in\n";
 			admin += "                [nN]* ) correct=\\\"false\\\";;\n";
 			admin += "                    * ) correct=\\\"true\\\";\n";
-			admin += "                        printf \\\"\\\"%s\\\"      *      \\\"%s\\\"\\\" \\\"\\${username}\\\" \\\"\\${password}\\\" > /etc/ppp/chap-secrets;;\n";
+			admin += "                        printf \\\"%s      *      %s\\\" \\\"\\${username}\\\" \\\"\\${password}\\\" > /etc/ppp/chap-secrets;;\n";
 			admin += "			esac\n";
 			admin += "		done\n";
 			admin += "      \n";
@@ -1000,5 +1003,12 @@ public class Router extends AStructuredProfile {
 		units.addElement(new FilePermsUnit("router_admin", "router_admin_chowned", "/root/routerAdmin.sh", "500"));
 		
 		return units;
+	}
+	
+	private String cleanString(String string) {
+		String invalidChars = "[^a-zA-Z0-9-]";
+		String safeChars    = "_";
+		
+		return string.replaceAll(invalidChars, safeChars);
 	}
 }
