@@ -151,6 +151,8 @@ public class Webproxy extends AStructuredProfile {
 				nginxConf += "        proxy_read_timeout      3000;\n";
 				nginxConf += "        send_timeout            3000;\n";
 				nginxConf += "    }\n";
+				nginxConf += "\n";
+				nginxConf += "    include custom/" + backend + ".conf;\n";
 				nginxConf += "}";
 				
 				webserver.addLiveConfig(backend, nginxConf);

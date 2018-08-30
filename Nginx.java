@@ -9,6 +9,7 @@ import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
+import core.unit.fs.DirUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
@@ -89,9 +90,15 @@ public class Nginx extends AStructuredProfile {
 		model.getServerModel(server).getProcessModel().addProcess("nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf$");
 		model.getServerModel(server).getProcessModel().addProcess("nginx: worker process *$");
 		
+		units.addElement(new DirUnit("nginx_custom_conf_dir", "proceed", "/etc/nginx/conf.d/custom"));
+		
 		if (liveConfig.size() > 0) {		
-			for (Map.Entry<String, String> entry : liveConfig.entrySet()) {
-				units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_live_" + entry.getKey(), "nginx_installed", entry.getValue(), "/etc/nginx/conf.d/" + entry.getKey() + ".conf"));
+			for (Map.Entry<String, String> config : liveConfig.entrySet()) {
+				units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_live_" + config.getKey(), "nginx_installed", config.getValue(), "/etc/nginx/conf.d/" + config.getKey() + ".conf"));
+				
+				units.addElement(new SimpleUnit("nginx_custom_" + config.getKey(), "nginx_custom_conf_dir",
+						"sudo touch /etc/nginx/conf.d/custom/" + config.getKey() + ".conf",
+						"[ -f /etc/nginx/conf.d/custom/" + config.getKey() + ".conf ] && echo pass || echo fail", "pass", "pass"));
 			}
 		}
 		else {
@@ -109,9 +116,15 @@ public class Nginx extends AStructuredProfile {
 			conf += "    location = /50x.html {\n";
 			conf += "        root /usr/share/nginx/html;\n";
 			conf += "    }\n";
+			conf += "\n";
+			conf += "    include custom/default.conf;\n";
 			conf += "}";
 			
 			units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_default", "nginx_installed", conf, "/etc/nginx/conf.d/default.conf"));
+			
+			units.addElement(new SimpleUnit("nginx_custom_default", "nginx_custom_conf_dir",
+					"sudo touch /etc/nginx/conf.d/custom/default.conf",
+					"[ -f /etc/nginx/conf.d/custom/default.conf ] && echo pass || echo fail", "pass", "pass"));
 		}
 		
 		return units;
