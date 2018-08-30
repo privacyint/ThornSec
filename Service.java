@@ -45,7 +45,7 @@ public class Service extends AStructuredProfile {
 				"sudo mount /dev/sr1 /mnt &>/dev/null;grep -a 'INSTALLATION_VER=' /mnt/VBoxLinuxAdditions.run | tr -d \"\\\"[A-Z]\\=_\";sudo umount /mnt &>/dev/null;", 
 				//This is the currently running version, which isn't useful if it has already been updated pending reboot
 				//"lsmod | grep -io vboxguest | xargs sudo modinfo | grep -iw version | awk '{ print $2 }'",
-				"ls /opt | tr -d \"[A-Za-z\\-]\"",
+				"$(ls /opt | tr -d \\\"[A-Za-z\\-]\\\";)",
 				"pass",
 				"This server is running an outdated version of the guest additions.  If you're running a configuration, this can be fixed by restarting the VM."));
 		
