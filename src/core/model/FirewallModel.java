@@ -331,8 +331,9 @@ public class FirewallModel extends AModel {
 				policies += ":" + policy + " - [0:0]\n";
 			
 			Vector<String> chain = new Vector<String>(new LinkedHashSet<String>(this.getChain("filter", policy)));
-			for (int j = 0; j < chain.size(); j++) {
-				filters += "-A " + policy + " " + chain.elementAt(chain.size() - j - 1) + "\n";
+
+			for (int i = chain.size() - 1; i >= 0; --i) { //Loop through backwards
+				filters += "-A " + policy +  " " + chain.elementAt(i) + "\n";
 			}
 		}
 		return policies + filters;
