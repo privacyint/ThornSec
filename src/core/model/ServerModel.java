@@ -201,6 +201,10 @@ public class ServerModel extends AModel {
 		units.addAll(pm.getUnits());
 		units.addAll(um.getUnits());
 		
+		units.addElement(new SimpleUnit("apt_autoremove", "proceed",
+				"sudo apt-get autoremove --purge --assume-yes",
+				"sudo apt-get autoremove --purge | grep \"0 to remove\"", "", "fail"));	
+		
 		units.addElement(new SimpleUnit("delete_pid_file", "proceed",
 				"",
 				"rm ~/script.pid; [ -f ~/script.pid ] && echo fail || echo pass", "pass", "pass"));		
