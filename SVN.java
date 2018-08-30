@@ -7,20 +7,28 @@ import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
+import core.unit.fs.FileAppendUnit;
+import core.unit.fs.FileChecksumUnit;
+import core.unit.fs.FileDownloadUnit;
+import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
 public class SVN extends AStructuredProfile {
 
+	private PHP php;
 	
 	public SVN() {
 		super("svn");
 
+		php = new PHP();
 	}
 
 	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
+		
+		units.addAll(php.getInstalled(server, model));
 		
 		units.addElement(new InstalledUnit("apache", "apache2"));
 		units.addElement(new RunningUnit("apache", "apache2", "apache2"));
@@ -28,24 +36,17 @@ public class SVN extends AStructuredProfile {
 		
 		units.addElement(new InstalledUnit("svn", "proceed", "subversion"));
 		units.addElement(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
-		units.addElement(new InstalledUnit("libapache2_svn", "apache_installed", "libapache2-svn"));
+		units.addElement(new InstalledUnit("libapache2_svn", "apache_installed", "libapache2-mod-svn"));
 		units.addElement(new InstalledUnit("unzip", "proceed", "unzip"));
-
-		
-		units.addElement(new InstalledUnit("php5_fpm", "php5-fpm"));
-		units.addElement(new InstalledUnit("php5_base", "php5"));
-		units.addElement(new InstalledUnit("php5_apcu", "php5-apcu"));
-				
-		model.getServerModel(server).getProcessModel().addProcess("php-fpm: master process \\(/etc/php5/fpm/php-fpm\\.conf\\) *$");
-		model.getServerModel(server).getProcessModel().addProcess("php-fpm: pool www *$");
-		
-		units.addElement(new InstalledUnit("php5_apache", "apache_installed", "libapache2-mod-php5"));
+		units.addElement(new InstalledUnit("php_apache", "apache_installed", "libapache2-mod-php7.0"));
 
 		return units;
 	}
 	
 	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units =  new Vector<IUnit>();
+		
+		units.addAll(php.getPersistentConfig(server, model));
 		
 		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "www", "proceed", "www-data", "www-data", "0750"));
 		
@@ -70,41 +71,41 @@ public class SVN extends AStructuredProfile {
 				"sudo apache2ctl -M | grep dav_svn", "", "fail"));
 		
 		//Turn off Apache version on error pages
-		units.addElement(new SimpleUnit("hide_apache_version", "apache_installed",
-				"sudo bash -c '"
-								+ "echo \"ServerSignature Off\" >> /etc/apache2/apache2.conf;"
-				+ "'",
-				"grep 'ServerSignature' /etc/apache2/apache2.conf | awk '{ print $2 }'","Off","pass"));
+		units.addElement(new FileAppendUnit("hide_apache_version_errors", "apache_installed",
+				"ServerSignature Off",
+				"/etc/apache2/apache2.conf",
+				"Couldn't hide the Apache version on any potential error pages.  No real problem."));
 
 		//Turn off Apache version in headers
-		units.addElement(new SimpleUnit("hide_apache_version_headers", "apache_installed",
-				"sudo bash -c '"
-								+ "echo \"ServerTokens Prod\" >> /etc/apache2/apache2.conf;"
-				+ "'",
-				"grep 'ServerTokens' /etc/apache2/apache2.conf | awk '{ print $2 }'","Prod","pass"));
-		
-		units.addElement(new SimpleUnit("php5_version_header_off", "apache_installed",
-				"sudo sed -i 's/expose_php = On/expose_php = Off/g' /etc/php5/apache2/php.ini;"
-				+ "sudo service apache2 restart; sudo service php5-fpm restart;",
-				"grep 'expose_php' /etc/php5/apache2/php.ini | awk '{ print $3 }'","Off","pass"));
+		units.addElement(new FileAppendUnit("hide_apache_version_headers", "apache_installed",
+				"ServerTokens Prod",
+				"/etc/apache2/apache2.conf",
+				"Couldn't hide the Apache version in its headers.  No real problem."));
 		
 		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "svn", "proceed", "www-data", "www-data", "0750"));
 
 		units.addElement(new DirUnit("svn_repo_dir", "svn_data_mounted", "/media/data/svn/repos"));
 		units.addElement(new DirUnit("svn_credentials_dir", "svn_data_mounted", "/media/data/svn/credentials"));
 		
-		units.addElement(new SimpleUnit("svn_admin_downloaded", "apache_installed",
-				"sudo wget 'http://downloads.sourceforge.net/project/ifsvnadmin/svnadmin-1.6.2.zip?ts=1479474964&use_mirror=kent' -O /root/svnadmin.zip;",
-				"sudo [ -f /root/svnadmin.zip ] && echo pass;", "pass", "pass"));
+		units.addElement(new FileDownloadUnit("svn_admin", "apache_installed",
+				"https://kent.dl.sourceforge.net/project/ifsvnadmin/svnadmin-1.6.2.zip",
+				"/root/svnadmin.zip"));
 
-		units.addElement(new SimpleUnit("svn_admin_checksum", "svn_admin_downloaded",
-				"",
-				"sudo sha512sum /root/svnadmin.zip | awk '{print $1}';", "065666dcddb96990b4bef37b5d6bf1689811eb3916a8107105935d9e6f8e05b9f99e6fdd8b4522dffab0ae8b17cfade80db891bd2a7ba7f49758f2133e4d26fa", "pass"));
+		units.addElement(new FileChecksumUnit("svn_admin", "svn_admin_downloaded",
+				"/root/svnadmin.zip",
+				"065666dcddb96990b4bef37b5d6bf1689811eb3916a8107105935d9e6f8e05b9f99e6fdd8b4522dffab0ae8b17cfade80db891bd2a7ba7f49758f2133e4d26fa", "pass"));
 
 		units.addElement(new SimpleUnit("svn_admin_unzipped", "svn_admin_checksum",
 				"sudo unzip /root/svnadmin.zip -d /media/data/www/;"
 				+ "sudo mv /media/data/www/iF.SVNAdmin-stable-1.6.2 /media/data/www/admin;",
 				"[ -d /media/data/www/admin ] && echo pass;", "pass", "pass"));
+		
+		units.addElement(new FileEditUnit("svn_admin_php_version", "svn_admin_unzipped",
+				"// Check PHP version.\n"
+				+ "if (!checkPHPVersion(\"5.3\")) {",
+				"if (false) { /* removed php version check */",
+				"/media/data/www/admin/include/config.inc.php",
+				"I couldn't change the expected PHP version in svnadmin. This means svnadmin will not work."));
 		
 		return units;
 	}
@@ -130,27 +131,21 @@ public class SVN extends AStructuredProfile {
 		davConf += "	SVNListParentPath On\n";
 		davConf += "	SVNParentPath /media/data/svn/repos\n";
 		davConf += "	AuthType Digest\n";
-		davConf += "	AuthName pisvn\n";
+		davConf += "	AuthName thornsecsvn\n";
 		davConf += "	AuthUserFile /media/data/svn/credentials/svn.pass\n";
 		davConf += "	AuthzSVNAccessFile /media/data/svn/credentials/svn.auth\n";
 		davConf += "	Require valid-user\n";
 		davConf += "</Location>";
 
 		units.addElement(new FileUnit("apache_svn_conf", "apache_mod_dav_svn_enabled", davConf, "/etc/apache2/mods-available/dav_svn.conf"));
-		
+	
 		units.addElement(new SimpleUnit("svn_admin_password", "apache_installed",
 				"SVN_ADMIN_PASSWORD=`openssl rand -hex 32`;"
-				+ "SVN_DIGEST=`echo -n \"admin:pisvn:\" && echo -n \"admin:pisvn:${SVN_ADMIN_PASSWORD}\" | md5sum | awk '{print $1}'`;" //Can't pass to htdigest so do it like this
+				+ "SVN_DIGEST=`echo -n \"admin:thornsecsvn:\" && echo -n \"admin:thornsecsvn:${SVN_ADMIN_PASSWORD}\" | md5sum | awk '{print $1}'`;" //Can't pass to htdigest so do it like this
 				+ "echo 'SVN Admin password is:' ${SVN_ADMIN_PASSWORD};"
-				+ "echo ${SVN_DIGEST} | sudo tee /media/data/svn/credentials/svn.pass > /dev/null;"
-				+ "sudo chown www-data:www-data /media/data/svn/credentials/svn.pass;",
+				+ "echo ${SVN_DIGEST} | sudo tee /media/data/svn/credentials/svn.pass > /dev/null;",
 				"[ -f /media/data/svn/credentials/svn.pass ] && echo pass;", "pass", "pass"));
 
-		units.addElement(new SimpleUnit("svn_auth_file", "apache_installed",
-			"sudo touch /media/data/svn/credentials/svn.auth;"
-			+ "sudo chown www-data:www-data /media/data/svn/credentials/svn.auth;",
-			"sudo stat -c %U /media/data/svn/credentials/svn.auth;", "www-data", "pass"));
-		
 		String svnConf = "";
 		svnConf += "[Common]\n";
 		svnConf += "FirstStart=0\n";
@@ -183,27 +178,25 @@ public class SVN extends AStructuredProfile {
 		svnConf += "\n";
 		svnConf += "[Users:digest]\n";
 		svnConf += "SVNUserDigestFile=/media/data/svn/credentials/svn.pass\n";
-		svnConf += "SVNDigestRealm=pisvn\n";
+		svnConf += "SVNDigestRealm=thornsecsvn\n";
 		svnConf += "\n";
 		svnConf += "[GUI]\n";
 		svnConf += "RepositoryDeleteEnabled=false\n";
 		svnConf += "RepositoryDumpEnabled=false\n";
 		svnConf += "AllowUpdateByGui=true";
 
-		units.addElement(new FileUnit("svn_admin_config", "svn_admin_unzipped", svnConf, "/media/data/www/admin/data/config.ini"));
+		units.addElement(new DirUnit("svn_admin_config_dir", "svn_admin_unzipped", "/media/data/www/admin/data/"));
+		units.addElement(new FileUnit("svn_admin_config_file", "svn_admin_dir_created", svnConf, "/media/data/www/admin/data/config.ini"));
+		
+		units.addElement(new FileUnit("svn_auth_file", "svn_data_mounted", "", "/media/data/svn/credentials/svn.auth"));
 		
 		return units;
 	}
 	
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
-		
-		units.add(model.getServerModel(server).getFirewallModel().addFilterInput(server, "-p tcp --dport 80 -m state --state NEW,ESTABLISHED -j ACCEPT"));
-		units.add(model.getServerModel(server).getFirewallModel().addFilterInput(server, "-p tcp --dport 443 -m state --state NEW,ESTABLISHED -j ACCEPT"));
-		units.add(model.getServerModel(server).getFirewallModel().addFilterOutput(server, "-p tcp --sport 80 -m state --state ESTABLISHED -j ACCEPT"));
-		units.add(model.getServerModel(server).getFirewallModel().addFilterOutput(server, "-p tcp --sport 443 -m state --state ESTABLISHED -j ACCEPT"));
 
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_sourceforge", "downloads.sourceforge.net", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_sourceforge", "kent.dl.sourceforge.net", new String[]{"443"});
 		
 		return units;
 	}
