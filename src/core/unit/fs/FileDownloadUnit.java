@@ -14,7 +14,7 @@ public class FileDownloadUnit extends SimpleUnit {
 	 */
 	public FileDownloadUnit(String name, String precondition, String url, String path, String message) {
 		super(name + "_downloaded", precondition,
-				"sudo wget " + url + " -T 10 -O " + path + " || rm " + path,
+				"sudo wget '" + url + "' -T 10 -O " + path + " || rm " + path,
 				"sudo [ -f " + path + " ] && echo 'pass' || echo 'fail'", "pass", "pass",
 				message);
 	}
