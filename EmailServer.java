@@ -32,13 +32,11 @@ public class EmailServer extends AStructuredProfile {
 			//Ingress
 			fm.addFilter(server + "_ingress_email_allow", server + "_ingress",
 					"-p tcp"
-					+ " -m state --state NEW,ESTABLISHED,RELATED"
 					+ " -m tcp -m multiport --dports 25,465,993"
 					+ " -j ACCEPT");
 			//Fwd
 			fm.addFilter(server + "_fwd_email_allow", server + "_fwd",
 					"-p tcp"
-					+ " -m state --state NEW,ESTABLISHED,RELATED"
 					+ " -m tcp -m multiport --dports 25,465,993"
 					+ " -j ACCEPT");
 			
@@ -46,7 +44,6 @@ public class EmailServer extends AStructuredProfile {
 			fm.addFilter(server + "_egress_email_allow", server + "_egress",
 					"-p tcp"
 					+ " -m state --state ESTABLISHED,RELATED"
-					+ " -m tcp -m multiport --dport 25"
 					+ " -j ACCEPT");
 			
 			//Allow users to resolve/use internally
