@@ -203,7 +203,7 @@ public class ServerModel extends AModel {
 		
 		units.addElement(new SimpleUnit("apt_autoremove", "proceed",
 				"sudo apt-get autoremove --purge --assume-yes",
-				"sudo apt-get autoremove --purge | grep \"0 to remove\"", "", "fail"));	
+				"sudo apt-get autoremove --purge --assume-no | grep \"0 to remove\"", "", "fail"));	
 		
 		units.addElement(new SimpleUnit("delete_pid_file", "proceed",
 				"",
