@@ -522,21 +522,13 @@ public class ServerModel extends AModel {
 			});
 			
 			String serverIp     = model.getServerModel(server).getIP();
-			String cleanName    = server.replaceAll("-",  "_");
-			//String ingressChain = cleanName + "_ingress";
+			String cleanName    = cleanString(server);
 			String egressChain  = cleanName + "_egress";
 			
 			for (String router : model.getRouters()) {
 				for (InetAddress ip : ips) {
 					if (!ip.getHostAddress().contains(":")) { //no IPv6, please
-							//We don't need this, as our firewall is stateful...
-							//model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_in_" + port, ingressChain,
-							//		"-s " + ip.getHostAddress()
-							//		+ " -d " + serverIp
-							//		+ " -p tcp"
-							//		+ " --sport " + port
-							//		+ " -j ACCEPT");
-						model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_out_" + hostname.replaceAll("\\.", "_"), egressChain,
+						model.getServerModel(router).getFirewallModel().addFilter(cleanName + "_allow_out_" + cleanString(hostname), egressChain,
 								"-d " + ip.getHostAddress()
 								+ " -s " + serverIp
 								+ " -p tcp"
@@ -555,7 +547,7 @@ public class ServerModel extends AModel {
 
 	public void addRouterPoison(String server, NetworkModel model, String domain, String ip, String[] ports) {
 		String serverIp     = model.getServerModel(server).getIP();
-		String cleanName    = server.replaceAll("-",  "_");
+		String cleanName    = cleanString(server);
 		String ingressChain = cleanName + "_ingress";
 		String egressChain  = cleanName + "_egress";
 		
@@ -581,4 +573,11 @@ public class ServerModel extends AModel {
 		}
 	}
 
+	
+	private String cleanString(String string) {
+		String invalidChars = "[^a-zA-Z0-9-]";
+		String safeChars    = "_";
+		
+		return string.replaceAll(invalidChars, safeChars);
+	}
 }
