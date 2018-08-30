@@ -153,7 +153,7 @@ public class Nginx extends AStructuredProfile {
 					+ " -j ACCEPT");
 		}
 		//Allow the server to call out to nginx.org to download mainline
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_nginx", "nginx.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_nginx", "nginx.org", new String[]{"80","443"});
 
 		return units;
 	}
