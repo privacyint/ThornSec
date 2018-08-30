@@ -179,13 +179,13 @@ public class OpenSocial extends AStructuredProfile {
 		
 		units.addAll(webserver.getPersistentFirewall(server, model));
 
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_packagist", "packagist.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_github", "github.com", new String[]{"80","443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_drupal_packages", "packages.drupal.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_asset_packagist", "asset-packagist.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_github_api", "api.github.com", new String[]{"80","443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_github_codeload", "codeload.github.com", new String[]{"80","443"});
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_drupal_git", "git.drupal.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_packagist", "packagist.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_github", "github.com", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_drupal_packages", "packages.drupal.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_asset_packagist", "asset-packagist.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_github_api", "api.github.com", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_github_codeload", "codeload.github.com", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_drupal_git", "git.drupal.org", new String[]{"80","443"});
 		
 		String egressChain = model.getData().getHostname(server) + "_egress";
 		

@@ -142,7 +142,7 @@ public class OnionBalance extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		//Allow the server to call out to torproject.org to download mainline
-		model.getServerModel(server).addRouterFirewallRule(server, model, "allow_torproject", "deb.torproject.org", new String[]{"80","443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_torproject", "deb.torproject.org", new String[]{"80","443"});
 		
 		for (String router : model.getRouters()) {
 			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_onion_out_traffic", server + "_egress",

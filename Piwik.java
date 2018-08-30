@@ -116,7 +116,7 @@ public class Piwik extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addAll(webserver.getPersistentFirewall(server, model));
-		model.getServerModel(server).addRouterFirewallRule(server, model, "matomo", "builds.matomo.org", new String[]{"443"});
+		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "matomo", "builds.matomo.org", new String[]{"443"});
 
 		return units;
 	}
