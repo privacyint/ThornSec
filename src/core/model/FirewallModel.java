@@ -225,7 +225,11 @@ public class FirewallModel extends AModel {
 	}
 
 	public SimpleUnit addChain(String name, String table, String chain) {
+		chain = cleanString(chain);
+		table = cleanString(table);
+		
 		LinkedHashMap<String, Vector<String>> tab = iptTables.get(table);
+		
 		if (tab == null) {
 			iptTables.put(table, new LinkedHashMap<String, Vector<String>>());
 		}
@@ -242,6 +246,9 @@ public class FirewallModel extends AModel {
 
 
 	private SimpleUnit add(String name, String table, String chain, int position, String rule) {
+		chain = cleanString(chain);
+		table = cleanString(table);
+						
 		this.getChain(table, chain).add(position, rule);
 		return new SimpleUnit(name, "proceed", "echo \\\"handled by model\\\";",
 				"cat /etc/iptables/iptables.conf | iptables-xml | xsltproc --stringparam table " + table
@@ -250,6 +257,9 @@ public class FirewallModel extends AModel {
 	}
 
 	private SimpleUnit add(String name, String table, String chain, String rule) {
+		table = cleanString(table);
+		chain = cleanString(chain);
+		
 		int position = this.getChain(table, chain).size();
 		
 		return add(name, table, chain, position, rule);
@@ -291,13 +301,16 @@ public class FirewallModel extends AModel {
 		return getRules("nat", "PREROUTING");
 	}
 
-	private String getRules(String tableName, String chainName) {
-		Vector<String> chain = new Vector<String>(new LinkedHashSet<String>(this.getChain(tableName, chainName)));
+	private String getRules(String table, String chain) {
+		chain = cleanString(chain);
+		table = cleanString(table);
+		
+		Vector<String> ch = new Vector<String>(new LinkedHashSet<String>(this.getChain(table, chain)));
 
 		String rules = "";
 		
-		for (int i = chain.size() - 1; i >= 0; --i) { //Loop through backwards
-			rules += "-A " + chainName +  " " + chain.elementAt(i) + "\n";
+		for (int i = ch.size() - 1; i >= 0; --i) { //Loop through backwards
+			rules += "-A " + chain +  " " + ch.elementAt(i) + "\n";
 		}
 		
 		return rules;
@@ -326,12 +339,22 @@ public class FirewallModel extends AModel {
 	}
 
 	private Vector<String> getChain(String table, String chain) {
+		chain = cleanString(chain);
+		table = cleanString(table);
+		
 		Vector<String> ch = iptTables.get(table).get(chain);
 		if (ch == null) {
 			addChain("auto_create_chain_" + chain, table, chain);
 		}
 		
 		return iptTables.get(table).get(chain);
+	}
+	
+	private String cleanString(String string) {
+		String invalidChars = "[^a-zA-Z0-9-]";
+		String safeChars    = "_";
+		
+		return string.replaceAll(invalidChars, safeChars);
 	}
 
 }
