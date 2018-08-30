@@ -342,6 +342,18 @@ public class ServerModel extends AModel {
 				addRouterEgressFirewallRule(this.getLabel(), networkModel, destination, destination, ports);
 			}
 		}
+
+		JsonArray forward = (JsonArray) networkModel.getData().getPropertyObjectArray(this.getLabel(), "allowforward");
+		if (forward != null) {
+			for (int i = 0; i < forward.size(); ++i) {
+				JsonObject row = forward.getJsonObject(i);
+				
+				String   destination = row.getString("destination");
+				String[] ports       = row.getString("ports").split(",;");
+				
+				addRouterForwardFirewallRule(this.getLabel(), networkModel, destination, destination, ports);
+			}
+		}
 		
 		return units;
 	}
@@ -441,6 +453,34 @@ public class ServerModel extends AModel {
 	public boolean isService() {
 		String[] types = this.networkData.getTypes(this.getLabel());
 		return Arrays.stream(types).anyMatch("service"::equals);
+	}
+	
+	public void addRouterForwardFirewallRule(String server, NetworkModel model, String name, String destination, String[] ports) {
+		String sourceIp      = model.getServerModel(server).getIP();
+		String destinationIp = model.getServerModel(destination).getIP();
+		
+		String sourceClean      = cleanString(server);
+		String destinationClean = cleanString(destination);
+
+		String sourceFwdChain      = sourceClean + "_forward";
+		String destinationFwdChain = destinationClean + "_forward";
+		
+		for (String router : model.getRouters()) {
+			model.getServerModel(router).getFirewallModel().addFilter(sourceClean + "_allow_fwd_" + destinationClean, sourceFwdChain,
+					"-s " + sourceIp
+					+ " -d " + destinationIp
+					+ " -p tcp"
+					+ " -m tcp -m multiport"
+					+ " --sports " + String.join(",", ports)
+					+ " -j ACCEPT");
+			model.getServerModel(router).getFirewallModel().addFilter(destinationClean + "_allow_fwd_" + sourceClean, destinationFwdChain,
+					"-d " + destinationIp
+					+ " -s " + sourceIp
+					+ " -p tcp"
+					+ " -m tcp -m multiport"
+					+ " --dports " + String.join(",", ports)
+					+ " -j ACCEPT");
+		}
 	}
 	
 	public void addRouterEgressFirewallRule(String server, NetworkModel model, String name, String hostname, String[] ports) {
