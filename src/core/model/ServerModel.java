@@ -555,21 +555,21 @@ public class ServerModel extends AModel {
 			DNS dns = model.getServerModel(router).getRouter().getDNS();
 			
 			dns.addPoison(domain, ip);
-			
-			for (String port : ports) {
-				model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_in_" + port, ingressChain,
-						"-s " + ip
-						+ " -d " + serverIp
-						+ " -p tcp"
-						+ " --sport " + port
-						+ " -j ACCEPT");
-				model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_out_" + port, egressChain,
-						"-d " + ip
-						+ " -s " + serverIp
-						+ " -p tcp"
-						+ " --dport " + port
-						+ " -j ACCEPT");
-			}
+
+			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_in_" + cleanString(domain), ingressChain,
+					"-s " + ip
+					+ " -d " + serverIp
+					+ " -p tcp"
+					+ " -m tcp -m multiport"
+					+ " --sports " + String.join(",", ports)
+					+ " -j ACCEPT");
+			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_out_" + cleanString(domain), egressChain,
+					"-d " + ip
+					+ " -s " + serverIp
+					+ " -p tcp"
+					+ " -m tcp -m multiport"
+					+ " --dports " + String.join(",", ports)
+					+ " -j ACCEPT");
 		}
 	}
 
