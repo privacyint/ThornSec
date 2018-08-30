@@ -52,6 +52,8 @@ public class Nginx extends AStructuredProfile {
 		nginxConf += "error_log  /var/log/nginx/error.log warn;\n";
 		nginxConf += "pid        /var/run/nginx.pid;\n";
 		nginxConf += "\n";
+		nginxConf += "include includes/customNginxBlockParams;\n";
+		nginxConf += "\n";
 		nginxConf += "events {\n";
 		nginxConf += "    worker_connections $(ulimit -n);\n";
 		nginxConf += "    multi_accept       on;\n";
@@ -73,11 +75,21 @@ public class Nginx extends AStructuredProfile {
 		nginxConf += "\n";
 		nginxConf += "    server_tokens off;\n";
 		nginxConf += "\n";
+		nginxConf += "    include includes/customHttpBlockParams;\n";
+		nginxConf += "\n";
 		nginxConf += "    include /etc/nginx/conf.d/*.conf;\n";
 		nginxConf += "}";
 		
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_conf", "nginx_installed", nginxConf, "/etc/nginx/nginx.conf"));
 		
+		units.addElement(new SimpleUnit("nginx_custom_nginx", "nginx_installed",
+				"sudo touch /etc/nginx/includes/customNginxBlockParams",
+				"[ -f /etc/nginx/includes/customNginxBlockParams ] && echo pass || echo fail", "pass", "pass"));
+
+		units.addElement(new SimpleUnit("nginx_custom_http", "nginx_installed",
+				"sudo touch /etc/nginx/includes/customHttpBlockParams",
+				"[ -f /etc/nginx/includes/customHttpBlockParams ] && echo pass || echo fail", "pass", "pass"));
+
 		return units;
 	}
 
