@@ -6,6 +6,7 @@ import core.iface.IUnit;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
+import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
@@ -41,6 +42,8 @@ public class Tor extends AStructuredProfile {
 		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "tor", "tor_installed", "debian-tor", "debian-tor", "0700"));
 		units.addAll(model.getServerModel(server).getBindFsModel().addLogBindPoint(server, model, "tor", "tor_installed", "debian-tor", "0750"));
 
+		units.addElement(new DirUnit("torhs_files_dir", "tor_installed", "/var/lib/tor/hidden_service"));
+		
 		units.addElement(new SimpleUnit("torhs_hostname", "tor_data_mounted",
 				//Copy over the new hostname file if one doesn't already exist, or replace the new hostname if we already have one
 				"sudo [ ! -f /media/data/tor/hostname ] && cp /var/lib/tor/hidden_service/hostname /media/data/tor/hostname || cp /media/data/tor/hostname /var/lib/tor/hidden_service/hostname",
