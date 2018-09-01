@@ -25,14 +25,11 @@ public class NetworkModel {
 	private NetworkData data;
 
 	private LinkedHashMap<String, ServerModel> servers;
+	private LinkedHashMap<String, DeviceModel> devices;
 
 	private Vector<String> routers;
-
 	private Vector<String> metals;
-
 	private Vector<String> services;
-	
-	private LinkedHashMap<String, DeviceModel> devices;
 	
 	private LinkedHashMap<String, Vector<IUnit>> units;
 
@@ -160,14 +157,14 @@ public class NetworkModel {
 	public void auditNonBlock(String server, OutputStream out, InputStream in, boolean quiet) {
 		ManageExec exec = getManageExec(server, "audit", out, quiet);
 		if (exec != null)
-			exec.runScriptNonBlock();
+			exec.manage();
 	}
 
 	public void auditAll(OutputStream out, InputStream in, boolean quiet) {
 		for (String server : this.servers.keySet()) {
 			ManageExec exec = getManageExec(server, "audit", out, quiet);
 			if (exec != null)
-				exec.runScriptNonBlock();
+				exec.manage();
 		}
 	}
 
@@ -186,13 +183,13 @@ public class NetworkModel {
 	public void configNonBlock(String server, OutputStream out, InputStream in) {
 		ManageExec exec = getManageExec(server, "config", out, false);
 		if (exec != null)
-			exec.runScriptNonBlock();
+			exec.manage();
 	}
 
 	public void dryrunNonBlock(String server, OutputStream out, InputStream in) {
 		ManageExec exec = getManageExec(server, "dryrun", out, false);
 		if (exec != null)
-			exec.runScriptNonBlock();
+			exec.manage();
 	}
 
 	private ManageExec getManageExec(String server, String action, OutputStream out, boolean quiet) {
@@ -207,7 +204,6 @@ public class NetworkModel {
 			} else {
 				String password = pass.getPassword();
 				
-				System.out.println("PASS: password in keychain for " + serverModel.getLabel());
 				String audit = getScript(serverModel, action, quiet);
 				
 				if (action.equals("dryrun")) {
@@ -229,7 +225,7 @@ public class NetworkModel {
 					return null;
 				}
 				
-				ManageExec exec = new ManageExec(server, this, password, audit, out);
+				ManageExec exec = new ManageExec(this.getData().getUser(), password, serverModel.getIP(), this.getData().getSSHPort(server), audit, out);
 				return exec;
 			}
 		} else {

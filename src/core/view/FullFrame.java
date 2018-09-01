@@ -96,48 +96,43 @@ public class FullFrame {
 
 		DefaultMutableTreeNode root  = new DefaultMutableTreeNode(model.getLabel());
 
-		Vector<String> superUsers = new Vector<String>();
-		Vector<String> users = new Vector<String>();
-		Vector<String> intOnly = new Vector<String>();
-		Vector<String> extOnly = new Vector<String>();
+		Vector<String> userDevices         = new Vector<String>();
+		Vector<String> internalOnlyDevices = new Vector<String>();
+		Vector<String> externalOnlyDevices = new Vector<String>();
 
+		//Let's just get this out of the way up here rather than repeating over and over
+		//This class is difficult enough to follow already!! 
 		for (String device : model.getDeviceLabels()) {
 			switch (model.getDeviceModel(device).getType()) {
-			case "superuser":
-				superUsers.add(device);
-				break;
-			case "user":
-				users.add(device);
-				break;
-			case "intonly":
-				intOnly.add(device);
-				break;
-			case "extonly":
-				extOnly.add(device);
-				break;
+				case "User":
+					userDevices.add(device);
+					break;
+				case "Internal":
+					internalOnlyDevices.add(device);
+					break;
+				case "External":
+					externalOnlyDevices.add(device);
+					break;
+				default:
+					//In theory, we should never get here. Theory is a fine thing.
+					System.out.println("Encountered an unsupported device type for " + device);
 			}
 		}
 
-		DefaultMutableTreeNode superUsersNode = new DefaultMutableTreeNode("Super Users");
-		for (String superUser : superUsers) {
-			superUsersNode.add(new DefaultMutableTreeNode(superUser));
-		}
-		root.add(superUsersNode);
-
 		DefaultMutableTreeNode usersNode = new DefaultMutableTreeNode("Users");
-		for (String user : users) {
+		for (String user : userDevices) {
 			usersNode.add(new DefaultMutableTreeNode(user));
 		}
 		root.add(usersNode);
 
 		DefaultMutableTreeNode intOnlyNode = new DefaultMutableTreeNode("Internal-Only Devices");
-		for (String intO : intOnly) {
+		for (String intO : internalOnlyDevices) {
 			intOnlyNode.add(new DefaultMutableTreeNode(intO));
 		}
 		root.add(intOnlyNode);
 
 		DefaultMutableTreeNode extOnlyNode = new DefaultMutableTreeNode("External-Only Devices");
-		for (String extO : extOnly) {
+		for (String extO : externalOnlyDevices) {
 			extOnlyNode.add(new DefaultMutableTreeNode(extO));
 		}
 		root.add(extOnlyNode);
@@ -367,11 +362,11 @@ public class FullFrame {
 
 		serverPanel.add(serverTree);
 
-		GridBagConstraints g = new GridBagConstraints();
-		g.fill = GridBagConstraints.VERTICAL;
-		JButton buildiso = new JButton("Audit All");
-		buildiso.addActionListener(new ServerListener(null, model, out, System.in));
-		serverPanel.add(buildiso, g);
+		//GridBagConstraints g = new GridBagConstraints();
+		//g.fill = GridBagConstraints.VERTICAL;
+		//JButton buildiso = new JButton("Audit All");
+		//buildiso.addActionListener(new ServerListener(null, model, out, System.in));
+		//serverPanel.add(buildiso, g);
 
 		serverPane.setViewportView(serverPanel);
 
