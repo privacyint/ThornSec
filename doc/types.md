@@ -1,7 +1,0 @@
-# Base
-
-# Router
-
-# Metal
-
-# Service
