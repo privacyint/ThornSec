@@ -45,7 +45,9 @@ public class Virtualisation extends AStructuredProfile {
 		model.getServerModel(server).getUserModel().addUsername("nbd");
 		
 		//This is for our internal backups
-		units.addElement(new GitCloneUnit("backup_script", "metal_git_installed", "https://github.com/JohnKaul/rsync-time-backup.git", model.getData().getVmBase(server) + "/backup/rsync-time-backup",
+		units.addElement(new GitCloneUnit("backup_script", "metal_git_installed",
+				"https://github.com/JohnKaul/rsync-time-backup.git",
+				model.getData().getVmBase(server) + "/backups/rsync-time-backup",
 				"The backup script couldn't be retrieved from github.  Backups won't work."));
 
 		return units;
@@ -148,7 +150,7 @@ public class Virtualisation extends AStructuredProfile {
 
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		String isoDir =  model.getData().getVmBase(server) + "/iso/" + service + "/";
+		String isoDir =  model.getData().getVmBase(server) + "/isos/" + service + "/";
 
 		units.addElement(new DirUnit("iso_dir_" + service, "proceed", isoDir));
 		units.addElement(new FileUnit("preseed_" + service, "debian_netinst_iso_downloaded", preseed, isoDir + "preseed.cfg"));
@@ -182,17 +184,23 @@ public class Virtualisation extends AStructuredProfile {
 	}
 
 	public Vector<IUnit> buildVm(String server, String service, NetworkModel model, String bridge) {
-		String baseDir    = model.getData().getVmBase(server);
-		String storageDir = baseDir + "/storage/" + service;
-		String dataDir    = baseDir + "/data/" + service;
-		String logDir     = baseDir + "/log/" + service;
-		String backupDir  = baseDir + "/backup/" + service;
-		String storageVdi = storageDir + "/" + service + "_storage.vdi";
-		String dataVdi    = dataDir + "/" + service + "_data.vdi";
-		String iso        = baseDir + "/iso/" + service + "/" + service + ".iso";
-		String user       = "vboxuser_" + service;
-		String group      = "vboxusers";
-		String osType     = model.getData().getDebianIsoUrl(service).contains("amd64") ? "Debian_64" : "Debian";
+		String baseDir     = model.getData().getVmBase(server);
+
+		//Disks
+		String disksDir     = baseDir + "/disks";
+		String bootDiskDir  = disksDir + "/boot/" + service;
+		String bootDiskVdi  = bootDiskDir + "/" + service + "_boot.vdi";
+		String dataDiskDir  = disksDir + "/data/" + service;
+		String dataDiskVdi  = dataDiskDir + "/" + service + "_data.vdi";
+		
+		String logDir       = baseDir + "/logs/" + service;
+		String backupDir    = baseDir + "/backups/" + service;
+		String ttySocketDir = baseDir + "/sockets/" + service; 
+		
+		String installIso   = baseDir + "/isos/" + service + "/" + service + ".iso";
+		String user         = "vboxuser_" + service;
+		String group        = "vboxusers";
+		String osType       = model.getData().getDebianIsoUrl(service).contains("amd64") ? "Debian_64" : "Debian";
 		
 		Vector<IUnit> units = new Vector<IUnit>();
 		
@@ -203,13 +211,13 @@ public class Virtualisation extends AStructuredProfile {
 				"Couldn't create the user for " + service + " on its metal.  This is fatal, " + service + " will not be installed."));
 		
 		//Metal storage setup
-		units.addElement(new DirUnit("storage_dir_" + service, "proceed", storageDir));
-		units.addElement(new DirOwnUnit("storage_dir_" + service, "storage_dir_" + service + "_created", storageDir, user, group));
-		units.addElement(new DirPermsUnit("storage_dir_" + service, "storage_dir_" + service + "_chowned", storageDir, "750"));
+		units.addElement(new DirUnit("boot_disk_dir_" + service, "proceed", bootDiskDir));
+		units.addElement(new DirOwnUnit("boot_disk_dir_" + service, "boot_disk_dir_" + service + "_created", bootDiskDir, user, group));
+		units.addElement(new DirPermsUnit("boot_disk_dir_" + service, "boot_disk_dir_" + service + "_chowned", bootDiskDir, "750"));
 	
-		units.addElement(new DirUnit("data_dir_" + service, "proceed", dataDir));
-		units.addElement(new DirOwnUnit("data_dir_" + service , "data_dir_" + service + "_created", dataDir, user, group));
-		units.addElement(new DirPermsUnit("data_dir_" + service, "data_dir_" + service + "_chowned", dataDir, "750"));
+		units.addElement(new DirUnit("data_disk_dir_" + service, "proceed", dataDiskDir));
+		units.addElement(new DirOwnUnit("data_disk_dir_" + service , "data_disk_dir_" + service + "_created", dataDiskDir, user, group));
+		units.addElement(new DirPermsUnit("data_disk_dir_" + service, "data_disk_dir_" + service + "_chowned", dataDiskDir, "750"));
 
 		units.addElement(new DirUnit("log_dir_" + service, "proceed", logDir));
 		units.addElement(new DirOwnUnit("log_dir_" + service, "log_dir_" + service + "_created", logDir, user, group));
@@ -223,148 +231,148 @@ public class Virtualisation extends AStructuredProfile {
 		units.addElement(new FileUnit(service + "_mark_backup_dir", "backup_dir_" + service + "_chmoded" , "In memoriam Luke and Guy.  Miss you two!", backupDir + "/backup.marker"));
 		
 		//VM setup
-		units.addElement(new SimpleUnit(service + "_exists", "storage_dir_" + service + "_chmoded",
-				"sudo -u " + user + " bash -c 'VBoxManage createvm --name " + service + " --ostype \"" + osType + "\" --register'",
-				"sudo -u " + user + " bash -c 'VBoxManage list vms | grep " + service + "'", "", "fail",
+		units.addElement(new SimpleUnit(service + "_exists", "boot_disk_dir_" + service + "_chmoded",
+				"sudo -u " + user + " VBoxManage createvm --name " + service + " --ostype \"" + osType + "\" --register",
+				"sudo -u " + user + " VBoxManage list vms | grep " + service, "", "fail",
 				"Couldn't create " + service + " on its metal.  This is fatal, " + service + " will not be installed."));
 		
 		//Disk controller setup
 		units.addElement(new SimpleUnit(service + "_sata_controller", service + "_exists",
-				"sudo -u " + user + " bash -c 'VBoxManage storagectl " + service + " --name \"SATA Controller\" --add sata --controller IntelAHCI'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep storagecontrollername0'", "storagecontrollername0=\\\"SATA Controller\\\"", "pass",
+				"sudo -u " + user + " VBoxManage storagectl " + service + " --name \"SATA Controller\" --add sata --controller IntelAHCI",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep storagecontrollername0", "storagecontrollername0=\\\"SATA Controller\\\"", "pass",
 				"The SATA controller for " + service + " (where its disks are atached) Couldn't be created/attached to " + service + ".  This is fatal, " + service + " will not be installed."));
 		
 		units.addElement(new SimpleUnit(service + "_ide_controller", service + "_exists",
-				"sudo -u " + user + " bash -c 'VBoxManage storagectl " + service + " --name \"IDE Controller\" --add ide'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep storagecontrollername1'", "storagecontrollername1=\\\"IDE Controller\\\"", "pass",
+				"sudo -u " + user + " VBoxManage storagectl " + service + " --name \"IDE Controller\" --add ide",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep storagecontrollername1", "storagecontrollername1=\\\"IDE Controller\\\"", "pass",
 				"The IDE controller for " + service + " (where its disks are atached) Couldn't be created/attached to " + service + ".  This is fatal, " + service + " will not be installed."));
 
 		//Disk setup
-		units.addElement(new SimpleUnit(service + "_disk", "storage_dir_" + service + "_chmoded",
-				"sudo -u " + user + " bash -c 'VBoxManage createhd --filename " + storageVdi + " --size " + model.getData().getDiskSize(service) + "'",
-				"sudo [ -f " + storageVdi + " ] && echo pass;", "pass", "pass",
+		units.addElement(new SimpleUnit(service + "_boot_disk", "boot_disk_dir_" + service + "_chmoded",
+				"sudo -u " + user + " VBoxManage createhd --filename " + bootDiskVdi + " --size " + model.getData().getDiskSize(service),
+				"sudo [ -f " + bootDiskVdi + " ] && echo pass;", "pass", "pass",
 				"Couldn't create the disk for " + service + "'s base filesystem.  This is fatal."));
 		
-		units.addElement(new SimpleUnit(service + "_disk_attached", service + "_sata_controller",
-				"sudo -u " + user + " bash -c 'VBoxManage storageattach " + service + " --storagectl \"SATA Controller\" --port 0 --device 0 --type hdd --medium " + storageVdi +"'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep \"SATA Controller-0-0\"'", "\\\"SATA Controller-0-0\\\"=\\\"" + storageVdi + "\\\"", "pass",
+		units.addElement(new SimpleUnit(service + "_boot_disk_attached", service + "_sata_controller",
+				"sudo -u " + user + " VBoxManage storageattach " + service + " --storagectl \"SATA Controller\" --port 0 --device 0 --type hdd --medium " + bootDiskVdi,
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"SATA Controller-0-0\"", "\\\"SATA Controller-0-0\\\"=\\\"" + bootDiskVdi + "\\\"", "pass",
 				"Couldn't attach the disk for " + service + "'s base filesystem.  This is fatal."));
 
-		units.addElement(new SimpleUnit(service + "_data_disk", "data_dir_" + service + "_chmoded",
-				"sudo -u " + user + " bash -c 'VBoxManage createhd --filename " + dataVdi + " --size " + model.getData().getDataDiskSize(service) + "'",
-				"sudo [ -f " + dataVdi + " ] && echo pass;", "pass", "pass",
+		units.addElement(new SimpleUnit(service + "_data_disk", "data_disk_dir_" + service + "_chmoded",
+				"sudo -u " + user + " VBoxManage createhd --filename " + dataDiskVdi + " --size " + model.getData().getDataDiskSize(service),
+				"sudo [ -f " + dataDiskVdi + " ] && echo pass;", "pass", "pass",
 				"Couldn't create the disk for " + service + "'s data.  This is fatal."));
 		
 		units.addElement(new SimpleUnit(service + "_data_disk_attached", service + "_sata_controller",
-				"sudo -u " + user + " bash -c 'VBoxManage storageattach " + service + " --storagectl \"SATA Controller\" --port 1 --device 0 --type hdd --medium " + dataVdi +"'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep \"SATA Controller-1-0\"'", "\\\"SATA Controller-1-0\\\"=\\\"" + dataVdi + "\\\"", "pass",
+				"sudo -u " + user + " VBoxManage storageattach " + service + " --storagectl \"SATA Controller\" --port 1 --device 0 --type hdd --medium " + dataDiskVdi,
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"SATA Controller-1-0\"", "\\\"SATA Controller-1-0\\\"=\\\"" + dataDiskVdi + "\\\"", "pass",
 				"Couldn't attach the disk for " + service + "'s data.  This is fatal."));
 		
 		units.addElement(new SimpleUnit(service + "_install_iso_attached", service + "_ide_controller",
-				"sudo -u " + user + " bash -c 'VBoxManage storageattach " + service + " --storagectl \"IDE Controller\" --port 0 --device 0 --type dvddrive --medium " + iso + "'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep \"IDE Controller-0-0\"'", "\\\"IDE Controller-0-0\\\"=\\\"" + iso + "\\\"", "pass",
+				"sudo -u " + user + " VBoxManage storageattach " + service + " --storagectl \"IDE Controller\" --port 0 --device 0 --type dvddrive --medium " + installIso,
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"IDE Controller-0-0\"", "\\\"IDE Controller-0-0\\\"=\\\"" + installIso + "\\\"", "pass",
 				"Couldn't attach the preseeded installation disk for " + service + ".  This service will not be installed."));
 		
 		units.addElement(new SimpleUnit(service + "_guest_additions_iso_attached", service + "_ide_controller",
-				"sudo -u " + user + " bash -c 'VBoxManage storageattach " + service + " --storagectl \"IDE Controller\" --port 0 --device 1 --type dvddrive --medium /usr/share/virtualbox/VBoxGuestAdditions.iso'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep \"IDE Controller-0-1\"'", "\\\"IDE Controller-0-1\\\"=\\\"/usr/share/virtualbox/VBoxGuestAdditions.iso\\\"", "pass",
+				"sudo -u " + user + " VBoxManage storageattach " + service + " --storagectl \"IDE Controller\" --port 0 --device 1 --type dvddrive --medium /usr/share/virtualbox/VBoxGuestAdditions.iso",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"IDE Controller-0-1\"", "\\\"IDE Controller-0-1\\\"=\\\"/usr/share/virtualbox/VBoxGuestAdditions.iso\\\"", "pass",
 				"Couldn't attach the VirtualBox Guest Additions disk for " + service + ".  Logs will not be pushed out to the hypervisor as expected."));
 		
 		//Architecture setup
 		units.addElement(new SimpleUnit(service + "_ioapic_on", service + "_exists",
-				"sudo -u " + user + " bash -c 'VBoxManage modifyvm " + service + " --ioapic on'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep ioapic'", "ioapic=\\\"on\\\"", "pass",
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --ioapic on",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ioapic", "ioapic=\\\"on\\\"", "pass",
 				"IO APIC couldn't be enabled for " + service + ".  This is required for 64-bit installations, and for more than 1 virtual CPU in a service."));
 		
 		units.addElement(new SimpleUnit(service + "_pae_on", service + "_exists",
-				"sudo -u " + user + " bash -c 'VBoxManage modifyvm " + service + " --pae on'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep pae'", "pae=\\\"on\\\"", "pass",
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --pae on",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep pae", "pae=\\\"on\\\"", "pass",
 				"PAE (Physical Address Extensions) couldn't be enabled for " + service + ".  This isn't great, but isn't fatal."));
 		
 		units.addElement(new SimpleUnit(service + "_ram", service + "_exists",
-				"sudo -u " + user + " bash -c 'VBoxManage modifyvm " + service + " --memory " + model.getData().getRam(service) + "'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep memory'", "memory=" + model.getData().getRam(service), "pass",
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --memory " + model.getData().getRam(service),
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep memory", "memory=" + model.getData().getRam(service), "pass",
 				"Couldn't set the required amount of RAM for " + service + ".  This isn't great, but isn't fatal."));
 		
 		units.addElement(new SimpleUnit(service + "_vram", service + "_exists",
-				"sudo -u " + user + " bash -c 'VBoxManage modifyvm " + service + " --vram 16'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep vram'", "vram=16", "pass",
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --vram 16",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep vram", "vram=16", "pass",
 				"Couldn't reduce the RAM reserved for video in " + service + ".  This will reduce the amount of free RAM available in the service."));
 		
 		units.addElement(new SimpleUnit(service + "_cpus", service + "_exists",
-				"sudo -u " + user + " bash -c 'VBoxManage modifyvm " + service + " --cpus " + model.getData().getCpus(service) + "'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep cpus'", "cpus=" + model.getData().getCpus(service), "pass",
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --cpus " + model.getData().getCpus(service),
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep cpus", "cpus=" + model.getData().getCpus(service), "pass",
 				"Couldn't set the number of CPUs for " + service + ".  This means the service will only have 1 CPU available for use."));
 		
 		//Boot setup - DVD is second to stop machines being wiped every time they're brought up
-		units.addElement(new SimpleUnit(service + "_boot1_disk", service + "_disk_attached",
-				"sudo -u " + user + " bash -c 'VBoxManage modifyvm " + service + " --boot1 disk'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep boot1'", "boot1=\\\"disk\\\"", "pass",
+		units.addElement(new SimpleUnit(service + "_boot1_disk", service + "_data_disk_attached",
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --boot1 disk",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep boot1", "boot1=\\\"disk\\\"", "pass",
 				"Couldn't set the boot order for " + service + ".  This may mean the service will not be installed."));
 		
 		units.addElement(new SimpleUnit(service + "_boot2_dvd", service + "_ide_controller",
-				"sudo -u " + user + " bash -c 'VBoxManage modifyvm " + service + " --boot2 dvd'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep boot2'", "boot2=\\\"dvd\\\"", "pass",
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --boot2 dvd",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep boot2", "boot2=\\\"dvd\\\"", "pass",
 				"Couldn't set the boot order for " + service + ".  This may mean the service will not be installed."));
 		
 		//Networking setup
 		units.addElement(new SimpleUnit(service + "_nic_bridged", service + "_exists",
-				"sudo -u " + user + " bash -c 'VBoxManage modifyvm " + service + " --nic1 bridged'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep nic1'", "nic1=\\\"bridged\\\"", "pass",
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --nic1 bridged",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep nic1", "nic1=\\\"bridged\\\"", "pass",
 				"Couldn't give " + service + " a connection to the network.  This means the service will not be able to talk to the router or network, and will not be installed."));
 
 		units.addElement(new SimpleUnit(service + "_nic_bridge_adapter", service + "_nic_bridged",
-				"sudo -u " + user + " bash -c 'VBoxManage modifyvm " + service + " --bridgeadapter1 " + bridge + "'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep bridgeadapter1'", "bridgeadapter1=\\\"" + bridge + "\\\"", "pass",
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --bridgeadapter1 " + bridge,
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep bridgeadapter1", "bridgeadapter1=\\\"" + bridge + "\\\"", "pass",
 				"Couldn't give " + service + " a connection to the network.  This means the service will not be able to talk to the router or network, and will not be installed."));
 		
 		units.addElement(new SimpleUnit(service + "_nic_type", service + "_nic_bridge_adapter",
-				"sudo -u " + user + " bash -c 'VBoxManage modifyvm " + service + " --nictype1 virtio'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep nictype1'", "nictype1=\\\"virtio\\\"", "pass",
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --nictype1 virtio",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep nictype1", "nictype1=\\\"virtio\\\"", "pass",
 				"Couldn't set " + service + "'s network adapter to use the virtio drivers.  This will result in a performance hit on the service, and means traffic will flow over the physical adapter."));
 		
 		units.addElement(new SimpleUnit(service + "_mac_address", service + "_nic_type",
-				"sudo -u " + user + " bash -c 'VBoxManage modifyvm " + service + " --macaddress1 " + model.getData().getMac(service).replace(":", "").toUpperCase() + "'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep macaddress1'", "macaddress1=\\\"" + model.getData().getMac(service).replace(":", "").toUpperCase() + "\\\"", "pass",
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --macaddress1 " + model.getData().getMac(service).replace(":", "").toUpperCase(),
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep macaddress1", "macaddress1=\\\"" + model.getData().getMac(service).replace(":", "").toUpperCase() + "\\\"", "pass",
 				"Couldn't set " + service + "'s MAC address.  This means the service will not be able to get an IP address, and will not be installed."));
 		
 		//Audio setup (switch it off)
 		units.addElement(new SimpleUnit(service + "_no_audio", service + "_exists",
-				"sudo -u " + user + " bash -c 'VBoxManage modifyvm " + service + " --audio none'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep ^audio='", "audio=\\\"none\\\"", "pass",
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --audio none",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^audio=", "audio=\\\"none\\\"", "pass",
 				"Couldn't switch off " + service + "'s audio.  No biggie."));
 		
 		//Shared folders setup
 		units.addElement(new SimpleUnit(service + "_log_sf_attached", service + "_exists",
-				"sudo -u " + user + " bash -c 'VBoxManage sharedfolder add " + service + " --name log --hostpath " + logDir + "';"
-				+ "sudo -u " + user + " bash -c 'VBoxManage setextradata " + service + " VBoxInternal1/SharedFoldersEnableSymlinksCreate/log 1'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep SharedFolderPathMachineMapping1'", "SharedFolderPathMachineMapping1=\\\"" + logDir + "\\\"", "pass",
+				"sudo -u " + user + " VBoxManage sharedfolder add " + service + " --name log --hostpath " + logDir + ";"
+				+ "sudo -u " + user + " VBoxManage setextradata " + service + " VBoxInternal1/SharedFoldersEnableSymlinksCreate/log 1",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep SharedFolderPathMachineMapping1", "SharedFolderPathMachineMapping1=\\\"" + logDir + "\\\"", "pass",
 				"Couldn't attach the logs folder to " + service + ".  This means logs will only exist in the VM."));
 		
 		units.addElement(new SimpleUnit(service + "_backup_sf_attached", service + "_exists",
-				"sudo -u " + user + " bash -c 'VBoxManage sharedfolder add " + service + " --name backup --hostpath " + backupDir + "'",
-				"sudo -u " + user + " bash -c 'VBoxManage showvminfo " + service + " --machinereadable | grep SharedFolderPathMachineMapping2'", "SharedFolderPathMachineMapping2=\\\"" + backupDir + "\\\"", "pass"));
+				"sudo -u " + user + " VBoxManage sharedfolder add " + service + " --name backup --hostpath " + backupDir,
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep SharedFolderPathMachineMapping2", "SharedFolderPathMachineMapping2=\\\"" + backupDir + "\\\"", "pass"));
 		
 		//Clock setup to try and stop drift between host and guest
 		//https://www.virtualbox.org/manual/ch09.html#changetimesync
 		units.addElement(new SimpleUnit(service + "_timesync_interval", service + "_exists",
-				"sudo -u " + user + " bash -c 'VBoxManage guestproperty set " + service + " \"/VirtualBox/GuestAdd/VBoxService/--timesync-interval\" 10000'",
-				"sudo -u " + user + " bash -c 'VBoxManage guestproperty enumerate " + service + " | grep \"Name: /VirtualBox/GuestAdd/VBoxService/--timesync-interval, value: 10000\"'", "", "fail",
+				"sudo -u " + user + " VBoxManage guestproperty set " + service + " \"/VirtualBox/GuestAdd/VBoxService/--timesync-interval\" 10000",
+				"sudo -u " + user + " VBoxManage guestproperty enumerate " + service + " | grep \"Name: /VirtualBox/GuestAdd/VBoxService/--timesync-interval, value: 10000\"", "", "fail",
 				"Couldn't sync the clock between " + service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
 		
 		units.addElement(new SimpleUnit(service + "_timesync_min_adjust", service + "_exists",
-				"sudo -u " + user + " bash -c 'VBoxManage guestproperty set " + service + " \"/VirtualBox/GuestAdd/VBoxService/--timesync-min-adjust\" 100'",
-				"sudo -u " + user + " bash -c 'VBoxManage guestproperty enumerate " + service + " | grep \"Name: /VirtualBox/GuestAdd/VBoxService/--timesync-min-adjust, value: 100\"'", "", "fail",
+				"sudo -u " + user + " VBoxManage guestproperty set " + service + " \"/VirtualBox/GuestAdd/VBoxService/--timesync-min-adjust\" 100",
+				"sudo -u " + user + " VBoxManage guestproperty enumerate " + service + " | grep \"Name: /VirtualBox/GuestAdd/VBoxService/--timesync-min-adjust, value: 100\"", "", "fail",
 				"Couldn't sync the clock between " + service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
 
 		units.addElement(new SimpleUnit(service + "_timesync_set_on_restore", service + "_exists",
-				"sudo -u " + user + " bash -c 'VBoxManage guestproperty set " + service + " \"/VirtualBox/GuestAdd/VBoxService/--timesync-set-on-restore\" 1'",
-				"sudo -u " + user + " bash -c 'VBoxManage guestproperty enumerate " + service + " | grep \"Name: /VirtualBox/GuestAdd/VBoxService/--timesync-set-on-restore, value: 1\"'", "", "fail",
+				"sudo -u " + user + " VBoxManage guestproperty set " + service + " \"/VirtualBox/GuestAdd/VBoxService/--timesync-set-on-restore\" 1",
+				"sudo -u " + user + " VBoxManage guestproperty enumerate " + service + " | grep \"Name: /VirtualBox/GuestAdd/VBoxService/--timesync-set-on-restore, value: 1\"", "", "fail",
 				"Couldn't sync the clock between " + service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
 
 		units.addElement(new SimpleUnit(service + "_timesync_set_threshold", service + "_exists",
-				"sudo -u " + user + " bash -c 'VBoxManage guestproperty set " + service + " \"/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold\" 1000'",
-				"sudo -u " + user + " bash -c 'VBoxManage guestproperty enumerate " + service + " | grep \"Name: /VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold, value: 1000\"'", "", "fail",
+				"sudo -u " + user + " VBoxManage guestproperty set " + service + " \"/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold\" 1000",
+				"sudo -u " + user + " VBoxManage guestproperty enumerate " + service + " | grep \"Name: /VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold, value: 1000\"", "", "fail",
 				"Couldn't sync the clock between " + service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
 		
 		//Ready to go!

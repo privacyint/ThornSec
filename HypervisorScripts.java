@@ -20,9 +20,10 @@ public class HypervisorScripts extends AStructuredProfile {
 	private String vmBase;
 	private String dataDirBase;
 	private String backupDirBase;
-	private String storageDirBase;
+	private String bootDirBase;
 	private String isoDirBase;
 	private String logDirBase;
+	private String disksDirBase;
 
 	private String scriptsBase;
 	private String recoveryScriptsBase;
@@ -54,14 +55,15 @@ public class HypervisorScripts extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		vmBase      = model.getData().getVmBase(server);
-		scriptsBase = vmBase + "/scripts";
+		vmBase       = model.getData().getVmBase(server);
+		scriptsBase  = vmBase + "/scripts";
+		disksDirBase = vmBase + "/disks";
 
-		dataDirBase    = vmBase + "/data";
-		backupDirBase  = vmBase + "/backup";
-		storageDirBase = vmBase + "/storage";
-		isoDirBase     = vmBase + "/iso";
-		logDirBase     = vmBase + "/log";
+		dataDirBase   = disksDirBase + "/data";
+		bootDirBase   = disksDirBase + "/boot";
+		backupDirBase = vmBase + "/backup";
+		isoDirBase    = vmBase + "/isos";
+		logDirBase    = vmBase + "/logs";
 
 		recoveryScriptsBase = scriptsBase + "/recovery";
 		backupScriptsBase   = scriptsBase + "/backup";
@@ -388,7 +390,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		deleteVmScript += "wait\n";
 		deleteVmScript += "\n";
 		deleteVmScript += "echo \\\"Deleting \\${vmName}'s files\\\"\n";
-		deleteVmScript += "rm -R \\\"" + storageDirBase + "/\\${vm}\\\" 2>/dev/null\n";
+		deleteVmScript += "rm -R \\\"" + bootDirBase + "/\\${vm}\\\" 2>/dev/null\n";
 		deleteVmScript += "rm -R \\\"" + isoDirBase + "/\\${vm}\\\" 2>/dev/null\n";
 		deleteVmScript += "rm -R \\\"" + logDirBase + "/\\${vm}\\\" 2>/dev/null\n";
 		deleteVmScript += "rm -R \\\"/home/vboxuser_\\${vm}/VirtualBox VMs\\\" 2>/dev/null\n";
@@ -445,7 +447,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		mountStorageScript += "modprobe -r nbd\n";
 		mountStorageScript += "modprobe nbd max_part=15\n";
 		mountStorageScript += "\n";
-		mountStorageScript += "storageDirPath=" + storageDirBase + "\n";
+		mountStorageScript += "storageDirPath=" + bootDirBase + "\n";
 		mountStorageScript += "\n";
 		mountStorageScript += "echo \\\"This will mount the storage for \\${vm} and chroot.\\\"\n";
 		mountStorageScript += "echo \\\"When you are finished, type exit to restart the VM\\\"\n";
