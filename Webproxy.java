@@ -7,6 +7,7 @@ import core.iface.IUnit;
 import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
+import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
 import core.unit.pkg.InstalledUnit;
 
@@ -99,6 +100,9 @@ public class Webproxy extends AStructuredProfile {
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_headers", "proceed", headersConf, "/etc/nginx/includes/header_params"));
 
 		if (this.liveConfig.equals("")) {
+
+			units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "nginx_backend_custom", "nginx_installed", "/media/metaldata/nginx_custom_blocks", "/media/data/nginx_custom_blocks", "nginx", "nginx", "0750"));
+
 			//Now build per-host specific shit
 			String[] backends = model.getData().getPropertyArray(server, "proxy");
 			boolean isDefault = true;
@@ -114,7 +118,7 @@ public class Webproxy extends AStructuredProfile {
 				String nginxConf = "";
 			
 				units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, backend + "_tls_certs", "proceed", "/media/metaldata/tls/" + backend, "/media/data/tls/" + backend, "root", "root", "600", "/media/metaldata", false));
-								
+				
 				//Generated from https://mozilla.github.io/server-side-tls/ssl-config-generator/ (Nginx/Modern) & https://cipherli.st/
 				nginxConf = "server {\n";
 				nginxConf += "    listen 443 ssl http2";
@@ -152,10 +156,15 @@ public class Webproxy extends AStructuredProfile {
 				nginxConf += "        send_timeout            3000;\n";
 				nginxConf += "    }\n";
 				nginxConf += "\n";
-				nginxConf += "    include custom/" + backend + ".conf;\n";
+				nginxConf += "    include /media/data/nginx_custom_blocks/" + backend + ".conf;\n";
 				nginxConf += "}";
 				
 				webserver.addLiveConfig(backend, nginxConf);
+				
+				units.addElement(new SimpleUnit("nginx_custom_block_" + backend, "nginx_backend_custom_bindpoint_created",
+						"sudo touch /media/data/nginx_custom_blocks/" + backend + ".conf",
+						"[ -f /media/data/nginx_custom_blocks/" + backend + ".conf ] && echo pass || echo fail", "pass", "pass"));
+
 			}
 		}
 		else {
