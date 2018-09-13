@@ -6,14 +6,15 @@ import core.iface.IUnit;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
+import core.unit.fs.FileChecksumUnit;
 import core.unit.fs.FileDownloadUnit;
 import core.unit.pkg.InstalledUnit;
 
 public class Nextcloud extends AStructuredProfile {
 	
-	Nginx webserver;
-	PHP php;
-	MariaDB db;
+	private Nginx webserver;
+	private PHP php;
+	private MariaDB db;
 	
 	public Nextcloud() {
 		super("nextcloud");
@@ -38,31 +39,33 @@ public class Nextcloud extends AStructuredProfile {
 		units.addElement(new InstalledUnit("curl", "curl"));
 		units.addElement(new InstalledUnit("php_mod_curl", "php_fpm_installed", "php-curl"));		
 		units.addElement(new InstalledUnit("php_mysql", "mariadb_installed", "php-mysql"));
-		units.addElement(new InstalledUnit("php_pdo", "mariadb_installed", "php-pdo"));
+		//units.addElement(new InstalledUnit("php_pdo", "mariadb_installed", "php-pdo"));
 		units.addElement(new InstalledUnit("php_xml", "php_fpm_installed", "php-xml"));
-		units.addElement(new InstalledUnit("php_unzip", "php_fpm_installed", "php-unzip"));
-		units.addElement(new InstalledUnit("redis", "redis-server"));
-		units.addElement(new InstalledUnit("php_redis", "php_fpm_installed", "php-redis"));
+		units.addElement(new InstalledUnit("php_zip", "php_fpm_installed", "php-zip"));
+		units.addElement(new InstalledUnit("php_mbsgtring", "php_fpm_installed", "php-mbstring"));
+		//units.addElement(new InstalledUnit("redis", "redis-server"));
+		//units.addElement(new InstalledUnit("php_redis", "php_fpm_installed", "php-redis"));
 		units.addElement(new InstalledUnit("php_intl", "php_fpm_installed", "php-intl"));
 		
 		model.getServerModel(server).getUserModel().addUsername("redis");
 
-		units.addElement(new SimpleUnit("owncloud_mysql_password", "owncloud_checksum",
-				"OWNCLOUD_PASSWORD=`sudo grep \"dbpassword\" /media/data/www/nextcloud/config/config.php | head -1 | awk '{ print $3 }' | tr -d \"',\"`; [[ -z $OWNCLOUD_PASSWORD ]] && OWNCLOUD_PASSWORD=`openssl rand -hex 32`;",
+		units.addElement(new FileDownloadUnit("nextcloud", "nextcloud_data_mounted", "https://download.nextcloud.com/server/releases/latest.zip", "/root/nextcloud.zip",
+				"Couldn't download NextCloud.  This could mean you have no network connection, or that the specified download is no longer available."));
+		units.addElement(new FileChecksumUnit("nextcloud", "nextcloud_downloaded", "/root/nextcloud.zip",
+				"$(curl -s https://download.nextcloud.com/server/releases/latest.zip.sha512 | awk '{print $1}')",
+				"NextCloud's checksum doesn't match.  This could indicate a failed download, or a MITM attack.  NextCloud's installation will fail."));
+
+		units.addElement(new SimpleUnit("nextcloud_mysql_password", "nextcloud_checksum",
+				"NEXTCLOUD_PASSWORD=`sudo grep \"dbpassword\" /media/data/www/nextcloud/config/config.php | head -1 | awk '{ print $3 }' | tr -d \"',\"`; [[ -z $NEXTCLOUD_PASSWORD ]] && NEXTCLOUD_PASSWORD=`openssl rand -hex 32`;",
 				"sudo [ -f /media/data/www/nextcloud/config/config.php ] && sudo grep \"dbpassword\" /media/data/www/nextcloud/config/config.php | head -1 | awk '{ print $3 }' | tr -d \"',\"", "", "fail",
-				"Couldn't set the OwnCloud database user's password of ${NEXTCLOUD_PASSWORD}.  OwnCloud will be left in a broken state.") );
+				"Couldn't set the NextCloud database user's password of ${NEXTCLOUD_PASSWORD}.  NextCloud will be left in a broken state.") );
 
 		units.addAll(db.createDb("nextcloud", "nextcloud", "ALL", "NEXTCLOUD_PASSWORD"));
 
-		units.addElement(new FileDownloadUnit("nextcloud", "owncloud_data_mounted", "https://download.nextcloud.com/server/releases/nextcloud-13.0.1.zip", "/root/nextcloud.zip",
-				"Couldn't download NextCloud.  This could mean you have no network connection, or that the specified download is no longer available."));
-		//units.addElement(new FileChecksumUnit("nextcloud", "owncloud_downloaded", "/root/nextcloud.zip","de666286cd48210a53a3b019ef54741688747ed3fddf0a818d4d8647916831bc",
-			//	"OwnCloud's checksum doesn't match.  This could indicate a failed download, MITM attack, or a newer version than our code supports.  OwnCloud's installation will fail."));
-
-		units.addElement(new SimpleUnit("owncloud_unzipped", "proceed",
+		units.addElement(new SimpleUnit("nextcloud_unzipped", "nextcloud_checksum",
 				"sudo unzip /root/nextcloud.zip -d /media/data/www/",
-				"sudo [ -d /media/data/www/nextcloud/l10n ] && echo pass", "pass", "pass",
-				"OwnCloud couldn't be extracted to the required directory."));
+				"sudo [ -d /media/data/www/nextcloud/occ ] && echo pass", "pass", "pass",
+				"NextCloud couldn't be extracted to the required directory."));
 
 		//Only bother to do this if we haven't already set up Owncloud...
 		//units.addElement(new SimpleUnit("owncloud_admin_password", "owncloud_unzipped",
