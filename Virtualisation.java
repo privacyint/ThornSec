@@ -167,9 +167,18 @@ public class Virtualisation extends AStructuredProfile {
 					+ " umount loopdir;"
 					+ " cd cd;"
 					+ " cp ../preseed.cfg .;"
+					//Set the timeout to 1 second, otherwise it waits for user input
 					+ " sed -i \"s/timeout 0/timeout 1/g\" isolinux/isolinux.cfg;"
+					//Switch off graphical menu
+					+ " sed -i \"s/^default/#default/g\" isolinux/isolinux.cfg;"
+					//Append the preseed
 					+ " sed -i \"s_append_append file=/cdrom/preseed.cfg auto=true_g\" isolinux/gtk.cfg;"
+					//Switch off vga and add console
+					+ " sed -i \"s_vga=788_vga=none console=ttyS0,115200n8_g\" isolinux/gtk.cfg;"
+					//Point at non-graphical installer
 					+ " sed -i \"s_/install.amd/gtk/initrd.gz_/install.amd/initrd.gz_g\" isolinux/gtk.cfg;"
+					//Redirect output to console
+					+ " sed -i \"s_quiet_console=ttyS0,115200n8_g\" isolinux/gtk.cfg;"
 					+ " md5sum `find -follow -type f` > md5sum.txt;"
 				+ "' > /dev/null 2>&1;"
 				+ "sudo bash -c '"
@@ -226,6 +235,10 @@ public class Virtualisation extends AStructuredProfile {
 		units.addElement(new DirUnit("backup_dir_" + service, "proceed", backupDir));
 		units.addElement(new DirOwnUnit("backup_dir_" + service, "backup_dir_" + service + "_created", backupDir, user, group));
 		units.addElement(new DirPermsUnit("backup_dir_" + service, "backup_dir_" + service + "_chowned", backupDir, "750"));
+		
+		units.addElement(new DirUnit("socket_dir_" + service, "proceed", ttySocketDir));
+		units.addElement(new DirOwnUnit("socket_dir_" + service, "socket_dir_" + service + "_created", ttySocketDir, user, group));
+		units.addElement(new DirPermsUnit("socket_dir_" + service, "socket_dir_" + service + "_chowned", ttySocketDir, "750"));
 		
 		//Mark the backup directory as a valid destination
 		units.addElement(new FileUnit(service + "_mark_backup_dir", "backup_dir_" + service + "_chmoded" , "In memoriam Luke and Guy.  Miss you two!", backupDir + "/backup.marker"));
@@ -374,6 +387,15 @@ public class Virtualisation extends AStructuredProfile {
 				"sudo -u " + user + " VBoxManage guestproperty set " + service + " \"/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold\" 1000",
 				"sudo -u " + user + " VBoxManage guestproperty enumerate " + service + " | grep \"Name: /VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold, value: 1000\"", "", "fail",
 				"Couldn't sync the clock between " + service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
+		
+		//Sockets
+		units.addElement(new SimpleUnit(service + "_tty0_com_port", service + "_exists",
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --uart1 0x3F8 4",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep uart1", "uart1=\\\"0x03f8,4\\\"", "pass"));
+
+		units.addElement(new SimpleUnit(service + "_tty0_socket", service + "_exists",
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --uartmode1 server " + ttySocketDir + "/vboxttyS0",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep uartmode1", "uartmode1=\\\"server," + ttySocketDir + "/vboxttyS0\\\"", "pass"));
 		
 		//Ready to go!
 		//units.addElement(new SimpleUnit(service + "_running", service + "_exists",
