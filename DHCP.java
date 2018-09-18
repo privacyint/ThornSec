@@ -6,6 +6,7 @@ import core.iface.IUnit;
 import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
+import core.unit.SimpleUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
@@ -139,8 +140,15 @@ public class DHCP extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addElement(new RunningUnit("dhcp", "isc-dhcp-server", "isc-dhcp-server"));
-		
-		String dhcpconf = "ddns-update-style none;\n";
+
+		units.addElement(new SimpleUnit("dhcpd_custom_stanzas", "dhcp_installed",
+				"sudo touch /etc/dhcp/dhcpd.custom.conf",
+				"[ -f /etc/dhcpd/dhcpd.custom.conf ] && echo pass || echo fail", "pass", "pass"));
+
+		String dhcpconf = "";
+		dhcpconf += "include \\\"/etc/dhcp/dhcpd.custom.conf\\\";\n";
+		dhcpconf += "\n";
+		dhcpconf += "ddns-update-style none;\n";
 		dhcpconf += "option domain-name \\\"" + model.getData().getDomain(server) + "\\\";\n";
 		dhcpconf += "option domain-name-servers " + model.getServerModel(server).getGateway() + ";\n";
 		dhcpconf += "default-lease-time 600;\n";
