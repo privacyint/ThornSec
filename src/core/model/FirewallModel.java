@@ -62,7 +62,6 @@ public class FirewallModel extends AModel {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addElement(new InstalledUnit("iptables", "proceed", "iptables", "I was unable to install your firewall. This is bad."));
-		units.addElement(new InstalledUnit("iptables_xsltproc", "xsltproc"));
 		units.addElement(new DirUnit("iptables_dir", "proceed", "/etc/iptables"));
 		
 		units.addElement(new SimpleUnit("iptables_running_conf_backup", "iptables_dir_created",
@@ -77,151 +76,39 @@ public class FirewallModel extends AModel {
 				+ " sudo iptables-restore < /etc/iptables/iptables.conf;",
 				"cat /etc/iptables/iptables.conf;", getPersistent(), "pass"));
 		
-		String iptxslt = "";
-		iptxslt += "<?xml version=\\\"1.0\\\" encoding=\\\"ISO-8859-1\\\"?>\n";
-		iptxslt += "<xsl:transform version=\\\"1.0\\\" xmlns:xsl=\\\"http://www.w3.org/1999/XSL/Transform\\\">\n";
-		iptxslt += "  <xsl:output method = \\\"text\\\" />\n";
-		iptxslt += "  <xsl:strip-space elements=\\\"*\\\" />\n";
-		iptxslt += "    <xsl:param name=\\\"table\\\" />\n";
-		iptxslt += "\n";
-		iptxslt += "  <xsl:template match=\\\"iptables-rules/table/chain/rule/conditions/*\\\">\n";
-		iptxslt += "    <xsl:if test=\\\"name() != &quot;match&quot;\\\">\n";
-		iptxslt += "      <xsl:text> -m </xsl:text><xsl:value-of select=\\\"name()\\\"/>\n";
-		iptxslt += "    </xsl:if>\n";
-		iptxslt += "    <xsl:apply-templates select=\\\"node()\\\"/>\n";
-		iptxslt += "  </xsl:template>\n";
-		iptxslt += "\n";
-		iptxslt += "  <xsl:template match=\\\"iptables-rules/table/chain/rule/actions|table/chain/rule/conditions\\\">\n";
-		iptxslt += "    <xsl:apply-templates select=\\\"*\\\"/>\n";
-		iptxslt += "  </xsl:template>\n";
-		iptxslt += "\n";
-		iptxslt += "  <xsl:template match=\\\"iptables-rules/table/chain/rule/actions/goto\\\">\n";
-		iptxslt += "    <xsl:text> -g </xsl:text>\n";
-		iptxslt += "    <xsl:apply-templates select=\\\"*\\\"/>\n";
-		iptxslt += "    <xsl:text>&#xA;</xsl:text>\n";
-		iptxslt += "  </xsl:template>\n";
-		iptxslt += "  <xsl:template match=\\\"iptables-rules/table/chain/rule/actions/call\\\">\n";
-		iptxslt += "    <xsl:text> -j </xsl:text>\n";
-		iptxslt += "    <xsl:apply-templates select=\\\"*\\\"/>\n";
-		iptxslt += "    <xsl:text>&#xA;</xsl:text>\n";
-		iptxslt += "  </xsl:template>\n";
-		iptxslt += "  <xsl:template match=\\\"iptables-rules/table/chain/rule/actions/*\\\">\n";
-		iptxslt += "    <xsl:text> -j </xsl:text><xsl:value-of select=\\\"name()\\\"/>\n";
-		iptxslt += "    <xsl:apply-templates select=\\\"*\\\"/>\n";
-		iptxslt += "    <xsl:text>&#xA;</xsl:text>\n";
-		iptxslt += "  </xsl:template>\n";
-		iptxslt += "\n";
-		iptxslt += "  <xsl:template match=\\\"iptables-rules/table/chain/rule/actions//*|iptables-rules/table/chain/rule/conditions//*\\\" priority=\\\"0\\\">\n";
-		iptxslt += "    <xsl:if test=\\\"@invert=1\\\"><xsl:text> !</xsl:text></xsl:if>\n";
-		iptxslt += "    <xsl:text> -</xsl:text>\n";
-		iptxslt += "    <xsl:if test=\\\"string-length(name())&gt;1\\\">\n";
-		iptxslt += "      <xsl:text>-</xsl:text>\n";
-		iptxslt += "    </xsl:if>\n";
-		iptxslt += "    <xsl:value-of select=\\\"name()\\\"/>\n";
-		iptxslt += "    <xsl:text> </xsl:text>\n";
-		iptxslt += "    <xsl:apply-templates select=\\\"node()\\\"/>\n";
-		iptxslt += "  </xsl:template>\n";
-		iptxslt += "\n";
-		iptxslt += "  <xsl:template match=\\\"iptables-rules/table/chain/rule/actions/call/*|iptables-rules/table/chain/rule/actions/goto/*\\\">\n";
-		iptxslt += "    <xsl:value-of select=\\\"name()\\\"/>\n";
-		iptxslt += "    <xsl:apply-templates select=\\\"node()\\\"/>\n";
-		iptxslt += "  </xsl:template>\n";
-		iptxslt += "\n";
-		iptxslt += "  <xsl:template name=\\\"rule-head\\\">\n";
-		iptxslt += "    <xsl:text>-A </xsl:text><!-- a rule must be under a chain -->\n";
-		iptxslt += "    <xsl:value-of select=\\\"../@name\\\" />\n";
-		iptxslt += "    <xsl:apply-templates select=\\\"conditions\\\"/>\n";
-		iptxslt += "  </xsl:template>\n";
-		iptxslt += "\n";
-		iptxslt += "  <xsl:template match=\\\"iptables-rules/table/chain/rule\\\">\n";
-		iptxslt += "    <xsl:choose>\n";
-		iptxslt += "      <xsl:when test=\\\"count(actions/*)&gt;0\\\">\n";
-		iptxslt += "        <xsl:for-each select=\\\"actions/*\\\">\n";
-		iptxslt += "          <xsl:for-each select=\\\"../..\\\">\n";
-		iptxslt += "            <xsl:call-template name=\\\"rule-head\\\"/>\n";
-		iptxslt += "          </xsl:for-each>\n";
-		iptxslt += "          <xsl:apply-templates select=\\\".\\\"/>\n";
-		iptxslt += "        </xsl:for-each>\n";
-		iptxslt += "      </xsl:when>\n";
-		iptxslt += "      <xsl:otherwise>\n";
-		iptxslt += "        <xsl:call-template name=\\\"rule-head\\\"/>\n";
-		iptxslt += "        <xsl:text>&#xA;</xsl:text>\n";
-		iptxslt += "      </xsl:otherwise>\n";
-		iptxslt += "    </xsl:choose>\n";
-		iptxslt += "  </xsl:template>\n";
-		iptxslt += "\n";
-		iptxslt += "  <xsl:template match=\\\"iptables-rules/table\\\">\n";
-		iptxslt += "    <xsl:if test=\\\"@name=\\$table\\\">\n";
-		iptxslt += "    <xsl:for-each select=\\\"chain\\\">\n";
-		iptxslt += "    <xsl:text>:</xsl:text>\n";
-		iptxslt += "    <xsl:value-of select=\\\"@name\\\"/>\n";
-		iptxslt += "    <xsl:text> </xsl:text>\n";
-		iptxslt += "    <xsl:choose>\n";
-		iptxslt += "    <xsl:when test=\\\"not(string-length(@policy))\\\"><xsl:text>-</xsl:text></xsl:when>\n";
-		iptxslt += "      <xsl:otherwise><xsl:value-of select=\\\"@policy\\\"/></xsl:otherwise>\n";
-		iptxslt += "     </xsl:choose>\n";
-		iptxslt += "      <xsl:text> </xsl:text>\n";
-		iptxslt += "       <xsl:call-template name=\\\"counters\\\"><xsl:with-param name=\\\"node\\\" select=\\\".\\\"/></xsl:call-template>\n";
-		iptxslt += "       <xsl:text>&#xA;</xsl:text>\n";
-		iptxslt += "      </xsl:for-each>\n";
-		iptxslt += "            <xsl:apply-templates select=\\\"node()\\\"/>\n";
-		iptxslt += "    </xsl:if>\n";
-		iptxslt += "  </xsl:template>\n";
-		iptxslt += "\n";
-		iptxslt += "<xsl:template name=\\\"counters\\\">\n";
-		iptxslt += "	<xsl:param name=\\\"node\\\"/>\n";
-		iptxslt += "	<xsl:text>[</xsl:text>\n";
-		iptxslt += "	<xsl:if test=\\\"string-length(\\$node/@packet-count)\\\"><xsl:value-of select=\\\"\\$node/@packet-count\\\"/></xsl:if>\n";
-		iptxslt += "	<xsl:if test=\\\"string-length(\\$node/@packet-count)=0\\\">0</xsl:if>\n";
-		iptxslt += "	<xsl:text>:</xsl:text>\n";
-		iptxslt += "	<xsl:if test=\\\"string-length(\\$node/@byte-count)\\\"><xsl:value-of select=\\\"\\$node/@byte-count\\\"/></xsl:if>\n";
-		iptxslt += "	<xsl:if test=\\\"string-length(\\$node/@byte-count)=0\\\">0</xsl:if>\n";
-		iptxslt += "	<xsl:text>]</xsl:text>\n";
-		iptxslt += "</xsl:template>\n";
-		iptxslt += "\n";
-		iptxslt += "  <xsl:template match=\\\"@*|node()\\\">\n";
-		iptxslt += "    <xsl:copy>\n";
-		iptxslt += "      <xsl:apply-templates select=\\\"@*\\\"/>\n";
-		iptxslt += "      <xsl:apply-templates select=\\\"node()\\\"/>\n";
-		iptxslt += "    </xsl:copy>\n";
-		iptxslt += "  </xsl:template>\n";
-		iptxslt += "\n";
-		iptxslt += "</xsl:transform>";
-		units.addElement(new FileUnit("iptables_xlst", "proceed", iptxslt, "/etc/iptables/iptables.xslt"));
-
 		return units;
 	}
 
-	public SimpleUnit addFilterInput(String name, String rule) {
-		return add(name, "filter", "INPUT", rule);
+	public void addFilterInput(String name, String rule) {
+		add(name, "filter", "INPUT", rule);
 	}
 
-	public SimpleUnit addFilterForward(String name, String rule) {
-		return add(name, "filter", "FORWARD", rule);
+	public void addFilterForward(String name, String rule) {
+		add(name, "filter", "FORWARD", rule);
 	}
 
-	public SimpleUnit addFilterOutput(String name, String rule) {
-		return add(name, "filter", "OUTPUT", rule);
+	public void addFilterOutput(String name, String rule) {
+		add(name, "filter", "OUTPUT", rule);
 	}
 
-	public SimpleUnit addFilter(String name, String chain, String rule) {
-		return add(name, "filter", chain, rule);
+	public void addFilter(String name, String chain, String rule) {
+		add(name, "filter", chain, rule);
 	}
 
-	public SimpleUnit addFilter(String name, String chain, int position, String rule) {
-		return add(name, "filter", chain, position, rule);
+	public void addFilter(String name, String chain, int position, String rule) {
+		add(name, "filter", chain, position, rule);
 	}
 	
-	public SimpleUnit addNatPostrouting(String name, String rule) {
-		return add(name, "nat", "POSTROUTING", rule);
+	public void addNatPostrouting(String name, String rule) {
+		add(name, "nat", "POSTROUTING", rule);
 	}
 
-	public SimpleUnit addNatPrerouting(String name, String rule) {
-		return add(name, "nat", "PREROUTING", rule);
+	public void addNatPrerouting(String name, String rule) {
+		add(name, "nat", "PREROUTING", rule);
 	}
 	
-	public SimpleUnit addMangleForward(String name, String rule) {
-		return add(name, "mangle", "FORWARD", rule);
+	public void addMangleForward(String name, String rule) {
+		add(name, "mangle", "FORWARD", rule);
 	}
 
 	public SimpleUnit addChain(String name, String table, String chain) {
@@ -244,25 +131,20 @@ public class FirewallModel extends AModel {
 				":" + chain + " - [0:0]", "pass");
 	}
 
-
-	private SimpleUnit add(String name, String table, String chain, int position, String rule) {
+	private void add(String name, String table, String chain, int position, String rule) {
 		chain = cleanString(chain);
 		table = cleanString(table);
 						
 		this.getChain(table, chain).add(position, rule);
-		return new SimpleUnit(name, "proceed", "echo \\\"handled by model\\\";",
-				"cat /etc/iptables/iptables.conf | iptables-xml | xsltproc --stringparam table " + table
-				+ " /etc/iptables/iptables.xslt - | " + "grep -F \"" + chain + " " + rule + "\"",
-				"", "fail");
 	}
 
-	private SimpleUnit add(String name, String table, String chain, String rule) {
+	private void add(String name, String table, String chain, String rule) {
 		table = cleanString(table);
 		chain = cleanString(chain);
 		
 		int position = this.getChain(table, chain).size();
 		
-		return add(name, table, chain, position, rule);
+		add(name, table, chain, position, rule);
 	}
 
 	private String getPersistent() {
