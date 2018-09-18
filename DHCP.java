@@ -3,6 +3,7 @@ package profile;
 import java.util.Vector;
 
 import core.iface.IUnit;
+import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.pkg.InstalledUnit;
@@ -124,12 +125,12 @@ public class DHCP extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addElement(model.getServerModel(server).getFirewallModel().addNatPostrouting("router_nat", "-o " + model.getData().getExtIface(server) + " -j MASQUERADE"));
+		FirewallModel fm = model.getServerModel(server).getFirewallModel();
+		
+		fm.addNatPostrouting("router_nat", "-o " + model.getData().getExtIface(server) + " -j MASQUERADE");
 
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilterInput("dhcp_ipt_in",
-				"-i " + model.getData().getIface(server) + " -p udp --dport 67 -j ACCEPT"));
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("dhcp_ipt_out",
-				"-o " + model.getData().getIface(server) + " -p udp --sport 67 -j ACCEPT"));
+		fm.addFilterInput("dhcp_ipt_in", "-i " + model.getData().getIface(server) + " -p udp --dport 67 -j ACCEPT");
+		fm.addFilterOutput("dhcp_ipt_out", "-o " + model.getData().getIface(server) + " -p udp --sport 67 -j ACCEPT");
 
 		return units;
 	}

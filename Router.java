@@ -773,8 +773,8 @@ public class Router extends AStructuredProfile {
 			
 			units.addElement(new FileUnit("resolv_conf", "proceed", "nameserver 127.0.0.1", "/etc/ppp/resolv.conf"));
 			
-			units.addElement(this.firewall.addMangleForward("clamp_mss_to_pmtu",
-					"-p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1400:1536 -j TCPMSS --clamp-mss-to-pmtu"));
+			this.firewall.addMangleForward("clamp_mss_to_pmtu",
+					"-p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1400:1536 -j TCPMSS --clamp-mss-to-pmtu");
 		}
 		else if (model.getData().getExtConn(server).equals("dhcp")){
 			units.addElement(this.interfaces.addIface("router_ext_dhcp_iface", 
@@ -797,19 +797,19 @@ public class Router extends AStructuredProfile {
 			dhclient += "	rfc3442-classless-static-routes, ntp-servers;";
 			units.addElement(new FileUnit("router_ext_dhcp_persist", "proceed", dhclient, "/etc/dhcp/dhclient.conf"));
 
-			units.addElement(this.firewall.addFilterInput("router_ext_dhcp_in",
+			this.firewall.addFilterInput("router_ext_dhcp_in",
 					"-i " + this.externalIface
 					+ " -d 255.255.255.255"
 					+ " -p udp"
 					+ " --dport 68"
 					+ " --sport 67"
-					+ " -j ACCEPT"));
-			units.addElement(this.firewall.addFilterOutput("router_ext_dhcp_ipt_out", 
+					+ " -j ACCEPT");
+			this.firewall.addFilterOutput("router_ext_dhcp_ipt_out", 
 					"-o " + this.externalIface
 					+ " -p udp"
 					+ " --dport 67"
 					+ " --sport 68"
-					+ " -j ACCEPT"));
+					+ " -j ACCEPT");
 		}
 		else if(model.getData().getExtConn(server).equals("static")) {
 			JsonArray interfaces = (JsonArray) model.getData().getPropertyObjectArray(server, "extconfig");

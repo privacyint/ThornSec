@@ -3,6 +3,7 @@ package profile;
 import java.util.Vector;
 
 import core.iface.IUnit;
+import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
@@ -169,25 +170,27 @@ public class SSH extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
+		FirewallModel fm = model.getServerModel(server).getFirewallModel();
+		
 		if (model.getData().getAllowedSSHSource(server) != null) {
 			for (String ip : model.getData().getAllowedSSHSource(server)) {
-				units.addElement(model.getServerModel(server).getFirewallModel().addFilterInput("sshd_ipt_in",
+				fm.addFilterInput("sshd_ipt_in",
 						"-p tcp"
 						+ " --dport " + model.getData().getSSHPort(server)
 						+ " -s " + ip
-						+ " -j ACCEPT"));
-				units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("sshd_ipt_out",
+						+ " -j ACCEPT");
+				fm.addFilterOutput("sshd_ipt_out",
 						"-p tcp"
 						+ " --sport " + model.getData().getSSHPort(server)
 						+ " -d " + ip
-						+ " -j ACCEPT"));
+						+ " -j ACCEPT");
 			}
 		}
 		else {
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilterInput("sshd_ipt_in",
-					"-p tcp --dport " + model.getData().getSSHPort(server) + " -j ACCEPT"));
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("sshd_ipt_out",
-					"-p tcp --sport " + model.getData().getSSHPort(server) + " -j ACCEPT"));
+			fm.addFilterInput("sshd_ipt_in",
+					"-p tcp --dport " + model.getData().getSSHPort(server) + " -j ACCEPT");
+			fm.addFilterOutput("sshd_ipt_out",
+					"-p tcp --sport " + model.getData().getSSHPort(server) + " -j ACCEPT");
 		}
 	
 		return units;

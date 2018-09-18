@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import core.iface.IUnit;
+import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.pkg.InstalledUnit;
@@ -176,44 +177,36 @@ public class DNS extends AStructuredProfile {
 		
 		Vector<String> userIfaces = new Vector<String>();
 		
+		FirewallModel fm = model.getServerModel(server).getFirewallModel();
+		
 		int dnsPort = (useDtls) ? 853 : 53;
 		
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilterInput("dns_ipt_in_udp",
-				"-p udp --dport " + dnsPort + " -j ACCEPT"));
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("dns_ipt_out_udp",
-				"-p udp --sport " + dnsPort + " -j ACCEPT"));
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilterInput("dns_ipt_in_tcp",
-				"-p tcp --dport " + dnsPort + " -j ACCEPT"));
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("dns_ipt_out_tcp",
-				"-p tcp --sport " + dnsPort + " -j ACCEPT"));
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("dns_ipt_out_tcp_lo",
-				"-p tcp --dport " + dnsPort + " -j ACCEPT"));
-		units.addElement(model.getServerModel(server).getFirewallModel().addChain("dns_ipt_chain", "filter", "dnsd"));
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext", "dnsd", "-j DROP"));
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_log", "dnsd",
-				"-j LOG --log-prefix \\\"ipt-dnsd: \\\""));
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilterInput("dns_ext_in",
-				"-p udp --sport " + dnsPort + " -j dnsd"));
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilterOutput("dns_ext_out",
-				"-p udp --sport " + dnsPort + " -j dnsd"));
+		fm.addFilterInput("dns_ipt_in_udp",	"-p udp --dport " + dnsPort + " -j ACCEPT");
+		fm.addFilterOutput("dns_ipt_out_udp", "-p udp --sport " + dnsPort + " -j ACCEPT");
+		fm.addFilterInput("dns_ipt_in_tcp", "-p tcp --dport " + dnsPort + " -j ACCEPT");
+		fm.addFilterOutput("dns_ipt_out_tcp", "-p tcp --sport " + dnsPort + " -j ACCEPT");
+		fm.addFilterOutput("dns_ipt_out_tcp_lo", "-p tcp --dport " + dnsPort + " -j ACCEPT");
+		fm.addChain("dns_ipt_chain", "filter", "dnsd");
+		fm.addFilter("dns_ext", "dnsd", "-j DROP");
+		fm.addFilter("dns_ext_log", "dnsd",	"-j LOG --log-prefix \\\"ipt-dnsd: \\\"");
+		fm.addFilterInput("dns_ext_in",	"-p udp --sport " + dnsPort + " -j dnsd");
+		fm.addFilterOutput("dns_ext_out", "-p udp --sport " + dnsPort + " -j dnsd");
 		
 		for (String upstream : model.getData().getDNS()) {
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_server_" + upstream.replaceAll("\\.", "_") + "_in", "dnsd",
+			fm.addFilter("dns_ext_server_" + upstream.replaceAll("\\.", "_") + "_in", "dnsd",
 					"-s " + upstream
 					+ " -p udp"
 					+ " --sport " + dnsPort
-					+ " -j ACCEPT"));
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_ext_server_" + upstream.replaceAll("\\.", "_") + "_out", "dnsd",
+					+ " -j ACCEPT");
+			fm.addFilter("dns_ext_server_" + upstream.replaceAll("\\.", "_") + "_out", "dnsd",
 					"-d " + upstream
 					+ " -p udp"
 					+ " --dport " + dnsPort
-					+ " -j ACCEPT"));
+					+ " -j ACCEPT");
 		}
 
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_loopback_in",
-				"dnsd", "-i lo -j ACCEPT"));
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_loopback_out",
-				"dnsd", "-o lo -j ACCEPT"));
+		fm.addFilter("dns_allow_loopback_in", "dnsd", "-i lo -j ACCEPT");
+		fm.addFilter("dns_allow_loopback_out", "dnsd", "-o lo -j ACCEPT");
 
 		if (!model.getServerModel(server).isMetal()) {
 			userIfaces.addElement(model.getData().getIface(server) + ":2+");
@@ -226,16 +219,12 @@ public class DNS extends AStructuredProfile {
 		}
 		
 		for (String iface : userIfaces) {
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_in",
-							"dnsd", "-i " + iface + " -j ACCEPT"));
-			units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_bridges_out",
-							"dnsd", "-o " + iface + " -j ACCEPT"));
+			fm.addFilter("dns_allow_in", "dnsd", "-i " + iface + " -j ACCEPT");
+			fm.addFilter("dns_allow_bridges_out", "dnsd", "-o " + iface + " -j ACCEPT");
 		}
 		
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_in",
-				"dnsd", "-i " + model.getData().getIface(server) + " -j ACCEPT"));
-		units.addElement(model.getServerModel(server).getFirewallModel().addFilter("dns_allow_out",
-				"dnsd", "-o " + model.getData().getIface(server) + " -j ACCEPT"));
+		fm.addFilter("dns_allow_in", "dnsd", "-i " + model.getData().getIface(server) + " -j ACCEPT");
+		fm.addFilter("dns_allow_out", "dnsd", "-o " + model.getData().getIface(server) + " -j ACCEPT");
 		
 		return units;
 	}

@@ -60,16 +60,16 @@ public class Email extends AStructuredProfile {
 
 		units.addAll(webserver.getPersistentFirewall(server, model));
 		
-		units.add(model.getServerModel(server).getFirewallModel().addFilterForward(server,
+		model.getServerModel(server).getFirewallModel().addFilterForward(server,
 					"-p tcp"
 					+ " -m state --state NEW,ESTABLISHED"
 					+ " -m tcp -m multiport --dports 993,465"
-					+ " -j ACCEPT"));
-		units.add(model.getServerModel(server).getFirewallModel().addFilterForward(server,
+					+ " -j ACCEPT");
+		model.getServerModel(server).getFirewallModel().addFilterForward(server,
 					"-p tcp"
 					+ " -m state --state ESTABLISHED"
 					+ " -m tcp -m multiport --sports 993,465"
-					+ " -j ACCEPT"));
+					+ " -j ACCEPT");
 		
 		for (String router : model.getRouters()) {
 			

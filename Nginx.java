@@ -151,16 +151,16 @@ public class Nginx extends AStructuredProfile {
 		
 		FirewallModel fm = model.getServerModel(server).getFirewallModel();
 		//Allow the box to tx/rx on :80&&:443
-		units.add(fm.addFilterInput(server,
+		fm.addFilterInput(server,
 				"-p tcp"
 				+ " -m state --state NEW,ESTABLISHED"
 				+ " -m tcp -m multiport --dports 80,443"
-				+ " -j ACCEPT"));
-		units.add(fm.addFilterOutput(server,
+				+ " -j ACCEPT");
+		fm.addFilterOutput(server,
 				"-p tcp"
 				+ " -m state --state ESTABLISHED,RELATED"
 				+ " -m tcp -m multiport --sports 80,443"
-				+ " -j ACCEPT"));
+				+ " -j ACCEPT");
 		
 		for (String router : model.getRouters()) {
 			
