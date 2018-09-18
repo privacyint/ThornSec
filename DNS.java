@@ -8,6 +8,7 @@ import core.iface.IUnit;
 import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
+import core.unit.SimpleUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
@@ -76,6 +77,10 @@ public class DNS extends AStructuredProfile {
 		
 		Vector<IUnit> units = new Vector<IUnit>();
 		
+		units.addElement(new SimpleUnit("dns_custom_zone", "unbound_installed",
+				"sudo touch /etc/unbound/unbound.conf.d/custom.zone",
+				"[ -f /etc/unbound/unbound.conf.d/custom.zone ] && echo pass || echo fail", "pass", "pass"));
+		
 		//Config taken from https://calomel.org/unbound_dns.html
 		String config = "";
 		config += "server:\n";
@@ -140,6 +145,7 @@ public class DNS extends AStructuredProfile {
 		if (!poison.isEmpty()) {
 			config += "    include: \\\"/etc/unbound/unbound.conf.d/poison.zone\\\"\n";
 		}
+		config += "    include: \\\"/etc/unbound/unbound.conf.d/custom.zone\\\"\n";
 		//rDNS
 		config += "    local-zone: \\\"" + model.getServerModel(server).getGateway().split("\\.")[0] + ".in-addr.arpa.\\\" nodefault\n";
 		config += "    stub-zone:\n";
