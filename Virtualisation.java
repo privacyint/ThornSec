@@ -281,7 +281,7 @@ public class Virtualisation extends AStructuredProfile {
 		units.addElement(modifyVm(service, user, "paravirtprovider", "kvm")); //Default, make it explicit
 		units.addElement(modifyVm(service, user, "chipset", "ich9"));
 		units.addElement(modifyVm(service, user, "ioapic", "on", "IO APIC couldn't be enabled for " + service + ".  This is required for 64-bit installations, and for more than 1 virtual CPU in a service."));
-				"IO APIC couldn't be enabled for " + service + ".  This is required for 64-bit installations, and for more than 1 virtual CPU in a service."));
+		units.addElement(modifyVm(service, user, "hwvirtex", "on"));
 		units.addElement(modifyVm(service, user, "pae", "on"));
 		units.addElement(modifyVm(service, user, "cpus", model.getData().getCpus(service)));
 
