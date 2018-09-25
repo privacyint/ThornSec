@@ -183,24 +183,27 @@ public class Virtualisation extends AStructuredProfile {
 		return units;
 	}
 
-	public Vector<IUnit> buildVm(String server, String service, NetworkModel model, String bridge) {
+	public Vector<IUnit> buildServiceVm(String server, String service, NetworkModel model, String bridge) {
 		String baseDir     = model.getData().getVmBase(server);
 
 		//Disks
-		String disksDir     = baseDir + "/disks";
-		String bootDiskDir  = disksDir + "/boot/" + service;
-		String bootDiskVdi  = bootDiskDir + "/" + service + "_boot.vdi";
-		String dataDiskDir  = disksDir + "/data/" + service;
-		String dataDiskVdi  = dataDiskDir + "/" + service + "_data.vdi";
+		String diskExtension   = "vmdk";
+		String disksDir        = baseDir + "/disks";
+		String bootDiskDir     = disksDir + "/boot/" + service;
+		String bootDiskImg     = bootDiskDir + "/" + service + "_boot.";
+		String bootLoopbackDir = bootDiskDir + "/live";
+		String dataDiskDir     = disksDir + "/data/" + service;
+		String dataDiskImg     = dataDiskDir + "/" + service + "_data.";
+		String dataLoopbackDir = dataDiskDir + "/live";
 		
-		String logDir       = baseDir + "/logs/" + service;
-		String backupDir    = baseDir + "/backups/" + service;
-		String ttySocketDir = baseDir + "/sockets/" + service; 
+		String logDir          = baseDir + "/logs/" + service;
+		String backupTargetDir = baseDir + "/backups/" + service;
+		String ttySocketDir    = baseDir + "/sockets/" + service; 
 		
-		String installIso   = baseDir + "/isos/" + service + "/" + service + ".iso";
-		String user         = "vboxuser_" + service;
-		String group        = "vboxusers";
-		String osType       = model.getData().getDebianIsoUrl(service).contains("amd64") ? "Debian_64" : "Debian";
+		String installIso = baseDir + "/isos/" + service + "/" + service + ".iso";
+		String user       = "vboxuser_" + service;
+		String group      = "vboxusers";
+		String osType     = model.getData().getDebianIsoUrl(service).contains("amd64") ? "Debian_64" : "Debian";
 		
 		Vector<IUnit> units = new Vector<IUnit>();
 		
@@ -223,9 +226,11 @@ public class Virtualisation extends AStructuredProfile {
 		units.addElement(new DirOwnUnit("log_dir_" + service, "log_dir_" + service + "_created", logDir, user, group));
 		units.addElement(new DirPermsUnit("log_dir_" + service, "log_dir_" + service + "_chowned", logDir, "750"));
 		
-		units.addElement(new DirUnit("backup_dir_" + service, "proceed", backupDir));
-		units.addElement(new DirOwnUnit("backup_dir_" + service, "backup_dir_" + service + "_created", backupDir, user, group));
-		units.addElement(new DirPermsUnit("backup_dir_" + service, "backup_dir_" + service + "_chowned", backupDir, "750"));
+		units.addElement(new DirUnit("backup_dir_" + service, "proceed", backupTargetDir));
+		units.addElement(new DirOwnUnit("backup_dir_" + service, "backup_dir_" + service + "_created", backupTargetDir, user, group));
+		units.addElement(new DirPermsUnit("backup_dir_" + service, "backup_dir_" + service + "_chowned", backupTargetDir, "750"));
+		//Mark the backup destination directory as a valid destination
+		units.addElement(new FileUnit(service + "_mark_backup_dir", "backup_dir_" + service + "_chmoded" , "In memoriam Luke and Guy.  Miss you two!", backupTargetDir + "/backup.marker"));
 		
 		units.addElement(new DirUnit("socket_dir_" + service, "proceed", ttySocketDir));
 		units.addElement(new DirOwnUnit("socket_dir_" + service, "socket_dir_" + service + "_created", ttySocketDir, user, group));
@@ -322,8 +327,8 @@ public class Virtualisation extends AStructuredProfile {
 				"Couldn't attach the logs folder to " + service + ".  This means logs will only exist in the VM."));
 		
 		units.addElement(new SimpleUnit(service + "_backup_sf_attached", service + "_exists",
-				"sudo -u " + user + " VBoxManage sharedfolder add " + service + " --name backup --hostpath " + backupDir,
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep SharedFolderPathMachineMapping2", "SharedFolderPathMachineMapping2=\\\"" + backupDir + "\\\"", "pass"));
+				"sudo -u " + user + " VBoxManage sharedfolder add " + service + " --name backup --hostpath " + backupTargetDir,
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep SharedFolderPathMachineMapping2", "SharedFolderPathMachineMapping2=\\\"" + backupTargetDir + "\\\"", "pass"));
 		
 		//Clock setup to try and stop drift between host and guest
 		//https://www.virtualbox.org/manual/ch09.html#changetimesync
