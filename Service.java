@@ -87,11 +87,11 @@ public class Service extends AStructuredProfile {
 		units.addElement(new DirUnit("data_dir_exists", "is_virtualbox_guest", "/media/data/"));
 		
 		//Mount /media/backup
-		units.addElement(new FileAppendUnit("backup_fstab", "is_virtualbox_guest", "backup    /media/backup      vboxsf defaults,_netdev 0 0", "/etc/fstab",
+		units.addElement(new FileAppendUnit("backup_fstab", "is_virtualbox_guest", "backup    /media/backup      vboxsf defaults,_netdev,ro 0 0", "/etc/fstab",
 				"Couldn't create the mount for the backup at /media/backup.  Meh."));
 		units.addElement(new DirUnit("backup_bindpoint", "is_virtualbox_guest", "/media/backup"));
 		units.addElement(new DirMountedUnit("backup", "backup_fstab_appended", "backup",
-				"Couldn't mount the backup directory.  This isn't a problem, and this functionality should probably be scrubbed."));
+				"Couldn't mount the backup directory."));
 		
 		//Mount /log
 		units.addElement(new FileAppendUnit("log_fstab", "is_virtualbox_guest", "log       /var/log           vboxsf defaults,dmode=751,_netdev 0 0", "/etc/fstab",
