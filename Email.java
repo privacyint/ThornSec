@@ -29,9 +29,6 @@ public class Email extends AStructuredProfile {
 		units.addAll(php.getInstalled(server, model));
 		units.addAll(db.getInstalled(server, model));
 		
-		units.addElement(new InstalledUnit("postfixadmin", "proceed", "postfixadmin"));
-		units.addElement(new InstalledUnit("dovecot", "proceed", "dovecot"));
-		
 		return units;
 	}
 	
