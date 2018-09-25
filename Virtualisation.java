@@ -278,7 +278,7 @@ public class Virtualisation extends AStructuredProfile {
 				"Couldn't attach the VirtualBox Guest Additions disk for " + service + ".  Logs will not be pushed out to the hypervisor as expected."));
 		
 		//Architecture setup
-		units.addElement(new SimpleUnit(service + "_ioapic_on", service + "_exists",
+		units.addElement(modifyVm(service, user, "paravirtprovider", "kvm")); //Default, make it explicit
 		units.addElement(modifyVm(service, user, "chipset", "ich9"));
 		units.addElement(modifyVm(service, user, "ioapic", "on", "IO APIC couldn't be enabled for " + service + ".  This is required for 64-bit installations, and for more than 1 virtual CPU in a service."));
 				"IO APIC couldn't be enabled for " + service + ".  This is required for 64-bit installations, and for more than 1 virtual CPU in a service."));
