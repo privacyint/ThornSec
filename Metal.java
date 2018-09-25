@@ -36,6 +36,8 @@ public class Metal extends AStructuredProfile {
 		units.addElement(new DirUnit("media_dir", "proceed", model.getData().getVmBase(server)));
 
 		units.addElement(new InstalledUnit("whois", "proceed", "whois"));
+		units.addElement(new InstalledUnit("tmux", "proceed", "tmux"));
+		units.addElement(new InstalledUnit("socat", "proceed", "socat"));
 		
 		units.addElement(new FileDownloadUnit("debian_netinst_iso", "metal_genisoimage_installed", model.getData().getDebianIsoUrl(server), model.getData().getVmBase(server) + "/debian-netinst.iso",
 											  "The Debian net install ISO couldn't be downloaded.  Please check the URI in your config."));
