@@ -236,8 +236,14 @@ public class Virtualisation extends AStructuredProfile {
 		units.addElement(new DirOwnUnit("socket_dir_" + service, "socket_dir_" + service + "_created", ttySocketDir, user, group));
 		units.addElement(new DirPermsUnit("socket_dir_" + service, "socket_dir_" + service + "_chowned", ttySocketDir, "750"));
 		
-		//Mark the backup directory as a valid destination
-		units.addElement(new FileUnit(service + "_mark_backup_dir", "backup_dir_" + service + "_chmoded" , "In memoriam Luke and Guy.  Miss you two!", backupDir + "/backup.marker"));
+		//Create the mount point for the boot disk
+		units.addElement(new DirUnit("boot_disk_loopback_dir_" + service, "proceed", bootLoopbackDir));
+		units.addElement(new DirOwnUnit("boot_disk_loopback_dir_" + service, "boot_disk_loopback_dir_" + service + "_created", bootLoopbackDir, "root", "root"));
+		units.addElement(new DirPermsUnit("boot_disk_loopback_dir_" + service, "boot_disk_loopback_dir_" + service + "_chowned", bootLoopbackDir, "755"));
+		//And, more importantly, the data disk
+		units.addElement(new DirUnit("data_disk_loopback_dir_" + service, "proceed", dataLoopbackDir));
+		units.addElement(new DirOwnUnit("data_disk_loopback_dir_" + service, "data_disk_loopback_dir_" + service + "_created", dataLoopbackDir, "root", "root"));
+		units.addElement(new DirPermsUnit("data_disk_loopback_dir_" + service, "data_disk_loopback_dir_" + service + "_chowned", dataLoopbackDir, "755"));
 		
 		//VM setup
 		units.addElement(new SimpleUnit(service + "_exists", "boot_disk_dir_" + service + "_chmoded",
