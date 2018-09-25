@@ -63,7 +63,7 @@ public class InterfaceModel extends AModel {
 		net += "\n";
 		net += "auto lo\n";
 		net += "iface lo inet loopback\n";
-		net += "pre-up iptables-restore < /etc/iptables/iptables.conf.sh";
+		net += "pre-up /etc/iptables/iptables.conf.sh | iptables-restore";
 		
 		ifaces = new Vector<String>(new LinkedHashSet<String>(ifaces)); //Remove any duplicate stanzas
 		Collections.sort(ifaces); // Sort them into what's (hopefully) a sensible order

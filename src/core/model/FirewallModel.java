@@ -67,6 +67,7 @@ public class FirewallModel extends AModel {
 		
 		String iptablesConfSh = "";
 		iptablesConfSh += "#!/bin/bash\n";
+		iptablesConfSh += "cd /etc/iptables/\n";
 		iptablesConfSh += "{";
 		iptablesConfSh += " cat iptables.mangle.policies.conf;";
 		iptablesConfSh += " cat iptables.mangle.custom.conf;";
@@ -79,7 +80,8 @@ public class FirewallModel extends AModel {
 		iptablesConfSh += " cat iptables.filter.policies.conf;";
 		iptablesConfSh += " cat iptables.filter.custom.conf;";
 		iptablesConfSh += " cat iptables.filter.rules.conf;";
-		iptablesConfSh += " }";
+		iptablesConfSh += " }\n";
+		iptablesConfSh += "echo 'COMMIT'";
 		units.addElement(new FileUnit("iptables_conf_shell_script", "iptables_dir_created", iptablesConfSh, "/etc/iptables/iptables.conf.sh"));
 		units.addElement(new FilePermsUnit("iptables_conf_shell_script", "iptables_conf_shell_script", "/etc/iptables/iptables.conf.sh", "750"));
 		
@@ -104,6 +106,7 @@ public class FirewallModel extends AModel {
 		units.addElement(new FileUnit("iptables_mangle_forward", "iptables_dir_created", getMangleForward(), "/etc/iptables/iptables.mangle.forward.conf"));
 
 		String natPreRoutingPolicy = "";
+		natPreRoutingPolicy += "COMMIT\n";
 		natPreRoutingPolicy += "*nat\n";
 		natPreRoutingPolicy += ":PREROUTING ACCEPT [0:0]";
 		units.addElement(new FileUnit("iptables_nat_prerouting_policy", "iptables_dir_created", natPreRoutingPolicy, "/etc/iptables/iptables.nat.prerouting.policies.conf"));
@@ -127,6 +130,7 @@ public class FirewallModel extends AModel {
 		units.addElement(new FileUnit("iptables_nat_postrouting_rules", "iptables_dir_created", getNatPostrouting(), "/etc/iptables/iptables.nat.postrouting.rules.conf"));
 		
 		String filterPolicies = "";
+		filterPolicies += "COMMIT\n";
 		filterPolicies += "*filter\n";
 		filterPolicies += ":INPUT ACCEPT [0:0]\n";
 		filterPolicies += ":FORWARD ACCEPT [0:0]\n";
@@ -142,9 +146,9 @@ public class FirewallModel extends AModel {
 		//This needs child units back.  I should get 'round to fixing that.
 		//Hardcode fail for now...
 		units.addElement(new SimpleUnit("iptables_conf_persist", "iptables_running_conf_backup",
-				"sudo iptables-restore --test < /etc/iptables/iptables.conf.sh"
+				"sudo /etc/iptables/iptables.conf.sh | sudo iptables-restore --test"
 				+ " &&"
-				+ " sudo iptables-restore < /etc/iptables/iptables.conf.sh;",
+				+ " sudo /etc/iptables/iptables.conf.sh | sudo iptables-restore;",
 				"", "", "fail"));
 	
 		return units;
@@ -242,8 +246,6 @@ public class FirewallModel extends AModel {
 			rules += "-A " + chain +  " " + ch.elementAt(i) + "\n";
 		}
 		
-		rules += "COMMIT";
-		
 		return rules;
 	}
 	
@@ -260,7 +262,7 @@ public class FirewallModel extends AModel {
 			Vector<String> chain = new Vector<String>(new LinkedHashSet<String>(this.getChain("filter", policy)));
 
 			for (int i = chain.size() - 1; i >= 0; --i) { //Loop through backwards
-				filters += "-A " + policy +  " " + chain.elementAt(i) + "\n";
+				filters += "\n-A " + policy +  " " + chain.elementAt(i);
 			}
 		}
 		return policies + filters;
