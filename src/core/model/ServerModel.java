@@ -200,7 +200,14 @@ public class ServerModel extends AModel {
 		units.addAll(configs.getUnits());
 		units.addAll(pm.getUnits());
 		units.addAll(um.getUnits());
-		
+
+		units.addElement(new FileAppendUnit("auto_logout", "proceed",
+				"TMOUT=" + ( ( 2*60 ) *60 ) + "\n" + //two hour timeout 
+				"readonly TMOUT\n" + 
+				"export TMOUT",
+				"/etc/profile",
+				"Couldn't set the serial timeout. This means users who forget to log out won't be auto logged out after two hours."));
+
 		units.addElement(new SimpleUnit("apt_autoremove", "proceed",
 				"sudo apt-get autoremove --purge --assume-yes",
 				"sudo apt-get autoremove --purge --assume-no | grep \"0 to remove\"", "", "fail"));	
