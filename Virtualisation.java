@@ -140,36 +140,43 @@ public class Virtualisation extends AStructuredProfile {
 		units.addElement(new FileUnit("preseed_" + service, "debian_netinst_iso_downloaded", preseed, isoDir + "preseed.cfg"));
 		units.addElement(new FileOwnUnit("preseed_" + service, "preseed_" + service, isoDir + "preseed.cfg", "root"));
 		units.addElement(new FilePermsUnit("preseed_" + service, "preseed_" + service + "_chowned", isoDir + "preseed.cfg", "700"));
-				
+		
+		String buildIso = "";
+		buildIso += "sudo bash -c '";
+		//Create a working copy of the iso for preseeding
+		buildIso += 	" cd " + isoDir + ";";
+		buildIso += 	" mkdir loopdir;";
+		buildIso += 	" mount -o loop " + model.getData().getVmBase(server) + "/debian-netinst.iso loopdir;";
+		buildIso += 	" mkdir cd;";
+		buildIso += 	" rsync -a -H --exclude=TRANS.TBL loopdir/ cd;";
+		buildIso += 	" umount loopdir;";
+		buildIso += 	" cd cd;";
+		//Copy our preseed over to the working copy
+		buildIso += 	" cp ../preseed.cfg .;";
+		//Set the menu timeout to 1 second, otherwise it waits for user input
+		buildIso += 	" sed -i \"s/timeout 0/timeout 1/g\" isolinux/isolinux.cfg;";
+		//Switch off graphical menu
+		buildIso += 	" sed -i \"s/^default/#default/g\" isolinux/isolinux.cfg;";
+		//Append the preseed to the boot line
+		buildIso += 	" sed -i \"s_append_append file=/cdrom/preseed.cfg auto=true_g\" isolinux/gtk.cfg;";
+		//Switch off vga and add console
+		buildIso += 	" sed -i \"s_vga=788_vga=none console=ttyS0,115200n8_g\" isolinux/gtk.cfg;";
+		//Point at non-graphical installer
+		buildIso += 	" sed -i \"s_/install.amd/gtk/initrd.gz_/install.amd/initrd.gz_g\" isolinux/gtk.cfg;";
+		//Redirect output to console
+		buildIso += 	" sed -i \"s_quiet_console=ttyS0,115200n8_g\" isolinux/gtk.cfg;";
+		//Rebuild md5sums to reflect changes
+		buildIso += 	" md5sum `find -follow -type f` > md5sum.txt;";
+		buildIso += "' > /dev/null 2>&1;";
+		//Create our new preseeded image
+		buildIso += "sudo bash -c '";
+		buildIso +=		"cd " + isoDir + ";";
+		buildIso += 	" genisoimage -o " + service + ".iso -r -J -no-emul-boot -boot-load-size 4 -boot-info-table -b isolinux/isolinux.bin -c isolinux/boot.cat ./cd;";
+		buildIso += 	" rm -R cd loopdir;";
+		buildIso += "'";
+		
 		units.addElement(new SimpleUnit("build_iso_" + service, "debian_netinst_iso_downloaded",
-				"sudo bash -c '"
-					+ "cd " + isoDir + ";"
-					+ " mkdir loopdir;"
-					+ " mount -o loop " + model.getData().getVmBase(server) + "/debian-netinst.iso loopdir;"
-					+ " mkdir cd;"
-					+ " rsync -a -H --exclude=TRANS.TBL loopdir/ cd;"
-					+ " umount loopdir;"
-					+ " cd cd;"
-					+ " cp ../preseed.cfg .;"
-					//Set the timeout to 1 second, otherwise it waits for user input
-					+ " sed -i \"s/timeout 0/timeout 1/g\" isolinux/isolinux.cfg;"
-					//Switch off graphical menu
-					+ " sed -i \"s/^default/#default/g\" isolinux/isolinux.cfg;"
-					//Append the preseed
-					+ " sed -i \"s_append_append file=/cdrom/preseed.cfg auto=true_g\" isolinux/gtk.cfg;"
-					//Switch off vga and add console
-					+ " sed -i \"s_vga=788_vga=none console=ttyS0,115200n8_g\" isolinux/gtk.cfg;"
-					//Point at non-graphical installer
-					+ " sed -i \"s_/install.amd/gtk/initrd.gz_/install.amd/initrd.gz_g\" isolinux/gtk.cfg;"
-					//Redirect output to console
-					+ " sed -i \"s_quiet_console=ttyS0,115200n8_g\" isolinux/gtk.cfg;"
-					+ " md5sum `find -follow -type f` > md5sum.txt;"
-				+ "' > /dev/null 2>&1;"
-				+ "sudo bash -c '"
-					+ "cd " + isoDir + ";"
-					+ " genisoimage -o " + service + ".iso -r -J -no-emul-boot -boot-load-size 4 -boot-info-table -b isolinux/isolinux.bin -c isolinux/boot.cat ./cd;"
-					+ " rm -R cd loopdir;"
-				+ "'",
+				buildIso,
 				"test -f " + isoDir + service + ".iso && echo 'pass' || echo 'fail'", "pass", "pass",
 				"Couldn't create the install ISO for " + service + ".  This service won't be able to install."));
 		

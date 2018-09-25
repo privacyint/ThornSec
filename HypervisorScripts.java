@@ -54,7 +54,7 @@ public class HypervisorScripts extends AStructuredProfile {
 
 		dataDirBase   = disksDirBase + "/data";
 		bootDirBase   = disksDirBase + "/boot";
-		backupDirBase = vmBase + "/backup";
+		backupDirBase = vmBase + "/backups";
 		isoDirBase    = vmBase + "/isos";
 		logDirBase    = vmBase + "/logs";
 
