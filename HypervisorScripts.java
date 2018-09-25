@@ -41,13 +41,6 @@ public class HypervisorScripts extends AStructuredProfile {
 
 		units.addElement(new InstalledUnit("metal_git", "git"));
 		units.addElement(new InstalledUnit("metal_duplicity", "duplicity"));
-
-		units.addElement(new SimpleUnit("metal_qemu_nbd_enabled", "metal_qemu_utils_installed",
-				"sudo modprobe nbd",
-				"sudo lsmod | grep nbd", "", "fail",
-				"The nbd kernel module couldn't be loaded.  Backups won't work."));
-		
-		model.getServerModel(server).getUserModel().addUsername("nbd");
 		
 		return units;
 	}
@@ -111,40 +104,6 @@ public class HypervisorScripts extends AStructuredProfile {
 	private Vector<IUnit> helperScripts(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		String mountVdiScript = "";
-		mountVdiScript += "#!/bin/bash\n";
-		mountVdiScript += "if [ \\$# -eq 0 ]\n";
-		mountVdiScript += "then\n";
-		mountVdiScript += "    echo \\\"No parameter supplied. You need to provide the full path of the VDI as a parameter\\\"\n";
-		mountVdiScript += "    exit 1;\n";
-		mountVdiScript += "fi\n";
-		mountVdiScript += "\n";
-		mountVdiScript += "vdi=\\\"\\${1}\\\"\n";
-		mountVdiScript += "\n";
-		mountVdiScript += "modprobe -r nbd\n";
-		mountVdiScript += "modprobe nbd max_part=15\n";
-		mountVdiScript += "\n";
-		mountVdiScript += "echo \\\"=== Mounting ${vdi} to /mnt ===\\\"\n";
-		mountVdiScript += "qemu-nbd -c /dev/nbd0 \\\"\\${vdi}\\\"\n";
-		mountVdiScript += "sleep 5\n";
-		mountVdiScript += "mount /dev/nbd0p1 /mnt\n";
-		mountVdiScript += "echo \\\"=== Done! ===\\\"";
-		
-		units.addElement(new FileUnit("mount_vdi_script", "proceed", mountVdiScript, helperScriptsBase + "/mountVdi.sh"));
-		units.addElement(new FileOwnUnit("mount_vdi_script", "mount_vdi_script", helperScriptsBase + "/mountVdi.sh", "root"));
-		units.addElement(new FilePermsUnit("mount_vdi_script", "mount_vdi_script_chowned", helperScriptsBase + "/mountVdi.sh", "750"));
-		
-		String unmountVdiScript = "";
-		unmountVdiScript += "#!/bin/bash\n";
-		unmountVdiScript += "echo \\\"=== Unmounting ===\\\"\n";
-		unmountVdiScript += "umount /mnt\n";
-		unmountVdiScript += "sleep 5\n";
-        unmountVdiScript += "qemu-nbd --disconnect /dev/nbd0\n";
-		unmountVdiScript += "echo \\\"=== Done! ===\\\"";
-		
-		units.addElement(new FileUnit("unmount_vdi_script", "proceed", unmountVdiScript, helperScriptsBase + "/unmountVdi.sh"));
-		units.addElement(new FileOwnUnit("unmount_vdi_script", "unmount_vdi_script", helperScriptsBase + "/unmountVdi.sh", "root"));
-		units.addElement(new FilePermsUnit("unmount_vdi_script", "unmount_vdi_script_chowned", helperScriptsBase + "/unmountVdi.sh", "750"));
 		
 		return units;
 	}
@@ -257,11 +216,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		backupScript += "    vm=\\\"\\${dirPath##*/}\\\"\n";
 		backupScript += "\n";
 		backupScript += "    echo \\\"Backing up \\${vm}\\\"\n";
-		backupScript += "    " + controlScriptsBase + "/stopVm.sh \\\"\\${vm}\\\"\n";
-        backupScript += "    " + helperScriptsBase + "/mountVdi.sh \\\"\\${dirPath}/\\${vm}_data.vdi\\\"\n";
-        backupScript += "    ./rsync-time-backup/rsync_tmbackup.sh -s /mnt/ -d \\\"\\${backupBase}/\\${vm}\\\"\n";
-        backupScript += "    " + helperScriptsBase + "/unmountVdi.sh \\\"\\${dirPath}/\\${vm}_data.vdi\\\"\n";
-		backupScript += "    " + controlScriptsBase + "/startVm.sh \\\"\\${vm}\\\"\n";
+        backupScript += "    ./rsync-time-backup/rsync_tmbackup.sh -s " + dataDirBase + "/\\\"\\${vm}\\\"/live/ -d \\\"\\${backupBase}/\\${vm}\\\"\n";
 		backupScript += "\n";
 		backupScript += "    if [ ! \\\"\\$(ls -A \\${backupBase}/\\${vm}/latest)\\\" ]; then\n";
 		backupScript += "        (\n";
@@ -422,7 +377,6 @@ public class HypervisorScripts extends AStructuredProfile {
 		backupRecoveryScript += "\n";
 		backupRecoveryScript += "echo \\\"=== Restoring latest internal backup of ${vm} at \\$(date) ===\\\"\n";
 		backupRecoveryScript += controlScriptsBase + "/stopVm.sh \\\"\\${vm}\\\"\n";
-		backupRecoveryScript += helperScriptsBase + "/mountVdi.sh \\\"" + dataDirBase + "/\\${vm}/\\${vm}_data.vdi\\\"\n";
 		backupRecoveryScript += "rm -rf /mnt/*\n";
 		backupRecoveryScript += "cp -R \\\"" + backupDirBase + "/\\${vm}/latest/*\\\" /mnt/\n";
 		backupRecoveryScript += helperScriptsBase + "/unmountVdi.sh\n";
@@ -432,36 +386,6 @@ public class HypervisorScripts extends AStructuredProfile {
 		units.addElement(new FileUnit("backup_recovery_script", "proceed", backupRecoveryScript, recoveryScriptsBase + "/recoverFromLatest.sh"));
 		units.addElement(new FileOwnUnit("backup_recovery_script", "backup_recovery_script", recoveryScriptsBase + "/recoverFromLatest.sh", "root"));
 		units.addElement(new FilePermsUnit("backup_recovery_script", "backup_recovery_script_chowned", recoveryScriptsBase + "/recoverFromLatest.sh", "750"));
-
-		String mountStorageScript = "";
-		mountStorageScript += "#!/bin/bash\n";
-		mountStorageScript += "if [ \\$# -eq 0 ]\n";
-		mountStorageScript += "then\n";
-		mountStorageScript += "	   echo \\\"No parameter supplied.\\\nYou need to provide the name of the VM as a parameter\\\"\n";
-		mountStorageScript += "	   exit 1;\n";
-		mountStorageScript += "fi\n";
-		mountStorageScript += "\n";
-		mountStorageScript += "vm=\\${1}\n";
-		mountStorageScript += "\n";
-		mountStorageScript += "echo \\\"=== Mounting storage ===\\\"\n";
-		mountStorageScript += "modprobe -r nbd\n";
-		mountStorageScript += "modprobe nbd max_part=15\n";
-		mountStorageScript += "\n";
-		mountStorageScript += "storageDirPath=" + bootDirBase + "\n";
-		mountStorageScript += "\n";
-		mountStorageScript += "echo \\\"This will mount the storage for \\${vm} and chroot.\\\"\n";
-		mountStorageScript += "echo \\\"When you are finished, type exit to restart the VM\\\"\n";
-		mountStorageScript += "\n";
-		mountStorageScript += controlScriptsBase + "/stopVm.sh \\\"\\${vm}\\\"\n";
-		mountStorageScript += helperScriptsBase + "/mountVdi.sh \\\"\\${storageDirPath}\\\"/\\${vmName}/\\\"\\${vmName}\\\"_storage.vdi\n";
-		mountStorageScript += "chroot /mnt\n";
-		mountStorageScript += helperScriptsBase + "/unmountVdi.sh\n";
-		mountStorageScript += controlScriptsBase + "/startVm.sh \\\"\\${vm}\\\"\n";
-		mountStorageScript += "echo \\\"=== /fin/ ===\\\"";
-		
-		units.addElement(new FileUnit("mount_storage_script", "proceed", mountStorageScript, recoveryScriptsBase + "/mountStorage.sh"));
-		units.addElement(new FileOwnUnit("mount_storage_script", "mount_storage_script", recoveryScriptsBase + "/mountStorage.sh", "root"));
-		units.addElement(new FilePermsUnit("mount_storage_script", "mount_storage_script_chowned", recoveryScriptsBase + "/mountStorage.sh", "750"));
 
 		String prevToVbox = "";
 		prevToVbox += "#!/bin/bash\n";

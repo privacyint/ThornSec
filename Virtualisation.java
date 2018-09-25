@@ -32,16 +32,7 @@ public class Virtualisation extends AStructuredProfile {
 		units.addElement(new InstalledUnit("metal_virtualbox", "virtualbox_gpg", "virtualbox-5.2"));
 		units.addElement(new InstalledUnit("metal_genisoimage", "genisoimage"));
 		units.addElement(new InstalledUnit("metal_rsync", "rsync"));
-		units.addElement(new InstalledUnit("metal_git", "git"));
-		units.addElement(new InstalledUnit("metal_qemu_utils", "qemu-utils"));
-		units.addElement(new InstalledUnit("metal_duplicity", "duplicity"));
-
-		units.addElement(new SimpleUnit("metal_qemu_nbd_enabled", "metal_qemu_utils_installed",
-				"sudo modprobe nbd",
-				"sudo lsmod | grep nbd", "", "fail",
-				"The nbd kernel module couldn't be loaded.  Backups won't work."));
-		
-		model.getServerModel(server).getUserModel().addUsername("nbd");
+		units.addElement(new InstalledUnit("metal_guestfs_utils", "libguestfs-tools"));
 
 		return units;
 	}
