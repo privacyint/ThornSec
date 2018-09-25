@@ -44,8 +44,7 @@ public class Metal extends AStructuredProfile {
 		units.addElement(new FileChecksumUnit("debian_netinst_iso", "debian_netinst_iso_downloaded", model.getData().getVmBase(server) + "/debian-netinst.iso", model.getData().getDebianIsoSha512(server),
 											  "The sha512 sum of the Debian net install in your config doesn't match what has been downloaded.  This could mean your connection is man-in-the-middle'd, or it could just be that the file has been updated on the server. "
 											  + "Please check http://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA512SUMS (64 bit) or http://cdimage.debian.org/debian-cd/current/i386/iso-cd/SHA512SUMS (32 bit) for the correct checksum."));
-		
-		
+				
 		return units;
 	}
 	
@@ -182,11 +181,10 @@ public class Metal extends AStructuredProfile {
 				
 		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_debian_cd_image", "gensho.ftp.acc.umu.se", new String[]{"443"});
 		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_github", "github.com", new String[]{"443"});
-		
+
 		model.getServerModel(server).addRouterPoison(server, model, "cdn.debian.net", "130.89.148.14", new String[] {"80"});
 		model.getServerModel(server).addRouterPoison(server, model, "security-cdn.debian.org", "151.101.0.204", new String[] {"80"});
 		model.getServerModel(server).addRouterPoison(server, model, "prod.debian.map.fastly.net", "151.101.36.204", new String[] {"80"});
-		model.getServerModel(server).addRouterPoison(server, model, "download.virtualbox.org", "2.19.60.219", new String[]{"80"});
 		
 		return units;
 	}
