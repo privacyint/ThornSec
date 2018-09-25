@@ -10,9 +10,9 @@ import core.unit.pkg.InstalledUnit;
 
 public class Drupal8 extends AStructuredProfile {
 	
-	Nginx webserver;
-	PHP php;
-	MariaDB db;
+	private Nginx webserver;
+	private PHP php;
+	private MariaDB db;
 	
 	public Drupal8() {
 		super("drupal8");
@@ -30,13 +30,16 @@ public class Drupal8 extends AStructuredProfile {
 		units.addAll(db.getInstalled(server, model));
 		
 		units.addElement(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
+		units.addElement(new InstalledUnit("curl", "proceed", "curl"));
+		units.addElement(new InstalledUnit("unzip", "proceed", "unzip"));
+
 		units.addElement(new InstalledUnit("composer", "proceed", "composer"));
+		
 		units.addElement(new InstalledUnit("php_xml", "php_fpm_installed", "php-xml"));
 		units.addElement(new InstalledUnit("php_gd", "php_fpm_installed", "php-gd"));
 		units.addElement(new InstalledUnit("php_mysql", "php_fpm_installed", "php-mysql"));
 		units.addElement(new InstalledUnit("php_common", "php_fpm_installed", "php-common"));
-		units.addElement(new InstalledUnit("curl", "proceed", "curl"));
-		units.addElement(new InstalledUnit("unzip", "proceed", "unzip"));
+		units.addElement(new InstalledUnit("php_mbstring", "php_fpm_installed", "php-mbstring"));
 		units.addElement(new InstalledUnit("php_mod_curl", "php_fpm_installed", "php-curl"));
 		
 		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "drush", "composer_installed", "nginx", "nginx", "0750"));
@@ -124,11 +127,6 @@ public class Drupal8 extends AStructuredProfile {
 				"sudo /media/data/drush/drush status -r /media/data/www 2>&1 | grep 'Drupal root'", "", "fail",
 				"Couldn't install Drupal."));
 	
-		//These units are tying to edit settings which no longer exist in Drupal8
-		//units.addElement(new FileEditUnit("drupal_base_url", "drupal_installed", "\\# \\$base_url", "\\$base_url", "/media/data/www/sites/default/settings.php"));
-		//units.addElement(new FileEditUnit("drupal_https", "drupal_installed", "\\x27http://www.example.com\\x27", "\"https://{\\$_SERVER\\[\\x27HTTP_HOST\\x27\\]}\"", "/media/data/www/sites/default/settings.php",
-		//		"Couldn't set Drupal's URI to https. This could cause issues with hyperlinks in the installation."));
-		
 		return units;
 	}
 	
