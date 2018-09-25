@@ -285,66 +285,31 @@ public class Virtualisation extends AStructuredProfile {
 		//Architecture setup
 		units.addElement(new SimpleUnit(service + "_ioapic_on", service + "_exists",
 				"sudo -u " + user + " VBoxManage modifyvm " + service + " --ioapic on",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ioapic", "ioapic=\\\"on\\\"", "pass",
+		units.addElement(modifyVm(service, user, "ioapic", "on", "IO APIC couldn't be enabled for " + service + ".  This is required for 64-bit installations, and for more than 1 virtual CPU in a service."));
 				"IO APIC couldn't be enabled for " + service + ".  This is required for 64-bit installations, and for more than 1 virtual CPU in a service."));
-		
-		units.addElement(new SimpleUnit(service + "_pae_on", service + "_exists",
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --pae on",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep pae", "pae=\\\"on\\\"", "pass",
-				"PAE (Physical Address Extensions) couldn't be enabled for " + service + ".  This isn't great, but isn't fatal."));
-		
-		units.addElement(new SimpleUnit(service + "_ram", service + "_exists",
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --memory " + model.getData().getRam(service),
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep memory", "memory=" + model.getData().getRam(service), "pass",
-				"Couldn't set the required amount of RAM for " + service + ".  This isn't great, but isn't fatal."));
-		
-		units.addElement(new SimpleUnit(service + "_vram", service + "_exists",
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --vram 16",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep vram", "vram=16", "pass",
-				"Couldn't reduce the RAM reserved for video in " + service + ".  This will reduce the amount of free RAM available in the service."));
-		
-		units.addElement(new SimpleUnit(service + "_cpus", service + "_exists",
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --cpus " + model.getData().getCpus(service),
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep cpus", "cpus=" + model.getData().getCpus(service), "pass",
-				"Couldn't set the number of CPUs for " + service + ".  This means the service will only have 1 CPU available for use."));
-		
+		units.addElement(modifyVm(service, user, "pae", "on"));
+		units.addElement(modifyVm(service, user, "cpus", model.getData().getCpus(service)));
+
+		//RAM setup
+		units.addElement(modifyVm(service, user, "memory", model.getData().getRam(service)));
+		units.addElement(modifyVm(service, user, "vram", "16"));
+		units.addElement(modifyVm(service, user, "nestedpaging", "on"));
+
 		//Boot setup - DVD is second to stop machines being wiped every time they're brought up
-		units.addElement(new SimpleUnit(service + "_boot1_disk", service + "_data_disk_attached",
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --boot1 disk",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep boot1", "boot1=\\\"disk\\\"", "pass",
-				"Couldn't set the boot order for " + service + ".  This may mean the service will not be installed."));
-		
-		units.addElement(new SimpleUnit(service + "_boot2_dvd", service + "_ide_controller",
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --boot2 dvd",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep boot2", "boot2=\\\"dvd\\\"", "pass",
-				"Couldn't set the boot order for " + service + ".  This may mean the service will not be installed."));
+		units.addElement(modifyVm(service, user, "boot1", "disk", "Couldn't set the boot order for " + service + ".  This may mean the service will not be installed.", service + "_sas_controller"));
+		units.addElement(modifyVm(service, user, "boot2", "dvd", "Couldn't set the boot order for " + service + ".  This may mean the service will not be installed.", service + "_sas_controller"));
 		
 		//Networking setup
-		units.addElement(new SimpleUnit(service + "_nic_bridged", service + "_exists",
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --nic1 bridged",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep nic1", "nic1=\\\"bridged\\\"", "pass",
-				"Couldn't give " + service + " a connection to the network.  This means the service will not be able to talk to the router or network, and will not be installed."));
-
-		units.addElement(new SimpleUnit(service + "_nic_bridge_adapter", service + "_nic_bridged",
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --bridgeadapter1 " + bridge,
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep bridgeadapter1", "bridgeadapter1=\\\"" + bridge + "\\\"", "pass",
-				"Couldn't give " + service + " a connection to the network.  This means the service will not be able to talk to the router or network, and will not be installed."));
-		
-		units.addElement(new SimpleUnit(service + "_nic_type", service + "_nic_bridge_adapter",
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --nictype1 virtio",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep nictype1", "nictype1=\\\"virtio\\\"", "pass",
-				"Couldn't set " + service + "'s network adapter to use the virtio drivers.  This will result in a performance hit on the service, and means traffic will flow over the physical adapter."));
-		
-		units.addElement(new SimpleUnit(service + "_mac_address", service + "_nic_type",
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --macaddress1 " + model.getData().getMac(service).replace(":", "").toUpperCase(),
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep macaddress1", "macaddress1=\\\"" + model.getData().getMac(service).replace(":", "").toUpperCase() + "\\\"", "pass",
-				"Couldn't set " + service + "'s MAC address.  This means the service will not be able to get an IP address, and will not be installed."));
+		units.addElement(modifyVm(service, user, "nic1", "bridged", "Couldn't give " + service + " a connection to the network.  This means the service will not be able to talk to the router or network, and will not be installed."));
+		units.addElement(modifyVm(service, user, "bridgeadapter1", bridge, "Couldn't give " + service + " a connection to the network.  This means the service will not be able to talk to the router or network, and will not be installed.", service + "_nic1_bridged"));
+		units.addElement(modifyVm(service, user, "nictype1", "virtio", "Couldn't set " + service + "'s network adapter to use the virtio drivers.  This will result in a performance hit on the service, and means traffic will flow over the physical adapter.", service + "_bridgeadapter1_" + bridge));
+		units.addElement(modifyVm(service, user, "macaddress1", model.getData().getMac(service).replace(":", "").toUpperCase(),	"Couldn't set " + service + "'s MAC address.  This means the service will not be able to get an IP address, and will not be installed."));
 		
 		//Audio setup (switch it off)
-		units.addElement(new SimpleUnit(service + "_no_audio", service + "_exists",
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --audio none",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^audio=", "audio=\\\"none\\\"", "pass",
-				"Couldn't switch off " + service + "'s audio.  No biggie."));
+		units.addElement(modifyVm(service, user, "audio", "none"));
+
+		//Use high precision event timers instead of legacy
+		units.addElement(modifyVm(service, user, "hpet", "on"));
 		
 		//Shared folders setup
 		units.addElement(new SimpleUnit(service + "_log_sf_attached", service + "_exists",
@@ -359,27 +324,12 @@ public class Virtualisation extends AStructuredProfile {
 		
 		//Clock setup to try and stop drift between host and guest
 		//https://www.virtualbox.org/manual/ch09.html#changetimesync
-		units.addElement(new SimpleUnit(service + "_timesync_interval", service + "_exists",
-				"sudo -u " + user + " VBoxManage guestproperty set " + service + " \"/VirtualBox/GuestAdd/VBoxService/--timesync-interval\" 10000",
-				"sudo -u " + user + " VBoxManage guestproperty enumerate " + service + " | grep \"Name: /VirtualBox/GuestAdd/VBoxService/--timesync-interval, value: 10000\"", "", "fail",
-				"Couldn't sync the clock between " + service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
+		units.addElement(guestPropertySet(service, user, "timesync-interval", "10000", "Couldn't sync the clock between " + service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
+		units.addElement(guestPropertySet(service, user, "timesync-min-adjust", "100", "Couldn't sync the clock between " + service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
+		units.addElement(guestPropertySet(service, user, "timesync-set-on-restore", "1", "Couldn't sync the clock between " + service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
+		units.addElement(guestPropertySet(service, user, "timesync-set-threshold", "1000", "Couldn't sync the clock between " + service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
 		
-		units.addElement(new SimpleUnit(service + "_timesync_min_adjust", service + "_exists",
-				"sudo -u " + user + " VBoxManage guestproperty set " + service + " \"/VirtualBox/GuestAdd/VBoxService/--timesync-min-adjust\" 100",
-				"sudo -u " + user + " VBoxManage guestproperty enumerate " + service + " | grep \"Name: /VirtualBox/GuestAdd/VBoxService/--timesync-min-adjust, value: 100\"", "", "fail",
-				"Couldn't sync the clock between " + service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
-
-		units.addElement(new SimpleUnit(service + "_timesync_set_on_restore", service + "_exists",
-				"sudo -u " + user + " VBoxManage guestproperty set " + service + " \"/VirtualBox/GuestAdd/VBoxService/--timesync-set-on-restore\" 1",
-				"sudo -u " + user + " VBoxManage guestproperty enumerate " + service + " | grep \"Name: /VirtualBox/GuestAdd/VBoxService/--timesync-set-on-restore, value: 1\"", "", "fail",
-				"Couldn't sync the clock between " + service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
-
-		units.addElement(new SimpleUnit(service + "_timesync_set_threshold", service + "_exists",
-				"sudo -u " + user + " VBoxManage guestproperty set " + service + " \"/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold\" 1000",
-				"sudo -u " + user + " VBoxManage guestproperty enumerate " + service + " | grep \"Name: /VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold, value: 1000\"", "", "fail",
-				"Couldn't sync the clock between " + service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
-		
-		//Sockets
+		//tty0 socket
 		units.addElement(new SimpleUnit(service + "_tty0_com_port", service + "_exists",
 				"sudo -u " + user + " VBoxManage modifyvm " + service + " --uart1 0x3F8 4",
 				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep uart1", "uart1=\\\"0x03f8,4\\\"", "pass"));
@@ -399,5 +349,47 @@ public class Virtualisation extends AStructuredProfile {
 		model.getServerModel(server).getUserModel().addUsername(user);
 		
 		return units;
+	}
+	
+	private SimpleUnit modifyVm(String service, String user, String setting, String value, String errorMsg, String prerequisite) {
+		
+		String check = "";
+		
+		//Integers aren't quoted...
+		if (value.matches("-?(0|[1-9]\\d*)")) {
+			check = setting + "=" + value;
+		}
+		else {
+			check = setting + "=\\\"" + value + "\\\"";
+		}
+		
+		return new SimpleUnit(service + "_" + setting + "_" + value, prerequisite,
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --" + setting + " " + value,
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^" + setting + "=",
+				check, "pass",
+				errorMsg);
+	}
+	
+	private SimpleUnit modifyVm(String service, String user, String setting, String value, String errorMsg) {
+		return modifyVm(service, user, setting, value, errorMsg, service + "_exists");
+	}
+	
+	private SimpleUnit modifyVm(String service, String user, String setting, String value) {
+		return modifyVm(service, user, setting, value, "Couldn't change " + setting + " to " + value);
+	}
+	
+	private SimpleUnit guestPropertySet(String service, String user, String property, String value, String errorMsg, String prerequisite) {
+		return new SimpleUnit(service + "_" + property.replaceAll("-", "_") + "_" + value, prerequisite,
+				"sudo -u " + user + " VBoxManage guestproperty set " + service + " \"/VirtualBox/GuestAdd/VBoxService/--" + property + "\" " + value,
+				"sudo -u " + user + " VBoxManage guestproperty enumerate " + service + " | grep \"Name: /VirtualBox/GuestAdd/VBoxService/--" + property + ", value: " + value + "\"", "", "fail",
+				errorMsg);
+	}
+	
+	private SimpleUnit guestPropertySet(String service, String user, String property, String value, String errorMsg) {
+		return guestPropertySet(service, user, property, value, errorMsg, service + "_exists");
+	}
+	
+	private SimpleUnit guestPropertySet(String service, String user, String property, String value) {
+		return guestPropertySet(service, user, property, value, "Couldn't change " + property + " to " + value);
 	}
 }
