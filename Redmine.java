@@ -108,7 +108,7 @@ public class Redmine extends AStructuredProfile {
 		thinConfig += "chdir: \"/usr/share/redmine\"\n";
 		thinConfig += "environment: production\n";
 		thinConfig += "timeout: 30\n";
-		thinConfig += "log: \"/media/data/redmine-logs/redmine.log\"\n";
+		thinConfig += "log: \"/media/data/redmine_logs/redmine.log\"\n";
 		thinConfig += "pid: \"/var/run/thin/redmine.pid\"\n";
 		thinConfig += "max_conns: 1024\n";
 		thinConfig += "max_persistent_conns: 100\n";
