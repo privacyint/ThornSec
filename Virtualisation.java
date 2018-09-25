@@ -236,7 +236,14 @@ public class Virtualisation extends AStructuredProfile {
 		
 		//VM setup
 		units.addElement(new SimpleUnit(service + "_exists", "boot_disk_dir_" + service + "_chmoded",
-				"sudo -u " + user + " VBoxManage createvm --name " + service + " --ostype \"" + osType + "\" --register",
+				"sudo -u " + user + " VBoxManage createvm --name " + service + " --ostype \"" + osType + "\" --register;"
+				+ "sudo -u " + user + " VBoxManage modifyvm " + service + " --description "
+				+ "\""
+					+ service + "." + model.getData().getDomain(service) + "\n"
+					+ "ThornSec guest machine\n"
+					+ "Built with profile(s): " + String.join(", ", model.getServerModel(service).getProfiles()) + "\n"
+					+ "Built at $(date)"
+				+ "\"",
 				"sudo -u " + user + " VBoxManage list vms | grep " + service, "", "fail",
 				"Couldn't create " + service + " on its metal.  This is fatal, " + service + " will not be installed."));
 		
