@@ -170,6 +170,7 @@ public class Tor extends AStructuredProfile {
 		proxyConfig += "        proxy_ssl_server_name on;\n";
 		proxyConfig += "        proxy_set_header Host $host;\n";
 		proxyConfig += "    }\n";
+		proxyConfig += "    include /media/data/nginx_custom_conf_d/default.conf;\n";
 		proxyConfig += "}";
 		
 		proxy.setLiveConfig(proxyConfig);

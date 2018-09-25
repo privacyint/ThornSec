@@ -181,6 +181,7 @@ public class Nextcloud extends AStructuredProfile {
 		nginxConf += "        try_files \\$uri /index.php\\$uri\\$is_args\\$args;\n";
 		nginxConf += "        access_log off;\n";
 		nginxConf += "    }\n";
+		nginxConf += "    include /media/data/nginx_custom_conf_d/default.conf;\n";
 		nginxConf += "}";
 		
 		webserver.addLiveConfig("default", nginxConf);

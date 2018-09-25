@@ -160,6 +160,7 @@ public class Redmine extends AStructuredProfile {
 		nginxConf += "    location @cluster {\n"; 
 		nginxConf += "        proxy_pass http://thin_cluster;\n"; 
 		nginxConf += "    }\n";
+		nginxConf += "    include /media/data/nginx_custom_conf_d/default.conf;\n";
 		nginxConf += "}";
 		
 		webserver.addLiveConfig("default", nginxConf);

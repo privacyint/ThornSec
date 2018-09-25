@@ -192,7 +192,8 @@ public class Etherpad extends AStructuredProfile {
 	    nginxConf += "		proxy_pass http://etherpad-lite/;\n";
 	    nginxConf += "		proxy_pass_header Server;\n";
 	    nginxConf += "	}\n";
-	    nginxConf += "}";
+		nginxConf += "    include /media/data/nginx_custom_conf_d/default.conf;\n";
+		nginxConf += "}";
 		
 		webserver.addLiveConfig("default", nginxConf);	
 		

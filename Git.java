@@ -60,6 +60,7 @@ public class Git extends AStructuredProfile {
 		nginxConf += "        proxy_buffering     on;\n";
 		nginxConf += "        proxy_set_header    Accept-Encoding \"\";\n";
 		nginxConf += "    }\n";
+		nginxConf += "    include /media/data/nginx_custom_conf_d/default.conf;\n";
 		nginxConf += "}";
 		
 		webserver.addLiveConfig("default", nginxConf);

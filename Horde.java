@@ -89,6 +89,7 @@ public class Horde extends AStructuredProfile {
 		nginxConf += "    location ~ /\\.ht {\n";
 		nginxConf += "        deny all;\n";
 		nginxConf += "    }\n";
+		nginxConf += "    include /media/data/nginx_custom_conf_d/default.conf;\n";
 		nginxConf += "}";
 		
 		webserver.addLiveConfig("default", nginxConf);

@@ -44,6 +44,16 @@ public class Nginx extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
+		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "nginx_includes", "nginx_installed", "/media/metaldata/nginx_includes", "/media/data/nginx_includes", "nginx", "nginx", "0750"));
+
+		units.addElement(new SimpleUnit("nginx_custom_nginx", "nginx_includes_bindpoint_created",
+				"sudo touch /media/data/nginx_includes/customNginxBlockParams",
+				"[ -f /media/data/nginx_includes/customNginxBlockParams ] && echo pass || echo fail", "pass", "pass"));
+
+		units.addElement(new SimpleUnit("nginx_custom_http", "nginx_includes_bindpoint_created",
+				"sudo touch /media/data/nginx_includes/customHttpBlockParams",
+				"[ -f /media/data/nginx_includes/customHttpBlockParams ] && echo pass || echo fail", "pass", "pass"));
+		
 		String nginxConf = "";
 		nginxConf += "user nginx;\n";
 		nginxConf += "\n";
@@ -52,7 +62,7 @@ public class Nginx extends AStructuredProfile {
 		nginxConf += "error_log  /var/log/nginx/error.log warn;\n";
 		nginxConf += "pid        /var/run/nginx.pid;\n";
 		nginxConf += "\n";
-		nginxConf += "include includes/customNginxBlockParams;\n";
+		nginxConf += "include /media/data/nginx_includes/customNginxBlockParams;\n";
 		nginxConf += "\n";
 		nginxConf += "events {\n";
 		nginxConf += "    worker_connections $(ulimit -n);\n";
@@ -75,21 +85,13 @@ public class Nginx extends AStructuredProfile {
 		nginxConf += "\n";
 		nginxConf += "    server_tokens off;\n";
 		nginxConf += "\n";
-		nginxConf += "    include includes/customHttpBlockParams;\n";
+		nginxConf += "    include /media/data/nginx_includes/customHttpBlockParams;\n";
 		nginxConf += "\n";
 		nginxConf += "    include /etc/nginx/conf.d/*.conf;\n";
 		nginxConf += "}";
 		
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_conf", "nginx_installed", nginxConf, "/etc/nginx/nginx.conf"));
 		
-		units.addElement(new SimpleUnit("nginx_custom_nginx", "nginx_installed",
-				"sudo touch /etc/nginx/includes/customNginxBlockParams",
-				"[ -f /etc/nginx/includes/customNginxBlockParams ] && echo pass || echo fail", "pass", "pass"));
-
-		units.addElement(new SimpleUnit("nginx_custom_http", "nginx_installed",
-				"sudo touch /etc/nginx/includes/customHttpBlockParams",
-				"[ -f /etc/nginx/includes/customHttpBlockParams ] && echo pass || echo fail", "pass", "pass"));
-
 		return units;
 	}
 
@@ -102,15 +104,15 @@ public class Nginx extends AStructuredProfile {
 		model.getServerModel(server).getProcessModel().addProcess("nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf$");
 		model.getServerModel(server).getProcessModel().addProcess("nginx: worker process *$");
 		
-		units.addElement(new DirUnit("nginx_custom_conf_dir", "proceed", "/etc/nginx/conf.d/custom"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "nginx_custom_conf_dir", "nginx_installed", "/media/metaldata/nginx_custom_conf_d", "/media/data/nginx_custom_conf_d", "nginx", "nginx", "0750"));
 		
 		if (liveConfig.size() > 0) {		
 			for (Map.Entry<String, String> config : liveConfig.entrySet()) {
 				units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_live_" + config.getKey(), "nginx_installed", config.getValue(), "/etc/nginx/conf.d/" + config.getKey() + ".conf"));
 				
-				units.addElement(new SimpleUnit("nginx_custom_" + config.getKey(), "nginx_custom_conf_dir",
-						"sudo touch /etc/nginx/conf.d/custom/" + config.getKey() + ".conf",
-						"[ -f /etc/nginx/conf.d/custom/" + config.getKey() + ".conf ] && echo pass || echo fail", "pass", "pass"));
+				units.addElement(new SimpleUnit("nginx_custom_" + config.getKey(), "nginx_custom_conf_dir_bindpoint_created",
+						"sudo touch /media/data/nginx_custom_conf_d/" + config.getKey() + ".conf",
+						"[ -f /media/data/nginx_custom_conf_d/" + config.getKey() + ".conf ] && echo pass || echo fail", "pass", "pass"));
 			}
 		}
 		else {
@@ -129,14 +131,14 @@ public class Nginx extends AStructuredProfile {
 			conf += "        root /usr/share/nginx/html;\n";
 			conf += "    }\n";
 			conf += "\n";
-			conf += "    include custom/default.conf;\n";
+			conf += "    include /media/data/nginx_custom_conf_d/default.conf;\n";
 			conf += "}";
 			
 			units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_default", "nginx_installed", conf, "/etc/nginx/conf.d/default.conf"));
 			
-			units.addElement(new SimpleUnit("nginx_custom_default", "nginx_custom_conf_dir",
-					"sudo touch /etc/nginx/conf.d/custom/default.conf",
-					"[ -f /etc/nginx/conf.d/custom/default.conf ] && echo pass || echo fail", "pass", "pass"));
+			units.addElement(new SimpleUnit("nginx_custom_default", "nginx_custom_conf_d_bindpoint_created",
+					"sudo touch /media/data/nginx_custom_conf_d/default.conf",
+					"[ -f /media/data/nginx_custom_conf_d/default.conf ] && echo pass || echo fail", "pass", "pass"));
 		}
 		
 		return units;
