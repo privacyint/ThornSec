@@ -240,46 +240,41 @@ public class Virtualisation extends AStructuredProfile {
 				"sudo -u " + user + " VBoxManage list vms | grep " + service, "", "fail",
 				"Couldn't create " + service + " on its metal.  This is fatal, " + service + " will not be installed."));
 		
-		//Disk controller setup
-		units.addElement(new SimpleUnit(service + "_sata_controller", service + "_exists",
-				"sudo -u " + user + " VBoxManage storagectl " + service + " --name \"SATA Controller\" --add sata --controller IntelAHCI",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep storagecontrollername0", "storagecontrollername0=\\\"SATA Controller\\\"", "pass",
-				"The SATA controller for " + service + " (where its disks are atached) Couldn't be created/attached to " + service + ".  This is fatal, " + service + " will not be installed."));
-		
-		units.addElement(new SimpleUnit(service + "_ide_controller", service + "_exists",
-				"sudo -u " + user + " VBoxManage storagectl " + service + " --name \"IDE Controller\" --add ide",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep storagecontrollername1", "storagecontrollername1=\\\"IDE Controller\\\"", "pass",
-				"The IDE controller for " + service + " (where its disks are atached) Couldn't be created/attached to " + service + ".  This is fatal, " + service + " will not be installed."));
-
-		//Disk setup
+		//HDD creation
 		units.addElement(new SimpleUnit(service + "_boot_disk", "boot_disk_dir_" + service + "_chmoded",
-				"sudo -u " + user + " VBoxManage createhd --filename " + bootDiskVdi + " --size " + model.getData().getDiskSize(service),
-				"sudo [ -f " + bootDiskVdi + " ] && echo pass;", "pass", "pass",
+				"sudo -u " + user + " VBoxManage createmedium --filename " + bootDiskImg + diskExtension + " --size " + model.getData().getDiskSize(service) + " --format VMDK",
+				"sudo [ -f " + bootDiskImg + "* ] && echo pass;", "pass", "pass",
 				"Couldn't create the disk for " + service + "'s base filesystem.  This is fatal."));
 		
-		units.addElement(new SimpleUnit(service + "_boot_disk_attached", service + "_sata_controller",
-				"sudo -u " + user + " VBoxManage storageattach " + service + " --storagectl \"SATA Controller\" --port 0 --device 0 --type hdd --medium " + bootDiskVdi,
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"SATA Controller-0-0\"", "\\\"SATA Controller-0-0\\\"=\\\"" + bootDiskVdi + "\\\"", "pass",
-				"Couldn't attach the disk for " + service + "'s base filesystem.  This is fatal."));
-
 		units.addElement(new SimpleUnit(service + "_data_disk", "data_disk_dir_" + service + "_chmoded",
-				"sudo -u " + user + " VBoxManage createhd --filename " + dataDiskVdi + " --size " + model.getData().getDataDiskSize(service),
-				"sudo [ -f " + dataDiskVdi + " ] && echo pass;", "pass", "pass",
+				"sudo -u " + user + " VBoxManage createmedium --filename " + dataDiskImg + diskExtension + " --size " + model.getData().getDataDiskSize(service) + " --format VMDK",
+				"sudo [ -f " + dataDiskImg + "* ] && echo pass;", "pass", "pass",
 				"Couldn't create the disk for " + service + "'s data.  This is fatal."));
 		
-		units.addElement(new SimpleUnit(service + "_data_disk_attached", service + "_sata_controller",
-				"sudo -u " + user + " VBoxManage storageattach " + service + " --storagectl \"SATA Controller\" --port 1 --device 0 --type hdd --medium " + dataDiskVdi,
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"SATA Controller-1-0\"", "\\\"SATA Controller-1-0\\\"=\\\"" + dataDiskVdi + "\\\"", "pass",
+		//Disk controller setup
+		units.addElement(new SimpleUnit(service + "_sas_controller", service + "_exists",
+				"sudo -u " + user + " VBoxManage storagectl " + service + " --name \"SAS\" --add sas --controller LSILogicSAS --portcount 5 --hostiocache off",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^storagecontrollername0=", "storagecontrollername0=\\\"SAS\\\"", "pass",
+				"The SAS controller for " + service + " (where its disks are attached) Couldn't be created/attached to " + service + ".  This is fatal, " + service + " will not be installed."));
+
+		units.addElement(new SimpleUnit(service + "_boot_disk_attached", service + "_sas_controller",
+				"sudo -u " + user + " VBoxManage storageattach " + service + " --storagectl \"SAS\" --port 0 --device 0 --type hdd --medium " + bootDiskImg + diskExtension + " --comment \\\"" + service + "BootDisk\\\"",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"SAS-0-0\"", "\\\"SAS-0-0\\\"=\\\"" + bootDiskImg + diskExtension + "\\\"", "pass",
+				"Couldn't attach the disk for " + service + "'s base filesystem.  This is fatal."));
+
+		units.addElement(new SimpleUnit(service + "_data_disk_attached", service + "_sas_controller",
+				"sudo -u " + user + " VBoxManage storageattach " + service + " --storagectl \"SAS\" --port 1 --device 0 --type hdd --medium " + dataDiskImg + diskExtension + " --comment \\\"" + service + "DataDisk\\\"",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"SAS-1-0\"", "\\\"SAS-1-0\\\"=\\\"" + dataDiskImg + diskExtension + "\\\"", "pass",
 				"Couldn't attach the disk for " + service + "'s data.  This is fatal."));
 		
-		units.addElement(new SimpleUnit(service + "_install_iso_attached", service + "_ide_controller",
-				"sudo -u " + user + " VBoxManage storageattach " + service + " --storagectl \"IDE Controller\" --port 0 --device 0 --type dvddrive --medium " + installIso,
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"IDE Controller-0-0\"", "\\\"IDE Controller-0-0\\\"=\\\"" + installIso + "\\\"", "pass",
+		units.addElement(new SimpleUnit(service + "_install_iso_attached", service + "_sas_controller",
+				"sudo -u " + user + " VBoxManage storageattach " + service + " --storagectl \"SAS\" --port 2 --device 0 --type dvddrive --medium " + installIso,
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"SAS-2-0\"", "\\\"SAS-2-0\\\"=\\\"" + installIso + "\\\"", "pass",
 				"Couldn't attach the preseeded installation disk for " + service + ".  This service will not be installed."));
 		
-		units.addElement(new SimpleUnit(service + "_guest_additions_iso_attached", service + "_ide_controller",
-				"sudo -u " + user + " VBoxManage storageattach " + service + " --storagectl \"IDE Controller\" --port 0 --device 1 --type dvddrive --medium /usr/share/virtualbox/VBoxGuestAdditions.iso",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"IDE Controller-0-1\"", "\\\"IDE Controller-0-1\\\"=\\\"/usr/share/virtualbox/VBoxGuestAdditions.iso\\\"", "pass",
+		units.addElement(new SimpleUnit(service + "_guest_additions_iso_attached", service + "_sas_controller",
+				"sudo -u " + user + " VBoxManage storageattach " + service + " --storagectl \"SAS\" --port 3 --device 0 --type dvddrive --medium /usr/share/virtualbox/VBoxGuestAdditions.iso",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"SAS-3-0\"", "\\\"SAS-3-0\\\"=\\\"/usr/share/virtualbox/VBoxGuestAdditions.iso\\\"", "pass",
 				"Couldn't attach the VirtualBox Guest Additions disk for " + service + ".  Logs will not be pushed out to the hypervisor as expected."));
 		
 		//Architecture setup
