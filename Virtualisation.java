@@ -289,6 +289,7 @@ public class Virtualisation extends AStructuredProfile {
 		units.addElement(modifyVm(service, user, "memory", model.getData().getRam(service)));
 		units.addElement(modifyVm(service, user, "vram", "16"));
 		units.addElement(modifyVm(service, user, "nestedpaging", "on"));
+		units.addElement(modifyVm(service, user, "largepages", "on"));
 
 		//Boot setup - DVD is second to stop machines being wiped every time they're brought up
 		units.addElement(modifyVm(service, user, "boot1", "disk", "Couldn't set the boot order for " + service + ".  This may mean the service will not be installed.", service + "_sas_controller"));
