@@ -328,12 +328,20 @@ public class Virtualisation extends AStructuredProfile {
 		//tty0 socket
 		units.addElement(new SimpleUnit(service + "_tty0_com_port", service + "_exists",
 				"sudo -u " + user + " VBoxManage modifyvm " + service + " --uart1 0x3F8 4",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep uart1", "uart1=\\\"0x03f8,4\\\"", "pass"));
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^uart1=", "uart1=\\\"0x03f8,4\\\"", "pass"));
 
-		units.addElement(new SimpleUnit(service + "_tty0_socket", service + "_exists",
+		units.addElement(new SimpleUnit(service + "_tty0_socket", service + "_tty0_com_port",
 				"sudo -u " + user + " VBoxManage modifyvm " + service + " --uartmode1 server " + ttySocketDir + "/vboxttyS0",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep uartmode1", "uartmode1=\\\"server," + ttySocketDir + "/vboxttyS0\\\"", "pass"));
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^uartmode1=", "uartmode1=\\\"server," + ttySocketDir + "/vboxttyS0\\\"", "pass"));
 		
+		units.addElement(new SimpleUnit(service + "_tty1_com_port", service + "_exists",
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --uart2 0x2F8 3",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^uart2=", "uart2=\\\"0x02f8,3\\\"", "pass"));
+
+		units.addElement(new SimpleUnit(service + "_tty1_socket", service + "_tty1_com_port",
+				"sudo -u " + user + " VBoxManage modifyvm " + service + " --uartmode2 server " + ttySocketDir + "/vboxttyS1",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^uartmode2=", "uartmode2=\\\"server," + ttySocketDir + "/vboxttyS1\\\"", "pass"));
+
 		//Ready to go!
 		//units.addElement(new SimpleUnit(service + "_running", service + "_exists",
 		//		"sudo -u " + user + " bash -c 'VBoxManage startvm " + service + " --type headless'",
