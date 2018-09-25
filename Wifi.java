@@ -1,4 +1,4 @@
-/*package profile;
+package profile;
 
 import java.util.Vector;
 
@@ -17,7 +17,7 @@ public class Wifi extends AStructuredProfile {
 	public Wifi() {
 		super("wifi");
 	}
-
+/*
 	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
@@ -132,6 +132,5 @@ public class Wifi extends AStructuredProfile {
 
 		return units;
 	}
-
+	*/
 }
-*/

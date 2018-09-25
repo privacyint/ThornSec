@@ -32,12 +32,13 @@ public class Drupal extends AStructuredProfile {
 		
 		units.addElement(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
 		units.addElement(new InstalledUnit("composer", "proceed", "composer"));
+		units.addElement(new InstalledUnit("curl", "proceed", "curl"));
+		units.addElement(new InstalledUnit("unzip", "proceed", "unzip"));
+
 		units.addElement(new InstalledUnit("php_xml", "php_fpm_installed", "php-xml"));
 		units.addElement(new InstalledUnit("php_gd", "php_fpm_installed", "php-gd"));
 		units.addElement(new InstalledUnit("php_mysql", "php_fpm_installed", "php-mysql"));
 		units.addElement(new InstalledUnit("php_common", "php_fpm_installed", "php-common"));
-		units.addElement(new InstalledUnit("curl", "proceed", "curl"));
-		units.addElement(new InstalledUnit("unzip", "proceed", "unzip"));
 		units.addElement(new InstalledUnit("php_mod_curl", "php_fpm_installed", "php-curl"));
 		units.addElement(new InstalledUnit("php_mbstring", "php_fpm_installed", "php-mbstring"));
 
