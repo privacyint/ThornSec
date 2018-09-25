@@ -131,7 +131,37 @@ public class Metal extends AStructuredProfile {
 			}
 			
 			units.addAll(hypervisor.buildIso(server, service, model, hypervisor.preseed(server, service, model, expirePasswords)));
-			units.addAll(hypervisor.buildVm(server, service, model, bridge));
+			units.addAll(hypervisor.buildServiceVm(server, service, model, bridge));
+			
+			String fuse = "";
+			fuse += "user_allow_other";
+
+			units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("fuse", "proceed", fuse, "/etc/fuse.conf"));
+			
+			String bootDiskDir = model.getData().getVmBase(server) + "/disks/boot/" + service + "/";
+			String dataDiskDir = model.getData().getVmBase(server) + "/disks/data/" + service + "/";
+			
+			units.addElement(new SimpleUnit(service + "_boot_disk_loopback_mounted", "proceed",
+					"sudo -u vboxuser_" + service + " bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg';"
+					+" sudo -u vboxuser_" + service
+					+ " guestmount -a " + bootDiskDir + service + "_boot.v*"
+					+ " -i"
+					+ " --ro"
+					+ " -o allow_root"
+					+ " " + bootDiskDir + "live/",
+					"sudo mount | grep " + bootDiskDir, "", "fail",
+					"I was unable to loopback mount the boot disk for " + service + " in " + server + "."));
+			
+			units.addElement(new SimpleUnit(service + "_data_disk_loopback_mounted", "proceed",
+					"sudo -u vboxuser_" + service + " bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg';"
+					+ " sudo -u vboxuser_" + service
+					+ " guestmount -a " + dataDiskDir + service + "_data.v*"
+					+ " -m /dev/sda1"
+					+ " --ro"
+					+ " -o allow_root"
+					+ " " + dataDiskDir + "live/",
+					"sudo mount | grep " + dataDiskDir, "", "fail",
+					"I was unable to loopback mount the data disk for " + service + " in " + server + ".  Backups will not work."));
 		}
 		
 		return units;
