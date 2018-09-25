@@ -279,7 +279,7 @@ public class Virtualisation extends AStructuredProfile {
 		
 		//Architecture setup
 		units.addElement(new SimpleUnit(service + "_ioapic_on", service + "_exists",
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --ioapic on",
+		units.addElement(modifyVm(service, user, "chipset", "ich9"));
 		units.addElement(modifyVm(service, user, "ioapic", "on", "IO APIC couldn't be enabled for " + service + ".  This is required for 64-bit installations, and for more than 1 virtual CPU in a service."));
 				"IO APIC couldn't be enabled for " + service + ".  This is required for 64-bit installations, and for more than 1 virtual CPU in a service."));
 		units.addElement(modifyVm(service, user, "pae", "on"));
