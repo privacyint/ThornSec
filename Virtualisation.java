@@ -12,7 +12,6 @@ import core.unit.fs.DirUnit;
 import core.unit.fs.FileOwnUnit;
 import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
-import core.unit.fs.GitCloneUnit;
 import core.unit.pkg.InstalledUnit;
 
 public class Virtualisation extends AStructuredProfile {
@@ -43,12 +42,6 @@ public class Virtualisation extends AStructuredProfile {
 				"The nbd kernel module couldn't be loaded.  Backups won't work."));
 		
 		model.getServerModel(server).getUserModel().addUsername("nbd");
-		
-		//This is for our internal backups
-		units.addElement(new GitCloneUnit("backup_script", "metal_git_installed",
-				"https://github.com/JohnKaul/rsync-time-backup.git",
-				model.getData().getVmBase(server) + "/backups/rsync-time-backup",
-				"The backup script couldn't be retrieved from github.  Backups won't work."));
 
 		return units;
 	}
