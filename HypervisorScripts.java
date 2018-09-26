@@ -41,6 +41,7 @@ public class HypervisorScripts extends AStructuredProfile {
 
 		units.addElement(new InstalledUnit("metal_git", "git"));
 		units.addElement(new InstalledUnit("metal_duplicity", "duplicity"));
+		units.addElement(new InstalledUnit("metal_mutt", "mutt"));
 		
 		return units;
 	}
