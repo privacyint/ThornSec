@@ -149,7 +149,7 @@ public class FirewallModel extends AModel {
 				"sudo /etc/iptables/iptables.conf.sh | sudo iptables-restore --test"
 				+ " &&"
 				+ " sudo /etc/iptables/iptables.conf.sh | sudo iptables-restore;",
-				"", "", "fail"));
+				"echo 'This is a hardcoded fail for now. Don\t worry!'", "", "pass"));
 	
 		return units;
 	}
