@@ -148,12 +148,6 @@ public class NetworkModel {
 		return data.getDeviceLabels();
 	}
 
-//	public void auditBlock(String server, OutputStream out, InputStream in, boolean quiet) {
-//		ManageExec exec = getManageExec(server, "audit", out, quiet);
-//		if (exec != null)
-//			exec.runBlock();
-//	}
-
 	public void auditNonBlock(String server, OutputStream out, InputStream in, boolean quiet) {
 		ManageExec exec = getManageExec(server, "audit", out, quiet);
 		if (exec != null)
@@ -167,18 +161,6 @@ public class NetworkModel {
 				exec.manage();
 		}
 	}
-
-//	public void configBlock(String server, OutputStream out, InputStream in) {
-//		ManageExec exec = getManageExec(server, "config", out, false);
-//		if (exec != null)
-//			exec.runBlock();
-//	}
-
-//	public void dryrunBlock(String server, OutputStream out, InputStream in) {
-//		ManageExec exec = getManageExec(server, "dryrun", out, false);
-//		if (exec != null)
-//			exec.runBlock();
-//	}
 
 	public void configNonBlock(String server, OutputStream out, InputStream in) {
 		ManageExec exec = getManageExec(server, "config", out, false);
