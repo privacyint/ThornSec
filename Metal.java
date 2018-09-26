@@ -139,9 +139,13 @@ public class Metal extends AStructuredProfile {
 			String bootDiskDir = model.getData().getVmBase(server) + "/disks/boot/" + service + "/";
 			String dataDiskDir = model.getData().getVmBase(server) + "/disks/data/" + service + "/";
 			
-			units.addElement(new SimpleUnit(service + "_boot_disk_loopback_mounted", "proceed",
-					"sudo -u vboxuser_" + service + " bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg';"
-					+" sudo -u vboxuser_" + service
+			units.addElement(new SimpleUnit(service + "_boot_disk_formatted", "proceed",
+					"",
+					"sudo bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;"
+					+ "virt-filesystems -a " + bootDiskDir + service + "_boot.v*'", "", "fail",
+					"Boot disk is unformatted (therefore has no OS on it), please configure the service and try mounting again."));
+			
+			units.addElement(new SimpleUnit(service + "_boot_disk_loopback_mounted", service + "_boot_disk_formatted",
 					+ " guestmount -a " + bootDiskDir + service + "_boot.v*"
 					+ " -i"
 					+ " --ro"
@@ -150,9 +154,13 @@ public class Metal extends AStructuredProfile {
 					"sudo mount | grep " + bootDiskDir, "", "fail",
 					"I was unable to loopback mount the boot disk for " + service + " in " + server + "."));
 			
-			units.addElement(new SimpleUnit(service + "_data_disk_loopback_mounted", "proceed",
-					"sudo -u vboxuser_" + service + " bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg';"
-					+ " sudo -u vboxuser_" + service
+			units.addElement(new SimpleUnit(service + "_data_disk_formatted", "proceed",
+					"",
+					"sudo bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;"
+					+ "virt-filesystems -a " + dataDiskDir + service + "_data.v*'", "", "fail",
+					"Data disk is unformatted (therefore hasn't been configured), please configure the service and try mounting again."));
+
+			units.addElement(new SimpleUnit(service + "_data_disk_loopback_mounted", service + "_data_disk_formatted",
 					+ " guestmount -a " + dataDiskDir + service + "_data.v*"
 					+ " -m /dev/sda1"
 					+ " --ro"
