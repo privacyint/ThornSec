@@ -419,7 +419,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		adminScript += "RECOVERY_SCRIPTS=" + recoveryScriptsBase + "\n";
 		adminScript += "BACKUP_SCRIPTS=" + backupScriptsBase + "\n";
 		adminScript += "\n";
-		adminScript += "vms=\\$(find \\${VMS_BASE}/* -maxdepth 1 -type d ! -name '.*' -printf '%f ')\n";
+		adminScript += "vms=\\$(find \\${VMS_BASE}/* -maxdepth 0 -type d ! -name '.*' -printf '%f ')\n";
 		adminScript += "PS3=\\\"Number: \\\"\n";
 		adminScript += "\n";
 		adminScript += "function stopVM {\n";
