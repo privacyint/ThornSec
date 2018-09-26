@@ -145,12 +145,15 @@ public class Metal extends AStructuredProfile {
 					+ "virt-filesystems -a " + bootDiskDir + service + "_boot.v*'", "", "fail",
 					"Boot disk is unformatted (therefore has no OS on it), please configure the service and try mounting again."));
 			
+			//For now, do this as root.  We probably want to move to another user, idk
 			units.addElement(new SimpleUnit(service + "_boot_disk_loopback_mounted", service + "_boot_disk_formatted",
-					+ " guestmount -a " + bootDiskDir + service + "_boot.v*"
-					+ " -i"
-					+ " --ro"
-					+ " -o allow_root"
-					+ " " + bootDiskDir + "live/",
+					"sudo bash -c '"
+						+ " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;"
+						+ " guestmount -a " + bootDiskDir + service + "_boot.v*"
+						+ " -i"
+						+ " --ro"
+						+ " " + bootDiskDir + "live/"
+					+"'",
 					"sudo mount | grep " + bootDiskDir, "", "fail",
 					"I was unable to loopback mount the boot disk for " + service + " in " + server + "."));
 			
@@ -161,11 +164,13 @@ public class Metal extends AStructuredProfile {
 					"Data disk is unformatted (therefore hasn't been configured), please configure the service and try mounting again."));
 
 			units.addElement(new SimpleUnit(service + "_data_disk_loopback_mounted", service + "_data_disk_formatted",
-					+ " guestmount -a " + dataDiskDir + service + "_data.v*"
-					+ " -m /dev/sda1"
-					+ " --ro"
-					+ " -o allow_root"
-					+ " " + dataDiskDir + "live/",
+					"sudo bash -c '"
+						+ " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;"
+						+ " guestmount -a " + dataDiskDir + service + "_data.v*"
+						+ " -m /dev/sda1"
+						+ " --ro"
+						+ " " + dataDiskDir + "live/"
+					+"'",
 					"sudo mount | grep " + dataDiskDir, "", "fail",
 					"I was unable to loopback mount the data disk for " + service + " in " + server + ".  Backups will not work."));
 		}
