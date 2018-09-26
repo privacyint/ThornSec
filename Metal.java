@@ -51,6 +51,10 @@ public class Metal extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 
+		String fuse = "";
+		fuse += "#user_allow_other";
+		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("fuse", "proceed", fuse, "/etc/fuse.conf"));
+
 		InterfaceModel im = model.getServerModel(server).getInterfaceModel();
 		
 		//Routers build their own external ifaces.
@@ -131,11 +135,6 @@ public class Metal extends AStructuredProfile {
 			
 			units.addAll(hypervisor.buildIso(server, service, model, hypervisor.preseed(server, service, model, expirePasswords)));
 			units.addAll(hypervisor.buildServiceVm(server, service, model, bridge));
-			
-			String fuse = "";
-			fuse += "user_allow_other";
-
-			units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("fuse", "proceed", fuse, "/etc/fuse.conf"));
 			
 			String bootDiskDir = model.getData().getVmBase(server) + "/disks/boot/" + service + "/";
 			String dataDiskDir = model.getData().getVmBase(server) + "/disks/data/" + service + "/";
