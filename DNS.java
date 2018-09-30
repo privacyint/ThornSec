@@ -252,7 +252,7 @@ public class DNS extends AStructuredProfile {
 
 		for (String domain : domainRecords.keySet()) {
 			String zoneConfig = "";
-			zoneConfig += "    local-zone: \\\"" + domain + ".\\\" transparent";
+			zoneConfig += "    local-zone: \\\"" + domain + ".\\\" typetransparent";
 	
 			Vector<String> records = domainRecords.get(domain);
 			
