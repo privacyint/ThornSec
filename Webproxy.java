@@ -8,6 +8,7 @@ import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
+import core.unit.fs.CustomFileUnit;
 import core.unit.fs.DirUnit;
 import core.unit.pkg.InstalledUnit;
 
@@ -161,10 +162,7 @@ public class Webproxy extends AStructuredProfile {
 				
 				webserver.addLiveConfig(backend, nginxConf);
 				
-				units.addElement(new SimpleUnit("nginx_custom_block_" + backend, "nginx_backend_custom_bindpoint_created",
-						"sudo touch /media/data/nginx_custom_blocks/" + backend + ".conf",
-						"[ -f /media/data/nginx_custom_blocks/" + backend + ".conf ] && echo pass || echo fail", "pass", "pass"));
-
+				units.addElement(new CustomFileUnit("nginx_custom_block_" + backend, "nginx_backend_custom_bindpoint_created", "/media/data/nginx_custom_blocks/" + backend + ".conf"));
 			}
 		}
 		else {

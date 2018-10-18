@@ -7,6 +7,7 @@ import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
+import core.unit.fs.CustomFileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
@@ -141,9 +142,7 @@ public class DHCP extends AStructuredProfile {
 		
 		units.addElement(new RunningUnit("dhcp", "isc-dhcp-server", "isc-dhcp-server"));
 
-		units.addElement(new SimpleUnit("dhcpd_custom_stanzas", "dhcp_installed",
-				"sudo touch /etc/dhcp/dhcpd.custom.conf",
-				"[ -f /etc/dhcpd/dhcpd.custom.conf ] && echo pass || echo fail", "pass", "pass"));
+		units.addElement(new CustomFileUnit("dhcpd_custom_stanzas", "dhcp_installed", "/etc/dhcp/dhcpd.custom.conf"));
 
 		String dhcpconf = "";
 		dhcpconf += "include \\\"/etc/dhcp/dhcpd.custom.conf\\\";\n";

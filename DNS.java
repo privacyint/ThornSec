@@ -8,7 +8,7 @@ import core.iface.IUnit;
 import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
-import core.unit.SimpleUnit;
+import core.unit.fs.CustomFileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
@@ -77,9 +77,7 @@ public class DNS extends AStructuredProfile {
 		
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addElement(new SimpleUnit("dns_custom_zone", "unbound_installed",
-				"sudo touch /etc/unbound/unbound.conf.d/custom.zone",
-				"[ -f /etc/unbound/unbound.conf.d/custom.zone ] && echo pass || echo fail", "pass", "pass"));
+		units.addElement(new CustomFileUnit("dns_custom_zone", "dns_installed", "/etc/unbound/unbound.conf.d/custom.zone"));
 		
 		//Config taken from https://calomel.org/unbound_dns.html
 		String config = "";

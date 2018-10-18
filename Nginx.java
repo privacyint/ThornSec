@@ -9,7 +9,7 @@ import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
-import core.unit.fs.DirUnit;
+import core.unit.fs.CustomFileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
@@ -46,13 +46,12 @@ public class Nginx extends AStructuredProfile {
 		
 		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "nginx_includes", "nginx_installed", "/media/metaldata/nginx_includes", "/media/data/nginx_includes", "nginx", "nginx", "0750"));
 
-		units.addElement(new SimpleUnit("nginx_custom_nginx", "nginx_includes_bindpoint_created",
-				"sudo touch /media/data/nginx_includes/customNginxBlockParams",
-				"[ -f /media/data/nginx_includes/customNginxBlockParams ] && echo pass || echo fail", "pass", "pass"));
+		units.addElement(new SimpleUnit("nginx_modules_symlink", "nginx_modules_data_bindpoint_created",
+				"sudo rm /etc/nginx/modules;"
+				+ "sudo ln -s /media/data/nginx_modules/ /etc/nginx/modules",
 
-		units.addElement(new SimpleUnit("nginx_custom_http", "nginx_includes_bindpoint_created",
-				"sudo touch /media/data/nginx_includes/customHttpBlockParams",
-				"[ -f /media/data/nginx_includes/customHttpBlockParams ] && echo pass || echo fail", "pass", "pass"));
+		units.addElement(new CustomFileUnit("nginx_custom_nginx", "nginx_includes_data_bindpoint_created", "/media/data/nginx_includes/customNginxBlockParams"));
+		units.addElement(new CustomFileUnit("nginx_custom_http", "nginx_includes_data_bindpoint_created", "/media/data/nginx_includes/customHttpBlockParams"));
 		
 		String nginxConf = "";
 		nginxConf += "user nginx;\n";
@@ -109,10 +108,8 @@ public class Nginx extends AStructuredProfile {
 		if (liveConfig.size() > 0) {		
 			for (Map.Entry<String, String> config : liveConfig.entrySet()) {
 				units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_live_" + config.getKey(), "nginx_installed", config.getValue(), "/etc/nginx/conf.d/" + config.getKey() + ".conf"));
-				
-				units.addElement(new SimpleUnit("nginx_custom_" + config.getKey(), "nginx_custom_conf_dir_bindpoint_created",
-						"sudo touch /media/data/nginx_custom_conf_d/" + config.getKey() + ".conf",
-						"[ -f /media/data/nginx_custom_conf_d/" + config.getKey() + ".conf ] && echo pass || echo fail", "pass", "pass"));
+
+				units.addElement(new CustomFileUnit("nginx_custom_" + config.getKey(), "nginx_custom_conf_d_data_bindpoint_created", "/media/data/nginx_custom_conf_d/" + config.getKey() + ".conf"));
 			}
 		}
 		else {
@@ -136,9 +133,7 @@ public class Nginx extends AStructuredProfile {
 			
 			units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_default", "nginx_installed", conf, "/etc/nginx/conf.d/default.conf"));
 			
-			units.addElement(new SimpleUnit("nginx_custom_default", "nginx_custom_conf_d_bindpoint_created",
-					"sudo touch /media/data/nginx_custom_conf_d/default.conf",
-					"[ -f /media/data/nginx_custom_conf_d/default.conf ] && echo pass || echo fail", "pass", "pass"));
+			units.addElement(new CustomFileUnit("nginx_custom_default", "nginx_custom_conf_d_data_bindpoint_created", "/media/data/nginx_custom_conf_d/default.conf"));
 		}
 		
 		return units;
