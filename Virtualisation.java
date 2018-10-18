@@ -262,13 +262,15 @@ public class Virtualisation extends AStructuredProfile {
 		//HDD creation
 		units.addElement(new SimpleUnit(service + "_boot_disk", "boot_disk_dir_" + service + "_chmoded",
 				"sudo -u " + user + " VBoxManage createmedium --filename " + bootDiskImg + diskExtension + " --size " + model.getData().getDiskSize(service) + " --format VMDK",
-				"sudo [ -f " + bootDiskImg + "* ] && echo pass;", "pass", "pass",
+				"sudo [ -f " + bootDiskImg + diskExtension + " ] && echo pass;", "pass", "pass",
 				"Couldn't create the disk for " + service + "'s base filesystem.  This is fatal."));
+		units.addElement(new FileOwnUnit(service + "_boot_disk", service + "_boot_disk", bootDiskImg + diskExtension, user, group));
 		
 		units.addElement(new SimpleUnit(service + "_data_disk", "data_disk_dir_" + service + "_chmoded",
 				"sudo -u " + user + " VBoxManage createmedium --filename " + dataDiskImg + diskExtension + " --size " + model.getData().getDataDiskSize(service) + " --format VMDK",
-				"sudo [ -f " + dataDiskImg + "* ] && echo pass;", "pass", "pass",
+				"sudo [ -f " + dataDiskImg + diskExtension + " ] && echo pass;", "pass", "pass",
 				"Couldn't create the disk for " + service + "'s data.  This is fatal."));
+		units.addElement(new FileOwnUnit(service + "_data_disk", service + "_data_disk", dataDiskImg + diskExtension, user, group));
 		
 		//Disk controller setup
 		units.addElement(new SimpleUnit(service + "_sas_controller", service + "_exists",
