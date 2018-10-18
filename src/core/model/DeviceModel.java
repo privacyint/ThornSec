@@ -35,7 +35,7 @@ public class DeviceModel extends AModel {
 		return units;
 	}
 
-	private String ipFromClass() {
+	public String ipFromClass() {
 		String subnet  = get3rdOctet();
 		String ipClass = networkData.getIPClass();
 		
