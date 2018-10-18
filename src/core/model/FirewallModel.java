@@ -7,6 +7,7 @@ import java.util.Vector;
 
 import core.iface.IUnit;
 import core.unit.SimpleUnit;
+import core.unit.fs.CustomFileUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
@@ -99,11 +100,7 @@ public class FirewallModel extends AModel {
 		manglePolicies += ":OUTPUT ACCEPT [0:0]\n";
 		manglePolicies += ":POSTROUTING ACCEPT [0:0]";
 		units.addElement(new FileUnit("iptables_mangle_policies", "iptables_dir_created", manglePolicies, "/etc/iptables/iptables.mangle.policies.conf"));
-
-		units.addElement(new SimpleUnit("iptables_mangle_custom", "iptables_dir_created",
-				"sudo touch /etc/iptables/iptables.mangle.custom.conf",
-				"[ -f /etc/iptables/iptables.mangle.custom.conf ] && echo pass || echo fail", "pass", "pass"));
-		
+		units.addElement(new CustomFileUnit("iptables_mangle_custom", "iptables_dir_created", "/etc/iptables/iptables.mangle.custom.conf"));
 		units.addElement(new FileUnit("iptables_mangle_forward", "iptables_dir_created", getMangleForward(), "/etc/iptables/iptables.mangle.forward.conf"));
 
 		String natPreRoutingPolicy = "";
@@ -111,11 +108,7 @@ public class FirewallModel extends AModel {
 		natPreRoutingPolicy += "*nat\n";
 		natPreRoutingPolicy += ":PREROUTING ACCEPT [0:0]";
 		units.addElement(new FileUnit("iptables_nat_prerouting_policy", "iptables_dir_created", natPreRoutingPolicy, "/etc/iptables/iptables.nat.prerouting.policies.conf"));
-
-		units.addElement(new SimpleUnit("iptables_nat_prerouting_rules_custom", "iptables_dir_created",
-				"sudo touch /etc/iptables/iptables.nat.prerouting.custom.conf",
-				"[ -f /etc/iptables/iptables.nat.prerouting.custom.conf ] && echo pass || echo fail", "pass", "pass"));
-
+		units.addElement(new CustomFileUnit("iptables_nat_prerouting_rules_custom", "iptables_dir_created",	"/etc/iptables/iptables.nat.prerouting.custom.conf"));
 		units.addElement(new FileUnit("iptables_nat_prerouting_rules", "iptables_dir_created", getNatPrerouting(), "/etc/iptables/iptables.nat.prerouting.rules.conf"));
 
 		String natPostRoutingPolicies = "";
@@ -123,11 +116,7 @@ public class FirewallModel extends AModel {
 		natPostRoutingPolicies += ":OUTPUT ACCEPT [0:0]\n";
 		natPostRoutingPolicies += ":POSTROUTING ACCEPT [0:0]";
 		units.addElement(new FileUnit("iptables_nat_postrouting_policy", "iptables_dir_created", natPostRoutingPolicies, "/etc/iptables/iptables.nat.postrouting.policies.conf"));
-
-		units.addElement(new SimpleUnit("iptables_nat_postrouting_rules_custom", "iptables_dir_created",
-				"sudo touch /etc/iptables/iptables.nat.postrouting.custom.conf",
-				"[ -f /etc/iptables/iptables.nat.postrouting.custom.conf ] && echo pass || echo fail", "pass", "pass"));
-		
+		units.addElement(new CustomFileUnit("iptables_nat_postrouting_rules_custom", "iptables_dir_created","/etc/iptables/iptables.nat.postrouting.custom.conf"));
 		units.addElement(new FileUnit("iptables_nat_postrouting_rules", "iptables_dir_created", getNatPostrouting(), "/etc/iptables/iptables.nat.postrouting.rules.conf"));
 		
 		String filterPolicies = "";
@@ -137,11 +126,7 @@ public class FirewallModel extends AModel {
 		filterPolicies += ":FORWARD ACCEPT [0:0]\n";
 		filterPolicies += ":OUTPUT ACCEPT [0:0]";
 		units.addElement(new FileUnit("iptables_filter_policy", "iptables_dir_created", filterPolicies, "/etc/iptables/iptables.filter.policies.conf"));
-
-		units.addElement(new SimpleUnit("iptables_filter_rules_custom", "iptables_dir_created",
-				"sudo touch /etc/iptables/iptables.filter.custom.conf",
-				"[ -f /etc/iptables/iptables.filter.custom.conf ] && echo pass || echo fail", "pass", "pass"));
-		
+		units.addElement(new CustomFileUnit("iptables_filter_rules_custom", "iptables_dir_created", "/etc/iptables/iptables.filter.custom.conf"));
 		units.addElement(new FileUnit("iptables_filter_rules", "iptables_dir_created", getFilter(), "/etc/iptables/iptables.filter.rules.conf"));
 
 		//This needs child units back.  I should get 'round to fixing that.
