@@ -9,6 +9,7 @@ import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.fs.CustomFileUnit;
+import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
@@ -236,8 +237,6 @@ public class DNS extends AStructuredProfile {
 	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addElement(new RunningUnit("dns", "unbound", "unbound"));
-		
 		String ifaceConfig = "";
 		
 		ifaceConfig += "    interface: 127.0.0.1\n";
@@ -270,6 +269,14 @@ public class DNS extends AStructuredProfile {
 			}
 			units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("dns_poison_zone", "dns_installed", poisonConfig.replaceAll("\\s+$", ""), "/etc/unbound/unbound.conf.d/poison.zone"));
 		}
+		
+		units.addElement(new RunningUnit("dns", "unbound", "unbound"));
+		
+		String resolv = "";
+		resolv += "search " + model.getData().getDomain(server) + "\n";
+		resolv += "nameserver 127.0.0.1";
+		units.addElement(new FileUnit("dns_resolv_conf", "dns_running", resolv, "/etc/resolv.conf",
+				"Unable to change your DNS to point at the local one.  This will probably cause VM building to fail, amongst other problems"));
 		
 		return units;
 	}
