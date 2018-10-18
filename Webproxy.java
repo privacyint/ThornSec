@@ -146,6 +146,10 @@ public class Webproxy extends AStructuredProfile {
 				nginxConf += "    ssl_trusted_certificate /media/data/tls/" + backend + "/stapling.pem;\n";
 				nginxConf += "\n";
 				nginxConf += "    location / {\n";
+				for (String source : model.getData().getPropertyArray(backend, "allow")) {					
+					nginxConf += "        allow " + source + ";\n";
+					nginxConf += "        deny all;\n";
+				}
 				nginxConf += "        proxy_pass              http://" + model.getServerModel(backend).getIP() + ";\n";
 				nginxConf += "        proxy_request_buffering off;\n";
 				nginxConf += "        proxy_buffering         off;\n";
