@@ -9,7 +9,7 @@ public class InstalledUnit extends SimpleUnit {
 				"export DEBIAN_FRONTEND=noninteractive; "
 				+ "sudo apt-get update;"
 				+ "sudo -E apt-get install --assume-yes " + pkg + ";",
-				"dpkg-query --status " + pkg + " | grep -E \"Status: (install|hold) ok installed\";", "", "fail",
+				"dpkg-query --status " + pkg + " 2>&1 | grep -E \"Status: (install|hold) ok installed\";", "", "fail",
 				message);
 	}
 
