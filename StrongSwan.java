@@ -78,8 +78,7 @@ public class StrongSwan extends AStructuredProfile {
 			DNS  dns  = model.getServerModel(router).getRouter().getDNS();
 			
 			for (String user : users) {
-				String firstThree = model.getDeviceModel(user).getSubnets()[0];
-				firstThree = firstThree.substring(0, firstThree.length()-2);
+				String firstThree = model.getDeviceModel(user).ipFromClass();
 				
 				int vpnSubnet = ((model.getDeviceModel(user).getSubnets().length) * 4);
 
