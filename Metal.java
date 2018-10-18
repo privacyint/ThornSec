@@ -1,5 +1,8 @@
 package profile;
 
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
@@ -109,7 +112,19 @@ public class Metal extends AStructuredProfile {
 			}
 			
 			if (password.equals("")) {
-				password = "secret";
+				password = model.getData().getUserDefaultPassword(model.getData().getUser());
+				password += " " + service;
+
+				String hash = null;
+
+				try {
+					hash = String.format("%032x", new BigInteger(1, MessageDigest.getInstance("MD5").digest(password.getBytes())));
+				} catch (NoSuchAlgorithmException e) {
+					e.printStackTrace();
+				}
+				
+				password = hash;
+				
 				expirePasswords = true;
 			}
 			else {

@@ -1,5 +1,8 @@
 package profile;
 
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Vector;
 
 import core.iface.IUnit;
@@ -137,9 +140,23 @@ public class SSH extends AStructuredProfile {
 				"awk '$5 <= 2000' /etc/ssh/moduli", "", "pass",
 				"Couldn't remove weak moduli from your SSH daemon.  This is undesirable, as it weakens your security.  Please re-run the script to try and get this to work."));
 
+		//Why is this in here?!
 		for (String admin : model.getData().getAdmins(server)) {
 			String sshDir = "/home/" + admin + "/.ssh";
 			String keys   = sshDir + "/authorized_keys";
+			
+			String password = model.getData().getUserDefaultPassword(admin);
+			password += " " + server;
+
+			String hash = null;
+
+			try {
+				hash = String.format("%032x", new BigInteger(1, MessageDigest.getInstance("MD5").digest(password.getBytes())));
+			} catch (NoSuchAlgorithmException e) {
+				e.printStackTrace();
+			}
+			
+			password = hash;
 			
 			units.addElement(new SimpleUnit("user_" + admin + "_created", "proceed",
 					"sudo useradd"
@@ -147,7 +164,7 @@ public class SSH extends AStructuredProfile {
 					+ " -c \"" + model.getData().getFullName(admin) + "\"" //Full name
 					+ " -G sudo" //Groups
 					+ " -s /bin/bash;"
-					+ "echo " + admin + ":secret | sudo chpasswd;" //Set their password to "secret"
+					+ "echo " + admin + ":" + password + " | sudo chpasswd;" //Set their password
 					+ "sudo passwd -e " + admin //Expire their password immediately
 					,
 					"id " + admin + " 2>&1", "id: ‘" + admin + "’: no such user", "fail",
