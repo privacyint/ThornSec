@@ -13,7 +13,7 @@ public class FileOwnUnit extends SimpleUnit {
 	 * @param group        Group to change ownership to
 	 */
 	public FileOwnUnit(String name, String precondition, String file, String user, String group) {
-		super(name + "_chowned", precondition, "sudo chown " + user + ":" + user + " " + file + ";",
+		super(name + "_chowned", precondition, "sudo chown " + user + ":" + group + " " + file + ";",
 				"sudo stat -c %U:%G " + file + ";", user + ":" + group, "pass",
 				"Couldn't change the ownership of " + file + " to " + user + ":" + group);
 	}
