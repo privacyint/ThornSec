@@ -79,5 +79,9 @@ public abstract class ADeviceData {
 	public String getFullName() {
 		return null;
 	}
+	
+	public String getDefaultPw() {
+		return null;
+	}
 
 }

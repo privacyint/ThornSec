@@ -484,4 +484,8 @@ public class NetworkData extends AData {
 	public String getDeviceType(String device) {
 		return this.devices.get(device).getClass().getSimpleName().replace("DeviceData", "");
 	}
+	
+	public String getUserDefaultPassword(String userDevice) {
+		return this.devices.get(userDevice).getDefaultPw();
+	}
 }
