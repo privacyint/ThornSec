@@ -4,9 +4,6 @@ import core.unit.SimpleUnit;
 
 public class FileUnit extends SimpleUnit {
 
-	private String text;
-	private String path;
-
 	/**
 	 * Unit test for creating/modifying a whole file, with custom fail message
 	 * @param name         Name of unit test
@@ -16,9 +13,10 @@ public class FileUnit extends SimpleUnit {
 	 * @param message      Custom fail message
 	 */
 	public FileUnit(String name, String precondition, String text, String path, String message) {
-		super(name, precondition, "", "sudo cat " + path + ";", text, "pass", message);
-		this.text = text;
-		this.path = path;
+		super(name, precondition,
+				"sudo [ -f " + path + " ] || sudo touch " + path + ";"
+				+ "echo \"" + text + "\" | sudo tee " + path + " > /dev/null;",
+				"sudo cat " + path + " 2>&1;", text, "pass", message);
 	}
 
 	/**
@@ -30,18 +28,6 @@ public class FileUnit extends SimpleUnit {
 	 */
 	public FileUnit(String name, String precondition, String text, String path) {
 		this(name, precondition, text, path, "Couldn't create " + path + ".  This is a pretty serious problem!");
-	}
-	
-	public String getConfig() {
-		String config = "";
-		config += "sudo [ -f " + path + " ] || sudo touch " + path + ";";
-		config += "echo \"" + getText() + "\" | sudo tee " + path + " > /dev/null;";
-		
-		return config;
-	}
-
-	public String getText() {
-		return this.text;
 	}
 
 }
