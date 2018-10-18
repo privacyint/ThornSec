@@ -229,7 +229,7 @@ public class FirewallModel extends AModel {
 		String rules = "";
 		
 		for (int i = ch.size() - 1; i >= 0; --i) { //Loop through backwards
-			rules += "-A " + chain +  " " + ch.elementAt(i) + "\n";
+			rules += "\n-A " + chain +  " " + ch.elementAt(i);
 		}
 		
 		return rules;
