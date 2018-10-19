@@ -165,7 +165,16 @@ public class PHP extends AStructuredProfile {
 		iniConf += "soap.wsdl_cache_limit = 5\n";
 		iniConf += "\n";
 		iniConf += "[ldap]\n";
-		iniConf += "ldap.max_links = -1";
+		iniConf += "ldap.max_links = -1\n";
+		iniConf += "\n";
+		iniConf += "[OPcache]\n";
+		iniConf += "opcache.enable=1\n";
+		iniConf += "opcache.enable_cli=1\n";
+		iniConf += "opcache.interned_strings_buffer=8\n";
+		iniConf += "opcache.max_accelerated_files=10000\n";
+		iniConf += "opcache.memory_consumption=128\n";
+		iniConf += "opcache.save_comments=1\n";
+		iniConf += "opcache.revalidate_freq=1";
 		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("php_ini", "php_base_installed", iniConf, iniPath));
 
 		//This is approximate, and very(!!!) generous(!!!) to give the box some breathing room.
