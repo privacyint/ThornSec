@@ -165,8 +165,9 @@ public class Metal extends AStructuredProfile {
 					"sudo bash -c '"
 						+ " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;"
 						+ " guestmount -a " + bootDiskDir + service + "_boot.v*"
-						+ " -i"
-						+ " --ro"
+						+ " -i" //Inspect the disk for the relevant partition
+						+ " -o direct_io" //All read operations must be done against live, not cache
+						+ " --ro" //_MOUNT THE DISK READ ONLY_
 						+ " " + bootDiskDir + "live/"
 					+"'",
 					"sudo mount | grep " + bootDiskDir, "", "fail",
@@ -182,8 +183,9 @@ public class Metal extends AStructuredProfile {
 					"sudo bash -c '"
 						+ " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;"
 						+ " guestmount -a " + dataDiskDir + service + "_data.v*"
-						+ " -m /dev/sda1"
-						+ " --ro"
+						+ " -m /dev/sda1" //Mount the first partition
+						+ " -o direct_io" //All read operations must be done against live, not cache
+						+ " --ro" //_MOUNT THE DISK READ ONLY_
 						+ " " + dataDiskDir + "live/"
 					+"'",
 					"sudo mount | grep " + dataDiskDir, "", "fail",
