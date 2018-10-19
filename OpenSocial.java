@@ -50,7 +50,7 @@ public class OpenSocial extends AStructuredProfile {
 		
 		units.addElement(new SimpleUnit("drush_installed", "composer_installed",
 				"sudo -u nginx bash -c 'composer create-project drush/drush /media/data/drush -n'",
-				"[ -f /media/data/drush/drush ] && echo pass || echo fail", "pass", "pass",
+				"sudo [ -f /media/data/drush/drush ] && echo pass || echo fail", "pass", "pass",
 				"Couldn't install drush. The installation of OpenSocial will fail."));
 		
 		return units;

@@ -61,14 +61,14 @@ public class MariaDB extends AStructuredProfile {
 
 		units.addElement(new SimpleUnit("mariadb_stopped", "mysql_data_mounted",
 				stopMariaDb(),
-				"[ -f /var/run/mysqld/mysqld.pid ] && echo fail || echo pass", "pass", "pass"));
+				"sudo [ -f /var/run/mysqld/mysqld.pid ] && echo fail || echo pass", "pass", "pass"));
 
 		units.addElement(new SimpleUnit("mariadb_data_dir_moved", "mariadb_installed",
 				//We only want to move over the files if they don't already exist
-				"[ -d /media/data/mysql/mysql ] || sudo mv /var/lib/mysql/* /media/data/mysql/;"
+				"sudo [ -d /media/data/mysql/mysql ] || sudo mv /var/lib/mysql/* /media/data/mysql/;"
 				//Either which way, remove the new ones
 				+ "sudo rm -R /var/lib/mysql;",
-				"[ -d /var/lib/mysql ] && echo fail || echo pass", "pass", "pass",
+				"sudo [ -d /var/lib/mysql ] && echo fail || echo pass", "pass", "pass",
 				"Couldn't move MariaDB's data directory.  This means that the database files will be stored in the VM."));
 
 		String conf = "";

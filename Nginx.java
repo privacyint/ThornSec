@@ -44,8 +44,8 @@ public class Nginx extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "nginx_includes", "nginx_installed", "/media/metaldata/nginx_includes", "/media/data/nginx_includes", "nginx", "nginx", "0750"));
-
+		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "nginx_includes", "nginx_installed", "nginx", "nginx", "0750"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "nginx_modules", "nginx_installed", "nginx", "nginx", "0750"));
 		units.addElement(new SimpleUnit("nginx_modules_symlink", "nginx_modules_data_bindpoint_created",
 				"sudo rm /etc/nginx/modules;"
 				+ "sudo ln -s /media/data/nginx_modules/ /etc/nginx/modules",
