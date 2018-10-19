@@ -49,7 +49,8 @@ public class Nginx extends AStructuredProfile {
 		units.addElement(new SimpleUnit("nginx_modules_symlink", "nginx_modules_data_bindpoint_created",
 				"sudo rm /etc/nginx/modules;"
 				+ "sudo ln -s /media/data/nginx_modules/ /etc/nginx/modules",
-
+				"readlink /etc/nginx/modules", "/media/data/nginx_modules/", "pass"));
+		
 		units.addElement(new CustomFileUnit("nginx_custom_nginx", "nginx_includes_data_bindpoint_created", "/media/data/nginx_includes/customNginxBlockParams"));
 		units.addElement(new CustomFileUnit("nginx_custom_http", "nginx_includes_data_bindpoint_created", "/media/data/nginx_includes/customHttpBlockParams"));
 		
@@ -103,7 +104,7 @@ public class Nginx extends AStructuredProfile {
 		model.getServerModel(server).getProcessModel().addProcess("nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf$");
 		model.getServerModel(server).getProcessModel().addProcess("nginx: worker process *$");
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "nginx_custom_conf_dir", "nginx_installed", "/media/metaldata/nginx_custom_conf_d", "/media/data/nginx_custom_conf_d", "nginx", "nginx", "0750"));
+		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "nginx_custom_conf_d", "nginx_installed", "nginx", "nginx", "0750"));
 		
 		if (liveConfig.size() > 0) {		
 			for (Map.Entry<String, String> config : liveConfig.entrySet()) {
