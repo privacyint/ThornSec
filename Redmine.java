@@ -164,6 +164,10 @@ public class Redmine extends AStructuredProfile {
 		nginxConf += "}";
 		
 		webserver.addLiveConfig("default", nginxConf);
+		
+		units.addElement(new DirOwnUnit("redmine_cache", "redmine_installed", "/var/cache/redmine/default/tmp", "nginx"));
+		units.addElement(new DirOwnUnit("redmine_cache_tmp", "redmine_installed", "/var/cache/redmine/default/tmp/cache", "nginx"));
+		
 		units.addAll(webserver.getPersistentConfig(server, model));
 		units.addAll(db.getPersistentConfig(server, model));
 		
