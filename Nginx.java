@@ -85,6 +85,8 @@ public class Nginx extends AStructuredProfile {
 		nginxConf += "\n";
 		nginxConf += "    server_tokens off;\n";
 		nginxConf += "\n";
+		nginxConf += "    client_max_body_size 0;\n";
+		nginxConf += "\n";
 		nginxConf += "    include /media/data/nginx_includes/customHttpBlockParams;\n";
 		nginxConf += "\n";
 		nginxConf += "    include /etc/nginx/conf.d/*.conf;\n";
