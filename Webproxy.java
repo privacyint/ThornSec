@@ -138,6 +138,10 @@ public class Webproxy extends AStructuredProfile {
 				
 				nginxConf += ";\n";
 			
+				//Let's separate the logs out...
+				nginxConf += "    access_log  /var/log/nginx/" + server + "." + model.getData().getDomain(server) + "/access.log main buffer=16k;\n";
+				nginxConf += "    error_log   /var/log/nginx/" + server + "." + model.getData().getDomain(server) + "/error.log main buffer=16k;\n";
+				nginxConf += "\n";
 				//We use the Let's Encrypt naming convention here, in case we want to install it later
 				nginxConf += "    include /etc/nginx/includes/ssl_params;\n";
 				nginxConf += "    include /etc/nginx/includes/header_params;\n";
