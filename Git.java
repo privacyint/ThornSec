@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileEditUnit;
@@ -15,30 +16,30 @@ public class Git extends AStructuredProfile {
 
 	private Nginx webserver;
 	
-	public Git() {
-		super("git");
+	public Git(ServerModel me, NetworkModel networkModel) {
+		super("git", me, networkModel);
 		
-		this.webserver = new Nginx();
+		this.webserver = new Nginx(me, networkModel);
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addElement(new InstalledUnit("java", "proceed", "default-jre-headless"));
 				
-		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "scm_manager", "proceed", "deb http://maven.scm-manager.org/nexus/content/repositories/releases ./", "keyserver.ubuntu.com", "D742B261");
+		((ServerModel)me).getAptSourcesModel().addAptSource("scm_manager", "proceed", "deb http://maven.scm-manager.org/nexus/content/repositories/releases ./", "keyserver.ubuntu.com", "D742B261");
 		
 		units.addElement(new InstalledUnit("scm_server", "scm_manager_gpg", "scm-server"));
 		
-		units.addAll(webserver.getInstalled(server, model));
+		units.addAll(webserver.getInstalled());
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units =  new Vector<IUnit>();
 				
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "scm", "proceed", "scm", "scm", "0750"));
+		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("scm", "proceed", "scm", "scm", "0750"));
 		
 		units.addElement(new FileEditUnit("scm_server_home", "scm_data_mounted", "export SCM_HOME=/var/lib/scm", "export SCM_HOME=/media/data/scm", "/etc/default/scm-server",
 				"Couldn't change scm-manager's data directory.  Its data will be stored in the VM only."));
@@ -64,7 +65,7 @@ public class Git extends AStructuredProfile {
 		nginxConf += "}";
 		
 		webserver.addLiveConfig("default", nginxConf);
-		units.addAll(webserver.getPersistentConfig(server, model));
+		units.addAll(webserver.getPersistentConfig());
 		
 		String systemd = "";
 		systemd += "[Unit]\n";
@@ -89,20 +90,20 @@ public class Git extends AStructuredProfile {
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(webserver.getLiveConfig(server, model));
+		units.addAll(webserver.getLiveConfig());
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_scm", "maven.scm-manager.org", new String[]{"80","443"});
+		me.addRequiredEgress("maven.scm-manager.org");
 
-		units.addAll(webserver.getPersistentFirewall(server, model));
+		units.addAll(webserver.getNetworking());
 
 		return units;
 	}

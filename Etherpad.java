@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileChecksumUnit;
@@ -19,20 +20,25 @@ public class Etherpad extends AStructuredProfile {
 	private PHP php;
 	private MariaDB db;
 	
-	public Etherpad() {
-		super("etherpad");
+	public Etherpad(ServerModel me, NetworkModel networkModel) {
+		super("etherpad", me, networkModel);
 		
-		this.webserver = new Nginx();
-		this.php = new PHP();
-		this.db = new MariaDB();
+		this.webserver = new Nginx(me, networkModel);
+		this.php = new PHP(me, networkModel);
+		this.db = new MariaDB(me, networkModel);
+		
+		this.db.setUsername("etherpad");
+		this.db.setUserPrivileges("ALL");
+		this.db.setUserPassword("${ETHERPAD_PASSWORD}");
+		this.db.setDb("etherpad");
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		units.addAll(webserver.getInstalled(server, model));
-		units.addAll(php.getInstalled(server, model));
-		units.addAll(db.getInstalled(server, model));
+		units.addAll(webserver.getInstalled());
+		units.addAll(php.getInstalled());
+		units.addAll(db.getInstalled());
 		
 		units.addElement(new InstalledUnit("gzip", "proceed", "gzip"));
 		units.addElement(new InstalledUnit("git", "gzip_installed", "git"));
@@ -45,12 +51,12 @@ public class Etherpad extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units =  new Vector<IUnit>();
 
-		units.addAll(webserver.getPersistentConfig(server, model));
-		units.addAll(db.getPersistentConfig(server, model));
-		units.addAll(php.getPersistentConfig(server, model));	
+		units.addAll(webserver.getPersistentConfig());
+		units.addAll(db.getPersistentConfig());
+		units.addAll(php.getPersistentConfig());	
 		
 		units.addElement(new FileDownloadUnit("nodejs", "build_essential_installed",
 				"https://deb.nodesource.com/setup_9.x",
@@ -94,8 +100,10 @@ public class Etherpad extends AStructuredProfile {
 				"echo $ETHERPAD_PASSWORD", "", "fail",
 				"Couldn't set the Etherpad database user's password.  Etherpad will be left in a broken state."));
 		
-		units.addAll(db.createDb("etherpad", "etherpad", "ALL", "ETHERPAD_PASSWORD"));
-
+		//Set up our database
+		units.addAll(db.checkUserExists());
+		units.addAll(db.checkDbExists());
+		
 		String settings = "";
 		settings += "{";
 		settings += "\n";
@@ -157,7 +165,7 @@ public class Etherpad extends AStructuredProfile {
 		settings += "	\\\"loglevel\\\": \\\"INFO\\\",\n";
 		settings += "}";
 		
-		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("etherpad", "etherpad_installed", settings, "/media/data/www/settings.json"));
+		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("etherpad", "etherpad_installed", settings, "/media/data/www/settings.json"));
 		
 		//https://github.com/ether/etherpad-lite/wiki/How-to-deploy-Etherpad-Lite-as-a-service
 		String serviceConf = "";
@@ -174,7 +182,7 @@ public class Etherpad extends AStructuredProfile {
 		serviceConf += "[Install]\n";
 		serviceConf += "WantedBy=multi-user.target";
 
-		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("etherpad_service", "etherpad_installed", serviceConf, "/etc/systemd/system/etherpad-lite.service"));
+		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("etherpad_service", "etherpad_installed", serviceConf, "/etc/systemd/system/etherpad-lite.service"));
 
 		units.addElement(new SimpleUnit("etherpad_service_enabled", "etherpad_service_config",
 				"sudo systemctl enable etherpad-lite",
@@ -183,7 +191,7 @@ public class Etherpad extends AStructuredProfile {
 				
 		units.addElement(new RunningUnit("etherpad", "etherpad-lite", "etherpad-lite"));
 		
-		model.getServerModel(server).getProcessModel().addProcess("node /media/data/www/node_modules/ep_etherpad-lite/node/server.js$");
+		((ServerModel)me).getProcessModel().addProcess("node /media/data/www/node_modules/ep_etherpad-lite/node/server.js$");
 		
 		String nginxConf = "";
 		nginxConf += "upstream etherpad-lite {\n";
@@ -206,28 +214,28 @@ public class Etherpad extends AStructuredProfile {
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(webserver.getLiveConfig(server, model));
-		units.addAll(php.getLiveConfig(server, model));
-		units.addAll(db.getLiveConfig(server, model));
+		units.addAll(webserver.getLiveConfig());
+		units.addAll(php.getLiveConfig());
+		units.addAll(db.getLiveConfig());
 						
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(webserver.getPersistentFirewall(server, model));
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_github", "github.com", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_etherpad", "etherpad.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_beta_etherpad", "beta.etherpad.org", new String[]{"80","443"});
-		
-		model.getServerModel(server).addRouterPoison(server, model, "code.jquery.com", "205.185.208.52", new String[]{"443"});
-		model.getServerModel(server).addRouterPoison(server, model, "deb.nodesource.com", "52.222.225.13", new String[]{"443"});
-		model.getServerModel(server).addRouterPoison(server, model, "npmjs.org", "34.208.205.7", new String[]{"443"});
-		model.getServerModel(server).addRouterPoison(server, model, "registry.npmjs.org", "138.197.224.240", new String[]{"443"});
+		units.addAll(webserver.getNetworking());
+		//Let's open this box up to most of the internet.  Thanks, node & etherpad!
+		me.addRequiredEgress("github.com");
+		me.addRequiredEgress("etherpad.org");
+		me.addRequiredEgress("beta.etherpad.org");
+		me.addRequiredEgress("code.jquery.com");
+		me.addRequiredEgress("deb.nodesource.com");
+		me.addRequiredEgress("npmjs.org");
+		me.addRequiredEgress("registry.npmjs.org");
 
 		return units;
 	}

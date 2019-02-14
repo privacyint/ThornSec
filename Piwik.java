@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileChecksumUnit;
@@ -16,20 +17,25 @@ public class Piwik extends AStructuredProfile {
 	private PHP php;
 	private MariaDB db;
 	
-	public Piwik() {
-		super("piwik");
+	public Piwik(ServerModel me, NetworkModel networkModel) {
+		super("piwik", me, networkModel);
 		
-		this.webserver = new Nginx();
-		this.php = new PHP();
-		this.db = new MariaDB();
+		this.webserver = new Nginx(me, networkModel);
+		this.php = new PHP(me, networkModel);
+		this.db = new MariaDB(me, networkModel);
+		
+		this.db.setUsername("piwik");
+		this.db.setUserPrivileges("SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES");
+		this.db.setUserPassword("${PIWIK_PASSWORD}");
+		this.db.setDb("piwik");
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 				
-		units.addAll(webserver.getInstalled(server, model));
-		units.addAll(php.getInstalled(server, model));
-		units.addAll(db.getInstalled(server, model));
+		units.addAll(webserver.getInstalled());
+		units.addAll(php.getInstalled());
+		units.addAll(db.getInstalled());
 
 		units.addElement(new InstalledUnit("unzip", "proceed", "unzip"));
 		units.addElement(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
@@ -51,17 +57,17 @@ public class Piwik extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
-		units.addAll(webserver.getPersistentConfig(server, model));
-		units.addAll(php.getPersistentConfig(server, model));
-		units.addAll(db.getPersistentConfig(server, model));
+		units.addAll(webserver.getPersistentConfig());
+		units.addAll(php.getPersistentConfig());
+		units.addAll(db.getPersistentConfig());
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addElement(new SimpleUnit("piwik_mysql_password", "piwik_installed",
@@ -70,8 +76,10 @@ public class Piwik extends AStructuredProfile {
 				"echo $PIWIK_PASSWORD", "", "fail",
 				"Couldn't set the Piwik database user's password.  Piwik will be left in a broken state."));
 		
-		units.addAll(db.createDb("piwik", "piwik", "SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES", "PIWIK_PASSWORD"));
-		
+		//Set up our database
+		units.addAll(db.checkUserExists());
+		units.addAll(db.checkDbExists());
+				
 		String nginxConf = "";
 		nginxConf += "server {\n";
 		nginxConf += "    listen *:80 default;\n";
@@ -106,20 +114,19 @@ public class Piwik extends AStructuredProfile {
 		
 		webserver.addLiveConfig("default", nginxConf);
 		
-		units.addAll(webserver.getLiveConfig(server, model));
-		units.addAll(php.getLiveConfig(server, model));
-		units.addAll(db.getLiveConfig(server, model));
+		units.addAll(webserver.getLiveConfig());
+		units.addAll(php.getLiveConfig());
+		units.addAll(db.getLiveConfig());
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(webserver.getPersistentFirewall(server, model));
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "matomo", "builds.matomo.org", new String[]{"443"});
+		units.addAll(webserver.getNetworking());
+		me.addRequiredEgress("builds.matomo.org", new Integer[]{443});
 
 		return units;
 	}
-
 }

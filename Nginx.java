@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.Vector;
 
 import core.iface.IUnit;
-import core.model.FirewallModel;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.CustomFileUnit;
@@ -15,37 +15,40 @@ import core.unit.pkg.RunningUnit;
 
 public class Nginx extends AStructuredProfile {
 	private HashMap<String, String> liveConfig;
+	//private Jail jail;
 	
-	public Nginx() {
-		super("nginx");
+	public Nginx(ServerModel me, NetworkModel networkModel) {
+		super("nginx", me, networkModel);
 		
 		this.liveConfig = new HashMap<String, String>();
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
+
+		((ServerModel)me).getAptSourcesModel().addAptSource("nginx", "proceed", "deb http://nginx.org/packages/mainline/debian/ stretch nginx", "keyserver.ubuntu.com", "ABF5BD827BD9BF62");
 		
+		//If we don't give the nginx user a home dir, it can cause problems with npm etc
 		units.addElement(new SimpleUnit("nginx_user", "proceed",
 				"sudo useradd -r -d /media/data/www nginx",
 				"id nginx 2>&1", "id: ‘nginx’: no such user", "fail",
 				"The nginx user couldn't be added.  This will cause all sorts of errors."));
-		
-		model.getServerModel(server).getUserModel().addUsername("nginx");
-		
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "www", "proceed", "nginx", "nginx", "0750"));
-		units.addAll(model.getServerModel(server).getBindFsModel().addLogBindPoint(server, model, "nginx", "proceed", "nginx", "0600"));
 
-		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "nginx", "proceed", "deb http://nginx.org/packages/mainline/debian/ stretch nginx", "keyserver.ubuntu.com", "ABF5BD827BD9BF62");
+		((ServerModel)me).getUserModel().addUsername("nginx");
+		
 		units.addElement(new InstalledUnit("nginx", "nginx_gpg", "nginx"));
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "nginx_includes", "nginx_installed", "nginx", "nginx", "0750"));
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "nginx_modules", "nginx_installed", "nginx", "nginx", "0750"));
+		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("www", "proceed", "nginx", "nginx", "0750"));
+		units.addAll(((ServerModel)me).getBindFsModel().addLogBindPoint("nginx", "proceed", "nginx", "0600"));
+		
+		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("nginx_includes", "nginx_installed", "nginx", "nginx", "0750"));
+		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("nginx_modules", "nginx_installed", "nginx", "nginx", "0750"));
 		units.addElement(new SimpleUnit("nginx_modules_symlink", "nginx_modules_data_bindpoint_created",
 				"sudo rm /etc/nginx/modules;"
 				+ "sudo ln -s /media/data/nginx_modules/ /etc/nginx/modules",
@@ -57,7 +60,7 @@ public class Nginx extends AStructuredProfile {
 		String nginxConf = "";
 		nginxConf += "user nginx;\n";
 		nginxConf += "\n";
-		nginxConf += "worker_processes " + model.getData().getCpus(server) + ";\n";
+		nginxConf += "worker_processes " + networkModel.getData().getCpus(me.getLabel()) + ";\n";
 		nginxConf += "\n";
 		nginxConf += "error_log  /var/log/nginx/error.log warn;\n";
 		nginxConf += "pid        /var/run/nginx.pid;\n";
@@ -92,25 +95,23 @@ public class Nginx extends AStructuredProfile {
 		nginxConf += "    include /etc/nginx/conf.d/*.conf;\n";
 		nginxConf += "}";
 		
-		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_conf", "nginx_installed", nginxConf, "/etc/nginx/nginx.conf"));
+		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("nginx_conf", "nginx_installed", nginxConf, "/etc/nginx/nginx.conf"));
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addElement(new RunningUnit("nginx", "nginx", "nginx"));
+		((ServerModel)me).getProcessModel().addProcess("nginx: master process /usr/sbin/nginx -g daemon on; master_process on;$");
+		((ServerModel)me).getProcessModel().addProcess("nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf$");
+		((ServerModel)me).getProcessModel().addProcess("nginx: worker process *$");
 		
-		model.getServerModel(server).getProcessModel().addProcess("nginx: master process /usr/sbin/nginx -g daemon on; master_process on;$");
-		model.getServerModel(server).getProcessModel().addProcess("nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf$");
-		model.getServerModel(server).getProcessModel().addProcess("nginx: worker process *$");
-		
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "nginx_custom_conf_d", "nginx_installed", "nginx", "nginx", "0750"));
+		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("nginx_custom_conf_d", "nginx_installed", "nginx", "nginx", "0750"));
 		
 		if (liveConfig.size() > 0) {		
 			for (Map.Entry<String, String> config : liveConfig.entrySet()) {
-				units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_live_" + config.getKey(), "nginx_installed", config.getValue(), "/etc/nginx/conf.d/" + config.getKey() + ".conf"));
+				units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("nginx_live_" + config.getKey(), "nginx_installed", config.getValue(), "/etc/nginx/conf.d/" + config.getKey() + ".conf"));
 
 				units.addElement(new CustomFileUnit("nginx_custom_" + config.getKey(), "nginx_custom_conf_d_data_bindpoint_created", "/media/data/nginx_custom_conf_d/" + config.getKey() + ".conf"));
 			}
@@ -134,11 +135,13 @@ public class Nginx extends AStructuredProfile {
 			conf += "    include /media/data/nginx_custom_conf_d/default.conf;\n";
 			conf += "}";
 			
-			units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("nginx_default", "nginx_installed", conf, "/etc/nginx/conf.d/default.conf"));
+			units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("nginx_default", "nginx_installed", conf, "/etc/nginx/conf.d/default.conf"));
 			
 			units.addElement(new CustomFileUnit("nginx_custom_default", "nginx_custom_conf_d_data_bindpoint_created", "/media/data/nginx_custom_conf_d/default.conf"));
 		}
 		
+		units.addElement(new RunningUnit("nginx", "nginx", "nginx"));
+
 		return units;
 	}
 	
@@ -146,39 +149,13 @@ public class Nginx extends AStructuredProfile {
 		liveConfig.put(file, config);
 	}
 
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		FirewallModel fm = model.getServerModel(server).getFirewallModel();
-		//Allow the box to tx/rx on :80&&:443
-		fm.addFilterInput(server,
-				"-p tcp"
-				+ " -m state --state NEW,ESTABLISHED"
-				+ " -m tcp -m multiport --dports 80,443"
-				+ " -j ACCEPT");
-		fm.addFilterOutput(server,
-				"-p tcp"
-				+ " -m state --state ESTABLISHED,RELATED"
-				+ " -m tcp -m multiport --sports 80,443"
-				+ " -j ACCEPT");
+		me.addRequiredListen(80);
 		
-		for (String router : model.getRouters()) {
-			
-			FirewallModel routerFm = model.getServerModel(router).getFirewallModel();
-		
-			routerFm.addFilter(server + "_ingress_80_443_allow", server + "_ingress",
-					"-p tcp"
-					+ " -m state --state NEW,ESTABLISHED,RELATED"
-					+ " -m tcp -m multiport --dports 80,443"
-					+ " -j ACCEPT");
-			routerFm.addFilter(server + "_egress_80_443_allow", server + "_egress",
-					"-p tcp"
-					+ " -m state --state ESTABLISHED,RELATED"
-					+ " -m tcp -m multiport --sports 80,443"
-					+ " -j ACCEPT");
-		}
 		//Allow the server to call out to nginx.org to download mainline
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_nginx", "nginx.org", new String[]{"80","443"});
+		me.addRequiredEgress("nginx.org");
 
 		return units;
 	}

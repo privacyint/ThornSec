@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirMountedUnit;
@@ -15,11 +16,11 @@ public class ChrootJessie extends AStructuredProfile {
 
 	private String CHROOT_DIR = "/media/metaldata/chroot";
 	
-	public ChrootJessie() {
-		super("chrootjessie");
+	public ChrootJessie(ServerModel me, NetworkModel networkModel) {
+		super("chrootjessie", me, networkModel);
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addElement(new InstalledUnit("debootstrap", "proceed", "debootstrap"));
@@ -31,7 +32,7 @@ public class ChrootJessie extends AStructuredProfile {
 				"[ -d " + getChrootDir() + "/home ] && echo pass || echo fail", "pass", "pass"));
 
 		String configcmd = "";
-		if (model.getData().getUpdate(server).equals("true")) {
+		if (networkModel.getData().autoUpdate(me.getLabel())) {
 			configcmd = "sudo chroot " + getChrootDir() + " apt-get --assume-yes upgrade;";
 		}
 		else {
@@ -53,10 +54,10 @@ public class ChrootJessie extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "debian_debs", "deb.debian.org", new String[]{"80","443"});
+		me.addRequiredEgress("deb.debian.org", new Integer[]{80,443});
 
 		return units;
 	}

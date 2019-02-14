@@ -4,41 +4,47 @@ import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.pkg.InstalledUnit;
 
 public class MISP extends AStructuredProfile {
 	
-	Nginx webserver;
-	PHP php;
-	MariaDB db;
+	private Nginx webserver;
+	private PHP php;
+	private MariaDB db;
 	
 	String webBase;
 	
-	public MISP() {
-		super("misp");
+	public MISP(ServerModel me, NetworkModel networkModel) {
+		super("misp", me, networkModel);
 		
-		this.webserver = new Nginx();
-		this.php = new PHP();
-		this.db = new MariaDB();
+		this.webserver = new Nginx(me, networkModel);
+		this.php = new PHP(me, networkModel);
+		this.db = new MariaDB(me, networkModel);
 		this.webBase = "/media/data/www/MISP/";
+		
+		this.db.setUsername("misp");
+		this.db.setUserPrivileges("ALL");
+		this.db.setUserPassword("${MISP_PASSWORD}");
+		this.db.setDb("misp");
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		//units.addElement(new SimpleUnit("nginx_user", "proceed",
 		//		"sudo adduser nginx --system --shell=/bin/false --disabled-login --ingroup nginx",
 		//		"id nginx 2>&1", "id: nginx: no such user", "fail"));
 		
-		units.addAll(webserver.getInstalled(server, model));
-		units.addAll(php.getInstalled(server, model));
-		units.addAll(db.getInstalled(server, model));
+		units.addAll(webserver.getInstalled());
+		units.addAll(php.getInstalled());
+		units.addAll(db.getInstalled());
 		
 		//Hush your face, postfix config!
 		units.addElement(new SimpleUnit("postfix_mailname", "proceed",
-				"sudo debconf-set-selections <<< 'postfix postfix/mailname string " + model.getData().getDomain(server) + "'",
+				"sudo debconf-set-selections <<< 'postfix postfix/mailname string " + networkModel.getData().getDomain(me.getLabel()) + "'",
 				"sudo debconf-show postfix | grep 'postfix/mailname:' || dpkg -l | grep '^.i' | grep 'postfix'", "", "fail"));
 		units.addElement(new SimpleUnit("postfix_mailer_type", "postfix_mailname",
 				"sudo debconf-set-selections <<< 'postfix postfix/main_mailer_type string \"Satellite system\"'",
@@ -56,7 +62,7 @@ public class MISP extends AStructuredProfile {
 		units.addElement(new InstalledUnit("redis_server", "proceed", "redis-server"));
 		units.addElement(new InstalledUnit("zip", "proceed", "zip"));
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "gnupg_home", "gnupg_agent_installed", "/media/metaldata/gpg", "/media/data/gpg", "nginx", "nginx", "0750"));
+		units.addAll(((ServerModel)me).getBindFsModel().addBindPoint("gnupg_home", "gnupg_agent_installed", "/media/metaldata/gpg", "/media/data/gpg", "nginx", "nginx", "0750"));
 		
 		//Install PHP dependencies
 		units.addElement(new InstalledUnit("php5_cli", "php5_fpm_installed", "php5-cli"));
@@ -77,7 +83,7 @@ public class MISP extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
 		String nginxConf = "";
@@ -109,22 +115,22 @@ public class MISP extends AStructuredProfile {
 		nginxConf += "}";
 		
 		webserver.addLiveConfig("default", nginxConf);
-		units.addAll(webserver.getPersistentConfig(server, model));
-		units.addAll(db.getPersistentConfig(server, model));
-		units.addAll(php.getPersistentConfig(server, model));
+		units.addAll(webserver.getPersistentConfig());
+		units.addAll(db.getPersistentConfig());
+		units.addAll(php.getPersistentConfig());
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "nginx", "nginx_installed", "/media/metaldata/www/MISP/app/tmp", "/media/data/www/MISP/app/tmp", "nginx", "nginx", "0770"));
-		units.addAll(model.getServerModel(server).getBindFsModel().addBindPoint(server, model, "nginx", "nginx_installed", "/media/metaldata/www/MISP/app/files", "/media/data/www/MISP/app/files", "nginx", "nginx", "0770"));
+		units.addAll(((ServerModel)me).getBindFsModel().addBindPoint("nginx", "nginx_installed", "/media/metaldata/www/MISP/app/tmp", "/media/data/www/MISP/app/tmp", "nginx", "nginx", "0770"));
+		units.addAll(((ServerModel)me).getBindFsModel().addBindPoint("nginx", "nginx_installed", "/media/metaldata/www/MISP/app/files", "/media/data/www/MISP/app/files", "nginx", "nginx", "0770"));
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(webserver.getLiveConfig(server, model));
-		units.addAll(php.getLiveConfig(server, model));
-		units.addAll(db.getLiveConfig(server, model));
+		units.addAll(webserver.getLiveConfig());
+		units.addAll(php.getLiveConfig());
+		units.addAll(db.getLiveConfig());
 		
 		units.addElement(new SimpleUnit("misp_cloned", "git_installed",
 				"sudo -u nginx bash -c '"
@@ -178,8 +184,10 @@ public class MISP extends AStructuredProfile {
 				"MISP_PASSWORD=`grep \"password\" " + webBase + "app/Config/database.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',\"`; [[ -z $MISP_PASSWORD ]] && MISP_PASSWORD=`openssl rand -hex 32`",
 				"echo $MISP_PASSWORD", "", "fail"));
 		
-		units.addAll(db.createDb("misp", "misp", "ALL", "MISP_PASSWORD"));
-		
+		//Set up our database
+		units.addAll(db.checkUserExists());
+		units.addAll(db.checkDbExists());
+
 		units.addElement(new SimpleUnit("misp_database_exists", "misp_mariadb_user_exists",
 				"sudo -u nginx bash -c 'mysql -umisp -p${MISP_PASSWORD} < " + webBase + "INSTALL/MYSQL.sql;'",
 				"sudo [ echo $(mysqlshow -umisp -p${MISP_PASSWORD} misp attributes 1>/dev/null 2>/dev/null) == 0 ] && echo pass || echo fail", "", "fail"));
@@ -206,12 +214,11 @@ public class MISP extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(webserver.getPersistentFirewall(server, model));
+		units.addAll(webserver.getNetworking());
 
 		return units;
 	}
-
 }

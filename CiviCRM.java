@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
@@ -11,20 +12,25 @@ import core.unit.pkg.InstalledUnit;
 
 public class CiviCRM extends AStructuredProfile {
 	
-	Drupal drupal;
-	MariaDB db;
+	private Drupal drupal;
+	private MariaDB db;
 	
-	public CiviCRM() {
-		super("civicrm");
+	public CiviCRM(ServerModel me, NetworkModel networkModel) {
+		super("civicrm", me, networkModel);
 		
-		this.drupal = new Drupal();
-		this.db = new MariaDB();
+		this.drupal = new Drupal(me, networkModel);
+		this.db     = new MariaDB(me, networkModel);
+		
+		this.db.setUsername("civicrm");
+		this.db.setUserPrivileges("SUPER");
+		this.db.setUserPassword("${CIVICRM_PASSWORD}");
+		this.db.setDb("civicrm");
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(drupal.getInstalled(server, model));
+		units.addAll(drupal.getInstalled());
 		
 		units.add(new InstalledUnit("php_imagemagick", "php_fpm_installed", "php-imagick"));
 		units.add(new InstalledUnit("php_mcrypt", "php_fpm_installed", "php-mcrypt"));
@@ -32,18 +38,18 @@ public class CiviCRM extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
-		units.addAll(drupal.getPersistentConfig(server, model));
+		units.addAll(drupal.getPersistentConfig());
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(drupal.getLiveConfig(server, model));
+		units.addAll(drupal.getLiveConfig());
 
 		units.addElement(new DirUnit("drush_home", "drupal_installed", "~/.drush"));
 
@@ -53,7 +59,8 @@ public class CiviCRM extends AStructuredProfile {
 				"echo $CIVICRM_PASSWORD", "", "fail",
 				"Couldn't set a password for CiviCRM's database user. The installation will fail."));
 		
-		units.addAll(db.createDb("civicrm", "*", "civicrm", "SUPER", "CIVICRM_PASSWORD"));
+		units.addAll(this.db.checkUserExists());
+		units.addAll(this.db.checkDbExists());
 		
 		units.addElement(new SimpleUnit("civicrm_installed", "drupal_installed",
 				"sudo wget 'https://download.civicrm.org/civicrm-4.7.27-drupal.tar.gz' -O /media/data/www/sites/all/modules/civi.tar.gz"
@@ -70,15 +77,15 @@ public class CiviCRM extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_civicrm", "download.civicrm.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_civicrm_updates", "latest.civicrm.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_civicrm_extensions", "civicrm.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_google", "storage.googleapis.com", new String[]{"80","443"});
+		me.addRequiredEgress("download.civicrm.org");
+		me.addRequiredEgress("latest.civicrm.org");
+		me.addRequiredEgress("civicrm.org");
+		me.addRequiredEgress("storage.googleapis.com");
 		
-		units.addAll(drupal.getPersistentFirewall(server, model));
+		units.addAll(drupal.getNetworking());
 
 		return units;
 	}

@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirOwnUnit;
@@ -32,11 +33,11 @@ public class HypervisorScripts extends AStructuredProfile {
 	private String watchdogScriptsBase;
 	private String helperScriptsBase;
 	
-	public HypervisorScripts() {
-		super("hypervisorscripts");
+	public HypervisorScripts(ServerModel me, NetworkModel networkModel) {
+		super("hypervisorscripts", me, networkModel);
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
 		units.addElement(new InstalledUnit("metal_git", "git"));
@@ -46,10 +47,10 @@ public class HypervisorScripts extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		vmBase       = model.getData().getVmBase(server);
+		vmBase       = networkModel.getData().getHypervisorThornsecBase(me.getLabel());
 		scriptsBase  = vmBase + "/scripts";
 		disksDirBase = vmBase + "/disks";
 
@@ -91,33 +92,78 @@ public class HypervisorScripts extends AStructuredProfile {
 				backupScriptsBase + "/rsync-time-backup",
 				"The backup script couldn't be retrieved from github.  Backups won't work."));
 		
-		units.addAll(helperScripts(server, model));
-		units.addAll(recoveryScripts(server, model));
-		units.addAll(backupScripts(server, model));
-		units.addAll(vmControlScripts(server, model));
-		units.addAll(watchdogScripts(server, model));
+		units.addAll(helperScripts());
+		units.addAll(recoveryScripts());
+		units.addAll(backupScripts());
+		units.addAll(vmControlScripts());
+		units.addAll(watchdogScripts());
 		
-		units.addAll(adminScripts(server, model));
+		units.addAll(adminScripts());
 		
 		return units;
 	}
 
-	private Vector<IUnit> helperScripts(String server, NetworkModel model) {
+	private Vector<IUnit> helperScripts() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
+		String mountDataScript = "";
+		mountDataScript += "#!/bin/bash\n";
+		mountDataScript += "if [ \\$# -eq 0 ]; then\n";
+		mountDataScript += "    echo \\\"No parameter supplied. You need to provide the name of the VM as a parameter\\\"\n";
+		mountDataScript += "    exit 1;\n";
+		mountDataScript += "fi\n";
+		mountDataScript += "\n";
+		mountDataScript += "vm=\\${1}\n";
+		mountDataScript += "src=/srv/VMs/disks/data/\\${vm}/\\${vm}_data.v*\n";
+		mountDataScript += "dst=/srv/VMs/disks/data/\\${vm}/live/\n";
+		mountDataScript += "\n";
+		mountDataScript += "echo \\\"Mounting \\${vm}'s data disk\\\"\n";
+		mountDataScript += "\n";
+		mountDataScript += "export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;\n";
+		mountDataScript += "\n";
+		mountDataScript += "formatted=\\$(virt-filesystems -a \\${src})\n";
+		mountDataScript += "\n";
+		mountDataScript += "if [ \\\"\\${formatted}\\\" = \\\"\\\" ]; then\n";
+		mountDataScript += "    echo \\\"Disk is not formatted. I shall not attempt to mount it.\\\"\n";
+		mountDataScript += "    exit 1\n";
+		mountDataScript += "else\n";
+		mountDataScript += "    guestmount -a \\${src} -m /dev/sda1 -o direct_io --ro \\${dst}\n";
+		mountDataScript += "    exit \\$?\n";
+		mountDataScript += "fi";
+		
+		units.addElement(new FileUnit("mount_data_script", "proceed", mountDataScript, helperScriptsBase + "/mountData.sh"));
+		units.addElement(new FileOwnUnit("mount_data_script", "mount_data_script", helperScriptsBase + "/mountData.sh", "root"));
+		units.addElement(new FilePermsUnit("mount_data_script", "mount_data_script_chowned", helperScriptsBase + "/mountData.sh", "750"));
+		
+		String umountDataScript = "";
+		umountDataScript += "#!/bin/bash\n";
+		umountDataScript += "if [ \\$# -eq 0 ]; then\n";
+		umountDataScript += "    echo \\\"No parameter supplied. You need to provide the name of the VM as a parameter\\\"\n";
+		umountDataScript += "    exit 1;\n";
+		umountDataScript += "fi\n";
+		umountDataScript += "\n";
+		umountDataScript += "vm=\\${1}\n";
+		umountDataScript += "echo \\\"Unmounting \\${vm}'s data disk\\\"\n"; 
+		umountDataScript += "\n"; 
+		umountDataScript += "umount \\\"" + dataDirBase + "/\\${vm}/live/\\\"\n";
+		umountDataScript += "exit \\$?";
+		
+		units.addElement(new FileUnit("umount_data_script", "proceed", umountDataScript, helperScriptsBase + "/umountData.sh"));
+		units.addElement(new FileOwnUnit("umount_data_script", "umount_data_script", helperScriptsBase + "/umountData.sh", "root"));
+		units.addElement(new FilePermsUnit("umount_data_script", "umount_data_script_chowned", helperScriptsBase + "/umountData.sh", "750"));
 		
 		return units;
 	}
-	private Vector<IUnit> watchdogScripts(String server, NetworkModel model) {
+	private Vector<IUnit> watchdogScripts() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		String isUpScript = "";
 		isUpScript += "#!/bin/bash\n";
 		isUpScript += "statusPath=" + watchdogScriptsBase + "/.status\n";
 		isUpScript += "logPath=" + logDirBase + "/*/\n";
-		isUpScript += "emailTo=" + model.getData().getAdminEmail() + "\n";
-		isUpScript += "emailFrom=" + server + "." + model.getLabel() + "@" + model.getData().getDomain(server) + "\n";
-		isUpScript += "emailFromRealName=\\\"ThornSec Server Daemon™ on " + server + "\\\"\n";
+		isUpScript += "emailTo=" + networkModel.getData().getAdminEmail() + "\n";
+		isUpScript += "emailFrom=" + me.getLabel() + "." + networkModel.getLabel() + "@" + networkModel.getData().getDomain(me.getLabel()) + "\n";
+		isUpScript += "emailFromRealName=\\\"ThornSec Server Daemon™ on " + me.getLabel() + "\\\"\n";
 		isUpScript += "\n";
 		isUpScript += "blacklist=(\\\"lost+found\\\")\n";
 		isUpScript += "\n";
@@ -157,7 +203,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		isUpScript += "                                        wait \\${!};\n";
 		isUpScript += "                                        " + controlScriptsBase + "/startVm.sh \\\"\\${vm}\\\"\n";
 		isUpScript += "                                        wait \\${!}\n";
-		isUpScript += "                                        ) | mutt -e \\\"set realname='\\${emailFromRealName}️' from=\\${emailFrom}\\\" -s \\\"Restarted \\${vm} on " + server + "\\\" -n \\${emailTo}\n";
+		isUpScript += "                                        ) | mutt -e \\\"set realname='\\${emailFromRealName}️' from=\\${emailFrom}\\\" -s \\\"Restarted \\${vm} on " + me.getLabel() + "\\\" -n \\${emailTo}\n";
 		isUpScript += "\n";
 		isUpScript += "                                        counter=0\n";
 		isUpScript += "                                fi\n";
@@ -182,7 +228,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		service += "[Service]\n";
 		service += "ExecStart=" + watchdogScriptsBase + "/isUp.sh\n";
 		service += "KillMode=process\n";
-		service += "Restart=always\n";
+		service += "Restart=no\n";
 		service += "RestartPreventExitStatus=255\n";
 		service += "\n";
 		service += "[Install]\n";
@@ -200,16 +246,18 @@ public class HypervisorScripts extends AStructuredProfile {
 		return units;
 	}
 	
-	private Vector<IUnit> backupScripts(String server, NetworkModel model) {
+	private Vector<IUnit> backupScripts() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		String backupScript = "";
 		backupScript += "#!/bin/bash\n";
 		backupScript += "echo \\\"=== Starting internal backup at \\$(date) ===\\\"\n";
-		backupScript += "emailTo=" + model.getData().getAdminEmail() + "\n";
-		backupScript += "emailFrom=" + server + "." + model.getLabel() + "@" + model.getData().getDomain(server) + "\n";
-		backupScript += "emailFromRealName=\\\"ThornSec Backup Daemon™ on " + server + "\\\"\n";
+		backupScript += "emailTo=" + networkModel.getData().getAdminEmail() + "\n";
+		backupScript += "emailFrom=" + me.getLabel() + "." + networkModel.getLabel() + "@" + networkModel.getData().getDomain(me.getLabel()) + "\n";
+		backupScript += "emailFromRealName=\\\"ThornSec Backup Daemon™ on " + me.getLabel() + "\\\"\n";
 		backupScript += "backupBase=" + backupDirBase + "\n";
+		backupScript += "\n";
+		backupScript += "warnings=\\\"\\n\\\"";
 		backupScript += "\n";
 		backupScript += "for dirPath in " + dataDirBase + "/*/\n";
 		backupScript += "do\n";
@@ -217,15 +265,18 @@ public class HypervisorScripts extends AStructuredProfile {
 		backupScript += "    vm=\\\"\\${dirPath##*/}\\\"\n";
 		backupScript += "\n";
 		backupScript += "    echo \\\"Backing up \\${vm}\\\"\n";
-        backupScript += "    ./rsync-time-backup/rsync_tmbackup.sh -s " + dataDirBase + "/\\\"\\${vm}\\\"/live/ -d \\\"\\${backupBase}/\\${vm}\\\"\n";
+		backupScript += "    " + helperScriptsBase + "/umountData.sh \\\"\\${vm}\\\" 2>/dev/null\n";
+        backupScript += "    " + helperScriptsBase + "/mountData.sh \\\"\\${vm}\\\" &&" + backupScriptsBase + "/rsync-time-backup/rsync_tmbackup.sh -s " + dataDirBase + "/\\\"\\${vm}\\\"/live/ -d \\\"\\${backupBase}/\\${vm}\\\"\n";
+		backupScript += "    " + helperScriptsBase + "/umountData.sh \\\"\\${vm}\\\" 2>/dev/null\n";
 		backupScript += "\n";
 		backupScript += "    if [ ! \\\"\\$(ls -A \\${backupBase}/\\${vm}/latest)\\\" ]; then\n";
-		backupScript += "        (\n";
-		backupScript += "            Today's backup is empty.  This is almost certainly unexpected.";
-		backupScript += "        ) | mutt -e \\\"set realname='\\${emailFromRealName}️' from=\\${emailFrom}\\\" -s \\\"[\\${vm}." + server + "] WARNING: BACKUP EMPTY\\\" -n \\${emailTo}\n";
+		backupScript += "         warnings+=\\\"WARNING: \\${vm}'s latest backup is empty.\\n\\\"\n";
 		backupScript += "    fi\n";
 		backupScript += "done\n";
 		backupScript += "echo \\\"=== Finished internal backup at \\$(date) ===\\\"\n";
+		backupScript += "\n";
+		backupScript += "(echo -e \\\"\\${warnings}\\nBackup précis:\\n\\\"; egrep -w '===|Backing|sent|total' " + backupScriptsBase + "/backup.latest) |\n"; 
+		backupScript += "mutt \\${emailTo} -e \\\"set realname='\\${emailFromRealName}️' from=\\${emailFrom}\\\" -s \\\"[" + me.getLabel() + "] Backup Complete\\\" -a \\\"" + backupScriptsBase + "/backup.latest\\\"\n";
 		backupScript += "\n";
 		backupScript += "if [ -f external_backup.sh ]; then\n";
 		backupScript += "    ./external_backup.sh\n";
@@ -238,7 +289,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		String backupCronJob = "";
 		backupCronJob += "#!/bin/sh\n";
 		backupCronJob += "cd " + backupScriptsBase + "\n";
-		backupCronJob += "./backup.sh >> backup.log";
+		backupCronJob += "./backup.sh | tee ./backup.latest >> ./backup.log";
 
 		units.addElement(new FileUnit("metal_backup_cron_job", "proceed", backupCronJob, "/etc/cron.daily/vm_backup"));
 		units.addElement(new FileOwnUnit("metal_backup_cron_job", "metal_backup_cron_job", "/etc/cron.daily/vm_backup", "root"));
@@ -247,7 +298,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		return units;
 	}
 	
-	private Vector<IUnit> vmControlScripts(String server, NetworkModel model) {
+	private Vector<IUnit> vmControlScripts() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		String stopScript = "";
@@ -362,7 +413,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		return units;
 	}
 	
-	private Vector<IUnit> recoveryScripts(String server, NetworkModel model) {
+	private Vector<IUnit> recoveryScripts() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
 		//Backup recovery scripts
@@ -407,7 +458,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		return units;
 	}
 	
-	private Vector<IUnit> adminScripts(String server, NetworkModel model) {
+	private Vector<IUnit> adminScripts() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		String adminScript = "";
@@ -415,6 +466,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		adminScript += "\n";
 		adminScript += "VMS_BASE=" + dataDirBase + "\n";
 		adminScript += "SCRIPTS_BASE=" + scriptsBase + "\n";
+		adminScript += "HELPER_SCRIPTS=" + helperScriptsBase + "\n";
 		adminScript += "CONTROL_SCRIPTS=" + controlScriptsBase + "\n";
 		adminScript += "RECOVERY_SCRIPTS=" + recoveryScriptsBase + "\n";
 		adminScript += "BACKUP_SCRIPTS=" + backupScriptsBase + "\n";
@@ -499,11 +551,8 @@ public class HypervisorScripts extends AStructuredProfile {
 		adminScript += "function internalBackups {\n";
 		adminScript += "    echo -e \\\"\\\\033[0;31m\\\"\n";
 		adminScript += "    echo \\\"************** WARNING *************\\\"\n";
-		adminScript += "    echo \\\"*  THIS WILL STOP EACH VM IN TURN  *\\\"\n";
-		adminScript += "    echo \\\"*     IN ORDER TO BACK THEM UP     *\\\"\n";
-		adminScript += "    echo \\\"*  THIS WILL ALSO TRIGGER EXTERNAL *\\\"\n";
-		adminScript += "    echo \\\"*    BACKUPS, IF YOU HAVE THEM     *\\\"\n";
-		adminScript += "    echo \\\"*    THIS WILL TAKE SOME TIME!     *\\\"\n";
+		adminScript += "    echo \\\"*  THIS WILL TRIGGER YOUR BACKUPS  *\\\"\n";
+		adminScript += "    echo \\\"*     THIS MAY TAKE SOME TIME!     *\\\"\n";
 		adminScript += "    echo \\\"************** WARNING *************\\\"\n";
 		adminScript += "    echo -e \\\"\\\\033[0m\\\"\n";
 		adminScript += "    read -r -p \\\"Please type 'fg' to continue in the foreground, 'bg' to continue in the background, or 'c' to cancel: \\\" go\n";

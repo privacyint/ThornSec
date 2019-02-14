@@ -1,10 +1,15 @@
 package profile;
 
+import java.net.InetAddress;
+import java.util.Map;
 import java.util.Vector;
 
+import core.data.InterfaceData;
 import core.iface.IUnit;
+import core.model.DeviceModel;
 import core.model.FirewallModel;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
@@ -23,8 +28,8 @@ public class QoS extends AStructuredProfile {
 	
 	private String tcUnits;
 
-	public QoS() {
-		super("qos");
+	public QoS(ServerModel me, NetworkModel networkModel) {
+		super("qos", me, networkModel);
 		
 		userMarkAfter = 20;
 		userMark      = 4;
@@ -41,76 +46,85 @@ public class QoS extends AStructuredProfile {
 		tcUnits = "kbps"; //Kilobytes per second
 	}
 
-	public Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	public Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(bandwidthThrottlingUnits(server, model));
-		units.addAll(bandwidthThrottlingAlertUnits(server, model));
+		units.addAll(bandwidthThrottlingUnits());
+		units.addAll(bandwidthThrottlingAlertUnits());
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
 		//Iterate through devicen first
-		for (String device : model.getDeviceLabels()) {
+		for (DeviceModel device : networkModel.getAllDevices()) {
 			
 			//If they're not throttled, don't bother
-			if (!model.getData().getDeviceThrottled(device)) { continue; }
+			if (!networkModel.getData().getDeviceIsThrottled(device.getLabel())) { continue; }
 			//Or if they don't have an IP (i.e. not a network "internal" user)
-			if (model.getDeviceModel(device).getSubnets().length == 0) { continue; }
+			if (device.getSubnets().isEmpty()) { continue; }
 			
-			String deviceSubnet = model.getDeviceModel(device).getSubnets()[0] + "/24";
+			String deviceSubnet = device.getSubnets().elementAt(0).getHostAddress() + "/24";
 			
-			switch (model.getDeviceModel(device).getType()) {
+			switch (device.getType()) {
 				//Email the user only
 				case "User":
-					markingUnits(server, model, device, deviceSubnet, userMark, userMarkAfter);
+					markingUnits(device.getLabel(), deviceSubnet, userMark, userMarkAfter);
 			        break;
 				//This is a peripheral of some sort.  Just let the responsible person know.
 				case "Internal":
 				case "External":
-					markingUnits(server, model, device, deviceSubnet, deviceMark, deviceMarkAfter);
+					markingUnits(device.getLabel(), deviceSubnet, deviceMark, deviceMarkAfter);
 					break;
 				default:
 			}
 		}
 
-		for (String srv : model.getServerLabels()) {
-			markingUnits(server, model, srv, model.getServerModel(srv).getIP(), serverMark, serverMarkAfter);
+		for (ServerModel srv : networkModel.getAllServers()) {
+			
+			if (srv.isRouter()) { continue; }
+			
+			Vector<InterfaceData> ifaces = srv.getInterfaces();
+			
+			if (ifaces != null && !ifaces.isEmpty()) {
+				markingUnits(srv.getLabel(), ifaces.firstElement().getSubnet().getHostAddress() + "/30", serverMark, serverMarkAfter);
+			}
 		}
 		
 		return units;
 	}
 	
-	private Vector<IUnit> markingUnits(String server, NetworkModel model, String name, String subnet, int mark, int markAfter) {
+	private Vector<IUnit> markingUnits(String name, String subnet, int mark, int markAfter) {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-        FirewallModel fm = model.getServerModel(server).getFirewallModel();
-
-        String extIface = model.getData().getExtIface(server);
+        FirewallModel fm = ((ServerModel)me).getFirewallModel();
 
 		markAfter = markAfter*1024*1024; //get it in bytes
 
-        //Mark any connection which has uploaded > markAfter bytes
-		fm.addMangleForward(name.replaceAll("-",  "_") + "_mark_large_uploads", 
-				"-s " + subnet
-				+ " -o " + extIface
-				+ " -m connbytes --connbytes " + markAfter + ": --connbytes-dir original --connbytes-mode bytes"
-				+ " -j MARK --set-mark " + mark);
-		//Log any connection which has uploaded > markAfter bytes
-        fm.addMangleForward(name.replaceAll("-",  "_") + "_log_large_uploads", 
-				"-s " + subnet
-				+ " -o " + extIface
-				+ " -m connbytes --connbytes " + markAfter + ": --connbytes-dir original --connbytes-mode bytes"
-				+ " -m limit --limit 1/minute" //Poor, poor syslog!
-				+ " -j LOG --log-prefix \\\"ipt-" + name + "-throttled: \\\"");
+		for (Map.Entry<String, String> wanIface : networkModel.getData().getWanIfaces(me.getLabel()).entrySet() ) {
+	        //Mark any connection which has uploaded > markAfter bytes
+			fm.addMangleForward(name.replaceAll("-",  "_") + "_mark_large_uploads", 
+					"-s " + subnet
+					+ " -o " + wanIface.getKey()
+					+ " -m connbytes --connbytes " + markAfter + ": --connbytes-dir original --connbytes-mode bytes"
+					+ " -j MARK --set-mark " + mark,
+					"Mark (tag) packets which are related to large uploads, so they can be treated differently");
+			//Log any connection which has uploaded > markAfter bytes
+	        fm.addMangleForward(name.replaceAll("-",  "_") + "_log_large_uploads", 
+					"-s " + subnet
+					+ " -o " + wanIface.getKey()
+					+ " -m connbytes --connbytes " + markAfter + ": --connbytes-dir original --connbytes-mode bytes"
+					+ " -m limit --limit 1/minute" //Poor, poor syslog!
+					+ " -j LOG --log-prefix \\\"ipt-" + name + "-throttled: \\\"",
+					"Log any large uploads, limited to once a minute");
+		}
 		
 		return units;
 	}
 	
-	private Vector<IUnit> bandwidthThrottlingAlertUnits(String server, NetworkModel model) {
+	private Vector<IUnit> bandwidthThrottlingAlertUnits() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		String ommail = "";
@@ -151,18 +165,18 @@ public class QoS extends AStructuredProfile {
 		ommail += "if \\$msg contains \\\"throttled\\\" then {\n";
 
 		//Iterate through devicen first
-		for (String device : model.getDeviceLabels()) {
+		for (DeviceModel device : networkModel.getAllDevices()) {
 			
 			//If they're not throttled, don't bother
-			if (!model.getData().getDeviceThrottled(device)) { continue; }
+			if (!networkModel.getData().getDeviceIsThrottled(device.getLabel())) { continue; }
 			
-			String deviceEmail  = device + "@" + model.getData().getDomain(server);
-			String adminEmail = model.getData().getAdminEmail();
-			String identifier = device + "." + model.getLabel();
+			String deviceEmail  = device.getLabel() + "@" + networkModel.getData().getDomain(me.getLabel());
+			String adminEmail   = networkModel.getData().getAdminEmail();
+			String identifier   = device.getLabel() + "." + networkModel.getLabel();
 			
-			String[] ips = model.getDeviceModel(device).getIPs();
+			Vector<InetAddress> ips = device.getAddresses();
 			
-			switch (model.getDeviceModel(device).getType()) {
+			switch (device.getType()) {
 				//Email both the user && the responsible person
 				case "User":
 					ommail += buildThrottledEmailAction(ips, identifier, adminEmail, deviceEmail, "mailBodyUser");
@@ -178,11 +192,14 @@ public class QoS extends AStructuredProfile {
 		}
 		
 		//Then servers
-		for (String srv : model.getServerLabels()) {
-			String[] ip = new String[1];
-			ip[0] = model.getServerModel(srv).getIP();
+		for (ServerModel srv : networkModel.getAllServers()) {
+			Vector<InetAddress> ip = new Vector<InetAddress>();
 			
-			ommail += buildThrottledEmailAction(ip, srv + "." + model.getLabel(), srv + "@" + model.getLabel() + model.getData().getDomain(srv), model.getData().getAdminEmail(), "mailBodyTech");
+			if (!ip.isEmpty() && ip != null) {
+				ip.add(srv.getIP());
+				
+				ommail += buildThrottledEmailAction(ip, srv + "." + networkModel.getLabel(), srv + "@" + networkModel.getLabel() + networkModel.getData().getDomain(srv.getLabel()), networkModel.getData().getAdminEmail(), "mailBodyTech");
+			}
 		}
 		
 		ommail += "}";
@@ -194,14 +211,14 @@ public class QoS extends AStructuredProfile {
 		return units;
 	}
 
-	private String buildThrottledEmailAction(String[] ips, String identifier, String fromEmail, String toEmail, String bodyTemplate) {
+	private String buildThrottledEmailAction(Vector<InetAddress> ips, String identifier, String fromEmail, String toEmail, String bodyTemplate) {
 		String action = "";
 
-		if (ips.length > 0) {
-			action += "    if \\$msg contains \\\"SRC=" + ips[0] + "\\\"";
+		if (!ips.isEmpty() && ips != null) {
+			action += "    if \\$msg contains \\\"SRC=" + ips.elementAt(0).getHostAddress() + "\\\"";
 			
-			for (int i = 1; i < ips.length; ++i) {
-				action += " or \\$msg contains \\\"SRC=" + ips[i] + "\\\"";
+			for (InetAddress ip : ips) {
+				action += " or \\$msg contains \\\"SRC=" + ip.getHostAddress() + "\\\"";
 			}
 			
 			action += " then {\n";
@@ -219,7 +236,7 @@ public class QoS extends AStructuredProfile {
 		return action;
 	}
 	
-	private Vector<IUnit> bandwidthThrottlingUnits(String server, NetworkModel model) {
+	private Vector<IUnit> bandwidthThrottlingUnits() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		String tcInit = "";
@@ -234,8 +251,8 @@ public class QoS extends AStructuredProfile {
 		tcInit += "EXT_UPLD=" + extOnlyUploadRate + tcUnits + " # UPLOAD Limit for external-only devicen\n";
 		tcInit += "EXT_UWEIGHT=" + (extOnlyUploadRate/10) + tcUnits + " # UPLOAD Weight Factor for external-only devicen\n";
 		tcInit += "\n";
-		tcInit += "INTIFACE=" + model.getData().getIface(server) + "\n";
-		tcInit += "EXTIFACE=" + model.getData().getExtIface(server) + "\n";
+		tcInit += "INTIFACE=lan0\n";
+		tcInit += "EXTIFACE=" + networkModel.getData().getWanIfaces(me.getLabel()).keySet().toArray()[0] + "\n";
 		tcInit += "\n";
 		tcInit += "tc_start() {\n";
 
@@ -306,12 +323,15 @@ public class QoS extends AStructuredProfile {
 				+ "control any potential exfiltration from your network."));
 		units.addElement(new FilePermsUnit("tc_init_script_perms", "tc_init_script_created", "/etc/init.d/tc.sh", "755"));
 
-		model.getServerModel(server).getFirewallModel().addFilter(server + "_egress_25_allow", server + "_egress",
-				"-p tcp"
-				+ " --dport 25"
-				+ " -j ACCEPT");
-
 		return units;
 	}
 	
+	public Vector<IUnit> getInstalled() { 
+		return new Vector<IUnit>();
+	}
+	
+	public Vector<IUnit> getLiveConfig() { 
+		return new Vector<IUnit>();
+	}
+
 }

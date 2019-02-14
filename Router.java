@@ -1,15 +1,27 @@
 package profile;
 
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Set;
 import java.util.Vector;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.swing.JOptionPane;
 
+import core.data.InterfaceData;
 import core.iface.IUnit;
+import core.model.DeviceModel;
 import core.model.FirewallModel;
 import core.model.InterfaceModel;
+import core.model.MachineModel;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileOwnUnit;
@@ -19,39 +31,37 @@ import core.unit.pkg.InstalledUnit;
 
 public class Router extends AStructuredProfile {
 
-	private DNS dns;
+	private DNS  dns;
 	private DHCP dhcp;
-	private QoS qos;
+	private QoS  qos;
 	
 	private FirewallModel firewall;
-	private InterfaceModel interfaces;
 	
 	private Vector<String> userIfaces;
+	private Vector<String> wanIfaces;
 	
-	private String internalIface;
-	private String externalIface;
-	private String netmask;
+	private HashMap<String, InetAddress[]> resolved;
+	
 	private String domain;
 	
-	private Vector<String> internalOnlyDevices;
-	private Vector<String> externalOnlyDevices;
-	private Vector<String> peripheralDevices;
-	private Vector<String> userDevices;
-	
-	public Router() {
-		super("router");
+	private boolean isPPP;
+
+	public Router(ServerModel me, NetworkModel networkModel) {
+		super("router", me, networkModel);
 		
-		dns  = new DNS();
-		dhcp = new DHCP();
-		qos  = new QoS();
+		this.dns  = new DNS(me, networkModel);
+		this.dhcp = new DHCP(me, networkModel);
+		this.qos  = new QoS(me, networkModel);
 		
-		userIfaces = new Vector<String>();
-		userIfaces.addElement(":2+");
+		//:2+ is a wildcard for VPN traffic interfaces
+		this.userIfaces = new Vector<String>();
+		this.userIfaces.addElement(":2+");
+
+		this.wanIfaces = new Vector<String>();
 		
-		internalOnlyDevices = new Vector<String>();
-		externalOnlyDevices = new Vector<String>();
-		peripheralDevices   = new Vector<String>();
-		userDevices         = new Vector<String>();
+		this.isPPP = false;
+		
+		this.resolved = new HashMap<String, InetAddress[]>();
 	}
 
 	public DHCP getDHCP() {
@@ -62,107 +72,414 @@ public class Router extends AStructuredProfile {
 		return this.dns;
 	}
 	
-	public Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	public Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		externalIface = model.getData().getExtIface(server);
-		internalIface = model.getData().getIface(server);
-
-		firewall   = model.getServerModel(server).getFirewallModel();
-		interfaces = model.getServerModel(server).getInterfaceModel();
-		
-		netmask = model.getData().getNetmask();
-		domain  = model.getData().getDomain(server);
-		
-		//Let's just get this out of the way up here rather than repeating over and over
-		//This class is difficult enough to follow already!! 
-		for (String device : model.getDeviceLabels()) {
-			switch (model.getDeviceModel(device).getType()) {
-				case "User":
-					userDevices.add(device);
-					break;
-				case "Internal":
-					internalOnlyDevices.add(device);
-					break;
-				case "External":
-					externalOnlyDevices.add(device);
-					break;
-				default:
-					//In theory, we should never get here. Theory is a fine thing.
-					System.out.println("Encountered an unsupported device type for " + device);
-			}
-		}
-		
-		//Also lump them together in one - we don't discriminate int/ext 99% of the time
-		peripheralDevices.addAll(internalOnlyDevices);
-		peripheralDevices.addAll(externalOnlyDevices);
-		
-		units.addAll(subnetConfigUnits(server, model));
-		
 		String sysctl = "";
 		sysctl += "net.ipv4.ip_forward=1\n";
 		sysctl += "net.ipv6.conf.all.disable_ipv6=1\n";
 		sysctl += "net.ipv6.conf.default.disable_ipv6=1\n";
 		sysctl += "net.ipv6.conf.lo.disable_ipv6=1";
 
-		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("sysctl", "proceed", sysctl, "/etc/sysctl.conf"));
+		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("sysctl", "proceed", sysctl, "/etc/sysctl.conf"));
 		
-		units.addAll(dhcp.getPersistentConfig(server, model));
-		units.addAll(dns.getPersistentConfig(server, model));
-		units.addAll(qos.getPersistentConfig(server, model));
+		units.addAll(this.dhcp.getPersistentConfig());
+		units.addAll(this.dns.getPersistentConfig());
+		units.addAll(this.qos.getPersistentConfig());
 		
-		units.addAll(extConnConfigUnits(server, model));
-		
-		units.addAll(dailyBandwidthEmailDigestUnits(server, model));
-		
-		units.addAll(routerScript(server, model));
+		units.addAll(routerScript());
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addElement(new InstalledUnit("xsltproc", "xsltproc"));
-		units.addElement(new InstalledUnit("sendmail", "sendmail"));;
+		units.addElement(new InstalledUnit("bridge_utils", "bridge-utils"));
+		units.addElement(new InstalledUnit("traceroute", "traceroute"));
 		
-		model.getServerModel(server).getProcessModel().addProcess("sendmail: MTA: accepting connections$");
-		model.getServerModel(server).getUserModel().addUsername("smmta");
-		model.getServerModel(server).getUserModel().addUsername("smmpa");
-		model.getServerModel(server).getUserModel().addUsername("smmsp");
+		units.addAll(this.dns.getInstalled());
+		units.addAll(this.dhcp.getInstalled());
+		units.addAll(this.qos.getInstalled());
+
+		return units;
+	}
+	
+	protected Vector<IUnit> getLiveConfig() {
+		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(dns.getInstalled(server, model));
-		units.addAll(dhcp.getInstalled(server, model));
+		units.addAll(this.dhcp.getLiveConfig());
+		units.addAll(this.dns.getLiveConfig());
+		units.addAll(this.qos.getLiveConfig());
+
+		units.addAll(dailyBandwidthEmailDigestUnits());
+
+		return units;
+	}
+	
+	private InetAddress[] hostToInetAddress(String uri) {
+		InetAddress[] destination = null;
+		
+		if (this.resolved.containsKey(uri)) {
+			destination = this.resolved.get(uri);
+		}
+		else {
+			destination = networkModel.stringToAllIPs(uri);
+			
+			this.resolved.put(uri, destination);
+		}
+		
+		return destination;
+	}
+	
+	private Vector<IUnit> machineIngressRules(MachineModel machine) {
+		Vector<IUnit> units = new Vector<IUnit>();
+		
+		HashMap<String, Set<Integer>> ingress = machine.getRequiredIngress();
+
+		for (String uri : ingress.keySet()) {
+			InetAddress[] destinations = hostToInetAddress(uri);
+			
+			String setName = networkModel.getIPSet().getSetName(name);
+			
+			networkModel.getIPSet().addSet(setName, new Vector<InetAddress>(Arrays.asList(destinations)));
+			
+			String rule = "";
+			rule += "-p tcp";
+			rule += (ingress.get(uri).isEmpty() || ingress.get(uri).contains(0)) ? "" : " -m multiport --dports " + collection2String(ingress.get(uri));
+			rule += " -m set";
+			rule += " --match-set " + setName + " src";
+			rule += " -j ACCEPT";
+			
+			this.firewall.addFilter(
+					machine.getHostname() + "_" + setName + "_ingress",
+					machine.getIngressChain(),
+					rule,
+					"Allow call in to " + uri
+			);
+		}
+
+		return units;
+	}
+	
+	private Vector<IUnit> machineEgressRules(MachineModel machine) {
+		Vector<IUnit> units = new Vector<IUnit>();
+
+		HashMap<String, Set<Integer>> egress = machine.getRequiredEgress();
+
+		for (String uri : egress.keySet()) {
+			InetAddress[] destinations = hostToInetAddress(uri);
+			
+			String setName = networkModel.getIPSet().getSetName(uri);
+			
+			networkModel.getIPSet().addSet(setName, new Vector<InetAddress>(Arrays.asList(destinations)));
+			
+			String rule = "";
+			rule += "-p tcp";
+			rule += (egress.get(uri).isEmpty() || egress.get(uri).contains(0)) ? "" : " -m multiport --dports " + collection2String(egress.get(uri));
+			rule += " -m set";
+			rule += " --match-set " + setName + " dst";
+			rule += " -j ACCEPT";
+			
+			this.firewall.addFilter(
+					machine.getHostname() + "_" + setName + "_egress",
+					machine.getEgressChain(),
+					rule,
+					"Allow call out to " + uri
+			);
+		}
+
+		return units;
+	}
+	
+	private Vector<IUnit> serverForwardRules(ServerModel server) {
+		Vector<IUnit> units = new Vector<IUnit>();
+		
+		HashMap<String, Set<Integer>> forward = server.getRequiredForward();
+
+		for (String destination : forward.keySet()) {
+			MachineModel destinationMachine = networkModel.getMachineModel(destination);
+			
+			String request = "";
+			request += "-p tcp";
+			request += " -m tcp";
+			request += " -m multiport";
+			request += " --sports " + collection2String(forward.get(destination));
+			request += " -s " + collection2String(destinationMachine.getAddresses());
+			request += " -d " + collection2String(server.getAddresses());
+			request += " -j ACCEPT";
+
+			String reply = "";
+			reply += "-p tcp";
+			reply += " -m tcp";
+			reply += " -m multiport";
+			reply += " --dports " + collection2String(forward.get(destination));
+			reply += " -d " + collection2String(destinationMachine.getAddresses());
+			reply += " -s " + collection2String(server.getAddresses());
+			reply += " -j ACCEPT";
+			
+			this.firewall.addFilter(
+					server.getHostname() + "_" + destinationMachine.getHostname() + "_forward",
+					server.getForwardChain(),
+					request,
+					"Allow traffic from " + destination
+			);
+			this.firewall.addFilter(
+					destinationMachine.getHostname() + "_" + server.getHostname() + "_forward",
+					destinationMachine.getForwardChain(),
+					request,
+					"Allow traffic to " + destination
+			);
+			this.firewall.addFilter(
+					server.getHostname() + "_" + destinationMachine.getHostname() + "_forward",
+					server.getForwardChain(),
+					reply,
+					"Allow traffic from " + destination
+			);
+			this.firewall.addFilter(
+					destinationMachine.getHostname() + "_" + server.getHostname() + "_forward",
+					destinationMachine.getForwardChain(),
+					reply,
+					"Allow traffic to " + destination
+			);
+		}
+
+		return units;
+	}
+
+	private Vector<IUnit> machineDnatRules(MachineModel machine) {
+		Vector<IUnit> units = new Vector<IUnit>();
+
+		HashMap<String, Set<Integer>> dnat = machine.getRequiredDnat();
+
+		for (String destinationName : dnat.keySet()) {
+			MachineModel destinationMachine = networkModel.getMachineModel(destinationName);
+			
+			String rule = "";
+			rule += "-p tcp";
+			rule += " -m tcp";
+			rule += " -m multiport";
+			rule += " --dports " + collection2String(dnat.get(destinationName));
+			rule += " ! -s " + collection2String(machine.getAddresses());
+			rule += " -d " + collection2String(destinationMachine.getAddresses());
+			rule += " -j DNAT";
+			rule += " --to-destination " + collection2String(machine.getAddresses());
+			
+			this.firewall.addNatPrerouting(
+					machine.getHostname() + "_" + destinationMachine.getHostname() + "_dnat",
+					rule,
+					"DNAT traffic for " + destinationName + " to " + machine.getHostname()
+			);
+		}
+		
+		//If we've given it an external IP, and it's actually listening, let it have it!
+		if (networkModel.getData().getExternalIp(machine.getLabel()) != null && !machine.getRequiredListen().isEmpty()) {
+			String rule = "";
+			rule += "-i " + collection2String(networkModel.getData().getWanIfaces(me.getLabel()));
+			rule += " -p tcp";
+			rule += " -m multiport";
+			rule += " --dports " + collection2String(machine.getRequiredListen());
+			rule += " -j DNAT";
+			rule += " --to-destination " + collection2String(machine.getAddresses());
+			
+			this.firewall.addNatPrerouting(
+					machine.getHostname() + "_external_ip_dnat",
+					rule,
+					"DNAT external traffic to " + machine.getHostname() + " if it has an external IP & is listening"
+			);
+		}
+
+		return units;
+	}
+
+	private Vector<IUnit> machineAllowUserForwardRules(MachineModel machine) {
+		Vector<IUnit> units = new Vector<IUnit>();
+
+		Vector<Integer> listen = machine.getRequiredListen();
+		
+		if (machine instanceof ServerModel && listen.size() > 0) {
+			String rule = "";
+			rule += "-p tcp";
+			rule += " -m multiport";
+			rule += " --dports " + collection2String(listen);
+			rule += " -m set";
+			rule += " --match-set user src";
+			rule += " -j ACCEPT";
+	
+			this.firewall.addFilter(
+					machine.getHostname() + "_users_forward",
+					machine.getForwardChain(),
+					rule,
+					"Allow traffic from users"
+			);
+		}
+		else if (machine instanceof DeviceModel && networkModel.getInternalOnlyDevices().contains(machine)) {
+			String rule = "";
+			rule += "-p tcp";
+			rule += (!listen.isEmpty()) ? " -m multiport --dports " + collection2String(listen) : "";
+			rule += " -m set";
+			rule += " --match-set user src";
+			rule += " -j ACCEPT";
+	
+			this.firewall.addFilter(
+					machine.getHostname() + "_users_forward",
+					machine.getForwardChain(),
+					rule,
+					"Allow traffic from users"
+			);
+		}
+		
+		return units;
+	}
+
+	private Vector<IUnit> machineIngressEgressForwardRules(MachineModel machine) {
+		Vector<IUnit> units = new Vector<IUnit>();
+
+		String wanIfaces = collection2String(networkModel.getData().getWanIfaces(me.getLabel()));
+		
+		String ingressRule = "";
+		ingressRule += "-i " + wanIfaces;
+		ingressRule += " -j " + machine.getIngressChain();
+
+		String egressRule = "";
+		egressRule += "-o " + wanIfaces;
+		egressRule += " -j " + machine.getEgressChain();
+
+		this.firewall.addFilter(
+				machine.getHostname() + "_jump_on_ingress",
+				machine.getForwardChain(),
+				ingressRule,
+				"Jump to our ingress chain for incoming (external) traffic"
+		);
+
+		this.firewall.addFilter(
+				machine.getHostname() + "_jump_on_egress",
+				machine.getForwardChain(),
+				egressRule,
+				"Jump to our egress chain for outgoing (external) traffic"
+		);
+		
+		return units;
+	}
+
+	private Vector<IUnit> userAllowServerForwardRules(DeviceModel user) {
+		Vector<IUnit> units = new Vector<IUnit>();
+
+		if (!networkModel.getAllServers().isEmpty()) {
+			String rule = "";
+			rule += "-m set";
+			rule += " --match-set servers dst";
+			rule += " -j ACCEPT";
+	
+			this.firewall.addFilter(
+					user.getHostname() + "_servers_forward",
+					user.getForwardChain(),
+					rule,
+					"Allow traffic to servers"
+			);
+		}
+		
+		return units;
+	}
+
+	private Vector<IUnit> userAllowInternalOnlyForwardRules(DeviceModel user) {
+		Vector<IUnit> units = new Vector<IUnit>();
+
+		if (!networkModel.getInternalOnlyDevices().isEmpty()) {
+			String rule = "";
+			rule += "-m set";
+			rule += " --match-set internalonly dst";
+			rule += " -j ACCEPT";
+	
+			this.firewall.addFilter(
+					user.getHostname() + "_internalonly_forward",
+					user.getForwardChain(),
+					rule,
+					"Allow traffic to internal-only devices"
+			);
+		}
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	private Vector<IUnit> serverAdminRules(MachineModel machine) {
 		Vector<IUnit> units = new Vector<IUnit>();
+
+		String machineName = machine.getLabel();
 		
-		if (!model.getData().getVpnOnly()) {
-			userIfaces.addElement(":1+");
-		}
-		
-		units.addAll(dhcp.getPersistentFirewall(server, model));
-		units.addAll(dns.getPersistentFirewall(server, model));
-		units.addAll(qos.getPersistentFirewall(server, model));
-		
-		units.addAll(userIptUnits(server, model));
-		units.addAll(intOnlyIptUnits(server, model));
-		units.addAll(extOnlyIptUnits(server, model));
-		units.addAll(serverIptUnits(server, model));
+		//Don't need this to be conditional... I don't think :/
+		String rule = "";
+		rule += "-p tcp";
+		rule += " --dport " + networkModel.getData().getSSHPort(machineName);
+		rule += " -m set";
+		rule += " --match-set " + machineName + "_admins src";
+		rule += " -j ACCEPT";
+
+		this.firewall.addFilter(
+				machine.getHostname() + "_allow_admin_ssh",
+				machine.getForwardChain(),
+				rule,
+				"Allow SSH from admins"
+		);
 
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	private Vector<IUnit> networkIptUnits() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(dhcp.getLiveConfig(server, model));
-		units.addAll(dns.getLiveConfig(server, model));
+		for (ServerModel server : networkModel.getAllServers()) {
+			machineIngressRules(server);
+			machineEgressRules(server);
+			serverForwardRules(server);
+			machineDnatRules(server);
+			machineAllowUserForwardRules(server);
+			serverAdminRules(server);
+		}
+		
+		for (DeviceModel device : networkModel.getUserDevices()) {
+			//No need for ingress rules here
+			machineDnatRules(device);
+			machineAllowUserForwardRules(device);
+			userAllowServerForwardRules(device);
+			userAllowInternalOnlyForwardRules(device);
+			machineEgressRules(device);
+		}
+		
+		for (DeviceModel device : networkModel.getInternalOnlyDevices()) {
+			//No need for ingress or egress rules here, they only listen on fwd
+			machineDnatRules(device); //May be behind a load balancer
+			machineAllowUserForwardRules(device);
+		}
+
+		for (DeviceModel device : networkModel.getExternalOnlyDevices()) {
+			//No need for forward or ingress rules here
+			machineDnatRules(device); //May be behind a load balancer
+			machineEgressRules(device);
+		}
+		
+		for (MachineModel machine : networkModel.getAllMachines()) {
+			//Make sure to push traffic to {in,e}gress chains
+			machineIngressEgressForwardRules(machine);
+		}
 		
 		return units;
+	}
+	
+	private String collection2String(Object collection) {
+		
+		if (collection instanceof HashMap) {
+			collection = ((HashMap<?, ?>) collection).keySet();
+		}
+		
+		return collection.toString()
+				.replace("[", "")
+				.replace("]", "")
+				.replace(" ", "")
+				.replace("/", "")
+				.replace("null,", "")
+				.replace(",null", "");
 	}
 	
 	private String buildUserDailyBandwidthEmail(String sender, String recipient, String subject, String username, boolean includeBlurb) {
@@ -207,62 +524,58 @@ public class Router extends AStructuredProfile {
 		return email;
 	}
 	
-	private Vector<IUnit> dailyBandwidthEmailDigestUnits(String server, NetworkModel model) {
+	private Vector<IUnit> dailyBandwidthEmailDigestUnits() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
 		String script = "";
 		script += "#!/bin/bash\n";
 		
 		//Iterate through users first; they need alerting individually
-		for (String user : userDevices) {
-			if (model.getData().getDeviceMacs(user).length > 0) { //But only if they're an internal user 
+		for (DeviceModel user : networkModel.getUserDevices()) {
+			if (!networkModel.getDeviceModel(user.getLabel()).getInterfaces().isEmpty()) { //But only if they're an internal user 
 				//Email the user only
 				script += "\n\n";
-				script += buildUserDailyBandwidthEmail(model.getData().getAdminEmail(),
-												user + "@" + model.getData().getDomain(server),
-												"[" + user + "." + model.getData().getLabel() + "] Daily Bandwidth Digest",
-												user,
+				script += buildUserDailyBandwidthEmail(networkModel.getData().getAdminEmail(),
+												user.getLabel() + "@" + networkModel.getData().getDomain(me.getLabel()),
+												"[" + user.getLabel() + "." + networkModel.getData().getLabel() + "] Daily Bandwidth Digest",
+												user.getLabel(),
 												true);
-				script += "iptables -Z " + cleanString(user) + "_ingress\n";
-				script += "iptables -Z " + cleanString(user) + "_egress";
+				script += "iptables -Z " + user.getIngressChain() + "\n";
+				script += "iptables -Z " + user.getEgressChain();
 			}
 		}
 
 		script += "\n\n";
 
 		script += "echo -e \\\"";
-		script += "subject: [" + model.getData().getLabel() + "." + model.getData().getDomain(server) + "] Daily Bandwidth Digest\\n";
-		script += "from:" + server + "@" + model.getData().getDomain(server) + "\\n";
-		script += "recipients:" + model.getData().getAdminEmail() + "\\n";
+		script += "subject: [" + networkModel.getData().getLabel() + "." + networkModel.getData().getDomain(me.getLabel()) + "] Daily Bandwidth Digest\\n";
+		script += "from:" + me.getLabel() + "@" + networkModel.getData().getDomain(me.getLabel()) + "\\n";
+		script += "recipients:" + networkModel.getData().getAdminEmail() + "\\n";
 
 		//Iterate through everything which should be reported back to admins.
 		//This used to be an individual email per device/server, but this is useless as it just spams the admins
-		for (String peripheral : peripheralDevices) {
+		for (DeviceModel peripheral : networkModel.getAllPeripheralDevices()) {
 			script += "\\n\\n";
-			script += "Digest for " + peripheral + ":\\n";
-			script += "UL: \\`iptables -L " + cleanString(peripheral) + "_egress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
-			script += "DL: \\`iptables -L " + cleanString(peripheral) + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`";
+			script += "Digest for " + peripheral.getLabel() + ":\\n";
+			script += "UL: \\`iptables -L " + peripheral.getEgressChain() + " -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
+			script += "DL: \\`iptables -L " + peripheral.getIngressChain() + " -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`";
 		}
 
 		//Then servers
-		for (String srv : model.getServerLabels()) {
+		for (ServerModel srv : networkModel.getAllServers()) {
 			script += "\\n\\n";
-			script += "Digest for " + srv + ":\\n";
-			script += "UL: \\`iptables -L " + cleanString(srv) + "_egress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
-			script += "DL: \\`iptables -L " + cleanString(srv) + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`";
+			script += "Digest for " + srv.getLabel() + ":\\n";
+			script += "UL: \\`iptables -L " + srv.getEgressChain() + " -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
+			script += "DL: \\`iptables -L " + srv.getIngressChain() + " -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`";
 		}
 
 		script += "\\\"";
-		script += "|sendmail \"" + model.getData().getAdminEmail() + "\"\n";
-		
-		for (String peripheral : peripheralDevices) {
-			script += "\niptables -Z " + cleanString(peripheral) + "_ingress";
-			script += "\niptables -Z " + cleanString(peripheral) + "_egress";
-		}
+		script += "|sendmail \"" + networkModel.getData().getAdminEmail() + "\"\n";
 
-		for (String srv : model.getServerLabels()) {
-			script += "\niptables -Z " + cleanString(srv) + "_ingress";
-			script += "\niptables -Z " + cleanString(srv) + "_egress";
+		//Zero all the chains
+		for (MachineModel machine : networkModel.getAllMachines()) {
+			script += "\niptables -Z " + machine.getIngressChain();
+			script += "\niptables -Z " + machine.getEgressChain();
 		}
 		
 		units.addElement(new FileUnit("daily_bandwidth_alert_script_created", "proceed", script, "/etc/cron.daily/bandwidth", "I couldn't create the bandwidth digest script.  This means you and your users won't receive daily updates on bandwidth use"));
@@ -271,577 +584,353 @@ public class Router extends AStructuredProfile {
 		return units;
 	}
 
-	private Vector<IUnit> subnetConfigUnits(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
+
+		InterfaceModel interfaces = me.getInterfaceModel();
+
+		firewall = ((ServerModel)me).getFirewallModel();
+		domain   = networkModel.getData().getDomain(me.getLabel());
 		
-		for (String srv : model.getServerLabels()) {
-			String[] cnames  = model.getData().getCnames(srv);
+		JsonArray extInterfaces = (JsonArray) networkModel.getData().getPropertyObjectArray(me.getLabel(), "wan");
+
+		if (extInterfaces.size() == 0) {
+			JOptionPane.showMessageDialog(null, "You must specify at least one WAN interface for your router.\n\nValid options are 'ppp', 'static', and 'dhcp'");
+			System.exit(1);
+		}
+		
+		for (int i = 0; i < extInterfaces.size(); ++i) {
+			JsonObject row = extInterfaces.getJsonObject(i);
+
+			String wanIface = row.getString("iface");
 			
-			String ip       = model.getServerModel(srv).getIP();
-			String gateway  = model.getServerModel(srv).getGateway();
-			String domain   = model.getData().getDomain(srv);
-			
-			String hostname = cleanString(srv);
-
-			String[] subdomains = new String[cnames.length + 1];
-			System.arraycopy(new String[] {model.getData().getHostname(srv)},0,subdomains,0, 1);
-			System.arraycopy(cnames,0,subdomains,1, cnames.length);
-
-			if (!model.getServerModel(server).isMetal()) {
-				String bridge = model.getData().getProperty(server, "bridge");
-
-				//If we're bridging to an actual iface, we need to declare it
-				if (bridge != null) {
-					units.addElement(this.interfaces.addIface(hostname + "_bridge",
-						"manual", bridge, null, null, null, null, null));
-				}
-				
-				units.addElement(this.interfaces.addIface(hostname + "_router_iface",
-										"static",
-										this.internalIface + ((!srv.equals(server)) ? ":0" + model.getData().getSubnet(srv) : ""),
-										(srv.equals(server)) ? bridge : null,
-										gateway,
-										this.netmask,
-										null,
-										null));
+			//If we've already declared this iface, give it an alias
+			if (wanIfaces.contains(wanIface)) {
+				wanIface += ":" + i;
 			}
+			
+			//These are fine to be null if not given
+			InetAddress staticAddress = networkModel.stringToIP(row.getString("address", null));
+			InetAddress netmask       = networkModel.stringToIP(row.getString("netmask", null));
+			InetAddress gateway       = networkModel.stringToIP(row.getString("gateway", null));
+			InetAddress broadcast     = networkModel.stringToIP(row.getString("broadcast", null));
+			
+			switch (row.getString("inettype", null)) {
+				case "dhcp":
+					interfaces.addIface(new InterfaceData(
+							me.getLabel(), //host
+							wanIface, //iface
+							null, //mac
+							"dhcp", //inet
+							null, //bridgeports
+							null, //subnet
+							null, //address
+							null, //netmask
+							null, //broadcast
+							null, //gateway
+							"DHCP WAN physical network interface" //comment
+					));
+					
+					String dhclient = "option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n";
+					dhclient += "send host-name = gethostname();\n";
+					dhclient += "supersede domain-search \\\"" + this.domain + "\\\";\n";
+					dhclient += "supersede domain-name-servers 10.0.0.1;\n";
+					dhclient += "request subnet-mask, broadcast-address, time-offset, routers,\n";
+					dhclient += "	domain-name, domain-name-servers, domain-search, host-name,\n";
+					dhclient += "	dhcp6.name-servers, dhcp6.domain-search,\n";
+					dhclient += "	netbios-name-servers, netbios-scope, interface-mtu,\n";
+					dhclient += "	rfc3442-classless-static-routes, ntp-servers;";
+					units.addElement(new FileUnit("router_ext_dhcp_persist", "proceed", dhclient, "/etc/dhcp/dhclient.conf"));
 
-			this.dns.addDomainRecord(domain, gateway, subdomains, ip);
+					firewall.addFilterInput("router_ext_dhcp_in",
+							"-i " + wanIface
+							+ " -d 255.255.255.255"
+							+ " -p udp"
+							+ " --dport 68"
+							+ " --sport 67"
+							+ " -j ACCEPT",
+							"Make sure the Router can send DHCP requests");
+					firewall.addFilterOutput("router_ext_dhcp_ipt_out", 
+							"-o " + wanIface
+							+ " -p udp"
+							+ " --dport 67"
+							+ " --sport 68"
+							+ " -j ACCEPT",
+							"Make sure the Router can receive DHCP responses");
+					break;
+				case "ppp":
+					units.addElement(new InstalledUnit("ext_ppp", "ppp"));
+					units.addElement(me.getInterfaceModel().addPPPIface("router_ext_ppp_iface", wanIface));
+					((ServerModel)me).getProcessModel().addProcess("/usr/sbin/pppd call provider$");
+					
+					((ServerModel)me).getConfigsModel().addConfigFilePath("/etc/ppp/peers/dsl-provider$");
+					((ServerModel)me).getConfigsModel().addConfigFilePath("/etc/ppp/options$");
+					
+					units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("resolv_conf", "proceed", "nameserver 127.0.0.1", "/etc/ppp/resolv.conf"));
+					
+					firewall.addMangleForward("clamp_mss_to_pmtu",
+							"-p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1400:1536 -j TCPMSS --clamp-mss-to-pmtu",
+							"Clamp the MSS to PMTU. This makes sure the packets over PPPoE are the correct size (and take into account the PPPoE overhead)");
+					
+					isPPP = true;
+					
+					break;
+				case "static":
+					interfaces.addIface(new InterfaceData(
+							me.getLabel(), //host
+							wanIface, //iface
+							null, //mac
+							"static", //inet
+							null, //bridgeports
+							null, //subnet
+							staticAddress, //address
+							netmask, //netmask
+							broadcast, //broadcast
+							gateway, //gateway
+							"Static WAN physical network interface" //comment
+					));
+					break;
+				default:
+					JOptionPane.showMessageDialog(null, "Valid options for your router's WAN inettype are 'ppp', 'static', and 'dhcp'");
+					System.exit(1);
+					break;
+			}
+			
+			wanIfaces.addElement(wanIface);
 		}
 
-		for (String device : model.getDeviceLabels()) {
-			String[] gateways = model.getDeviceModel(device).getGateways();
-			String[] ips      = model.getDeviceModel(device).getIPs();
+		Vector<String> routerLanIfaces = new Vector<String>(networkModel.getData().getLanIfaces(me.getLabel()).keySet());
+		
+		String bridge = "lan0";
+		
+		//First, add this machine's own interfaces
+		for (String lanIface : routerLanIfaces) {
+			interfaces.addIface(new InterfaceData(
+					me.getLabel(), //host
+					lanIface, //iface
+					null, //mac
+					"manual", //inet
+					null, //bridgeports
+					null, //subnet
+					null, //address
+					null, //netmask
+					null, //broadcast
+					null, //gateway
+					"physical network interface" //comment
+			));
+		}
+		
+		//Now, bridge 'em
+		InetAddress subnet  = networkModel.stringToIP("10.0.0.0");
+		InetAddress address = networkModel.stringToIP("10.0.0.1");
+		InetAddress netmask = networkModel.getData().getNetmask();
+		interfaces.addIface(new InterfaceData(
+				"lan", //host
+				bridge, //iface
+				null, //mac
+				"static", //inet
+				routerLanIfaces.toArray(new String[routerLanIfaces.size()]), //bridgeports
+				subnet, //subnet
+				address, //address
+				netmask, //netmask
+				null, //broadcast
+				null, //gateway
+				"bridge all physical interfaces" //comment
+		));
+		
+		//Now add for our servers
+		for (ServerModel srv : networkModel.getAllServers()) {
 			
-			String subnet = model.getDeviceModel(device).get3rdOctet();
+			if (srv.equals(me)) { continue; } //Skip if we're talking about ourself
 			
-			for (int i = 0; i < gateways.length; ++i) {
-				String subdomain = cleanString(device).replace('_', '-') + "." + model.getLabel() + ".lan." + i;
+			for (InterfaceData srvLanIface : ((ServerModel)srv).getInterfaceModel().getIfaces()) {
+				//Parse our MAC address into an integer to stop collisions when adding/removing interfaces
+				String alias = getAlias(srvLanIface.getMac());
+
+				interfaces.addIface(new InterfaceData(
+						srv.getLabel(), //host
+						bridge + ":0" + alias, //iface
+						srvLanIface.getMac(), //mac
+						"static", //inet
+						null, //bridgeports
+						null, //subnet
+						srvLanIface.getGateway(), //address
+						netmask, //netmask
+						null, //broadcast
+						null, //gateway
+						"router interface" //comment
+				));
+
+				String[] serverCnames  = networkModel.getData().getCnames(srv.getLabel());
+				String[] subdomains = new String[serverCnames.length + 1];
+				System.arraycopy(new String[] {srv.getHostname()},0,subdomains,0, 1);
+				System.arraycopy(serverCnames,0,subdomains,1, serverCnames.length);
+
+				this.dns.addDomainRecord(networkModel.getData().getDomain(srv.getLabel()), srvLanIface.getGateway(), subdomains, srvLanIface.getAddress());
+			}
+		}
+
+		
+		for (DeviceModel device : networkModel.getAllDevices()) {
+			for (InterfaceData devLanIface : device.getInterfaces()) {
+				//Parse our MAC address into an integer to stop collisions when adding/removing interfaces
+				String alias = null;
 				
-				units.addElement(this.interfaces.addIface(cleanString(device).replace('-', '_') + "_router_iface_" + i,
-										"static",
-										this.internalIface + ":1" + subnet + i,
-										null,
-										gateways[i],
-										this.netmask,
-										null,
-										null));
+				if (devLanIface.getMac() == null) {
+					alias = getAlias(devLanIface.getIface());
+				}
+				else {
+					alias = getAlias(devLanIface.getMac());
+				}
+
+				String subdomain = device.getHostname() + "." + networkModel.getLabel() + ".lan." + alias;
 				
-				this.dns.addDomainRecord(this.domain, gateways[i], new String[] {subdomain}, ips[i]);
+				interfaces.addIface(new InterfaceData(
+						device.getLabel(), //host
+						bridge + ":1" + alias, //iface
+						devLanIface.getMac(), //mac
+						"static", //inet
+						null, //bridgeports
+						null, //subnet
+						devLanIface.getGateway(), //address
+						netmask, //netmask
+						null, //broadcast
+						null, //gateway
+						devLanIface.getMac() //comment
+				));
+				
+				this.dns.addDomainRecord(this.domain, devLanIface.getGateway(), new String[] {subdomain}, devLanIface.getAddress());
 			}
 		}
 
 		units.addElement(new SimpleUnit("ifaces_up", "proceed",
 				"sudo service networking restart",
-				"sudo ip addr | grep " + this.internalIface, "", "fail",
+				"sudo ip addr | grep " + bridge, "", "fail",
 				"Couldn't bring your network interfaces up.  This can potentially be resolved by a restart (assuming you've had no other network-related errors)."));
 
+		//Initialise the basic firewall rules for everything
+		for (MachineModel machine : networkModel.getAllMachines()) {
+			if (machine.getSubnets().isEmpty()) { continue; } //Unless they don't have any interfaces
+			baseIptConfig(machine);
+		}
+
+		for (String wanIface : wanIfaces) {
+			//Masquerade on the external iface
+			this.firewall.addNatPostrouting(me.getHostname() + "_masquerade_external",
+					"-o " + wanIface
+					+ " -j MASQUERADE",
+					"Mask the IP address of any external traffic coming from our network on " + wanIface + " to obscure internal IPs");
+		}
+	
+		//If we're not forcing VPN only, also allow clearnet devices
+		if (!networkModel.getData().getVpnOnly()) {
+			userIfaces.addElement(":1+");
+		}
+		
+		units.addAll(dhcp.getNetworking());
+		units.addAll(dns.getNetworking());
+		units.addAll(qos.getNetworking());
+		
+		units.addAll(networkIptUnits());
+		
 		return units;
 	}
 	
-	private Vector<IUnit> baseIptConfig(String server, NetworkModel model, String name, String subnet) {
+	private Vector<IUnit> baseIptConfig(MachineModel machine) {
 		Vector<IUnit> units = new Vector<IUnit>();
-		
-		String cleanName    = cleanString(name);
-		
-		String fwdChain     = cleanName + "_fwd";
-		String ingressChain = cleanName + "_ingress";
-		String egressChain  = cleanName + "_egress";
+
+		//Do we want to be logging drops?
+		Boolean debugMode = Boolean.parseBoolean(networkModel.getData().getProperty(me.getLabel(), "debug", false));
 		
 		//Create our egress chain for bandwidth (exfil?) tracking
 		//In future, we could perhaps do some form of traffic blocking malarky here?
-		this.firewall.addChain(cleanName + "_egress_chain", "filter", egressChain);
+		this.firewall.addChain(machine.getEgressChain(), "filter", machine.getEgressChain());
 		//Create our ingress chain for download bandwidth tracking
-		this.firewall.addChain(cleanName + "_ingress_chain", "filter", ingressChain);
+		this.firewall.addChain(machine.getIngressChain(), "filter", machine.getIngressChain());
 		//Create our forward chain for all other rules
-		this.firewall.addChain(cleanName + "_fwd_chain", "filter", fwdChain);
+		this.firewall.addChain(machine.getForwardChain(), "filter", machine.getForwardChain());
 
 		//Force traffic to/from a given subnet to jump to our chains
-		this.firewall.addFilterForward(cleanName + "_ipt_server_src",
-				"-s " + subnet
-				+ " -j "+ fwdChain);
-		this.firewall.addFilterForward(cleanName + "_ipt_server_dst",
-				"-d " + subnet
-				+ " -j " + fwdChain);
+		this.firewall.addFilterForward(machine.getHostname() + "_ipt_server_src",
+				"-s " + machine.getSubnets().elementAt(0).getHostAddress() + "/24"
+				+ " -j "+ machine.getForwardChain(),
+				"Force any internal traffic coming from " + machine.getHostname() + " to its own chain");
+		this.firewall.addFilterForward(machine.getHostname() + "_ipt_server_dst",
+				"-d " + machine.getSubnets().elementAt(0).getHostAddress() + "/24"
+				+ " -j " + machine.getForwardChain(),
+				"Force any internal traffic going to " + machine.getHostname() + " to its own chain");
 
 		//We want to default drop anything not explicitly whitelisted
 		//Make sure that these are the very first rules as the chain may have been pre-populated
-		this.firewall.addFilter(cleanName + "_fwd_default_drop", fwdChain, 0,
-				"-j DROP");
+		this.firewall.addFilter(machine.getHostname() + "_fwd_default_drop", machine.getForwardChain(), 0,
+				"-j DROP",
+				"Drop any internal traffic for " + machine.getHostname() + " which has not already hit one of our rules");
 		
 		//Don't allow any traffic in from the outside world
-		this.firewall.addFilter(cleanName + "_ingress_default_drop", ingressChain, 0,
-				"-j DROP");
+		this.firewall.addFilter(machine.getHostname() + "_ingress_default_drop", machine.getIngressChain(), 0,
+				"-j DROP",
+				"Drop any external traffic for " + machine.getHostname() + " which has not already hit one of our rules");
 
 		//Don't allow any traffic out to the outside world
-		this.firewall.addFilter(cleanName + "_egress_default_drop", egressChain, 0,
-				"-j DROP");
+		this.firewall.addFilter(machine.getHostname() + "_egress_default_drop", machine.getEgressChain(), 0,
+				"-j DROP",
+				"Drop any outbound traffic from " + machine.getHostname() + " which has not already hit one of our rules");
+
+		//Have we set debug on? Let's do some logging!
+		if (debugMode) {
+			this.firewall.addFilter(machine.getHostname() + "_fwd_log", machine.getForwardChain(), 1,
+					"-j LOG --log-prefix \"" + machine.getHostname() + "-forward-dropped:\"",
+					"Log any traffic from " + machine.getHostname() + " before dropping it");
+			this.firewall.addFilter(machine.getHostname() + "_ingress_log", machine.getIngressChain(), 1,
+					"-j LOG --log-prefix \"" + machine.getHostname() + "-ingress-dropped:\"",
+					"Log any traffic from " + machine.getHostname() + " before dropping it");
+			this.firewall.addFilter(machine.getHostname() + "_ingress_log", machine.getEgressChain(), 1,
+					"-j LOG --log-prefix \"" + machine.getHostname() + "-egress-dropped:\"",
+					"Log any traffic from " + machine.getHostname() + " before dropping it");
+		}
 		
+		//Allow responses to established traffic on all chains
+		this.firewall.addFilter(machine.getHostname() + "_allow_related_ingress_traffic_tcp", machine.getIngressChain(),
+				"-p tcp"
+				+ " -m state --state ESTABLISHED,RELATED"
+				+ " -j ACCEPT",
+				"Allow " + machine.getHostname() + " to receive responses to accepted outbound tcp traffic");
+		this.firewall.addFilter(machine.getHostname() + "_allow_related_ingress_traffic_udp", machine.getIngressChain(),
+				"-p udp"
+				+ " -m state --state ESTABLISHED,RELATED"
+				+ " -j ACCEPT",
+				"Allow " + machine.getHostname() + " to receive responses to accepted outbound udp traffic");
+		this.firewall.addFilter(machine.getHostname() + "_allow_related_fwd_traffic_tcp", machine.getForwardChain(),
+				"-p tcp"
+				+ " -m state --state ESTABLISHED,RELATED"
+				+ " -j ACCEPT",
+				"Allow " + machine.getHostname() + " to receive responses to accepted forward tcp traffic");
+		this.firewall.addFilter(machine.getHostname() + "_allow_related_fwd_traffic_udp", machine.getForwardChain(),
+				"-p udp"
+				+ " -m state --state ESTABLISHED,RELATED"
+				+ " -j ACCEPT",
+				"Allow " + machine.getHostname() + " to receive responses to accepted forward udp traffic");
+		this.firewall.addFilter(machine.getHostname() + "_allow_related_outbound_traffic_tcp", machine.getEgressChain(),
+				"-p tcp"
+				+ " -m state --state ESTABLISHED,RELATED"
+				+ " -j ACCEPT",
+				"Allow " + machine.getHostname() + " to send responses to accepted inbound tcptraffic");
+		this.firewall.addFilter(machine.getHostname() + "_allow_outbound_traffic_udp", machine.getEgressChain(),
+				"-p udp"
+				+ " -j ACCEPT",
+				"Allow " + machine.getHostname() + " to send udp traffic");
+
 		//Add our forward chain rules (backwards(!))
 		//Allow our router to talk to us
-		this.firewall.addFilter(cleanName + "_allow_router_traffic", fwdChain,
-				"-s " + subnet
-				+ " -j ACCEPT");
+		this.firewall.addFilter(machine.getHostname() + "_allow_router_traffic", machine.getForwardChain(),
+				"-s " + machine.getSubnets().elementAt(0).getHostAddress() + "/30"
+				+ " -j ACCEPT",
+				"Allow traffic between " + machine.getHostname() + " and its router");
 
-		//Masquerade on the external iface
-		this.firewall.addNatPostrouting(cleanName + "_masquerade_external",
-				"-o " + externalIface
-				+ " -j MASQUERADE");
-		
 		return units;
 	}
 	
-	private Vector<IUnit> serverIptUnits(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
-		
-		for (String srv : model.getServerLabels()) {
-			String serverSubnet    = model.getServerModel(srv).getSubnet() + "/30";
-			
-			String cleanServerName = cleanString(srv);
-			
-			String fwdChain        = cleanServerName + "_fwd";
-			String egressChain     = cleanServerName + "_egress";
-			String ingressChain    = cleanServerName + "_ingress";
-			
-			baseIptConfig(server, model, srv, serverSubnet);
-			
-			if (model.getServerModel(srv).isRouter()) {
-				this.firewall.addFilter(cleanServerName + "_allow_email_out", egressChain,
-						"-p tcp"
-						+ " --dport 25"
-						+ " -j ACCEPT");
-			}
-
-			//Allow admins to SSH to their server(s)
-			for (String admin : model.getData().getAdmins(srv)) {
-				//Not an "internal" user
-				if (model.getDeviceModel(admin).getSubnets().length == 0) { continue; }
-				
-				this.firewall.addFilter(cleanServerName + "_ssh_" + cleanString(admin), fwdChain,
-						"-s " + model.getDeviceModel(admin).getSubnets()[0] + "/24"
-						+ " -d " + serverSubnet
-						+ " -p tcp"
-						+ " --dport " + model.getData().getSSHPort(srv)
-						+ " -j ACCEPT");
-			}
-			
-			//Only actually do this if we have any users!
-			if (userDevices.size() > 0) {
-				int actualUsers = 0;
-				String userRule = "";
-				userRule += "-s ";
-				for (String user : userDevices) {
-					if (model.getDeviceModel(user).getSubnets().length == 0) { continue; }
-					++actualUsers;
-					userRule += model.getDeviceModel(user).getSubnets()[0] + "/24,";
-				}
-				userRule = userRule.replaceAll(",$", ""); //Remove any trailing comma
-				userRule += " -d " + serverSubnet;
-				userRule += " -p tcp";
-				userRule += " -m state --state NEW";
-				userRule += " -m tcp -m multiport --dports 80,443";
-				userRule += " -j ACCEPT";
-				
-				if (actualUsers > 0) {
-					this.firewall.addFilter("allow_users_80_443_" + server, fwdChain, userRule);
-				}
-			}
-			
-			//And servers can talk back, if established/related traffic
-			this.firewall.addFilter(cleanServerName + "_allow_related_traffic", fwdChain,
-					"-p tcp"
-					+ " -m state --state ESTABLISHED,RELATED"
-					+ " -j ACCEPT");
-	
-			//Jump to the ingress/egress chains
-			this.firewall.addFilter(cleanServerName + "_jump_ingress", fwdChain,
-					"-i " + this.externalIface
-					+ " -j " + ingressChain);
-			this.firewall.addFilter(cleanServerName + "_jump_egress", fwdChain,
-					"-o " + this.externalIface
-					+ " -j " + egressChain);
-			//Log anything hopping to our egress chain
-			this.firewall.addFilter(cleanServerName + "_log_egress_traffic", egressChain,
-					"-j LOG --log-prefix \\\"ipt-" + cleanServerName + ": \\\"");
-			//Allow related ingress traffic
-			this.firewall.addFilter(cleanServerName + "_allow_related_ingress_traffic", ingressChain,
-					"-p tcp"
-					+ " -m state --state ESTABLISHED,RELATED"
-					+ " -j ACCEPT");
-		}
-	
-		return units;
-	}
-	
-	private Vector<IUnit> userIptUnits(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
-		
-		for (String user : userDevices) {
-			//Not an "internal" user
-			if (model.getDeviceModel(user).getSubnets().length == 0) { continue; }
-			
-			String cleanUserName = cleanString(user);
-			
-			String fwdChain      = cleanUserName + "_fwd";
-			String ingressChain  = cleanUserName + "_ingress";
-			String egressChain   = cleanUserName + "_egress";
-			
-			String userSubnet = model.getDeviceModel(user).getSubnets()[0] + "/24";
-			
-			baseIptConfig(server, model, user, userSubnet);
-
-			for (String iface : userIfaces) {
-				//First make sure we actually *have* servers (thanks, Chris...)
-				if (model.getServerLabels().length == 0) { continue; }
-				
-				//They can talk to our servers on :80 && :443
-				String serverRule = "";
-				serverRule += "-i " + this.internalIface + iface;
-				serverRule += " -d ";
-
-				for (String srv : model.getServerLabels()) {
-					serverRule += model.getServerModel(srv).getSubnet() + "/30,";
-				}
-				serverRule = serverRule.replaceAll(",$", ""); //Remove any trailing comma
-				
-				serverRule += " -p tcp";
-				serverRule += " -m state --state NEW";
-				serverRule += " -m tcp -m multiport --dports 80,443";
-				serverRule += " -j ACCEPT";
-				
-				this.firewall.addFilter("allow_users_80_443_" + server, fwdChain, serverRule);
-			}
-			
-			//Allow superusers to SSH into their servers
-			for (String srv : model.getServerLabels()) {
-				if (Arrays.asList(model.getData().getAdmins(srv)).contains(user)) {
-					for (String iface : userIfaces) {
-						this.firewall.addFilter(cleanUserName + "_allow_ssh_traffic_" + srv.replaceAll("-",  "_"), fwdChain,
-								"-i " + this.internalIface + iface
-								+ " -d " + model.getServerModel(srv).getSubnet() + "/30"
-								+ " -p tcp"
-								+ " --dport " + model.getData().getSSHPort(srv)
-								+ " -j ACCEPT");
-					}
-				}
-			}
-			
-			//Does this user have ports which should be allowed internally?
-			//Configure, if so!
-			if (model.getDeviceModel(user).getPorts().length > 0) {
-				String[] ports = model.getDeviceModel(user).getPorts();
-				
-				//Firstly, allow all other users to talk to it on given ports
-				for (String iface : userIfaces) {
-					String otherUsersRule = "";
-					otherUsersRule += "-i " + this.internalIface + iface;
-					otherUsersRule += " -p tcp";
-					otherUsersRule += " -s ";
-					
-					for (String u : userDevices) {
-						otherUsersRule += model.getDeviceModel(u).getSubnets()[0] + "/30,";
-					}
-					
-					otherUsersRule = otherUsersRule.replaceAll(",$", ""); // Remove any trailing comma
-					otherUsersRule += " -m multiport";
-					otherUsersRule += " --dports ";
-					
-					for (int i = 0; i < ports.length; ++i) {
-						otherUsersRule += ports[i] + ",";
-					}
-					
-					otherUsersRule = otherUsersRule.replaceAll(",$", ""); // Remove any trailing comma
-					otherUsersRule += " -j ACCEPT";
-					
-					this.firewall.addFilter("allow_user_ports_" + user, fwdChain, otherUsersRule);
-				}
-			}
-			
-			//Allow the user currently being configured to talk with other users on specified ports
-			for (String iface : userIfaces) {
-				for (String u : userDevices) {
-					if (model.getDeviceModel(u).getPorts().length > 0) {
-						String[] ports = model.getDeviceModel(u).getPorts();
-						
-						String myRule = "";
-						myRule += "-i " + this.internalIface + iface;
-						myRule += " -p tcp";
-						myRule += " -d " + model.getDeviceModel(u).getSubnets()[0] + "/24";
-						myRule += " -m state --state NEW";
-						myRule += " -m tcp -m multiport --dports ";
-
-						for (int i = 0; i < ports.length; ++i) {
-							myRule += ports[i] + ",";
-						}
-
-						myRule = myRule.replaceAll(",$", ""); // Remove any trailing comma
-						
-						myRule += " -j ACCEPT";
-						
-						this.firewall.addFilter(cleanUserName + "_allow_talk_to_" + u.replaceAll("-",  "_"), fwdChain, myRule);
-					}
-				}
-			}
-			
-			//Configure what they can do with internal only devices
-			for (String iface : userIfaces) {
-				
-				if (internalOnlyDevices.size() == 0) { continue; }
-				
-				String intOnlyRule = "";
-				intOnlyRule += "-i " + this.internalIface + iface;
-				intOnlyRule += " -d ";
-
-				for (String device : internalOnlyDevices) {
-					intOnlyRule += model.getDeviceModel(device).getSubnets()[0] + "/30,";
-				}
-				
-				intOnlyRule = intOnlyRule.replaceAll(",$", ""); //Remove any trailing comma
-				intOnlyRule += " -p tcp";
-				intOnlyRule += " -m state --state NEW";
-				intOnlyRule += " -j ACCEPT";
-				this.firewall.addFilter("allow_int_only_" + server, fwdChain, intOnlyRule);
-			}
-
-			//Allow them to manage certain ext only devicen, if they're a superuser
-			if (Arrays.asList(model.getData().getAdmins()).contains(user)) {
-				for (String device : externalOnlyDevices) {
-					//But only if they're managed.
-					if (!model.getDeviceModel(device).isManaged()) {
-						continue;
-					}
-					
-					for (String iface : userIfaces) {
-						this.firewall.addFilter(cleanUserName + "_allow_managed_traffic_nonvpn_" + device.replaceAll("-",  "_"), fwdChain,
-								"-i " + this.internalIface + iface
-								+ " -d " + model.getDeviceModel(device).getSubnets()[0] + "/24"
-								+ " -p tcp"
-								+ " -m state --state NEW"
-								+ " -m tcp -m multiport --dports 80,443,22"
-								+ " -j ACCEPT");
-					}
-				}
-			}
-			
-			//Users can talk to the outside world
-			this.firewall.addFilter(cleanUserName + "_allow_egress_traffic", egressChain,
-					"-o " + this.externalIface
-					+ " -j ACCEPT");
-			//And can accept established/related traffic from the outside world, too
-			this.firewall.addFilter(cleanUserName + "_allow_ingress_traffic", ingressChain,
-					"-i " + this.externalIface
-					+ " -m state --state ESTABLISHED,RELATED"
-					+ " -j ACCEPT");
-
-			this.firewall.addFilter(cleanUserName + "_allow_related_traffic", fwdChain,
-					"-p tcp"
-					+ " -m state --state ESTABLISHED,RELATED"
-					+ " -j ACCEPT");
-			
-			//Jump to the ingress/egress chains
-			this.firewall.addFilter(cleanUserName + "_allow_ingress", fwdChain,
-					"-i " + this.externalIface
-					+ " -j " + ingressChain);
-			this.firewall.addFilter(cleanUserName + "_allow_egress", fwdChain,
-					"-o " + this.externalIface
-					+ " -j " + egressChain);
-			
-			//Log any NEW connections on our egress chain
-			this.firewall.addFilter(cleanUserName + "_log_new_egress_traffic", egressChain,
-					"-m state --state NEW"
-					+ " -j LOG --log-prefix \\\"ipt-" + cleanUserName + "-[new]: \\\"");
-			//Log any DESTROYED conections on our egress chain
-			this.firewall.addFilter(cleanUserName + "_log_destroyed_fin_egress_traffic", egressChain,
-					"-p tcp --tcp-flags FIN FIN"
-					+ " -j LOG --log-prefix \\\"ipt-" + cleanUserName + "-[fin]: \\\"");
-			this.firewall.addFilter(cleanUserName + "_log_destroyed_fin_egress_traffic", egressChain,
-					"-p tcp --tcp-flags RST RST"
-					+ " -j LOG --log-prefix \\\"ipt-" + cleanUserName + "-[rst]: \\\"");
-		}
-		
-		return units;
-	}
-	
-	private Vector<IUnit> intOnlyIptUnits(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
-		
-		for (String device : internalOnlyDevices) {
-			String cleanDeviceName = cleanString(device);
-			
-			String fwdChain        = cleanDeviceName + "_fwd";
-			String ingressChain    = cleanDeviceName + "_ingress";
-			String egressChain     = cleanDeviceName + "_egress";
-			
-			String deviceSubnet = model.getDeviceModel(device).getSubnets()[0] + "/24";
-			
-			baseIptConfig(server, model, device, deviceSubnet);
-
-			//Jump to the ingress/egress chains
-			this.firewall.addFilter(cleanDeviceName + "_allow_ingress", fwdChain,
-					"-i " + this.externalIface
-					+ " -j " + ingressChain);
-			this.firewall.addFilter(cleanDeviceName + "_allow_egress", fwdChain,
-					"-o " + this.externalIface
-					+ " -j " + egressChain);
-			//Log anything hopping to our egress chain
-			this.firewall.addFilter(cleanDeviceName + "_log_egress_traffic", egressChain,
-					"-j LOG --log-prefix \\\"ipt-" + cleanDeviceName + ": \\\"");
-			
-			//Users can talk to our internal only devices
-			//Configure what they can do with internal only devices
-			String intOnlyRule = "";
-			intOnlyRule += "-d " + deviceSubnet;
-			intOnlyRule += " -s ";
-
-			for (String user : userDevices) {
-				intOnlyRule += model.getDeviceModel(user).getSubnets()[0] + "/24,";
-			}
-			
-			intOnlyRule = intOnlyRule.replaceAll(",$", ""); //Remove any trailing comma
-			intOnlyRule += " -p tcp";
-			intOnlyRule += " -m state --state NEW";
-			intOnlyRule += " -j ACCEPT";
-			this.firewall.addFilter("allow_users_" + device, fwdChain, intOnlyRule);
-			
-			this.firewall.addFilter(cleanDeviceName + "_allow_related_traffic", fwdChain,
-					"-p tcp"
-					+ " -m state --state ESTABLISHED,RELATED"
-					+ " -j ACCEPT");
-		}
-		
-		return units;
-	}
-	
-	private Vector<IUnit> extOnlyIptUnits(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
-		
-		for (String device : externalOnlyDevices) {
-			String cleanDeviceName = cleanString(device);
-			
-			String fwdChain     = cleanDeviceName + "_fwd";
-			String ingressChain = cleanDeviceName + "_ingress";
-			String egressChain  = cleanDeviceName + "_egress";
-			
-			String deviceSubnet = model.getDeviceModel(device).getSubnets()[0] + "/24";
-			
-			baseIptConfig(server, model, device, deviceSubnet);
-
-			//External only devices can talk to the outside world
-			this.firewall.addFilter(cleanDeviceName + "_allow_egress_traffic", egressChain,
-					"-o " + this.externalIface
-					+ " -j ACCEPT");
-			//And can accept established/related traffic from the outside world, too
-			this.firewall.addFilter(cleanDeviceName + "_allow_ingress_traffic", ingressChain,
-					"-i " + this.externalIface
-					+ " -m state --state ESTABLISHED,RELATED"
-					+ " -j ACCEPT");
-			
-			if (model.getDeviceModel(device).isManaged()) {
-				for (String user : userDevices) {
-					//Allow them to manage certain ext only devicen, if they're a superuser
-					if (Arrays.asList(model.getData().getAdmins()).contains(user)) {
-						//And can accept established/related traffic from the outside world, too
-						this.firewall.addFilter(cleanDeviceName + "_allow_management_traffic", fwdChain,
-								"-s " + model.getDeviceModel(user).getSubnets()[0] + "/24"
-								+ " -j ACCEPT");
-					}
-				}
-			}
-			
-			//Jump to the ingress/egress chains
-			this.firewall.addFilter(cleanDeviceName + "_allow_ingress", fwdChain,
-					"-i " + this.externalIface
-					+ " -j " + ingressChain);
-			this.firewall.addFilter(cleanDeviceName + "_allow_egress", fwdChain,
-					"-o " + this.externalIface
-					+ " -j " + egressChain);
-		}
-		
-		return units;
-	}
-	
-	private Vector<IUnit> extConnConfigUnits(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
-
-		if (model.getData().getExtConn(server).contains("ppp")) {
-			units.addElement(new InstalledUnit("ext_ppp", "ppp"));
-			units.addElement(this.interfaces.addPPPIface("router_ext_ppp_iface", model.getData().getProperty(server, "pppiface")));
-			model.getServerModel(server).getProcessModel().addProcess("/usr/sbin/pppd call provider$");
-			
-			model.getServerModel(server).getConfigsModel().addConfigFilePath("/etc/ppp/peers/dsl-provider$");
-			model.getServerModel(server).getConfigsModel().addConfigFilePath("/etc/ppp/options$");
-			
-			units.addElement(new FileUnit("resolv_conf", "proceed", "nameserver 127.0.0.1", "/etc/ppp/resolv.conf"));
-			
-			this.firewall.addMangleForward("clamp_mss_to_pmtu",
-					"-p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1400:1536 -j TCPMSS --clamp-mss-to-pmtu");
-		}
-		else if (model.getData().getExtConn(server).equals("dhcp")){
-			units.addElement(this.interfaces.addIface("router_ext_dhcp_iface", 
-														"dhcp",
-														this.externalIface,
-														null,
-														null,
-														null,
-														null,
-														null));
-
-			String dhclient = "option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n";
-			dhclient += "send host-name = gethostname();\n";
-			dhclient += "supersede domain-search \\\"" + this.domain + "\\\";\n";
-			dhclient += "supersede domain-name-servers " + model.getServerModel(server).getGateway() + ";\n";
-			dhclient += "request subnet-mask, broadcast-address, time-offset, routers,\n";
-			dhclient += "	domain-name, domain-name-servers, domain-search, host-name,\n";
-			dhclient += "	dhcp6.name-servers, dhcp6.domain-search,\n";
-			dhclient += "	netbios-name-servers, netbios-scope, interface-mtu,\n";
-			dhclient += "	rfc3442-classless-static-routes, ntp-servers;";
-			units.addElement(new FileUnit("router_ext_dhcp_persist", "proceed", dhclient, "/etc/dhcp/dhclient.conf"));
-
-			this.firewall.addFilterInput("router_ext_dhcp_in",
-					"-i " + this.externalIface
-					+ " -d 255.255.255.255"
-					+ " -p udp"
-					+ " --dport 68"
-					+ " --sport 67"
-					+ " -j ACCEPT");
-			this.firewall.addFilterOutput("router_ext_dhcp_ipt_out", 
-					"-o " + this.externalIface
-					+ " -p udp"
-					+ " --dport 67"
-					+ " --sport 68"
-					+ " -j ACCEPT");
-		}
-		else if(model.getData().getExtConn(server).equals("static")) {
-			JsonArray interfaces = (JsonArray) model.getData().getPropertyObjectArray(server, "extconfig");
-			
-			for (int i = 0; i < interfaces.size(); ++i) {
-				JsonObject row = interfaces.getJsonObject(i);
-				
-				String address   = row.getString("address");
-				String netmask   = row.getString("netmask");
-				String gateway   = row.getString("gateway", null);
-				String broadcast = row.getString("broadcast", null);
-				String iface     = this.externalIface;
-				
-				if (i > 0) {
-					iface += ":" + i;
-				}
-				
-				units.addElement(this.interfaces.addIface("router_ext_static_iface_" + i,
-											"static",
-											iface,
-											null,
-											address,
-											netmask,
-											broadcast,
-											gateway));
-			}
-		}
-		
-		return units;
-	}
-	
-	protected Vector<IUnit> routerScript(String server, NetworkModel model) {
+	private Vector<IUnit> routerScript() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		String admin = "";
@@ -895,7 +984,7 @@ public class Router extends AStructuredProfile {
 		admin += "        read -n 1 -s -r -p \\\"Press any key to return to the main menu...\\\"\n"; 
 		admin += "}\n";
 		admin += "\n";
-		if (model.getData().getExtConn(server).contains("ppp")) {
+		if (this.isPPP) {
 			admin += "function restartPPPoE {\n";
 			admin += "        clear\n";
 			admin += "\n";
@@ -914,8 +1003,10 @@ public class Router extends AStructuredProfile {
 		admin += "\n";
 		admin += "        echo \\\"Reloading the firewall - please wait...\\\"\n";
 		admin += "        echo \n";
-		admin += "        echo \\\"Flushing firewall rules  : \\$(iptables -F &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
-		admin += "        echo \\\"Reloading firewall rules : \\$(iptables-restore < /etc/iptables/iptables.conf &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
+		admin += "        echo \\\"Flushing firewall rules  (1/2)  : \\$(iptables -F &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
+		admin += "        echo \\\"Flushing firewall rules  (2/2)  : \\$(ipset destroy &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
+		admin += "        echo \\\"Reloading firewall rules (2/2) : \\$(/etc/ipsets/ipsets.up.sh | ipset restore &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
+		admin += "        echo \\\"Reloading firewall rules (2/2) : \\$(/etc/iptables/iptables.conf.sh | iptables-restore &> /dev/null && echo -e \\\"\\${GREEN}\\\"OK!\\\"\\${NC}\\\" || echo -e \\\"\\${RED}\\\"ERROR\\\"\\${NC}\\\")\\\"\n";
 		admin += "        echo \n";
 		admin += "        read -n 1 -s -r -p \\\"Press any key to return to the main menu...\\\"\n";
 		admin += "}\n";
@@ -930,7 +1021,7 @@ public class Router extends AStructuredProfile {
 		admin += "        read -n 1 -s -r -p \\\"Press any key to return to the main menu...\\\"\n";
 		admin += "}\n";
 		admin += "\n";
-		if (model.getData().getExtConn(server).contains("ppp")) {
+		if (this.isPPP) {
 			admin += "function configurePPPoE {\n";
 			admin += "        correct=\\\"false\\\"\n";
 			admin += "        \n";
@@ -975,7 +1066,7 @@ public class Router extends AStructuredProfile {
 		admin += "        echo \\\"4) Restart Internal DHCP Server\\\"\n";
 		admin += "        echo \\\"5) Flush & Reload Firewall\\\"\n";
 		admin += "        echo \\\"6) Traceroute\\\"\n";
-		if (model.getData().getExtConn(server).contains("ppp")) {
+		if (this.isPPP) {
 			admin += "        echo \\\"7) Restart PPPoE (Internet) Connection\\\"\n";
 			admin += "        echo \\\"C) Configure PPPoE credentials\\\"\n";
 		}
@@ -989,7 +1080,7 @@ public class Router extends AStructuredProfile {
 		admin += "                4   ) restartDHCP;;\n";
 		admin += "                5   ) reloadIPT;;\n";
 		admin += "                6   ) tracert;;\n";
-		if (model.getData().getExtConn(server).contains("ppp")) {
+		if (this.isPPP) {
 			admin += "                7   ) restartPPPoE;;\n";
 			admin += "                c|C ) configurePPPoE;;\n";
 		}
@@ -1010,5 +1101,25 @@ public class Router extends AStructuredProfile {
 		String safeChars    = "_";
 		
 		return string.replaceAll(invalidChars, safeChars);
+	}
+	
+	private String getAlias(String toParse) {
+		MessageDigest digest = null;
+		
+		try {
+			digest = MessageDigest.getInstance("SHA-512");
+			digest.reset();
+			digest.update(toParse.getBytes("utf8"));
+		}
+		catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+		catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+		
+		String digested = String.format("%040x", new BigInteger(1, digest.digest()));
+		
+		return digested.replaceAll("[^0-9]", "").substring(0, 8);
 	}
 }

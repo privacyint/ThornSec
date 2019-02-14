@@ -1,21 +1,14 @@
 package profile;
 
-import java.util.Vector;
-
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-
-import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
-import core.unit.fs.FileUnit;
-import core.unit.pkg.InstalledUnit;
 
 public class Wifi extends AStructuredProfile {
 
 	
-	public Wifi() {
-		super("wifi");
+	public Wifi(ServerModel me, NetworkModel networkModel) {
+		super("wifi", me, networkModel);
 	}
 /*
 	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {

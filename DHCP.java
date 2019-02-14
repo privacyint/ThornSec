@@ -1,12 +1,16 @@
 package profile;
 
+import java.util.Map;
+import java.util.Objects;
 import java.util.Vector;
 
+import core.data.InterfaceData;
 import core.iface.IUnit;
 import core.model.FirewallModel;
+import core.model.MachineModel;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
-import core.unit.SimpleUnit;
 import core.unit.fs.CustomFileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
@@ -17,16 +21,12 @@ public class DHCP extends AStructuredProfile {
 	private Vector<String> stanzas;
 	private Vector<String> listeningIfaces;
 	
-	private String invalidChars;
-	
-	public DHCP() {
-		super("dhcp");
+	public DHCP(ServerModel me, NetworkModel networkModel) {
+		super("dhcp", me, networkModel);
 
 		classes         = new Vector<String>();
 		stanzas         = new Vector<String>();
 		listeningIfaces = new Vector<String>();
-		
-		invalidChars = "[^\\-a-zA-Z0-9]";
 	}
 	
 	public void addStanza(String stanza) {
@@ -41,82 +41,38 @@ public class DHCP extends AStructuredProfile {
 		listeningIfaces.add(iface);
 	}
 
-	public Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	public Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		//If our router is also a metal, then we only want to bind to bridges
-		if (model.getServerModel(server).isMetal()) {
-			units.addElement(new InstalledUnit("bridge_utils", "proceed", "bridge-utils"));
+		String ifaceAutoString = "";
 
-			//DHCP listening interfaces
-			for (String service : model.getServerModel(server).getServices()) {
-				String subnet = model.getData().getSubnet(service);
-				addListeningIface("br" + subnet);
-			}
-		}
-		//Otherwise, just bind to the internally-facing interface
-		else {
-			addListeningIface(model.getData().getIface(server));
-		}
-
-		String defiface = "INTERFACES=\\\"";
-		String procString = "/usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf ";
-
-		for (String iface : listeningIfaces) {
-			defiface += iface + " ";
-			procString += iface + " ";
-		}
-
-		defiface = defiface.trim() + "\\\"";
-		procString = procString.trim() + "$";
-		
-		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("dhcp_defiface", "dhcp_installed", defiface, "/etc/default/isc-dhcp-server"));
-
-		model.getServerModel(server).getProcessModel().addProcess(procString);
-		
-		String dhcpconf  = "";
-		
-		for (String srv : model.getServerLabels()) {
-			if (!model.getServerModel(srv).isRouter()) {
-				dhcpconf = "\n\n";
-				dhcpconf += "\tsubnet " + model.getServerModel(srv).getSubnet() + " netmask " + model.getData().getNetmask() + " {\n";
-				dhcpconf += "\t\thost " + srv .replaceAll(invalidChars, "_")+ " {\n";
-				dhcpconf += "\t\t\thardware ethernet " + model.getServerModel(srv).getMac() + ";\n";
-				dhcpconf += "\t\t\tfixed-address " + model.getServerModel(srv).getIP() + ";\n";
-				dhcpconf += "\t\t\toption routers " + model.getServerModel(srv).getGateway() + ";\n";
-				dhcpconf += "\t\t}\n";
-				dhcpconf += "\t}";
-				
-				stanzas.add(dhcpconf);
-			}
-		}
-		
-		for (String device : model.getDeviceLabels()) {
-			String[] subnets  = model.getDeviceModel(device).getSubnets();
-			String[] ips      = model.getDeviceModel(device).getIPs();
-			String[] macs     = model.getDeviceModel(device).getMacs();
-			String[] gateways = model.getDeviceModel(device).getGateways();
-
-			String netmask = model.getDeviceModel(device).getNetmask();
+		//Build listening interfaces
+		for (InterfaceData iface : me.getInterfaces()) {
+			//Skip over non-LAN interfaces, or we'll potentially offer DHCP to the whole internet!
+			if (!iface.getIface().contains("lan")) { continue; }
 			
-			for (int i = 0; i < subnets.length; ++i) {
-				dhcpconf = "\n\n";
-				dhcpconf += "\tsubnet " + subnets[i] + " netmask " + netmask + " {\n";
-				dhcpconf += "\t\thost " + device.replaceAll(invalidChars, "_") + "_" + i + " {\n";
-				dhcpconf += "\t\t\thardware ethernet " + macs[i] + ";\n";
-				dhcpconf += "\t\t\tfixed-address " + ips[i] + ";\n";
-				dhcpconf += "\t\t\toption routers " + gateways[i] + ";\n";
-				dhcpconf += "\t\t}\n";
-				dhcpconf += "\t}";
-				
-				stanzas.add(dhcpconf);
+			ifaceAutoString += iface.getIface() + " ";
+		}
+
+		//Then build the DHCP offer stanzas
+		for (MachineModel machine : networkModel.getAllMachines()) {
+			if (Objects.equals(machine, me)) { continue; }
+
+			for (InterfaceData iface : machine.getInterfaceModel().getIfaces()) {
+				if (iface.getMac() != null) {
+					ifaceAutoString += iface.getIface() + " ";
+					stanzas.add(iface.getDhcpStanza());
+				}
 			}
 		}
 		
+		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("dhcp_defiface", "dhcp_installed", "INTERFACES=\\\"" + ifaceAutoString + "\\\"", "/etc/default/isc-dhcp-server"));
+		((ServerModel)me).getProcessModel().addProcess("/usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf " + ifaceAutoString + "$");
+
 		return units;
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addElement(new InstalledUnit("dhcp", "isc-dhcp-server"));
@@ -124,47 +80,42 @@ public class DHCP extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		FirewallModel fm = model.getServerModel(server).getFirewallModel();
+		FirewallModel fm = ((ServerModel)me).getFirewallModel();
 		
-		fm.addNatPostrouting("router_nat", "-o " + model.getData().getExtIface(server) + " -j MASQUERADE");
-
-		fm.addFilterInput("dhcp_ipt_in", "-i " + model.getData().getIface(server) + " -p udp --dport 67 -j ACCEPT");
-		fm.addFilterOutput("dhcp_ipt_out", "-o " + model.getData().getIface(server) + " -p udp --sport 67 -j ACCEPT");
+		for (Map.Entry<String, String> lanIface : networkModel.getData().getLanIfaces(me.getLabel()).entrySet() ) {
+			fm.addFilterInput("dhcp_ipt_in", "-i " + lanIface.getKey() + " -p udp --dport 67 -j ACCEPT", "Allow server to get an address by DHCP (This is only used up until the first configuration)");
+			fm.addFilterOutput("dhcp_ipt_out", "-o " + lanIface.getKey() + " -p udp --sport 67 -j ACCEPT", "Allow server to get an address by DHCP (This is only used up until the first configuration)");
+		}
 
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addElement(new RunningUnit("dhcp", "isc-dhcp-server", "isc-dhcp-server"));
-
-		units.addElement(new CustomFileUnit("dhcpd_custom_stanzas", "dhcp_installed", "/etc/dhcp/dhcpd.custom.conf"));
+		units.addElement(new CustomFileUnit("dhcp_custom_conf", "dhcp_installed", "/etc/dhcp/dhcpd.custom.conf"));
 
 		String dhcpconf = "";
 		dhcpconf += "include \\\"/etc/dhcp/dhcpd.custom.conf\\\";\n";
 		dhcpconf += "\n";
 		dhcpconf += "ddns-update-style none;\n";
-		dhcpconf += "option domain-name \\\"" + model.getData().getDomain(server) + "\\\";\n";
-		dhcpconf += "option domain-name-servers " + model.getServerModel(server).getGateway() + ";\n";
+		dhcpconf += "option domain-name \\\"" + networkModel.getData().getDomain(me.getLabel()) + "\\\";\n";
+		dhcpconf += "option domain-name-servers 10.0.0.1;\n";
 		dhcpconf += "default-lease-time 600;\n";
 		dhcpconf += "max-lease-time 1800;\n";
 		dhcpconf += "authoritative;\n";
-		dhcpconf += "log-facility local7;";
+		dhcpconf += "log-facility local7;\n";
+		dhcpconf += "\n";
+		dhcpconf += "shared-network " + networkModel.getLabel() + " {";
 		
 		for (int i = 0; i < classes.size(); ++i) {
 			dhcpconf += classes.elementAt(i);
 		}
 
-		dhcpconf += "\n\n";
-		// add iptfwd for shared net
-		dhcpconf += "shared-network sharednet {\n";
 		dhcpconf += "\n";
-		dhcpconf += "\tsubnet " + model.getServerModel(server).getSubnet() + " netmask " + model.getData().getNetmask() + " {\n";
-		dhcpconf += "\t}";
 
 		for (String stanza : stanzas) {
 			dhcpconf += stanza;
@@ -172,7 +123,9 @@ public class DHCP extends AStructuredProfile {
 		
 		dhcpconf += "\n}";
 
-		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("dhcp", "dhcp_installed", dhcpconf, "/etc/dhcp/dhcpd.conf"));
+		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("dhcp", "dhcp_installed", dhcpconf, "/etc/dhcp/dhcpd.conf"));
+
+		units.addElement(new RunningUnit("dhcp", "isc-dhcp-server", "isc-dhcp-server"));
 
 		return units;
 	}	

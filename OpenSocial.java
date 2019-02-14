@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.pkg.InstalledUnit;
@@ -14,20 +15,25 @@ public class OpenSocial extends AStructuredProfile {
 	private PHP php;
 	private MariaDB db;
 	
-	public OpenSocial() {
-		super("opensocial");
+	public OpenSocial(ServerModel me, NetworkModel networkModel) {
+		super("opensocial", me, networkModel);
 		
-		this.webserver = new Nginx();
-		this.php = new PHP();
-		this.db = new MariaDB();
+		this.webserver = new Nginx(me, networkModel);
+		this.php = new PHP(me, networkModel);
+		this.db = new MariaDB(me, networkModel);
+		
+		this.db.setUsername("opensocial");
+		this.db.setUserPrivileges("SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES");
+		this.db.setUserPassword("${OPENSOCIAL_PASSWORD}");
+		this.db.setDb("opensocial");
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(webserver.getInstalled(server, model));
-		units.addAll(php.getInstalled(server, model));
-		units.addAll(db.getInstalled(server, model));
+		units.addAll(webserver.getInstalled());
+		units.addAll(php.getInstalled());
+		units.addAll(db.getInstalled());
 		
 		units.addElement(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
 		units.addElement(new InstalledUnit("composer", "proceed", "composer"));
@@ -41,12 +47,12 @@ public class OpenSocial extends AStructuredProfile {
 		units.addElement(new InstalledUnit("php_mod_curl", "php_fpm_installed", "php-curl"));
 		units.addElement(new InstalledUnit("sendmail", "proceed", "sendmail"));
 		
-		model.getServerModel(server).getProcessModel().addProcess("sendmail: MTA: accepting connections$");
-		model.getServerModel(server).getUserModel().addUsername("smmta");
-		model.getServerModel(server).getUserModel().addUsername("smmpa");
-		model.getServerModel(server).getUserModel().addUsername("smmsp");
+		((ServerModel)me).getProcessModel().addProcess("sendmail: MTA: accepting connections$");
+		((ServerModel)me).getUserModel().addUsername("smmta");
+		((ServerModel)me).getUserModel().addUsername("smmpa");
+		((ServerModel)me).getUserModel().addUsername("smmsp");
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "drush", "composer_installed", "nginx", "nginx", "0750"));
+		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("drush", "composer_installed", "nginx", "nginx", "0750"));
 		
 		units.addElement(new SimpleUnit("drush_installed", "composer_installed",
 				"sudo -u nginx bash -c 'composer create-project drush/drush /media/data/drush -n'",
@@ -56,17 +62,17 @@ public class OpenSocial extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
-		units.addAll(webserver.getPersistentConfig(server, model));
-		units.addAll(db.getPersistentConfig(server, model));
-		units.addAll(php.getPersistentConfig(server, model));
+		units.addAll(webserver.getPersistentConfig());
+		units.addAll(db.getPersistentConfig());
+		units.addAll(php.getPersistentConfig());
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		String nginxConf = "";
@@ -106,9 +112,9 @@ public class OpenSocial extends AStructuredProfile {
 		
 		webserver.addLiveConfig("default", nginxConf);
 		
-		units.addAll(webserver.getLiveConfig(server, model));
-		units.addAll(php.getLiveConfig(server, model));
-		units.addAll(db.getLiveConfig(server, model));
+		units.addAll(webserver.getLiveConfig());
+		units.addAll(php.getLiveConfig());
+		units.addAll(db.getLiveConfig());
 		
 		units.addElement(new SimpleUnit("opensocial_mysql_password", "proceed",
 				"OPENSOCIAL_PASSWORD=`sudo grep \"password\" /media/data/www/html/sites/default/settings.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',\"`; [[ -z $OPENSOCIAL_PASSWORD ]] && OPENSOCIAL_PASSWORD=`openssl rand -hex 32`",
@@ -120,16 +126,18 @@ public class OpenSocial extends AStructuredProfile {
 				"echo $OPENSOCIAL_SALT", "", "fail",
 				"Couldn't set a hash salt for OpenSocial's one-time login links. Your installation may not function correctly."));
 		
-		units.addAll(db.createDb("opensocial", "opensocial", "SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES", "OPENSOCIAL_PASSWORD"));
-		
+		//Set up our database
+		units.addAll(db.checkUserExists());
+		units.addAll(db.checkDbExists());
+				
 		units.addElement(new SimpleUnit("opensocial_installed", "drush_installed",
 				"sudo composer create-project goalgorilla/social_template:dev-master /media/data/www --no-interaction"
 				+ " && sudo /media/data/drush/drush -y -r /media/data/www/html site-install social --db-url=mysql://opensocial:${OPENSOCIAL_PASSWORD}@localhost:3306/opensocial --account-pass=admin",
 				"sudo /media/data/drush/drush status -r /media/data/www/html 2>&1 | grep 'Install profile'", "", "fail",
 				"OpenSocial could not be installed."));
 
-		String[] cnames = model.getData().getCnames(server);
-		String   domain = model.getData().getDomain(server).replaceAll("\\.", "\\\\.");  
+		String[] cnames = networkModel.getData().getCnames(me.getLabel());
+		String   domain = networkModel.getData().getDomain(me.getLabel()).replaceAll("\\.", "\\\\.");  
 		
 		String opensocialConf = "";
 		opensocialConf += "<?php\n";
@@ -143,7 +151,7 @@ public class OpenSocial extends AStructuredProfile {
 		opensocialConf += "\\$settings['container_yamls'][] = \\$app_root . '/' . \\$site_path . '/services.yml';\n";;
 		opensocialConf += "\n";
 		opensocialConf += "\\$settings['trusted_host_patterns'] = array(\n";
-		opensocialConf += "    '^" + server + "\\\\." + domain + "$',\n";
+		opensocialConf += "    '^" + me.getHostname() + "\\\\." + domain + "$',\n";
 		
 		for (int i = 0; i < cnames.length; ++i) {
 			opensocialConf += "    '^" + cnames[i].replaceAll("\\.", "\\\\.") + "." + domain + "$',\n";
@@ -151,7 +159,7 @@ public class OpenSocial extends AStructuredProfile {
 		
 		opensocialConf += ");\n";
 		opensocialConf += "\n";
-		opensocialConf += "\\$settings['container_yamls'][] = $app_root . '/' . \\$site_path . '/services.yml';\n";
+		opensocialConf += "\\$settings['container_yamls'][] = \\$app_root . '/' . \\$site_path . '/services.yml';\n";
 		opensocialConf += "\n";
 		opensocialConf += "\\$settings['file_scan_ignore_directories'] = [\n"; 
 		opensocialConf += "    'node_modules',\n"; 
@@ -170,34 +178,24 @@ public class OpenSocial extends AStructuredProfile {
 		opensocialConf += "\n";
 		opensocialConf += "\\$settings['install_profile'] = 'social';";
 
-		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("opensocial", "opensocial_installed", opensocialConf, "/media/data/www/html/sites/default/settings.php"));
+		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("opensocial", "opensocial_installed", opensocialConf, "/media/data/www/html/sites/default/settings.php"));
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(webserver.getPersistentFirewall(server, model));
+		units.addAll(webserver.getNetworking());
 
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_packagist", "packagist.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_github", "github.com", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_drupal_packages", "packages.drupal.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_asset_packagist", "asset-packagist.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_github_api", "api.github.com", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_github_codeload", "codeload.github.com", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_drupal_git", "git.drupal.org", new String[]{"80","443"});
-		
-		String egressChain = model.getData().getHostname(server) + "_egress";
-		
-		for (String router : model.getRouters()) {
-			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_email", egressChain,
-				"-p tcp"
-				+ " --dport 25"
-				+ " -j ACCEPT");
-		}
+		me.addRequiredEgress("packagist.org");
+		me.addRequiredEgress("github.com");
+		me.addRequiredEgress("packages.drupal.org");
+		me.addRequiredEgress("asset-packagist.org");
+		me.addRequiredEgress("api.github.com");
+		me.addRequiredEgress("codeload.github.com");
+		me.addRequiredEgress("git.drupal.org");
 		
 		return units;
 	}
-
 }

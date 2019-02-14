@@ -3,10 +3,9 @@ package profile;
 import java.util.Vector;
 
 import core.iface.IUnit;
-import core.model.FirewallModel;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
-import core.unit.pkg.InstalledUnit;
 
 public class Email extends AStructuredProfile {
 	
@@ -14,93 +13,50 @@ public class Email extends AStructuredProfile {
 	private PHP     php;
 	private MariaDB db;
 	
-	public Email() {
-		super("email");
+	public Email(ServerModel me, NetworkModel networkModel) {
+		super("email", me, networkModel);
 		
-		webserver = new Nginx();
-		php = new PHP();
-		db = new MariaDB();
+		webserver = new Nginx(me, networkModel);
+ 		php       = new PHP(me, networkModel);
+		db        = new MariaDB(me, networkModel);
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(webserver.getInstalled(server, model));
-		units.addAll(php.getInstalled(server, model));
-		units.addAll(db.getInstalled(server, model));
+		units.addAll(webserver.getInstalled());
+		units.addAll(php.getInstalled());
+		units.addAll(db.getInstalled());
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
-		units.addAll(webserver.getPersistentConfig(server, model));
-		units.addAll(php.getPersistentConfig(server, model));
-		units.addAll(db.getPersistentConfig(server, model));
+		units.addAll(webserver.getPersistentConfig());
+		units.addAll(php.getPersistentConfig());
+		units.addAll(db.getPersistentConfig());
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(webserver.getLiveConfig(server, model));
-		units.addAll(php.getLiveConfig(server, model));
-		units.addAll(db.getLiveConfig(server, model));
+		units.addAll(webserver.getLiveConfig());
+		units.addAll(php.getLiveConfig());
+		units.addAll(db.getLiveConfig());
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		units.addAll(webserver.getPersistentFirewall(server, model));
-		
-		model.getServerModel(server).getFirewallModel().addFilterForward(server,
-					"-p tcp"
-					+ " -m state --state NEW,ESTABLISHED"
-					+ " -m tcp -m multiport --dports 993,465"
-					+ " -j ACCEPT");
-		model.getServerModel(server).getFirewallModel().addFilterForward(server,
-					"-p tcp"
-					+ " -m state --state ESTABLISHED"
-					+ " -m tcp -m multiport --sports 993,465"
-					+ " -j ACCEPT");
-		
-		for (String router : model.getRouters()) {
-			
-			FirewallModel fm = model.getServerModel(router).getFirewallModel();
-			
-			String intIface = model.getData().getIface(router);
-			
-			for (String device : model.getDeviceLabels()) {
-				if (!model.getDeviceModel(device).getType().equals("user") && !model.getDeviceModel(device).getType().equals("superuser")) {
-					continue;
-				}
-				
-				if (!model.getData().getVpnOnly()) { 
-					String emailRule = "";
-					emailRule += "-i " + intIface + ":1+";
-					emailRule += " -d " + model.getServerModel(server).getSubnet() + "/30";
-					emailRule += " -p tcp";
-					emailRule += " -m state --state NEW";
-					emailRule += " -m tcp -m multiport --dports 993,465";
-					emailRule += " -j ACCEPT";
-					fm.addFilter("allow_int_only_" + server, device + "_fwd", emailRule);
-				}
-				
-				String emailRule = "";
-				emailRule += "-i " + intIface + ":2+";
-				emailRule += " -d " + model.getServerModel(server).getSubnet() + "/30";
-				emailRule += " -p tcp";
-				emailRule += " -m state --state NEW";
-				emailRule += " -m tcp -m multiport --dports 993,465";
-				emailRule += " -j ACCEPT";
-				fm.addFilter("allow_int_only_" + server, device + "_fwd", emailRule);
-				
-			}
-		}
+		units.addAll(webserver.getNetworking());
+
+		me.addRequiredListen(new Integer[] {25, 465, 993});
 		
 		return units;
 	}

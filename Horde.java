@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileEditUnit;
@@ -11,24 +12,29 @@ import core.unit.pkg.InstalledUnit;
 
 public class Horde extends AStructuredProfile {
 	
-	Nginx webserver;
-	PHP php;
-	MariaDB db;
+	private Nginx webserver;
+	private PHP php;
+	private MariaDB db;
 	
-	public Horde() {
-		super("horde");
+	public Horde(ServerModel me, NetworkModel networkModel) {
+		super("horde", me, networkModel);
 		
-		this.webserver = new Nginx();
-		this.php = new PHP();
-		this.db = new MariaDB();
+		this.webserver = new Nginx(me, networkModel);
+		this.php = new PHP(me, networkModel);
+		this.db = new MariaDB(me, networkModel);
+		
+		this.db.setUsername("horde");
+		this.db.setUserPrivileges("ALL");
+		this.db.setUserPassword("${HORDE_PASSWORD}");
+		this.db.setDb("horde");
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(webserver.getInstalled(server, model));
-		units.addAll(php.getInstalled(server, model));
-		units.addAll(db.getInstalled(server, model));
+		units.addAll(webserver.getInstalled());
+		units.addAll(php.getInstalled());
+		units.addAll(db.getInstalled());
 		
 		units.addElement(new InstalledUnit("php_pear", "proceed", "php-pear"));
 		
@@ -45,7 +51,7 @@ public class Horde extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
 		String nginxConf = "";
@@ -93,35 +99,36 @@ public class Horde extends AStructuredProfile {
 		nginxConf += "}";
 		
 		webserver.addLiveConfig("default", nginxConf);
-		units.addAll(webserver.getPersistentConfig(server, model));
-		units.addAll(db.getPersistentConfig(server, model));
-		units.addAll(php.getPersistentConfig(server, model));
+		units.addAll(webserver.getPersistentConfig());
+		units.addAll(db.getPersistentConfig());
+		units.addAll(php.getPersistentConfig());
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(webserver.getLiveConfig(server, model));
-		units.addAll(php.getLiveConfig(server, model));
-		units.addAll(db.getLiveConfig(server, model));
+		units.addAll(webserver.getLiveConfig());
+		units.addAll(php.getLiveConfig());
+		units.addAll(db.getLiveConfig());
 		
 		units.addElement(new SimpleUnit("horde_mysql_password", "proceed",
 				"HORDE_PASSWORD=`grep \"password\" /media/data/www/sites/default/settings.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',\"`; [[ -z $HORDE_PASSWORD ]] && HORDE_PASSWORD=`openssl rand -hex 32`",
 				"echo $HORDE_PASSWORD", "", "fail"));
 		
-		units.addAll(db.createDb("horde", "horde", "ALL", "HORDE_PASSWORD"));
+		//Set up our database
+		units.addAll(db.checkUserExists());
+		units.addAll(db.checkDbExists());
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(webserver.getPersistentFirewall(server, model));
+		units.addAll(webserver.getNetworking());
 
 		return units;
 	}
-
 }

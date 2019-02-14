@@ -1,29 +1,36 @@
 package profile;
 
+import java.net.InetAddress;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
 
+import core.data.InterfaceData;
 import core.iface.IUnit;
+import core.model.InterfaceModel;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirMountedUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileAppendUnit;
 import core.unit.pkg.InstalledUnit;
+import core.unit.pkg.RunningUnit;
 
 public class Service extends AStructuredProfile {
 	
-	public Service() {
-		super("service");
+	public Service(ServerModel me, NetworkModel networkModel) {
+		super("service", me, networkModel);
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		//First, we need to be sure we're actually in a VirtualBox guest, or the rest of this is moot
 		units.addElement(new SimpleUnit("is_virtualbox_guest", "proceed", "",
 				"sudo dmidecode -s system-product-name", "VirtualBox", "pass",
-				"It seems that " + server + " isn't actually a VM.  This will cause a bunch of misconfigurations, please fix your config file."));
+				"It seems that " + me.getLabel() + " isn't actually a VM.  This will cause a bunch of misconfigurations, please fix your config file."));
 		
 		units.addElement(new InstalledUnit("build_essential", "is_virtualbox_guest", "build-essential"));
 		units.addElement(new InstalledUnit("linux_headers", "build_essential_installed", "linux-headers-$(uname -r)"));
@@ -49,14 +56,27 @@ public class Service extends AStructuredProfile {
 				"pass",
 				"This server is running an outdated version of the guest additions.  If you're running a configuration, this can be fixed by restarting the VM."));
 		
-		model.getServerModel(server).getUserModel().addUsername("vboxadd");
-		model.getServerModel(server).getProcessModel().addProcess("\\[iprt-VBoxWQueue\\]$");
-		model.getServerModel(server).getProcessModel().addProcess("/usr/sbin/VBoxService --pidfile /var/run/vboxadd-service.sh$");
+		((ServerModel)me).getUserModel().addUsername("vboxadd");
+		((ServerModel)me).getProcessModel().addProcess("\\[iprt-VBoxWQueue\\]$");
+		((ServerModel)me).getProcessModel().addProcess("/usr/sbin/VBoxService --pidfile /var/run/vboxadd-service.sh$");
+
+		//haveged is not perfect, but according to
+		//https://security.stackexchange.com/questions/34523/is-it-appropriate-to-use-haveged-as-a-source-of-entropy-on-virtual-machines
+		//is OK for producing entropy in VMs.
+		//It is also recommended by novell for VM entropy http://www.novell.com/support/kb/doc.php?id=7011351
+		units.addElement(new InstalledUnit("entropy_generator", "proceed", "haveged"));
+		units.addElement(new RunningUnit("entropy_generator", "haveged", "haveged"));
+		//Block until we have enough entropy to continue
+		units.addElement(new SimpleUnit("enough_entropy_available", "entropy_generator_installed",
+				"while [ `cat /proc/sys/kernel/random/entropy_avail` -le 600 ]; do sleep 2; done;",
+				"(($(cat /proc/sys/kernel/random/entropy_avail) > 600)) && echo pass || echo fail", "pass", "pass"));
+		
+		((ServerModel)me).getProcessModel().addProcess("/usr/sbin/haveged --Foreground --verbose=1 -w 1024$");
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
 		units.addElement(new SimpleUnit("data_drive_is_partitioned", "proceed",
@@ -104,29 +124,63 @@ public class Service extends AStructuredProfile {
 				"mount | grep 'log on /var/log' 2>&1", "log on /var/log type vboxsf (rw,nodev,relatime,_netdev)", "pass",
 				"Couldn't move & remount the logs.  This is usually caused by logs already being in the hypervisor, on the first config of a service.  This can be fixed by rebooting the service (though you will lose any logs from the installation)"));
 
-		units.addElement(model.getServerModel(server).getInterfaceModel().addIface(server.replace("-", "_") + "_primary_iface",
-																				   "static",
-																				   model.getData().getIface(server),
-																				   null,
-																				   model.getServerModel(server).getIP(),
-																				   model.getData().getNetmask(),
-																				   null,
-																				   model.getServerModel(server).getGateway()));
-
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
-		
-		model.getServerModel(server).addRouterPoison(server, model, "cdn.debian.net", "130.89.148.14", new String[] {"80"});
-		model.getServerModel(server).addRouterPoison(server, model, "security-cdn.debian.org", "151.101.0.204", new String[] {"80"});
-		model.getServerModel(server).addRouterPoison(server, model, "prod.debian.map.fastly.net", "151.101.36.204", new String[] {"80"});
-		model.getServerModel(server).addRouterPoison(server, model, "download.virtualbox.org", "2.19.60.219", new String[]{"80"});
 
-		//model.getServerModel(server).addRouterFirewallRule(server, model, "debian_cdn", "cdn.debian.net", new String[]{"80"});
-		//model.getServerModel(server).addRouterFirewallRule(server, model, "debian_security_cdn", "security-cdn.debian.org", new String[]{"80"});
+		String metal = networkModel.getData().getMetal(me.getLabel());
 		
+		me.setFirstOctet(10);
+		me.setSecondOctet(networkModel.getMetalServers().indexOf(networkModel.getServerModel(metal)) + 1);
+		me.setThirdOctet(networkModel.getServerModel(metal).getServices().indexOf(me) + 1);
+		
+		HashMap<String, String> lanIfaces = networkModel.getData().getLanIfaces(me.getLabel());
+
+		if (lanIfaces.isEmpty()) {
+			//That's OK, we'll generate one here
+			lanIfaces.put("enp0s17", null);
+		}
+
+		int i = 0;
+		
+		for (Map.Entry<String, String> lanIface : lanIfaces.entrySet() ) {
+			InterfaceModel im = me.getInterfaceModel();
+			
+			InetAddress subnet    = networkModel.stringToIP(me.getFirstOctet() + "." + me.getSecondOctet() + "." + me.getThirdOctet() + "." + (i * 4));
+			InetAddress router    = networkModel.stringToIP(me.getFirstOctet() + "." + me.getSecondOctet() + "." + me.getThirdOctet() + "." + ((i * 4) + 1));
+			InetAddress address   = networkModel.stringToIP(me.getFirstOctet() + "." + me.getSecondOctet() + "." + me.getThirdOctet() + "." + ((i * 4) + 2));
+			InetAddress broadcast = networkModel.stringToIP(me.getFirstOctet() + "." + me.getSecondOctet() + "." + me.getThirdOctet() + "." + ((i * 4) + 3));
+			InetAddress netmask   = networkModel.getData().getNetmask();
+			
+			String mac = lanIface.getValue();
+			if (mac == null || mac.equals("")) {
+				mac = "08:00:27:";
+				mac += String.format("%02x", me.getSecondOctet()) + ":";
+				mac += String.format("%02x", me.getThirdOctet()) + ":";
+				mac += String.format("%02x", i);
+			}
+			
+			im.addIface(new InterfaceData(
+							me.getLabel(),
+							lanIface.getKey(),
+							mac,
+							"static",
+							null,
+							subnet,
+							address,
+							netmask,
+							broadcast,
+							router,
+							"comment goes here")
+			);
+			
+			++i;
+		}
+
+		me.addRequiredEgress("download.virtualbox.org");
+
 		return units;
 	}
 }

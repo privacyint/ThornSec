@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileChecksumUnit;
@@ -16,22 +17,27 @@ public class Nextcloud extends AStructuredProfile {
 	private PHP php;
 	private MariaDB db;
 	
-	public Nextcloud() {
-		super("nextcloud");
+	public Nextcloud(ServerModel me, NetworkModel networkModel) {
+		super("nextcloud", me, networkModel);
 		
-		this.webserver = new Nginx();
-		this.php = new PHP();
-		this.db = new MariaDB();
+		this.webserver = new Nginx(me, networkModel);
+		this.php = new PHP(me, networkModel);
+		this.db = new MariaDB(me, networkModel);
+		
+		this.db.setUsername("nextcloud");
+		this.db.setUserPrivileges("ALL");
+		this.db.setUserPassword("${NEXTCLOUD_PASSWORD}");
+		this.db.setDb("nextcloud");
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(webserver.getInstalled(server, model));
-		units.addAll(php.getInstalled(server, model));
-		units.addAll(db.getInstalled(server, model));
+		units.addAll(webserver.getInstalled());
+		units.addAll(php.getInstalled());
+		units.addAll(db.getInstalled());
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "nextcloud", "proceed", "nginx", "nginx", "0770"));
+		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("nextcloud", "proceed", "nginx", "nginx", "0770"));
 
 		units.addElement(new InstalledUnit("unzip", "proceed", "unzip"));
 		units.addElement(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
@@ -47,7 +53,7 @@ public class Nextcloud extends AStructuredProfile {
 		//units.addElement(new InstalledUnit("php_redis", "php_fpm_installed", "php-redis"));
 		units.addElement(new InstalledUnit("php_intl", "php_fpm_installed", "php-intl"));
 		
-		model.getServerModel(server).getUserModel().addUsername("redis");
+		((ServerModel)me).getUserModel().addUsername("redis");
 
 		units.addElement(new FileDownloadUnit("nextcloud", "nextcloud_data_mounted", "https://download.nextcloud.com/server/releases/latest.zip", "/root/nextcloud.zip",
 				"Couldn't download NextCloud.  This could mean you have no network connection, or that the specified download is no longer available."));
@@ -60,8 +66,10 @@ public class Nextcloud extends AStructuredProfile {
 				"sudo [ -f /media/data/www/nextcloud/config/config.php ] && sudo grep \"dbpassword\" /media/data/www/nextcloud/config/config.php | head -1 | awk '{ print $3 }' | tr -d \"',\"", "", "fail",
 				"Couldn't set the NextCloud database user's password of ${NEXTCLOUD_PASSWORD}.  NextCloud will be left in a broken state.") );
 
-		units.addAll(db.createDb("nextcloud", "nextcloud", "ALL", "NEXTCLOUD_PASSWORD"));
-
+		//Set up our database
+		units.addAll(db.checkUserExists());
+		units.addAll(db.checkDbExists());
+		
 		units.addElement(new SimpleUnit("nextcloud_unzipped", "nextcloud_checksum",
 				"sudo unzip /root/nextcloud.zip -d /media/data/www/",
 				"sudo [ -d /media/data/www/nextcloud/occ ] && echo pass", "pass", "pass",
@@ -96,17 +104,17 @@ public class Nextcloud extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
-		units.addAll(webserver.getPersistentConfig(server, model));
-		units.addAll(db.getPersistentConfig(server, model));
-		units.addAll(php.getPersistentConfig(server, model));
+		units.addAll(webserver.getPersistentConfig());
+		units.addAll(db.getPersistentConfig());
+		units.addAll(php.getPersistentConfig());
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		String nginxConf = "";
@@ -186,35 +194,25 @@ public class Nextcloud extends AStructuredProfile {
 		
 		webserver.addLiveConfig("default", nginxConf);
 		
-		units.addAll(webserver.getLiveConfig(server, model));
-		units.addAll(php.getLiveConfig(server, model));
-		units.addAll(db.getLiveConfig(server, model));
+		units.addAll(webserver.getLiveConfig());
+		units.addAll(php.getLiveConfig());
+		units.addAll(db.getLiveConfig());
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
-
-		String cleanName   = server.replaceAll("-",  "_");
-		String egressChain = cleanName + "_egress";
 		
-		for (String router : model.getRouters()) {
-			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_email", egressChain,
-				"-p tcp"
-				+ " --dport 25"
-				+ " -j ACCEPT");
-		}
-		
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_nextcloud", "www.nextcloud.com", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_nextcloud_apps", "apps.nextcloud.com", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_nextcloud_download", "download.nextcloud.com", new String[]{"443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_nextcloud_updates_download", "updates.nextcloud.com", new String[]{"443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_github_download", "www.github.com", new String[]{"80","443"});
+		me.addRequiredEgress("nextcloud.com");
+		me.addRequiredEgress("apps.nextcloud.com");
+		me.addRequiredEgress("download.nextcloud.com");
+		me.addRequiredEgress("updates.nextcloud.com");
+		//It requires opening to the wider web anyway :(
+		me.addRequiredEgress("github.com");
 
-		units.addAll(webserver.getPersistentFirewall(server, model));
+		units.addAll(webserver.getNetworking());
 
 		return units;
 	}
-
 }

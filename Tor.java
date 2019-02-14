@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
@@ -15,32 +16,32 @@ public class Tor extends AStructuredProfile {
 	
 	private Webproxy proxy;
 	
-	public Tor() {
-		super("tor");
+	public Tor(ServerModel me, NetworkModel networkModel) {
+		super("tor", me, networkModel);
 		
-		this.proxy = new Webproxy();
+		this.proxy = new Webproxy(me, networkModel);
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "tor", "proceed", "deb http://deb.torproject.org/torproject.org stretch main", "keys.gnupg.net", "A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
+		((ServerModel)me).getAptSourcesModel().addAptSource("tor", "proceed", "deb http://deb.torproject.org/torproject.org stretch main", "keys.gnupg.net", "A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
 		
 		units.addElement(new InstalledUnit("tor_keyring", "tor_gpg", "deb.torproject.org-keyring"));
 		units.addElement(new InstalledUnit("tor", "tor_keyring_installed", "tor"));
 		
-		model.getServerModel(server).getUserModel().addUsername("debian-tor");
+		((ServerModel)me).getUserModel().addUsername("debian-tor");
 		
-		units.addAll(proxy.getInstalled(server, model));
+		units.addAll(proxy.getInstalled());
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "tor", "tor_installed", "debian-tor", "debian-tor", "0700"));
-		units.addAll(model.getServerModel(server).getBindFsModel().addLogBindPoint(server, model, "tor", "tor_installed", "debian-tor", "0750"));
+		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("tor", "tor_installed", "debian-tor", "debian-tor", "0700"));
+		units.addAll(((ServerModel)me).getBindFsModel().addLogBindPoint("tor", "tor_installed", "debian-tor", "0750"));
 
 		units.addElement(new DirUnit("torhs_files_dir", "tor_installed", "/var/lib/tor/hidden_service"));
 		
@@ -103,15 +104,15 @@ public class Tor extends AStructuredProfile {
 				"sudo systemctl is-enabled tor", "enabled", "pass",
 				"Couldn't set tor to auto-start on boot.  You will need to manually start the service (\"sudo service tor start\") on reboot."));
 		
-		units.addAll(proxy.getPersistentConfig(server, model));
+		units.addAll(proxy.getPersistentConfig());
 
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "tls", "proceed", "root", "root", "600"));
+		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("tls", "proceed", "root", "root", "600"));
 		
 		String proxyConfig = "";
 		proxyConfig += "include /etc/nginx/includes/ssl_params;\n";
@@ -162,7 +163,7 @@ public class Tor extends AStructuredProfile {
 		proxyConfig += "\n";
 		proxyConfig += "    location / {\n";
 		//needs to be ip address
-		proxyConfig += "        proxy_pass \\\"\\$scheme://" + model.getServerModel((model.getData().getPropertyArray(server, "proxy")[0])).getIP() + "\\\";\n";
+		proxyConfig += "        proxy_pass \\\"\\$scheme://" + networkModel.getServerModel((networkModel.getData().getPropertyArray(me.getLabel(), "proxy")[0])).getIP() + "\\\";\n";
 		proxyConfig += "        proxy_http_version 1.1;\n";
 		proxyConfig += "        proxy_set_header Accept-Encoding \\\"identity\\\";\n";
 		proxyConfig += "        proxy_set_header Connection \\\"upgrade\\\";\n";
@@ -176,27 +177,21 @@ public class Tor extends AStructuredProfile {
 		proxy.setLiveConfig(proxyConfig);
 		
 		units.addElement(new RunningUnit("tor", "tor", "/usr/bin/tor"));
-		model.getServerModel(server).getProcessModel().addProcess("/usr/bin/tor --defaults-torrc /usr/share/tor/tor-service-defaults-torrc -f /etc/tor/torrc --RunAsDaemon 0$");
-		units.addAll(proxy.getLiveConfig(server, model));
+		((ServerModel)me).getProcessModel().addProcess("/usr/bin/tor --defaults-torrc /usr/share/tor/tor-service-defaults-torrc -f /etc/tor/torrc --RunAsDaemon 0$");
+		units.addAll(proxy.getLiveConfig());
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
-		
+
+		units.addAll(proxy.getNetworking());
+
 		//Allow the server to call out to torproject.org to download mainline
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_torproject", "deb.torproject.org", new String[]{"80","443"});
-		units.addAll(proxy.getPersistentFirewall(server, model));
-		
-		for (String router : model.getRouters()) {
-			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_onion_out_traffic", server + "_egress",
-					"-p tcp"
-					+ " -m tcp -m multiport --dports 80,443"
-					+ " -j ACCEPT");
-		}
+		me.addRequiredEgress("deb.torproject.org");
+		me.addRequiredEgress("");
 		
 		return units;
 	}
-	
 }

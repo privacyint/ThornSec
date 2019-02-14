@@ -1,128 +1,130 @@
 package profile;
 
+import java.net.InetAddress;
 import java.util.Vector;
 
+import core.data.InterfaceData;
 import core.iface.IUnit;
+import core.model.DeviceModel;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 
 public class StrongSwan extends AStructuredProfile {
 
-	public StrongSwan() {
-		super("strongswan");
-	}
-
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
-        
-		getDhcpConfig(model);
-		
-		return units;
-	}
-
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
-
-		for (String router : model.getRouters()) {
-			String ip           = model.getServerModel(server).getIP();
-			String hostname     = model.getData().getHostname(server);
-			String fwdChain     = hostname + "_fwd";
-			String ingressChain = hostname + "_ingress";
-			String egressChain  = hostname + "_egress";
-			
-			model.getServerModel(router).getFirewallModel().addNatPrerouting("dnat_" + model.getData().getExternalIp(server),
-					"-p udp"
-					+ " -m multiport"
-					+ " --dports 500,4500"
-					+ " -j DNAT"
-					+ " --to-destination " + ip);
-			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_vpn_fwd", fwdChain,
-					"-p udp"
-					+ " -m multiport"
-					+ " --dports 500,4500"
-					+ " -j ACCEPT");
-			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_vpn_internally", fwdChain,
-					"-p udp"
-					+ " -m multiport"
-					+ " --sports 500,4500"
-					+ " -j ACCEPT");
-			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_vpn_in", ingressChain,
-					"-p udp"
-					+ " -m multiport"
-					+ " --dports 500,4500"
-					+ " -j ACCEPT");
-
-			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_egress", egressChain,
-					"-j ACCEPT");
-			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_ingress", ingressChain,
-					"-m state --state ESTABLISHED,RELATED"
-					+ " -j ACCEPT");
-		}
-		
-		return units;
+	public StrongSwan(ServerModel me, NetworkModel networkModel) {
+		super("strongswan", me, networkModel);
 	}
 	
-	private Vector<IUnit> getDhcpConfig(NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
+        
+		;;
 		
-		Vector<String> users = new Vector<String>();
+		return units;
+	}
 
-		for (String user : model.getData().getDeviceLabels()) {
-			if (model.getDeviceModel(user).getType().equals("User")) {
-					users.add(user);
-			}
-		}
-		
-		for (String router : model.getRouters()) {
-			DHCP dhcp = model.getServerModel(router).getRouter().getDHCP();
-			DNS  dns  = model.getServerModel(router).getRouter().getDNS();
+	public Vector<IUnit> getNetworking() {
+		Vector<IUnit> units = new Vector<IUnit>();
+
+		for (ServerModel router : networkModel.getRouterServers()) {
+			DHCP dhcp = ((ServerModel)router).getRouter().getDHCP();
+			DNS  dns  = ((ServerModel)router).getRouter().getDNS();
 			
-			for (String user : users) {
-				String firstThree = model.getDeviceModel(user).ipFromClass();
+			for (DeviceModel user : networkModel.getUserDevices()) {
 				
-				int vpnSubnet = ((model.getDeviceModel(user).getSubnets().length) * 4);
+				String firstThree = user.getFirstOctet() + "." + user.getSecondOctet() + "." + user.getThirdOctet();
+				
+				int vpnSubnet = ((user.getSubnets().size()) * 4);
 
-				String netmask = "255.255.255.252";//model.getData().getNetmask();
+				InetAddress netmask = networkModel.getData().getNetmask();
+				InetAddress subnet  = networkModel.stringToIP(firstThree + "." + vpnSubnet);
+				InetAddress gateway = networkModel.stringToIP(firstThree + "." + (vpnSubnet + 1));
+				InetAddress startIp = networkModel.stringToIP(firstThree + "." + (vpnSubnet + 2));
+				InetAddress endIp   = startIp;
 				
-				String subnet    = firstThree + "." + vpnSubnet;
-				String gateway   = firstThree + "." + (vpnSubnet + 1);
-				String startIp   = firstThree + "." + (vpnSubnet + 2);
-				String endIp     = firstThree + "." + (vpnSubnet + 2);
-				String domain    = model.getData().getDomain(router);
-				String subdomain = user + "." + model.getLabel() + ".vpn";
+				String domain    = networkModel.getData().getDomain(router.getLabel());
+				String subdomain = user.getLabel() + "." + networkModel.getLabel() + ".vpn";
 
 				String roadWarriorClass = "";
 				roadWarriorClass += "\n\n";
-				roadWarriorClass += "class \\\"" + user + "\\\" {\n";
-				roadWarriorClass += "\tmatch if ((substring(hardware, 1, 2) = 7a:a7) and (option dhcp-client-identifier = \\\"" + user + "\\\"));\n";
+				roadWarriorClass += "class \\\"" + user.getLabel() + "\\\" {\n";
+				roadWarriorClass += "\tmatch if ((substring(hardware, 1, 2) = 7a:a7) and (option dhcp-client-identifier = \\\"" + user.getLabel() + "\\\"));\n";
 				roadWarriorClass += "}";
 				
 				dhcp.addClass(roadWarriorClass);
 				
 				String roadWarrior = "";
 				roadWarrior += "\n\n";
-				roadWarrior += "\tsubnet " + subnet + " netmask " + netmask + " {\n";
+				roadWarrior += "\tsubnet " + subnet.getHostAddress() + " netmask " + netmask.getHostAddress() + " {\n";
 				roadWarrior += "\t\tpool {\n";
-				roadWarrior += "\t\t\tallow members of \\\"" + user + "\\\";\n";
-				roadWarrior += "\t\t\trange " + startIp + " " + endIp + ";\n";
-				roadWarrior += "\t\t\toption routers " + gateway + ";\n";
+				roadWarrior += "\t\t\tallow members of \\\"" + user.getLabel() + "\\\";\n";
+				roadWarrior += "\t\t\trange " + startIp.getHostAddress() + " " + endIp.getHostAddress() + ";\n";
+				roadWarrior += "\t\t\toption routers " + gateway.getHostAddress() + ";\n";
 				roadWarrior += "\t\t}\n";
 				roadWarrior += "\t}";
 				
 				dhcp.addStanza(roadWarrior);
 				dns.addDomainRecord(domain, gateway, new String[]{subdomain}, startIp);
-				
-				units.addElement(model.getServerModel(router).getInterfaceModel().addIface(user.replaceAll("-", "_") + "_vpn_router_iface",
-						"static",
-						model.getData().getIface(router) + ":2" + firstThree.split("\\.")[2] + vpnSubnet,
-						null,
-						gateway,
-						model.getData().getNetmask(),
-						null,
-						null));
+	
+				user.getInterfaceModel().addIface(new InterfaceData(
+						user.getLabel(), //host
+						"lan0:2" + user.getThirdOctet() + vpnSubnet, //iface
+						null, //mac
+						"static", //inet
+						null, //bridgeports
+						subnet, //subnet
+						startIp, //address
+						netmask, //netmask
+						null, //broadcast
+						gateway, //gateway
+						"VPN interface" //comment
+				));
 			}
 		}
 		
- 		return units;
+		for (ServerModel router : networkModel.getRouterServers()) {
+			InetAddress ip = networkModel.getServerModel(me.getLabel()).getIP();
+			
+			((ServerModel)router).getFirewallModel().addNatPrerouting("dnat_" + networkModel.getData().getExternalIp(me.getLabel()),
+					"-p udp"
+					+ " -m multiport"
+					+ " --dports 500,4500"
+					+ " -j DNAT"
+					+ " --to-destination " + ip.getHostAddress(),
+					"Redirect all external UDP traffic on :500 and :4500 (VPN ports) to our VPN server");
+			((ServerModel)router).getFirewallModel().addFilter(me.getLabel() + "_allow_vpn_fwd", me.getForwardChain(),
+					"-p udp"
+					+ " -m multiport"
+					+ " --dports 500,4500"
+					+ " -j ACCEPT",
+					"Allow internal UDP traffic on :500 and :4500 (VPN ports) to our VPN server");
+			((ServerModel)router).getFirewallModel().addFilter(me.getLabel() + "_allow_vpn_internally", me.getForwardChain(),
+					"-p udp"
+					+ " -m multiport"
+					+ " --sports 500,4500"
+					+ " -j ACCEPT",
+					"Allow internal UDP traffic on :500 and :4500 (VPN ports) to our VPN server");
+			((ServerModel)router).getFirewallModel().addFilter(me.getLabel() + "_allow_vpn_in", me.getIngressChain(),
+					"-p udp"
+					+ " -m multiport"
+					+ " --dports 500,4500"
+					+ " -j ACCEPT",
+					"Allow all external UDP traffic on :500 and :4500 (VPN ports)");
+
+			((ServerModel)router).getFirewallModel().addFilter(me.getLabel() + "_allow_egress", me.getEgressChain(),
+					"-j ACCEPT",
+					"Allow the VPN to talk to the outside world");
+			((ServerModel)router).getFirewallModel().addFilter(me.getLabel() + "_allow_ingress", me.getIngressChain(),
+					"-m state --state ESTABLISHED,RELATED"
+					+ " -j ACCEPT",
+					"Allow the VPN to respond to valid traffic");
+		}
+		
+		//for (ServerModel server : networkModel.getAllServers()) {
+		//	server.addRequiredForward(me.getLabel());
+		//}
+		
+		return units;
 	}
 }

@@ -2,8 +2,10 @@ package profile;
 
 import java.util.Vector;
 
+import core.data.InterfaceData;
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirOwnUnit;
@@ -16,16 +18,14 @@ import core.unit.pkg.InstalledUnit;
 
 public class Virtualisation extends AStructuredProfile {
 	
-	public Virtualisation() {
-		super("virtualisation");
+	public Virtualisation(ServerModel me, NetworkModel networkModel) {
+		super("virtualisation", me, networkModel);
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		model.getServerModel(server).getAptSourcesModel().addAptSource(server, model, "virtualbox", "proceed", "deb http://download.virtualbox.org/virtualbox/debian stretch contrib", "keyserver.ubuntu.com", "0xa2f683c52980aecf");
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_virtualbox", "download.virtualbox.org", new String[]{"80"});
-		model.getServerModel(server).addRouterPoison(server, model, "download.virtualbox.org", "2.19.60.219", new String[]{"80"});
+		((ServerModel)me).getAptSourcesModel().addAptSource("virtualbox", "proceed", "deb http://download.virtualbox.org/virtualbox/debian stretch contrib", "keyserver.ubuntu.com", "0xa2f683c52980aecf");
 
 		units.addElement(new InstalledUnit("build_essential", "build-essential"));
 		units.addElement(new InstalledUnit("linux_headers", "build_essential_installed", "linux-headers-$(uname -r)"));
@@ -38,28 +38,36 @@ public class Virtualisation extends AStructuredProfile {
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		model.getServerModel(server).getProcessModel().addProcess("/usr/lib/virtualbox/VBoxXPCOMIPCD$");
-		model.getServerModel(server).getProcessModel().addProcess("/usr/lib/virtualbox/VBoxSVC --auto-shutdown$");
-		model.getServerModel(server).getProcessModel().addProcess("\\[iprt-VBoxWQueue\\]$");
-		model.getServerModel(server).getProcessModel().addProcess("\\[iprt-VBoxTscThr\\]$");
-		model.getServerModel(server).getProcessModel().addProcess("\\[kvm-irqfd-clean\\]$");
+		((ServerModel)me).getProcessModel().addProcess("/usr/lib/virtualbox/VBoxXPCOMIPCD$");
+		((ServerModel)me).getProcessModel().addProcess("/usr/lib/virtualbox/VBoxSVC --auto-shutdown$");
+		((ServerModel)me).getProcessModel().addProcess("\\[iprt-VBoxWQueue\\]$");
+		((ServerModel)me).getProcessModel().addProcess("\\[iprt-VBoxTscThr\\]$");
+		((ServerModel)me).getProcessModel().addProcess("\\[kvm-irqfd-clean\\]$");
 		
 		return units;
 	}
 	
-	public String preseed(String server, String service, NetworkModel model, Boolean expirePasswords) {
+	public Vector<IUnit> getNetworking() {
+		Vector<IUnit> units = new Vector<IUnit>();
 
-		String user            = model.getData().getUser();
+		me.addRequiredEgress("download.virtualbox.org", new Integer[]{80});
+
+		return units;
+	}
+	
+	String preseed(String service, Boolean expirePasswords) {
+
+		String user            = networkModel.getData().getUser();
 		String sshDir          = "/home/" + user + "/.ssh";
-		String pubKey          = model.getData().getSSHKey(user);
-		String hostname        = model.getData().getHostname(service);
-		String domain          = model.getData().getDomain(service);
-		String fullName        = model.getData().getFullName(user);
-		String debianMirror    = model.getData().getDebianMirror(service);
-		String debianDirectory = model.getData().getDebianDirectory(service);
+		String pubKey          = networkModel.getData().getUserSSHKey(user);
+		String hostname        = networkModel.getData().getHostname(service);
+		String domain          = networkModel.getData().getDomain(service);
+		String fullName        = networkModel.getData().getUserFullName(user);
+		String debianMirror    = networkModel.getData().getDebianMirror(service);
+		String debianDirectory = networkModel.getData().getDebianDirectory(service);
 
 		String preseed = "";
 		//Set up new box before rebooting. Sometimes you need to echo out in chroot;
@@ -83,7 +91,7 @@ public class Virtualisation extends AStructuredProfile {
 		preseed += "	in-target passwd -l root;";
 		
 		//Change the SSHD to be on the expected port
-		preseed += "    in-target sed -i 's/#Port 22/Port " + model.getData().getSSHPort(service) + "/g' /etc/ssh/sshd_config;";
+		preseed += "    in-target sed -i 's/#Port 22/Port " + networkModel.getData().getSSHPort(service) + "/g' /etc/ssh/sshd_config;";
 		
 		//Debian installer options.
 		preseed += "\n";
@@ -131,11 +139,11 @@ public class Virtualisation extends AStructuredProfile {
 		return preseed;
 	}
 
-	public Vector<IUnit> buildIso(String server, String service, NetworkModel model, String preseed) {
+	Vector<IUnit> buildIso(String service, String preseed) {
 
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		String isoDir =  model.getData().getVmBase(server) + "/isos/" + service + "/";
+		String isoDir =  networkModel.getData().getHypervisorThornsecBase(me.getLabel()) + "/isos/" + service + "/";
 
 		units.addElement(new DirUnit("iso_dir_" + service, "proceed", isoDir));
 		units.addElement(new FileUnit("preseed_" + service, "debian_netinst_iso_downloaded", preseed, isoDir + "preseed.cfg"));
@@ -147,7 +155,7 @@ public class Virtualisation extends AStructuredProfile {
 		//Create a working copy of the iso for preseeding
 		buildIso += 	" cd " + isoDir + ";";
 		buildIso += 	" mkdir loopdir;";
-		buildIso += 	" mount -o loop " + model.getData().getVmBase(server) + "/debian-netinst.iso loopdir;";
+		buildIso += 	" mount -o loop " + networkModel.getData().getHypervisorThornsecBase(me.getLabel()) + "/debian-netinst.iso loopdir;";
 		buildIso += 	" mkdir cd;";
 		buildIso += 	" rsync -a -H --exclude=TRANS.TBL loopdir/ cd;";
 		buildIso += 	" umount loopdir;";
@@ -184,8 +192,8 @@ public class Virtualisation extends AStructuredProfile {
 		return units;
 	}
 
-	public Vector<IUnit> buildServiceVm(String server, String service, NetworkModel model, String bridge) {
-		String baseDir     = model.getData().getVmBase(server);
+	Vector<IUnit> buildServiceVm(String service, String bridge) {
+		String baseDir = networkModel.getData().getHypervisorThornsecBase(me.getLabel());
 
 		//Disks
 		String diskExtension   = "vmdk";
@@ -204,7 +212,7 @@ public class Virtualisation extends AStructuredProfile {
 		String installIso = baseDir + "/isos/" + service + "/" + service + ".iso";
 		String user       = "vboxuser_" + service;
 		String group      = "vboxusers";
-		String osType     = model.getData().getDebianIsoUrl(service).contains("amd64") ? "Debian_64" : "Debian";
+		String osType     = networkModel.getData().getDebianIsoUrl(service).contains("amd64") ? "Debian_64" : "Debian";
 		
 		Vector<IUnit> units = new Vector<IUnit>();
 		
@@ -251,9 +259,9 @@ public class Virtualisation extends AStructuredProfile {
 				"sudo -u " + user + " VBoxManage createvm --name " + service + " --ostype \"" + osType + "\" --register;"
 				+ "sudo -u " + user + " VBoxManage modifyvm " + service + " --description "
 				+ "\""
-					+ service + "." + model.getData().getDomain(service) + "\n"
+					+ service + "." + networkModel.getData().getDomain(service) + "\n"
 					+ "ThornSec guest machine\n"
-					+ "Built with profile(s): " + String.join(", ", model.getServerModel(service).getProfiles()) + "\n"
+					+ "Built with profile(s): " + String.join(", ", networkModel.getServerModel(service).getProfiles()) + "\n"
 					+ "Built at $(date)"
 				+ "\"",
 				"sudo -u " + user + " VBoxManage list vms | grep " + service, "", "fail",
@@ -261,13 +269,13 @@ public class Virtualisation extends AStructuredProfile {
 		
 		//HDD creation
 		units.addElement(new SimpleUnit(service + "_boot_disk", "boot_disk_dir_" + service + "_chmoded",
-				"sudo -u " + user + " VBoxManage createmedium --filename " + bootDiskImg + diskExtension + " --size " + model.getData().getDiskSize(service) + " --format VMDK",
+				"sudo -u " + user + " VBoxManage createmedium --filename " + bootDiskImg + diskExtension + " --size " + networkModel.getData().getBootDiskSize(service) + " --format VMDK",
 				"sudo [ -f " + bootDiskImg + diskExtension + " ] && echo pass;", "pass", "pass",
 				"Couldn't create the disk for " + service + "'s base filesystem.  This is fatal."));
 		units.addElement(new FileOwnUnit(service + "_boot_disk", service + "_boot_disk", bootDiskImg + diskExtension, user, group));
 		
 		units.addElement(new SimpleUnit(service + "_data_disk", "data_disk_dir_" + service + "_chmoded",
-				"sudo -u " + user + " VBoxManage createmedium --filename " + dataDiskImg + diskExtension + " --size " + model.getData().getDataDiskSize(service) + " --format VMDK",
+				"sudo -u " + user + " VBoxManage createmedium --filename " + dataDiskImg + diskExtension + " --size " + networkModel.getData().getDataDiskSize(service) + " --format VMDK",
 				"sudo [ -f " + dataDiskImg + diskExtension + " ] && echo pass;", "pass", "pass",
 				"Couldn't create the disk for " + service + "'s data.  This is fatal."));
 		units.addElement(new FileOwnUnit(service + "_data_disk", service + "_data_disk", dataDiskImg + diskExtension, user, group));
@@ -304,10 +312,10 @@ public class Virtualisation extends AStructuredProfile {
 		units.addElement(modifyVm(service, user, "ioapic", "on", "IO APIC couldn't be enabled for " + service + ".  This is required for 64-bit installations, and for more than 1 virtual CPU in a service."));
 		units.addElement(modifyVm(service, user, "hwvirtex", "on"));
 		units.addElement(modifyVm(service, user, "pae", "on"));
-		units.addElement(modifyVm(service, user, "cpus", model.getData().getCpus(service)));
+		units.addElement(modifyVm(service, user, "cpus", networkModel.getData().getCpus(service)));
 
 		//RAM setup
-		units.addElement(modifyVm(service, user, "memory", model.getData().getRam(service)));
+		units.addElement(modifyVm(service, user, "memory", networkModel.getData().getRam(service)));
 		units.addElement(modifyVm(service, user, "vram", "16"));
 		units.addElement(modifyVm(service, user, "nestedpaging", "on"));
 		units.addElement(modifyVm(service, user, "largepages", "on"));
@@ -316,11 +324,15 @@ public class Virtualisation extends AStructuredProfile {
 		units.addElement(modifyVm(service, user, "boot1", "disk", "Couldn't set the boot order for " + service + ".  This may mean the service will not be installed.", service + "_sas_controller"));
 		units.addElement(modifyVm(service, user, "boot2", "dvd", "Couldn't set the boot order for " + service + ".  This may mean the service will not be installed.", service + "_sas_controller"));
 		
+		int i = 1;
 		//Networking setup
-		units.addElement(modifyVm(service, user, "nic1", "bridged", "Couldn't give " + service + " a connection to the network.  This means the service will not be able to talk to the router or network, and will not be installed."));
-		units.addElement(modifyVm(service, user, "bridgeadapter1", bridge, "Couldn't give " + service + " a connection to the network.  This means the service will not be able to talk to the router or network, and will not be installed.", service + "_nic1_bridged"));
-		units.addElement(modifyVm(service, user, "nictype1", "virtio", "Couldn't set " + service + "'s network adapter to use the virtio drivers.  This will result in a performance hit on the service, and means traffic will flow over the physical adapter.", service + "_bridgeadapter1_" + bridge));
-		units.addElement(modifyVm(service, user, "macaddress1", model.getData().getMac(service).replace(":", "").toUpperCase(),	"Couldn't set " + service + "'s MAC address.  This means the service will not be able to get an IP address, and will not be installed."));
+		for (InterfaceData lanIface : networkModel.getMachineModel(service).getInterfaces()) { //networkModel.getData().getLanIfaces(service).entrySet() ) {
+			units.addElement(modifyVm(service, user, "nic" + i, "bridged", "Couldn't give " + service + " a connection to the network.  This means the service will not be able to talk to the router or network, and will not be installed."));
+			units.addElement(modifyVm(service, user, "bridgeadapter" + i, bridge, "Couldn't give " + service + " a connection to the network.  This means the service will not be able to talk to the router or network, and will not be installed.", service + "_nic1_bridged"));
+			units.addElement(modifyVm(service, user, "nictype" + i, "82545EM", "Couldn't set " + service + "'s network adapter to use the 82545EM model.", service + "_bridgeadapter1_" + bridge));
+			units.addElement(modifyVm(service, user, "macaddress" + i, lanIface.getMac().replace(":", "").toUpperCase(), "Couldn't set " + service + "'s MAC address.  This means the service will not be able to get an IP address, and will not be installed."));
+			++i;
+		}
 		
 		//Audio setup (switch it off)
 		units.addElement(modifyVm(service, user, "audio", "none"));
@@ -368,10 +380,10 @@ public class Virtualisation extends AStructuredProfile {
 		//		"sudo -u " + user + " bash -c 'VBoxManage startvm " + service + " --type headless'",
 		//		"sudo -u " + user + " bash -c 'VBoxManage list runningvms | grep " + service + "'", "", "fail"));
 		
-		model.getServerModel(server).getProcessModel().addProcess("/usr/lib/virtualbox/VBoxHeadless --comment " + service + " --startvm `if id '" + user + "' >/dev/null 2>&1; then sudo -u " + user + " bash -c 'VBoxManage list runningvms | grep " + service + "' | awk '{ print $2 }' | tr -d '{}'; else echo ''; fi` --vrde config *$");
-		model.getServerModel(server).getProcessModel().addProcess("awk \\{");
-		model.getServerModel(server).getProcessModel().addProcess("tr -d \\{\\}$");
-		model.getServerModel(server).getUserModel().addUsername(user);
+		((ServerModel)me).getProcessModel().addProcess("/usr/lib/virtualbox/VBoxHeadless --comment " + service + " --startvm `if id '" + user + "' >/dev/null 2>&1; then sudo -u " + user + " bash -c 'VBoxManage list runningvms | grep " + service + "' | awk '{ print $2 }' | tr -d '{}'; else echo ''; fi` --vrde config *$");
+		((ServerModel)me).getProcessModel().addProcess("awk \\{");
+		((ServerModel)me).getProcessModel().addProcess("tr -d \\{\\}$");
+		((ServerModel)me).getUserModel().addUsername(user);
 		
 		return units;
 	}
@@ -403,6 +415,10 @@ public class Virtualisation extends AStructuredProfile {
 		return modifyVm(service, user, setting, value, "Couldn't change " + setting + " to " + value);
 	}
 	
+	private SimpleUnit modifyVm(String service, String user, String setting, Integer value) {
+		return modifyVm(service, user, setting, value + "", "Couldn't change " + setting + " to " + value);
+	}
+
 	private SimpleUnit guestPropertySet(String service, String user, String property, String value, String errorMsg, String prerequisite) {
 		return new SimpleUnit(service + "_" + property.replaceAll("-", "_") + "_" + value, prerequisite,
 				"sudo -u " + user + " VBoxManage guestproperty set " + service + " \"/VirtualBox/GuestAdd/VBoxService/--" + property + "\" " + value,
@@ -412,9 +428,5 @@ public class Virtualisation extends AStructuredProfile {
 	
 	private SimpleUnit guestPropertySet(String service, String user, String property, String value, String errorMsg) {
 		return guestPropertySet(service, user, property, value, errorMsg, service + "_exists");
-	}
-	
-	private SimpleUnit guestPropertySet(String service, String user, String property, String value) {
-		return guestPropertySet(service, user, property, value, "Couldn't change " + property + " to " + value);
 	}
 }

@@ -1,16 +1,16 @@
 package profile;
 
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.net.InetAddress;
+import java.util.Map;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import core.data.InterfaceData;
 import core.exec.PasswordExec;
 import core.iface.IUnit;
-import core.model.FirewallModel;
 import core.model.InterfaceModel;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
@@ -23,197 +23,172 @@ public class Metal extends AStructuredProfile {
 	private Virtualisation hypervisor;
 	private HypervisorScripts backups;
 	
-	public Metal() {
-		super("metal");
+	private Vector<ServerModel> services;
+	
+	private ServerModel me;
+	
+	public Metal(ServerModel me, NetworkModel networkModel) {
+		super("metal", me, networkModel);
 		
-		hypervisor = new Virtualisation();
-		backups = new HypervisorScripts();
+		this.me = me;
+		
+		this.hypervisor = new Virtualisation(me, networkModel);
+		this.backups    = new HypervisorScripts(me, networkModel);
+		this.services   = new Vector<ServerModel>();
+	}
+	
+	public Vector<ServerModel> getServices() {
+		return services;
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(hypervisor.getInstalled(server, model));
-		units.addAll(backups.getInstalled(server, model));
+		units.addAll(hypervisor.getInstalled());
+		units.addAll(backups.getInstalled());
 		
-		units.addElement(new DirUnit("media_dir", "proceed", model.getData().getVmBase(server)));
+		units.addElement(new DirUnit("media_dir", "proceed", networkModel.getData().getHypervisorThornsecBase(me.getLabel())));
 
 		units.addElement(new InstalledUnit("whois", "proceed", "whois"));
 		units.addElement(new InstalledUnit("tmux", "proceed", "tmux"));
 		units.addElement(new InstalledUnit("socat", "proceed", "socat"));
 		
-		units.addElement(new FileDownloadUnit("debian_netinst_iso", "metal_genisoimage_installed", model.getData().getDebianIsoUrl(server), model.getData().getVmBase(server) + "/debian-netinst.iso",
+		units.addElement(new FileDownloadUnit("debian_netinst_iso", "metal_genisoimage_installed", networkModel.getData().getDebianIsoUrl(me.getLabel()), networkModel.getData().getHypervisorThornsecBase(me.getLabel()) + "/debian-netinst.iso",
 											  "The Debian net install ISO couldn't be downloaded.  Please check the URI in your config."));
-		units.addElement(new FileChecksumUnit("debian_netinst_iso", "debian_netinst_iso_downloaded", model.getData().getVmBase(server) + "/debian-netinst.iso", model.getData().getDebianIsoSha512(server),
+		units.addElement(new FileChecksumUnit("debian_netinst_iso", "debian_netinst_iso_downloaded", networkModel.getData().getHypervisorThornsecBase(me.getLabel()) + "/debian-netinst.iso", networkModel.getData().getDebianIsoSha512(me.getLabel()),
 											  "The sha512 sum of the Debian net install in your config doesn't match what has been downloaded.  This could mean your connection is man-in-the-middle'd, or it could just be that the file has been updated on the server. "
 											  + "Please check http://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA512SUMS (64 bit) or http://cdimage.debian.org/debian-cd/current/i386/iso-cd/SHA512SUMS (32 bit) for the correct checksum."));
 				
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
 		String fuse = "";
 		fuse += "#user_allow_other";
-		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("fuse", "proceed", fuse, "/etc/fuse.conf"));
+		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("fuse", "proceed", fuse, "/etc/fuse.conf"));
 
-		InterfaceModel im = model.getServerModel(server).getInterfaceModel();
-		
-		//Routers build their own external ifaces.
-		//Next step will be to allow more than one iface on a non-Router HyperVisor, so we can do load balancing
-		if (!model.getServerModel(server).isRouter()) {
-			units.addElement(model.getServerModel(server).getInterfaceModel().addIface(server.replace("-", "_") + "_primary_iface",
-					   "static",
-					   model.getData().getIface(server),
-					   null,
-					   model.getServerModel(server).getIP(),
-					   model.getData().getNetmask(),
-					   null,
-					   model.getServerModel(server).getGateway()));
-		}
-		else {
-			units.addElement(im.addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(server),
-					   "static",
-					   "br" + model.getData().getSubnet(server),
-					   "none",
-					   model.getServerModel(server).getGateway(),
-					   model.getData().getNetmask(),
-					   null,
-					   null));
-		
-			for (String service : model.getServerModel(server).getServices()) {
-				units.addElement(im.addIface(server.replace("-", "_") + "_br" + model.getData().getSubnet(service),
-									   "static",
-									   "br" + model.getData().getSubnet(service),
-									   "none",
-									   model.getServerModel(service).getGateway(),
-									   model.getData().getNetmask(),
-									   null,
-									   null));
-			}
-		}
-		
-		units.addAll(backups.getPersistentConfig(server, model));
+		units.addAll(backups.getPersistentConfig());
 	
 		return units;
 	}
-
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		for (String service : model.getServerModel(server).getServices()) {
+		InterfaceModel im = me.getInterfaceModel();
+
+		me.setFirstOctet(10);
+		me.setSecondOctet(networkModel.getMetalServers().indexOf(me) + 1);
+		me.setThirdOctet(0);
+		
+		int i = 0;
+		
+		//Add this machine's interfaces
+		for (Map.Entry<String, String> lanIface : networkModel.getData().getLanIfaces(me.getLabel()).entrySet() ) {	
+			InetAddress subnet    = networkModel.stringToIP(me.getFirstOctet() + "." + me.getSecondOctet() + "." + me.getThirdOctet() + "." + (i * 4));
+			InetAddress router    = networkModel.stringToIP(me.getFirstOctet() + "." + me.getSecondOctet() + "." + me.getThirdOctet() + "." + ((i * 4) + 1));
+			InetAddress address   = networkModel.stringToIP(me.getFirstOctet() + "." + me.getSecondOctet() + "." + me.getThirdOctet() + "." + ((i * 4) + 2));
+			InetAddress broadcast = networkModel.stringToIP(me.getFirstOctet() + "." + me.getSecondOctet() + "." + me.getThirdOctet() + "." + ((i * 4) + 3));
+			InetAddress netmask   = networkModel.getData().getNetmask();
+			
+			im.addIface(new InterfaceData(me.getLabel(),
+					lanIface.getKey(),
+					lanIface.getValue(),
+					"static",
+					null,
+					subnet,
+					address,
+					netmask,
+					broadcast,
+					router,
+					"comment goes here")
+			);
+		}
+
+		me.addRequiredEgress("gensho.ftp.acc.umu.se");
+		me.addRequiredEgress("github.com");
+		
+		return units;
+	}
+
+	protected Vector<IUnit> getLiveConfig() {
+		Vector<IUnit> units = new Vector<IUnit>();
+		
+		for (ServerModel service : me.getServices()) {
 			String password = "";
+			String serviceLabel = service.getLabel();
 			Boolean expirePasswords = false;
 			
-			PasswordExec pass   = new PasswordExec(service, model);
+			PasswordExec pass = new PasswordExec(serviceLabel, networkModel);
+			
 			if (pass.init()) {
 				password = pass.getPassword();
-			}
-			
-			if (password.equals("")) {
-				password = model.getData().getUserDefaultPassword(model.getData().getUser());
-				password += " " + service;
 
-				String hash = null;
-
-				try {
-					hash = String.format("%032x", new BigInteger(1, MessageDigest.getInstance("MD5").digest(password.getBytes())));
-				} catch (NoSuchAlgorithmException e) {
-					e.printStackTrace();
-				}
-				
-				password = hash;
-				
-				expirePasswords = true;
-			}
-			else {
 				password = Pattern.quote(password); //Turn special characters into literal so they don't get parsed out
-				password = password.substring(2, password.length()-3).trim(); //Remove '\Q' and '\E' from beginning/end since we're not using this as a regex
+				password = password.substring(2, password.length()-2).trim(); //Remove '\Q' and '\E' from beginning/end since we're not using this as a regex
 				password = password.replace("\"", "\\\""); //Also, make sure quote marks are properly escaped!
 			}
 			
-			units.addElement(new SimpleUnit(service + "_password", "proceed",
-					service.toUpperCase() + "_PASSWORD=`printf \"" + password + "\" | mkpasswd -s -m md5`",
-					"echo $" + service.toUpperCase() + "_PASSWORD", "", "fail",
-					"Couldn't set the passphrase for " + service + ".  You won't be able to configure this service."));
-			
-			String bridge = "";
-			//If we're also a router, bind to a bridge to keep the traffic off the external iface
-			if (model.getServerModel(server).isRouter()) {
-				bridge = "br" + model.getData().getSubnet(service);
-			}
-			//Otherwise, just bind to the physical iface
-			else {
-				bridge = model.getData().getIface(server);
+			if (pass.isDefaultPassword()) {
+				expirePasswords = true;
 			}
 			
-			units.addAll(hypervisor.buildIso(server, service, model, hypervisor.preseed(server, service, model, expirePasswords)));
-			units.addAll(hypervisor.buildServiceVm(server, service, model, bridge));
+			units.addElement(new SimpleUnit(serviceLabel + "_password", "proceed",
+					serviceLabel.toUpperCase() + "_PASSWORD=`printf \"" + password + "\" | mkpasswd -s -m md5`",
+					"echo $" + serviceLabel.toUpperCase() + "_PASSWORD", "", "fail",
+					"Couldn't set the passphrase for " + serviceLabel + ".  You won't be able to configure this service."));
 			
-			String bootDiskDir = model.getData().getVmBase(server) + "/disks/boot/" + service + "/";
-			String dataDiskDir = model.getData().getVmBase(server) + "/disks/data/" + service + "/";
+			String bridge = networkModel.getData().getMetalIface(serviceLabel);
 			
-			units.addElement(new SimpleUnit(service + "_boot_disk_formatted", "proceed",
+			if (bridge == null || bridge.equals("")) {
+				bridge = me.getInterfaceModel().getIfaces().elementAt(0).getIface();
+			}
+			
+			units.addAll(hypervisor.buildIso(service.getLabel(), hypervisor.preseed(service.getLabel(), expirePasswords)));
+			units.addAll(hypervisor.buildServiceVm(service.getLabel(), bridge));
+			
+			String bootDiskDir = networkModel.getData().getHypervisorThornsecBase(me.getLabel()) + "/disks/boot/" + serviceLabel + "/";
+			String dataDiskDir = networkModel.getData().getHypervisorThornsecBase(me.getLabel()) + "/disks/data/" + serviceLabel + "/";
+			
+			units.addElement(new SimpleUnit(serviceLabel + "_boot_disk_formatted", "proceed",
 					"",
 					"sudo bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;"
-					+ "virt-filesystems -a " + bootDiskDir + service + "_boot.v*'", "", "fail",
+					+ "virt-filesystems -a " + bootDiskDir + serviceLabel + "_boot.v*'", "", "fail",
 					"Boot disk is unformatted (therefore has no OS on it), please configure the service and try mounting again."));
 			
 			//For now, do this as root.  We probably want to move to another user, idk
-			units.addElement(new SimpleUnit(service + "_boot_disk_loopback_mounted", service + "_boot_disk_formatted",
+			units.addElement(new SimpleUnit(serviceLabel + "_boot_disk_loopback_mounted", serviceLabel + "_boot_disk_formatted",
 					"sudo bash -c '"
 						+ " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;"
-						+ " guestmount -a " + bootDiskDir + service + "_boot.v*"
+						+ " guestmount -a " + bootDiskDir + serviceLabel + "_boot.v*"
 						+ " -i" //Inspect the disk for the relevant partition
 						+ " -o direct_io" //All read operations must be done against live, not cache
 						+ " --ro" //_MOUNT THE DISK READ ONLY_
 						+ " " + bootDiskDir + "live/"
 					+"'",
 					"sudo mount | grep " + bootDiskDir, "", "fail",
-					"I was unable to loopback mount the boot disk for " + service + " in " + server + "."));
+					"I was unable to loopback mount the boot disk for " + serviceLabel + " in " + getLabel() + "."));
 			
-			units.addElement(new SimpleUnit(service + "_data_disk_formatted", "proceed",
+			units.addElement(new SimpleUnit(serviceLabel + "_data_disk_formatted", "proceed",
 					"",
 					"sudo bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;"
-					+ "virt-filesystems -a " + dataDiskDir + service + "_data.v*'", "", "fail",
+					+ "virt-filesystems -a " + dataDiskDir + serviceLabel + "_data.v*'", "", "fail",
 					"Data disk is unformatted (therefore hasn't been configured), please configure the service and try mounting again."));
 
-			units.addElement(new SimpleUnit(service + "_data_disk_loopback_mounted", service + "_data_disk_formatted",
+			units.addElement(new SimpleUnit(serviceLabel + "_data_disk_loopback_mounted", serviceLabel + "_data_disk_formatted",
 					"sudo bash -c '"
 						+ " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;"
-						+ " guestmount -a " + dataDiskDir + service + "_data.v*"
+						+ " guestmount -a " + dataDiskDir + serviceLabel + "_data.v*"
 						+ " -m /dev/sda1" //Mount the first partition
 						+ " -o direct_io" //All read operations must be done against live, not cache
 						+ " --ro" //_MOUNT THE DISK READ ONLY_
 						+ " " + dataDiskDir + "live/"
 					+"'",
 					"sudo mount | grep " + dataDiskDir, "", "fail",
-					"I was unable to loopback mount the data disk for " + service + " in " + server + ".  Backups will not work."));
+					"I was unable to loopback mount the data disk for " + serviceLabel + " in " + getLabel() + ".  Backups will not work."));
 		}
-		
-		return units;
-	}
-	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
-		
-		for (String router : model.getRouters()) {
-			
-			FirewallModel routerFm = model.getServerModel(router).getFirewallModel();
-		
-			routerFm.addFilter(server + "_egress_25_allow", server + "_egress",
-					"-p tcp"
-					+ " --dport 25"
-					+ " -j ACCEPT");
-		}
-				
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_debian_cd_image", "gensho.ftp.acc.umu.se", new String[]{"443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_github", "github.com", new String[]{"443"});
-
-		model.getServerModel(server).addRouterPoison(server, model, "cdn.debian.net", "130.89.148.14", new String[] {"80"});
-		model.getServerModel(server).addRouterPoison(server, model, "security-cdn.debian.org", "151.101.0.204", new String[] {"80"});
-		model.getServerModel(server).addRouterPoison(server, model, "prod.debian.map.fastly.net", "151.101.36.204", new String[] {"80"});
 		
 		return units;
 	}

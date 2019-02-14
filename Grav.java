@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.pkg.InstalledUnit;
 
@@ -12,18 +13,18 @@ public class Grav extends AStructuredProfile {
 	private Nginx webserver;
 	private PHP php;
 	
-	public Grav() {
-		super("grav");
+	public Grav(ServerModel me, NetworkModel networkModel) {
+		super("grav", me, networkModel);
 		
-		this.webserver = new Nginx();
-		this.php = new PHP();
+		this.webserver = new Nginx(me, networkModel);
+		this.php = new PHP(me, networkModel);
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 				
-		units.addAll(webserver.getInstalled(server, model));
-		units.addAll(php.getInstalled(server, model));
+		units.addAll(webserver.getInstalled());
+		units.addAll(php.getInstalled());
 		
 		units.addElement(new InstalledUnit("php_cli", "php_fpm_installed", "php-cli"));
 		units.addElement(new InstalledUnit("php_common", "php_fpm_installed", "php-common"));
@@ -38,16 +39,16 @@ public class Grav extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
-		units.addAll(webserver.getPersistentConfig(server, model));
-		units.addAll(php.getPersistentConfig(server, model));
+		units.addAll(webserver.getPersistentConfig());
+		units.addAll(php.getPersistentConfig());
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		String nginxConf = "";
@@ -110,19 +111,19 @@ public class Grav extends AStructuredProfile {
 		
 		webserver.addLiveConfig("default", nginxConf);
 		
-		units.addAll(webserver.getLiveConfig(server, model));
-		units.addAll(php.getLiveConfig(server, model));
+		units.addAll(webserver.getLiveConfig());
+		units.addAll(php.getLiveConfig());
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_grav", "getgrav.com", new String[]{"80","443"});
-		units.addAll(webserver.getPersistentFirewall(server, model));
+		me.addRequiredEgress("getgrav.com");
+		
+		units.addAll(webserver.getNetworking());
 
 		return units;
 	}
-
 }

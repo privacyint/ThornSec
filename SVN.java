@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
@@ -19,20 +20,20 @@ public class SVN extends AStructuredProfile {
 
 	private PHP php;
 	
-	public SVN() {
-		super("svn");
+	public SVN(ServerModel me, NetworkModel networkModel) {
+		super("svn", me, networkModel);
 
-		php = new PHP();
+		php = new PHP(me, networkModel);
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(php.getInstalled(server, model));
+		units.addAll(php.getInstalled());
 		
 		units.addElement(new InstalledUnit("apache", "apache2"));
 		units.addElement(new RunningUnit("apache", "apache2", "apache2"));
-		model.getServerModel(server).getProcessModel().addProcess("/usr/sbin/apache2 -k start$");
+		((ServerModel)me).getProcessModel().addProcess("/usr/sbin/apache2 -k start$");
 		
 		units.addElement(new InstalledUnit("svn", "proceed", "subversion"));
 		units.addElement(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
@@ -43,12 +44,12 @@ public class SVN extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
-		units.addAll(php.getPersistentConfig(server, model));
+		units.addAll(php.getPersistentConfig());
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "www", "proceed", "www-data", "www-data", "0750"));
+		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("www", "proceed", "www-data", "www-data", "0750"));
 		
 		units.addElement(new SimpleUnit("apache_mod_headers_enabled", "apache_installed",
 				"sudo a2enmod headers;",
@@ -82,7 +83,7 @@ public class SVN extends AStructuredProfile {
 				"/etc/apache2/apache2.conf",
 				"Couldn't hide the Apache version in its headers.  No real problem."));
 		
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "svn", "proceed", "www-data", "www-data", "0750"));
+		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("svn", "proceed", "www-data", "www-data", "0750"));
 
 		units.addElement(new DirUnit("svn_repo_dir", "svn_data_mounted", "/media/data/svn/repos"));
 		units.addElement(new DirUnit("svn_credentials_dir", "svn_data_mounted", "/media/data/svn/credentials"));
@@ -110,7 +111,7 @@ public class SVN extends AStructuredProfile {
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		String apacheConf = "";
@@ -193,10 +194,10 @@ public class SVN extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_sourceforge", "kent.dl.sourceforge.net", new String[]{"443"});
+		me.addRequiredEgress("kent.dl.sourceforge.net", new Integer[]{443});
 		
 		return units;
 	}

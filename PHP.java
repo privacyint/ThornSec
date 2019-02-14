@@ -4,17 +4,18 @@ import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
 public class PHP extends AStructuredProfile {
 	
-	public PHP() {
-		super("php_fpm");
+	public PHP(ServerModel me, NetworkModel networkModel) {
+		super("php_fpm", me, networkModel);
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addElement(new InstalledUnit("php_fpm", "proceed", "php-fpm"));
@@ -24,7 +25,7 @@ public class PHP extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
 		String iniPath  = getConfigDirRoot() + "php.ini";
@@ -175,12 +176,12 @@ public class PHP extends AStructuredProfile {
 		iniConf += "opcache.memory_consumption=128\n";
 		iniConf += "opcache.save_comments=1\n";
 		iniConf += "opcache.revalidate_freq=1";
-		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("php_ini", "php_base_installed", iniConf, iniPath));
+		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("php_ini", "php_base_installed", iniConf, iniPath));
 
 		//This is approximate, and very(!!!) generous(!!!) to give the box some breathing room.
 		//On most VMs I have configured, it's usually below 40M.
 		int mbRamPerProcess = 75;
-		int serverTotalRam  = Integer.parseInt(model.getData().getRam(server));
+		int serverTotalRam  = networkModel.getData().getRam(me.getLabel());
 		
 		int maxChildren     = serverTotalRam / mbRamPerProcess; 
 		int minSpareServers = maxChildren / 3;
@@ -202,18 +203,18 @@ public class PHP extends AStructuredProfile {
 		poolConf += "pm.max_requests = 200\n";
 		poolConf += "env[PATH] = /usr/local/bin:/usr/bin:/bin\n";
 		poolConf += "php_admin_value[max_execution_time] = 300";
-		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("php_www_pool", "php_fpm_installed", poolConf, poolPath));
+		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("php_www_pool", "php_fpm_installed", poolConf, poolPath));
 
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addElement(new RunningUnit("php_fpm", "php7.0-fpm", "php7.0-fpm"));
 		
-		model.getServerModel(server).getProcessModel().addProcess("php-fpm: master process \\(/etc/php/7.0/fpm/php-fpm\\.conf\\) *$");
-		model.getServerModel(server).getProcessModel().addProcess("php-fpm: pool www *$");
+		((ServerModel)me).getProcessModel().addProcess("php-fpm: master process \\(/etc/php/7.0/fpm/php-fpm\\.conf\\) *$");
+		((ServerModel)me).getProcessModel().addProcess("php-fpm: pool www *$");
 		
 		return units;
 	}
@@ -225,5 +226,4 @@ public class PHP extends AStructuredProfile {
 	private String getConfigDirRoot() {
 		return "/etc/php/7.0/fpm/";
 	}
-
 }

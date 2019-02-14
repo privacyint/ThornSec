@@ -1,13 +1,10 @@
 package profile;
 
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Vector;
 
 import core.iface.IUnit;
-import core.model.FirewallModel;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirOwnUnit;
@@ -21,22 +18,22 @@ import core.unit.pkg.RunningUnit;
 
 public class SSH extends AStructuredProfile {
 
-	public SSH() {
-		super("sshd");
+	public SSH(ServerModel me, NetworkModel networkModel) {
+		super("sshd", me, networkModel);
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		units.addElement(new InstalledUnit("sshd", "openssh-server"));
 		return units;
 	}
 
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		String sshdconf = "";
 		
-		sshdconf += "Port " + model.getData().getSSHPort(server) + "\n";
-		sshdconf += (model.getServerModel(server).isRouter()) ? "ListenAddress " + model.getData().getIP() + "\n" : "";
+		sshdconf += "Port " + networkModel.getData().getSSHPort(me.getLabel()) + "\n";
+		sshdconf += (((ServerModel)me).isRouter()) ? "ListenAddress " + networkModel.getData().getIP().getHostAddress() + "\n" : "";
 		sshdconf += "Protocol 2\n";
 		sshdconf += "HostKey /etc/ssh/ssh_host_rsa_key\n";
 		sshdconf += "HostKey /etc/ssh/ssh_host_ed25519_key\n";
@@ -70,7 +67,7 @@ public class SSH extends AStructuredProfile {
 		sshdconf += "UsePAM yes\n";
 		sshdconf += "Banner /etc/ssh/sshd_banner\n";
 		sshdconf += "MaxSessions 1";
-		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("sshd", "proceed", sshdconf, "/etc/ssh/sshd_config"));
+		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("sshd", "proceed", sshdconf, "/etc/ssh/sshd_config"));
 
 		//This banner is taken from https://www.dedicatedukhosting.com/hosting/adding-ssh-welcome-and-warning-messages/
 		String banner = "";
@@ -85,7 +82,7 @@ public class SSH extends AStructuredProfile {
 				"required. Anyone using this system consents to these terms and the laws\n" + 
 				"of the United Kingdom and United States respectively.\n" + 
 				"************************NOTICE***********************";
-		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("sshd_banner", "proceed", banner, "/etc/ssh/banner"));
+		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("sshd_banner", "proceed", banner, "/etc/ssh/banner"));
 		
 		units.addElement(new DirUnit("motd", "proceed", "/etc/update-motd.d/"));
 		
@@ -109,11 +106,11 @@ public class SSH extends AStructuredProfile {
 		motd += "echo\n";
 		motd += "printf \\\"System load:\\t%s\\tMemory usage:\\t%s\\n\\\" \\${load} \\${memory_usage}\n";
 		motd += "printf \\\"Usage on /:\\t%s\\tSwap usage:\\t%s\\n\\\" \\${root_usage} \\${swap_usage}\n";
-		motd += "printf \\\"Local users:\\t%s\\n\\\" \\${users}\n";
+		motd += "printf \\\"Currently logged in users:\\t%s\\n\\\" \\${users}\n";
 		motd += "echo\n";
 		motd += "echo \\\"HERE BE DRAGONS.\\\"\n";
 		motd += "echo";
-		units.addElement(model.getServerModel(server).getConfigsModel().addConfigFile("sshd_motd", "proceed", motd, "/etc/update-motd.d/00-motd"));
+		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("sshd_motd", "proceed", motd, "/etc/update-motd.d/00-motd"));
 		units.addElement(new FilePermsUnit("sshd_motd_perms", "sshd_motd_config", "/etc/update-motd.d/00-motd", "755"));
 		
 		units.addElement(new SimpleUnit("sshd_rsa", "sshd_config",
@@ -140,35 +137,9 @@ public class SSH extends AStructuredProfile {
 				"awk '$5 <= 2000' /etc/ssh/moduli", "", "pass",
 				"Couldn't remove weak moduli from your SSH daemon.  This is undesirable, as it weakens your security.  Please re-run the script to try and get this to work."));
 
-		//Why is this in here?!
-		for (String admin : model.getData().getAdmins(server)) {
+		for (String admin : networkModel.getData().getAdmins(me.getLabel())) {
 			String sshDir = "/home/" + admin + "/.ssh";
 			String keys   = sshDir + "/authorized_keys";
-			
-			String password = model.getData().getUserDefaultPassword(admin);
-			password += " " + server;
-
-			String hash = null;
-
-			try {
-				hash = String.format("%032x", new BigInteger(1, MessageDigest.getInstance("MD5").digest(password.getBytes())));
-			} catch (NoSuchAlgorithmException e) {
-				e.printStackTrace();
-			}
-			
-			password = hash;
-			
-			units.addElement(new SimpleUnit("user_" + admin + "_created", "proceed",
-					"sudo useradd"
-					+ " -m " + admin //Username
-					+ " -c \"" + model.getData().getFullName(admin) + "\"" //Full name
-					+ " -G sudo" //Groups
-					+ " -s /bin/bash;"
-					+ "echo " + admin + ":" + password + " | sudo chpasswd;" //Set their password
-					+ "sudo passwd -e " + admin //Expire their password immediately
-					,
-					"id " + admin + " 2>&1", "id: ‘" + admin + "’: no such user", "fail",
-					"The user " + admin + " couldn't be created on this machine."));
 			
 			//Create the .ssh dir for the user, with the correct permissions
 			units.addElement(new DirUnit("ssh_dir_" + admin, "sshd_config", sshDir));
@@ -176,7 +147,7 @@ public class SSH extends AStructuredProfile {
 			units.addElement(new DirPermsUnit("ssh_dir_" + admin, "ssh_dir_" + admin + "_chowned", sshDir, "755"));
 
 			//Create the authorized_keys file, with root permissions (we don't want users to be able to add arbitrary keys)
-			units.addElement(new FileUnit("ssh_key_" + admin, "ssh_dir_" + admin + "_created", model.getData().getSSHKey(admin), keys));
+			units.addElement(new FileUnit("ssh_key_" + admin, "ssh_dir_" + admin + "_created", networkModel.getData().getUserSSHKey(admin), keys));
 			units.addElement(new FileOwnUnit("ssh_key_" + admin, "ssh_key_" + admin, keys, "root"));
 			units.addElement(new FilePermsUnit("ssh_key_" + admin, "ssh_key_" + admin + "_chowned", keys, "644"));
 		}
@@ -184,36 +155,15 @@ public class SSH extends AStructuredProfile {
 		return units;
 	}
 
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
-		
-		FirewallModel fm = model.getServerModel(server).getFirewallModel();
-		
-		if (model.getData().getAllowedSSHSource(server) != null) {
-			for (String ip : model.getData().getAllowedSSHSource(server)) {
-				fm.addFilterInput("sshd_ipt_in",
-						"-p tcp"
-						+ " --dport " + model.getData().getSSHPort(server)
-						+ " -s " + ip
-						+ " -j ACCEPT");
-				fm.addFilterOutput("sshd_ipt_out",
-						"-p tcp"
-						+ " --sport " + model.getData().getSSHPort(server)
-						+ " -d " + ip
-						+ " -j ACCEPT");
-			}
-		}
-		else {
-			fm.addFilterInput("sshd_ipt_in",
-					"-p tcp --dport " + model.getData().getSSHPort(server) + " -j ACCEPT");
-			fm.addFilterOutput("sshd_ipt_out",
-					"-p tcp --sport " + model.getData().getSSHPort(server) + " -j ACCEPT");
-		}
-	
+
+		me.addRequiredListen(networkModel.getData().getSSHPort(me.getLabel()));
+
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		units.addElement(new RunningUnit("sshd", "sshd", "sshd"));
 		return units;

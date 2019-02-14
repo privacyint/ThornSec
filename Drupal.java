@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileEditUnit;
@@ -15,20 +16,25 @@ public class Drupal extends AStructuredProfile {
 	private PHP php;
 	private MariaDB db;
 	
-	public Drupal() {
-		super("drupal");
+	public Drupal(ServerModel me, NetworkModel networkModel) {
+		super("drupal", me, networkModel);
 		
-		this.webserver = new Nginx();
-		this.php = new PHP();
-		this.db = new MariaDB();
+		this.webserver = new Nginx(me, networkModel);
+		this.php = new PHP(me, networkModel);
+		this.db = new MariaDB(me, networkModel);
+		
+		this.db.setUsername("drupal");
+		this.db.setUserPrivileges("SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES");
+		this.db.setUserPassword("${DRUPAL_PASSWORD}");
+		this.db.setDb("drupal");
 	}
-
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addAll(webserver.getInstalled(server, model));
-		units.addAll(php.getInstalled(server, model));
-		units.addAll(db.getInstalled(server, model));
+		units.addAll(webserver.getInstalled());
+		units.addAll(php.getInstalled());
+		units.addAll(db.getInstalled());
 		
 		units.addElement(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
 		units.addElement(new InstalledUnit("composer", "proceed", "composer"));
@@ -42,7 +48,7 @@ public class Drupal extends AStructuredProfile {
 		units.addElement(new InstalledUnit("php_mod_curl", "php_fpm_installed", "php-curl"));
 		units.addElement(new InstalledUnit("php_mbstring", "php_fpm_installed", "php-mbstring"));
 
-		units.addAll(model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "drush", "composer_installed", "nginx", "nginx", "0750"));
+		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("drush", "composer_installed", "nginx", "nginx", "0750"));
 		
 		units.addElement(new SimpleUnit("drush_installed", "composer_installed",
 				"sudo -u nginx bash -c 'composer create-project drush/drush /media/data/drush -n'",
@@ -52,17 +58,17 @@ public class Drupal extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
-		units.addAll(webserver.getPersistentConfig(server, model));
-		units.addAll(db.getPersistentConfig(server, model));
-		units.addAll(php.getPersistentConfig(server, model));
+		units.addAll(webserver.getPersistentConfig());
+		units.addAll(db.getPersistentConfig());
+		units.addAll(php.getPersistentConfig());
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
+	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		String nginxConf = "";
@@ -112,16 +118,17 @@ public class Drupal extends AStructuredProfile {
 		
 		webserver.addLiveConfig("default", nginxConf);
 		
-		units.addAll(webserver.getLiveConfig(server, model));
-		units.addAll(php.getLiveConfig(server, model));
-		units.addAll(db.getLiveConfig(server, model));
+		units.addAll(webserver.getLiveConfig());
+		units.addAll(php.getLiveConfig());
+		units.addAll(db.getLiveConfig());
 		
 		units.addElement(new SimpleUnit("drupal_mysql_password", "proceed",
 				"DRUPAL_PASSWORD=`sudo grep \"password\" /media/data/www/sites/default/settings.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',\"`; [[ -z $DRUPAL_PASSWORD ]] && DRUPAL_PASSWORD=`openssl rand -hex 32`",
 				"echo $DRUPAL_PASSWORD", "", "fail",
 				"Couldn't set a password for Drupal's database user. The installation will fail."));
 		
-		units.addAll(db.createDb("drupal", "drupal", "SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES", "DRUPAL_PASSWORD"));
+		units.addAll(this.db.checkUserExists());
+		units.addAll(this.db.checkDbExists());
 		
 		units.addElement(new SimpleUnit("drupal_installed", "drush_installed",
 				"sudo /media/data/drush/drush -y dl drupal-7 --destination=/media/data --drupal-project-rename=www"
@@ -138,16 +145,16 @@ public class Drupal extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_drupal", "drupal.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_packagist", "packagist.org", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_api_github", "api.github.com", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_github", "github.com", new String[]{"80","443"});
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, "allow_codeload_github", "codeload.github.com", new String[]{"80","443"});
+		me.addRequiredEgress("drupal.org");
+		me.addRequiredEgress("packagist.org");
+		me.addRequiredEgress("api.github.com");
+		me.addRequiredEgress("github.com");
+		me.addRequiredEgress("codeload.github.com");
 
-		units.addAll(webserver.getPersistentFirewall(server, model));
+		units.addAll(webserver.getNetworking());
 
 		return units;
 	}

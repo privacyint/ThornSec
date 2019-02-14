@@ -1,9 +1,11 @@
 package profile;
 
+import java.io.File;
 import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
@@ -12,11 +14,15 @@ import core.unit.pkg.InstalledUnit;
 
 public class Jail extends AStructuredProfile {
 
-	public Jail() {
-		super("jail");
+	/*
+	 * This class is loosely based on http://blog.dornea.nu/2016/01/15/howto-put-nginx-and-php-to-jail-in-debian-8/
+	 */
+	
+	public Jail(ServerModel me, NetworkModel networkModel) {
+		super("jail", me, networkModel);
 	}
 
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
+	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addElement(new InstalledUnit("libcap2_bin", "proceed", "libcap2-bin"));
@@ -24,12 +30,12 @@ public class Jail extends AStructuredProfile {
 		//a=D   : ALL, execute bit only on dirs only
 		//fu=rw : Files; user, R+W
 		//fog=r : Files; group + others, R
-		model.getServerModel(server).getBindFsModel().addDataBindPoint(server, model, "jails", "proceed", "root", "root", "a=D:fu=rw:fog=r");
+		((ServerModel)me).getBindFsModel().addDataBindPoint("jails", "proceed", "root", "root", "a=D:fu=rw:fog=r");
 		
 		return units;
 	}
 
-	public Vector<IUnit> buildJail(String server, NetworkModel model, String jail) {
+	public Vector<IUnit> buildJail(String jail) {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		String   jailRoot    = "/media/data/jails/" + jail;
@@ -57,10 +63,8 @@ public class Jail extends AStructuredProfile {
 								};
 		
 		units.addElement(new DirUnit(jail + "_jail_root", "proceed", jailRoot, "Couldn't create a base directory for your jail. Everything past here will fail."));
-		
-		for (String dir : directories) {
-			units.addElement(new DirUnit(jail + "_jail" + dir.replace("/", "_"), jail + "_jail_root_created", jailRoot + dir, "Couldn't create a the " + dir + " directory for your jail. Expct weird behaviour."));
-		}
+
+		units.addAll(createDirs(jail, directories));
 		
 		units.addElement(new SimpleUnit("libraries_symlink", jail + "_jail_root_created",
 			    "cd " + jailRoot + ";"
@@ -88,12 +92,12 @@ public class Jail extends AStructuredProfile {
 					"sudo [ -f " + jailRoot + "/" + file + " ] && echo pass", "pass", "pass"));
 		}
 
-		units.addAll(addUser(server, model, jail, "nobody", "99", "99"));
+		units.addAll(addUser(jail, "nobody", "99", "99"));
 		
 		return units;
 	}
 
-	public Vector<IUnit> addUser(String server, NetworkModel model, String jail, String user, String uid, String gid) {
+	public Vector<IUnit> addUser(String jail, String user, String uid, String gid) {
 		Vector<IUnit> units = new Vector<IUnit>();
 
 		String jailRoot = "/media/data/jails/" + jail;
@@ -102,6 +106,61 @@ public class Jail extends AStructuredProfile {
 		units.addElement(new FileAppendUnit(jail + "_jail_addgroup_" + user, jail + "_jail_etc_created", user + ":x:" + gid + ":", jailRoot + "/etc/group", "Could not add the group " + user + " to the jail " + jail));
 		units.addElement(new FileAppendUnit(jail + "_jail_adduser_" + user + "_shadow", jail + "_jail_etc_created", user + ":x:14871::::::", jailRoot + "/etc/shadow", "Could not add the user " + user + " to the jail " + jail));
 		units.addElement(new FileAppendUnit(jail + "_jail_adduser_" + user + "_gshadow", jail + "_jail_etc_created", user + ":::", jailRoot + "/etc/gshadow", "Could not add the user " + user + " to the jail " + jail));
+		
+		return units;
+	}
+	
+	public Vector<IUnit> createDirs(String jail, String[] directories) {
+		Vector<IUnit> units = new Vector<IUnit>();
+
+		String jailRoot = "/media/data/jails/" + jail;
+		
+		for (String dir : directories) {
+			units.addElement(new DirUnit(jail + "_jail" + dir.replace("/", "_"), jail + "_jail_root_created", jailRoot + dir, "Couldn't create a the " + dir + " directory for your jail. Expct weird behaviour."));
+		}
+		
+		return units;
+	}
+	
+	public Vector<IUnit> addBinary(String jail, String binary) {
+		Vector<IUnit> units = new Vector<IUnit>();
+
+		String jailRoot   = "/media/data/jails/" + jail;
+		String name = new File(binary).getName().replace(".", "_");
+
+		/*
+		 * Based on https://bash.cyberciti.biz/web-server/nginx-chroot-helper-bash-shell-script/
+		 */
+		units.addElement(new SimpleUnit(jail + "_add_" + name + "_dependencies", jail + "_jail_root_created",
+		"for file in \\$(ldd " + binary + " |  awk '{ print \\\\$3 }' | sed -e '/^\\\\$/d' -e '/(*)\\\\$/d'); do;"
+		+	"dir=\"\\${file%/*}\";"
+		+	"[ ! -d " + jailRoot + "\\${dir} ] && mkdir -p " + jailRoot + "\\${dir};"
+		+	"sudo cp -Ll $file " + jailRoot + "${dir};"
+		+ "done;"
+		+ "ld=\"\\$(ldd " + binary + " | grep 'ld-linux' | awk '{ print \\$1 }')\";"
+		+ "lddir=\"\\${ld%/*}\";"
+		+ "[ ! -f " + jailRoot + "\\${ld} ] && sudo cp -Ll \\${ld} " + jailRoot + "\\${lddir};",
+		//Checks existence of all files returned in the ldd call
+		"for f in \\$(ldd " + binary + " |  awk '{ print \\\\$3 }' | sed -e '/^\\\\$/d' -e '/(*)\\\\$/d'); do [ -e \"" + jailRoot + "\\\\$f\" ] && echo pass || echo fail ; break; done", "pass", "pass")); 
+
+		
+		return units;
+	}
+	
+	public Vector<IUnit> copyToJail(String jail, String source) {
+		return copyToJail(jail, source, source);
+	}
+	
+	public Vector<IUnit> copyToJail(String jail, String source, String destination) {
+		Vector<IUnit> units = new Vector<IUnit>();
+
+		String jailRoot = "/media/data/jails/" + jail;
+		
+		String sourceName = new File(source).getName().replace(".", "_");
+		
+		units.addElement(new SimpleUnit(jail + "_add_" + sourceName, jail + "_jail_root_created",
+				"sudo cp -Llr " + source + " " + jailRoot + destination,
+				"sudo [ -e " + jailRoot + destination + " ] && echo pass || echo fail", "pass", "pass"));
 		
 		return units;
 	}
