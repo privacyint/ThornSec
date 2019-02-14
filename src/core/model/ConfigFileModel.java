@@ -10,12 +10,13 @@ public class ConfigFileModel extends AModel {
 
 	private Vector<String> configFiles;
 
-	public ConfigFileModel(String label) {
-		super(label);
+	ConfigFileModel(String label, ServerModel me, NetworkModel networkModel) {
+		super(label, me, networkModel);
+
+		this.configFiles = new Vector<String>();
 	}
 
-	public void init(NetworkModel model) {
-		this.configFiles = new Vector<String>();
+	public void init() {
 	}
 
 	public Vector<IUnit> getUnits() {

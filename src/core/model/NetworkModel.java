@@ -7,118 +7,232 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Vector;
+
+import javax.swing.JOptionPane;
 
 import core.data.NetworkData;
 import core.exec.ManageExec;
 import core.exec.PasswordExec;
 import core.iface.IUnit;
+import profile.IPSet;
 
 public class NetworkModel {
 
 	private String label;
 
 	private NetworkData data;
+	
+	private IPSet ipsets;
 
 	private LinkedHashMap<String, ServerModel> servers;
 	private LinkedHashMap<String, DeviceModel> devices;
 
-	private Vector<String> routers;
-	private Vector<String> metals;
-	private Vector<String> services;
+	private Vector<ServerModel> routers;
+	private Vector<ServerModel> dedis;
+	private Vector<ServerModel> metals;
+	private Vector<ServerModel> services;
 	
+	private Vector<DeviceModel> userDevices;
+	private Vector<DeviceModel> intOnlyDevices;
+	private Vector<DeviceModel> extOnlyDevices;
+	private Vector<DeviceModel> peripherals;
+
 	private LinkedHashMap<String, Vector<IUnit>> units;
 
-	public NetworkModel(String label) {
+	NetworkModel(String label) {
 		this.label = label;
+
+		//First, the two different types
+		servers = new LinkedHashMap<>();
+		devices = new LinkedHashMap<>();
+		
+		//Now the subtypes
+		routers  = new Vector<ServerModel>();
+		metals   = new Vector<ServerModel>();
+		dedis    = new Vector<ServerModel>();
+		services = new Vector<ServerModel>();
+		
+		peripherals = new Vector<DeviceModel>();
+		
+		userDevices    = new Vector<DeviceModel>();
+		intOnlyDevices = new Vector<DeviceModel>();
+		extOnlyDevices = new Vector<DeviceModel>();
+
+		ipsets = new IPSet(this);
+		
+		units = new LinkedHashMap<>();
 	}
 
 	public String getLabel() {
 		return this.label;
 	}
-
-	public void init() {
-		servers = new LinkedHashMap<>();
-		routers = new Vector<String>();
-		metals = new Vector<String>();
-		services = new Vector<String>();
-		devices = new LinkedHashMap<>();
-		units = new LinkedHashMap<>();
-		
-		for (String server : data.getServerLabels()) {
-			ServerModel sm = new ServerModel(server);
-			sm.setData(this.data);
-			servers.put(server, sm);
-		}
-
-		//Need to init them out here as they may depend on others
-		for(Map.Entry<String, ServerModel> server : servers.entrySet()) {
-			server.getValue().init(this);
-		}
-		
-		for (String device : data.getDeviceLabels()) {
-			DeviceModel dm = new DeviceModel(device);
-			dm.setData(this.data);
-			devices.put(device, dm);
-			//Can init them in this loop as they don't depend on others
-			dm.init(this);
-		}
-		
-		//We need to do it in the following order: devices, services, metals, routers.
-		//This is because inherited rules (e.g. IPTables) will only ever go in that direction
-		for (String device : data.getDeviceLabels()) {
-			//Remove duplication
-			if (!units.containsKey(device)) {
-				units.put(device, devices.get(device).getUnits());
-			}
-		}
-		for (String service : services) {
-			if (!units.containsKey(service)) {
-				units.put(service, servers.get(service).getUnits());
-			}
-		}
-		for (String metal : metals) {
-			if (!units.containsKey(metal)) {
-				units.put(metal, servers.get(metal).getUnits());
-			}
-		}
-		for (String router : routers) {
-			if (!units.containsKey(router)) {
-				units.put(router, servers.get(router).getUnits());
-			}
-		}
+	
+	public IPSet getIPSet() {
+		return this.ipsets;
 	}
 
-	public void registerRouter(String label) {
-		routers.add(label);
+	void init() {
+		//Create (and classify) all devices
+		for (String device : data.getAllDeviceLabels()) {
+			DeviceModel deviceModel = new DeviceModel(device, this);
+			deviceModel.setData(this.data);
+			devices.put(device, deviceModel);
+			
+			deviceModel.init();
+
+			switch (deviceModel.getType()) {
+				case "User":
+					userDevices.add(deviceModel);
+					break;
+				case "Internal":
+					peripherals.add(deviceModel);
+					intOnlyDevices.add(deviceModel);
+					break;
+				case "External":
+					peripherals.add(deviceModel);
+					extOnlyDevices.add(deviceModel);
+					break;
+				default:
+					//In theory, we should never get here. Theory is a fine thing.
+					System.out.println("Encountered an unsupported device type for " + device);
+			}
+		}
+
+		//Then, create (and classify) all servers
+		for (String server : data.getAllServerLabels()) {
+			ServerModel serverModel = new ServerModel(server, this);
+			serverModel.setData(this.data);
+			servers.put(server, serverModel);
+			serverModel.init();
+			
+			if (serverModel.isDedi()) {
+				dedis.add(serverModel);
+			}
+			if (serverModel.isMetal()) {
+				metals.add(serverModel);
+			}
+			if (serverModel.isRouter()) {
+				routers.add(serverModel);
+			}
+			if (serverModel.isService()) {
+				services.add(serverModel);
+			}
+		}
+
+		//Now everything is classified and init()ed, get their networking requirements
+		//We want to do this in a certain order - backwards through the network
+		for(DeviceModel device : devices.values()) {
+			device.getNetworking();
+		}
+
+		//Allow external-only && users to call out to the web
+		for (DeviceModel device : userDevices) {
+			device.addRequiredEgress("255.255.255.255", 0);
+		}
+		
+		for (DeviceModel device : extOnlyDevices) {
+			device.addRequiredEgress("255.255.255.255", 0);
+		}
+
+		for(ServerModel service : services) {
+			service.getNetworking();
+		}
+
+		for(ServerModel metal : metals) {
+			metal.getNetworking();
+		}
+
+		for(ServerModel dedi : dedis) {
+			dedi.getNetworking();
+		}
+		
+		//Now populate our ipsets before building our Router
+		this.ipsets.init();
+
+		for(ServerModel router : routers) {
+			router.getNetworking();
+		}
+
+		//Finally, get all of the config units
+		for (MachineModel machine : getAllMachines()) {
+			units.put(machine.getLabel(), machine.getUnits());
+		}
+
+	}
+
+	public Vector<MachineModel> getAllMachines() {
+		Vector<MachineModel> machines = new Vector<MachineModel>();
+		machines.addAll(servers.values());
+		machines.addAll(devices.values());
+		
+		return machines;
 	}
 	
-	public void registerMetal(String label) {
-		metals.add(label);
-	}
-	
-	public void registerService(String label) {
-		services.add(label);
-	}
-	
-	public Vector<String> getRouters() {
+	public Vector<ServerModel> getRouterServers() {
 		return routers;
 	}
 	
-	public Vector<String> getMetals() {
+	public Vector<ServerModel> getDediServers() {
+		return dedis;
+	}
+
+	public Vector<ServerModel> getMetalServers() {
 		return metals;
 	}
-	
-	public Vector<String> getServices() {
+
+	public Vector<ServerModel> getServiceServers() {
 		return services;
 	}
 	
-	public void registerOnMetal(String label, String metal) {
-		this.getServerModel(metal).registerService(label);
+	public Vector<ServerModel> getAllServers() {
+		return new Vector<ServerModel>(servers.values());
+	}
+
+	public Vector<DeviceModel> getAllPeripheralDevices() {
+		return peripherals;
+	}
+	
+	public Vector<DeviceModel> getUserDevices() {
+		return userDevices;
+	}
+
+	public Vector<DeviceModel> getInternalOnlyDevices() {
+		return intOnlyDevices;
+	}
+
+	public Vector<DeviceModel> getExternalOnlyDevices() {
+		return extOnlyDevices;
+	}
+	
+	public Vector<DeviceModel> getAllDevices() {
+		return new Vector<DeviceModel>(devices.values());
+	}
+	
+	void registerOnMetal(ServerModel service, ServerModel metal) {
+		metal.registerService(service);
+	}
+
+	public MachineModel getMachineModel(String machine) {
+		if (servers.containsKey(machine)) {
+			return servers.get(machine);
+		}
+		else if (devices.containsKey(machine)) {
+			return devices.get(machine);
+		}
+		else {
+			JOptionPane.showMessageDialog(null, machine + " does not exist in your network, yet you are trying to configure for it.\n\nThis is most likely due to a WebProxy pointing at an undeclared machine.\n\nPlease correct this, and run again");
+			System.exit(1);
+		}
+
+		return null;
 	}
 
 	public ServerModel getServerModel(String server) {
@@ -126,6 +240,8 @@ public class NetworkModel {
 			return servers.get(server);
 		}
 		else {
+			JOptionPane.showMessageDialog(null, server + " does not exist in your network, yet you are trying to configure for it.\n\nThis is most likely due to a WebProxy pointing at an undeclared machine.\n\nPlease correct this, and run again");
+			System.exit(1);
 			return null;
 		}
 	}
@@ -135,17 +251,10 @@ public class NetworkModel {
 			return devices.get(device);
 		}
 		else {
+			JOptionPane.showMessageDialog(null, device + " does not exist in your network, yet you are trying to configure for it.\n\nThis is most likely due to a requested admin user which has not been added to your users block.\n\nPlease correct this, and run again");
+			System.exit(1);
 			return null;
 		}
-	}
-
-	public String[] getServerLabels() {
-		//return this.servers.keySet().toArray(new String[servers.size()]);
-		return data.getServerLabels();
-	}
-
-	public String[] getDeviceLabels() {
-		return data.getDeviceLabels();
 	}
 
 	public void auditNonBlock(String server, OutputStream out, InputStream in, boolean quiet) {
@@ -177,43 +286,35 @@ public class NetworkModel {
 	private ManageExec getManageExec(String server, String action, OutputStream out, boolean quiet) {
 		// need to do a series of local checks eg known_hosts or expected
 		// fingerprint
-		if (servers.containsKey(server)) {
-			ServerModel serverModel = servers.get(server);
-			PasswordExec pass = new PasswordExec(server, this);
+		ServerModel serverModel = servers.get(server);
+		PasswordExec pass = new PasswordExec(server, this);
 
-			if (!pass.init()) {
-				return null;
-			} else {
-				String password = pass.getPassword();
-				
-				String audit = getScript(serverModel, action, quiet);
-				
-				if (action.equals("dryrun")) {
-					try {
-						Date now = new Date();
-						PrintWriter wr = new PrintWriter(new FileOutputStream("./" + server + "_" + now.toString() + ".sh"));
-						wr.write(audit);
-						wr.flush();
-						wr.close();
-					} catch (FileNotFoundException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					return null;
-				}
-
-				if (password == null || password.equals("")) {
-					System.out.println("FAIL: no password in keychain for " + serverModel.getLabel());
-					return null;
-				}
-				
-				ManageExec exec = new ManageExec(this.getData().getUser(), password, serverModel.getIP(), this.getData().getSSHPort(server), audit, out);
-				return exec;
+		String password = pass.getPassword();
+		
+		String audit = getScript(serverModel, action, quiet);
+		
+		if (action.equals("dryrun")) {
+			try {
+				Date now = new Date();
+				PrintWriter wr = new PrintWriter(new FileOutputStream("./" + server + "_" + now.toString() + ".sh"));
+				wr.write(audit);
+				wr.flush();
+				wr.close();
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-		} else {
-			System.out.println("No server " + server);
+			return null;
 		}
-		return null;
+
+		if (pass.isDefaultPassword()) {
+			System.out.println("FAIL: no password in keychain for " + serverModel.getLabel());
+			System.out.println("Using the default password instead (this almost certainly won't work!)");
+			return null;
+		}
+		
+		ManageExec exec = new ManageExec(this.getData().getUser(), password, serverModel.getIP(), this.getData().getSSHPort(server), audit, out);
+		return exec;
 	}
 
 	private String getScript(ServerModel serverModel, String action, boolean quiet) {
@@ -272,10 +373,10 @@ public class NetworkModel {
 	public void genIsoServer(String server, String dir) {
 		String currentUser = getData().getUser();
 		String sshDir = "/home/" + currentUser + "/.ssh";
-		String sshKey = getData().getSSHKey(currentUser);
+		String sshKey = getData().getUserSSHKey(currentUser);
 
 		String preseed = "";
-		preseed += "d-i preseed/late_command string";
+		preseed += "d-i preseed/late_command staring";
 		preseed += "	in-target mkdir " + sshDir + ";";
 		preseed += "    in-target touch " + sshDir + "/authorized_keys;";
 		preseed += "	echo \\\"echo \\\'" + sshKey + "\\\' >> " + sshDir + "/authorized_keys; \\\" | chroot /target /bin/bash;";
@@ -290,13 +391,13 @@ public class NetworkModel {
 		preseed += "d-i debian-installer/locale string en_GB.UTF-8\n";
 		preseed += "d-i keyboard-configuration/xkb-keymap select uk\n";
 		preseed += "d-i netcfg/target_network_config select ifupdown\n";
-		if (getData().getExtConn(server) != null && getData().getExtConn(server).equals("static")) {
+		if (getData().getExtConnectionType(server) != null && getData().getExtConnectionType(server).equals("static")) {
 			preseed += "d-i netcfg/disable_dhcp true\n";
-			preseed += "d-i netcfg/choose_interface select " + getData().getExtIface(server) + "\n";
+			preseed += "d-i netcfg/choose_interface select " + getData().getWanIfaces(server) + "\n";
 			preseed += "d-i netcfg/disable_autoconfig boolean true\n";
-			preseed += "d-i netcfg/get_ipaddress string " + getData().getProperty(server, "externaladdress") + "\n";
-			preseed += "d-i netcfg/get_netmask string " + getData().getProperty(server, "externalnetmask") + "\n";
-			preseed += "d-i netcfg/get_gateway string " + getData().getProperty(server, "externalgateway") + "\n";
+			preseed += "d-i netcfg/get_ipaddress string " + getData().getProperty(server, "externaladdress", true) + "\n";
+			preseed += "d-i netcfg/get_netmask string " + getData().getProperty(server, "externalnetmask", true) + "\n";
+			preseed += "d-i netcfg/get_gateway string " + getData().getProperty(server, "externalgateway", true) + "\n";
 			preseed += "d-i netcfg/get_nameservers string " + getData().getDNS()[0] + "\n"; //Use the first DNS server
 			preseed += "d-i netcfg/confirm_static boolean true\n";
 		}
@@ -313,7 +414,7 @@ public class NetworkModel {
 		preseed += "d-i mirror/http/proxy string\n";
 		preseed += "d-i passwd/root-password password secret\n";
 		preseed += "d-i passwd/root-password-again password secret\n";
-		preseed += "d-i passwd/user-fullname string " + getData().getFullName(currentUser) + "\n";
+		preseed += "d-i passwd/user-fullname string " + getData().getUserFullName(currentUser) + "\n";
 		preseed += "d-i passwd/username string " + currentUser + "\n";
 		preseed += "d-i passwd/user-password password secret\n";
 		preseed += "d-i passwd/user-password-again password secret\n";
@@ -332,7 +433,7 @@ public class NetworkModel {
 		preseed += "d-i partman/choose_partition select finish\n";
 		preseed += "d-i partman/confirm boolean true\n";
 		preseed += "d-i partman/confirm_nooverwrite boolean true\n";
-		preseed += "tasksel tasksel/first multiselect none\n";
+		preseed += "tasksel tasksel/first mualtiselect none\n";
 		preseed += "d-i pkgsel/include string sudo openssh-server dkms gcc bzip2\n";
 		preseed += "d-i preseed/late_command string sed -i '/^deb cdrom:/s/^/#/' /target/etc/apt/sources.list\n";
 		preseed += "d-i apt-setup/use_mirror boolean false\n";
@@ -422,5 +523,45 @@ public class NetworkModel {
 			e.printStackTrace();
 		}
 	}
+	
+	public Inet4Address stringToIP(String toParse) {
+		Object ip = null;
+		
+		//If we don't check this, null == 127.0.0.1, which throws everything :)
+		if (toParse == null) { return null; }
+		
+		try {
+			ip = Inet4Address.getByName(toParse);
+		}
+		catch (UnknownHostException e) {
+			JOptionPane.showMessageDialog(null, toParse + " appears to be an invalid address, or you're currently offline. Please check your network connection and try again.");
+			System.exit(1);
+		}
+		
+		return (Inet4Address) ip;
+	}
+	
+	public InetAddress[] stringToAllIPs(String toParse) {
+		Object[] parsed = null;
+		ArrayList<InetAddress> addresses = new ArrayList<InetAddress>(); 
+		
+		//If we don't check this, null == 127.0.0.1, which throws everything :)
+		if (toParse == null) { return null; }
+		
+		try {
+			parsed = Inet4Address.getAllByName(toParse);
+		}
+		catch (UnknownHostException e) {
+			JOptionPane.showMessageDialog(null, toParse + " appears to be an invalid address, or you're currently offline. Please check your network connection and try again.");
+			System.exit(1);
+		}
+		
+		for (InetAddress ip : (InetAddress[]) parsed) {
+			if (ip instanceof Inet4Address) {
+				addresses.add(ip);
+			}
+		}
 
+		return addresses.toArray(new InetAddress[addresses.size()]);
+	}
 }

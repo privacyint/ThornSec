@@ -117,7 +117,7 @@
 				"extiface":"enp2s0",
 				//Static configuration array
 				"extconfig":[ {"address":"123.321.123.321", "netmask":"255.255.255.224", "broadcast":"123.321.123.255", "gateway":"123.321.123.1"}
-				],
+				]
 				//Physical internal iface
 				"iface":"enp3s0"
 			},
@@ -199,7 +199,7 @@
 
 		"internaldevices":{
 			//Internal connections only
-			"printer": {"macs":["de:ad:be:ef:ca:fe"], "throttle":"true", "managed":"true"}
+			"printer": {"macs":["de:ad:be:ef:ca:fe"], "throttle":"true", "managed":"true"},
 		},
 		
 		"externaldevices":{

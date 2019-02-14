@@ -1,19 +1,23 @@
 package core.exec;
 
 import java.io.OutputStream;
+import java.net.InetAddress;
 
 public class ManageExec {
 
+	private InetAddress ip;
+	
+	private Integer port;
+
 	private String user;
-	private String ip;
-	private String port;
 	private String cmd;
 	private String password;
+	
 	private OutputStream out;
 
-	public ManageExec(String user, String password, String ip, String port, String cmd, OutputStream out) {
+	public ManageExec(String user, String password, InetAddress inetAddress, Integer port, String cmd, OutputStream out) {
 		this.user = user;
-		this.ip = ip;
+		this.ip = inetAddress;
 		this.port = port;
 		this.cmd = cmd;
 		this.out = out;
@@ -60,15 +64,10 @@ public class ManageExec {
 			exec2.writeAllOpen(pass.getBytes());
 			
 			return exec2;
-		} catch (Exception e1) {
+		}
+		catch (Exception e1) {
 			e1.printStackTrace();
 		}
 		return null;
 	}
-
-	public void manageBlock() {
-		ProcessExec exec = manage();
-		exec.waitFor();
-	}
-
 }

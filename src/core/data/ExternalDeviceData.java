@@ -1,21 +1,23 @@
 package core.data;
 
-import java.util.Objects;
-
 import javax.json.JsonObject;
 
-public class ExternalDeviceData extends ADeviceData {
+class ExternalDeviceData extends ADeviceData {
 
-	public ExternalDeviceData(String label) {
+	ExternalDeviceData(String label) {
 		super(label);
 	}
 
 	public void read(JsonObject data) {
-		super.data = data;
+		super.setData(data);
 		
-		super.macs      = getPropertyArray("macs");
-		super.throttled = Objects.equals(getProperty("throttle", "true"), "true");
-		super.managed   = Objects.equals(getProperty("managed", "false"), "true");
-		super.ports     = getPropertyArray("ports");
+		super.setMacs(super.getPropertyArray("macs"));
+		super.setPorts(super.getPropertyArray("ports"));
+
+		super.setIsThrottled(Boolean.parseBoolean(getProperty("throttle", "true")));
+		super.setIsManaged(Boolean.parseBoolean(getProperty("managed", "false")));
+		
+		super.setFirstOctet(10);
+		super.setSecondOctet(super.getIsManaged() ? 101 : 100);
 	}
 }

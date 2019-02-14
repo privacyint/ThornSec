@@ -78,7 +78,7 @@ function createVM {
 							 --device 0 --type hdd --medium $VM.vdi
 	VBoxManage storagectl $VM --name "IDE Controller" --add ide
 #	VBoxManage storageattach $VM --storagectl "IDE Controller" --port 0 \
-							 --device 0 --type dvddrive --medium $ISO
+#							 --device 0 --type dvddrive --medium $ISO
 	VBoxManage modifyvm $VM --ioapic on
 	VBoxManage modifyvm $VM --boot1 dvd --boot2 disk --boot3 none --boot4 none
 

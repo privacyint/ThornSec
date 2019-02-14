@@ -1,110 +1,162 @@
 package core.model;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Vector;
 
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import core.data.NetworkData;
+import javax.swing.JOptionPane;
+
 import core.iface.IUnit;
+
 import core.profile.AProfile;
+import core.profile.AStructuredProfile;
+
 import core.unit.SimpleUnit;
+import core.unit.fs.FileAppendUnit;
 import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
-import profile.DNS;
+
+import profile.Dedicated;
 import profile.Metal;
 import profile.Router;
 import profile.SSH;
 import profile.Service;
 
-public class ServerModel extends AModel {
-
-	private NetworkData networkData;
-
-	private NetworkModel networkModel;
-
-	private AptSourcesModel aptm;
+public class ServerModel extends MachineModel {
+	private Vector<IUnit> initUnits;
 	
-	private FirewallModel fm;
-
-	private InterfaceModel im;
-	
-	private ProcessModel pm;
-	
-	private BindFsModel bfm;
-	
-	private ConfigFileModel configs;
-	
-	private UserModel um;
-	
-	private Vector<String> services;
+	private Vector<ServerModel> services;
 	
 	private Router router;
+	private Vector<AStructuredProfile> types;
+	private Vector<AProfile> profiles;
+
+	//Server-specific 
+	private AptSourcesModel aptSources;
+	private FirewallModel   firewall;
+	private ProcessModel    runningProcesses;
+	private BindFsModel     bindMounts;
+	private ConfigFileModel configFiles;
+	private UserModel       users;
 	
-	public ServerModel(String label) {
-		super(label);
-	}
-
-	public void setData(NetworkData data) {
-		this.networkData = data;
-	}
-
-	public void init(NetworkModel model) {
-		this.networkModel = model;
-		this.services = new Vector<String>();
+	ServerModel(String label, NetworkModel networkModel) {
+		super(label, networkModel);
 		
-		String   me    = this.getLabel();
-		String[] types = this.networkData.getTypes(me);
-		for (String type : types) {
-			switch (type) {
-				case "router":
-					model.registerRouter(me);
-					router = new Router();
-					break;
-				case "metal":
-					model.registerMetal(me);
-					break;
-				case "service":
-					model.registerService(me);
-					model.registerOnMetal(me, networkData.getMetal(me));
-					break;
-				default:
-					System.out.println("Unsupported type: " + type);
-			}
+		this.types = new Vector<AStructuredProfile>();
+		this.profiles = new Vector<AProfile>();
+
+		this.initUnits = new Vector<IUnit>();
+		
+		this.services = new Vector<ServerModel>();
+		
+		this.firewall = new FirewallModel(getLabel(), this, networkModel);
+		this.firewall.init();
+		
+		this.runningProcesses = new ProcessModel(getLabel(), this, networkModel);
+		this.runningProcesses.init();
+		
+		this.bindMounts = new BindFsModel(getLabel(), this, networkModel);
+		this.bindMounts.init();
+		
+		this.aptSources = new AptSourcesModel(getLabel(), this, networkModel);
+		this.aptSources.init();
+		
+		this.users = new UserModel(getLabel(), this, networkModel);
+		this.users.init();
+		
+		this.configFiles = new ConfigFileModel(getLabel(), this, networkModel);
+		this.configFiles.init();
+		
+		addRequiredEgress("cdn.debian.net");
+		addRequiredEgress("security-cdn.debian.org");
+		addRequiredEgress("prod.debian.map.fastly.net");
+		addRequiredEgress("255.255.255.255", 25);
+
+	}
+	
+	public void init() {
+		if (this.isRouter()) {
+			router = new Router(this, networkModel);
+			types.addElement(router);
+		}
+		if (this.isMetal()) {
+			Metal metal = new Metal(this, networkModel);
+			types.addElement(metal);
+		}
+		if (this.isService()) {
+			Service service = new Service(this, networkModel);
+			networkModel.registerOnMetal(this, getMetal());
+			types.addElement(service);
+		}
+		if (this.isDedi()) {
+			Dedicated dedi = new Dedicated(this, networkModel);
+			types.addElement(dedi);
 		}
 		
-		this.fm = new FirewallModel(me);
-		this.fm.init(model);
-		this.im = new InterfaceModel(me);
-		this.im.init(model);
-		this.pm = new ProcessModel(me);
-		this.pm.init(model);
-		this.bfm = new BindFsModel(me);
-		this.bfm.init(model);
-		this.aptm = new AptSourcesModel(me);
-		this.aptm.init(model);
-		this.um = new UserModel(me);
-		this.um.init(model);
-		this.configs = new ConfigFileModel(me);
-		this.configs.init(model);
+		for (AStructuredProfile type : this.types) {
+			type.init();
+		}
+		
+		for (String profile : this.getProfiles()) {
+			try {
+				if (profile.equals("")) { continue; }
+				
+				AProfile profileClass = (AProfile) Class.forName("profile." + profile).getDeclaredConstructor(ServerModel.class, NetworkModel.class).newInstance(this, networkModel);
+				this.profiles.addElement(profileClass);
+				
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(null, profile + " has thrown an error.\n\nThe program will terminate");
+				System.exit(1);
+			}
+		}
+
 	}
 	
-	public void registerService(String label) {
-		this.services.addElement(label);
-	}
-	
-	public Vector<String> getServices() {
-		return this.services;
+	public void getNetworking() {
+		for (AStructuredProfile type : this.types) {
+			type.getNetworking();
+		}
+		for (AProfile profile : this.profiles) {
+			profile.getNetworking();
+		}
+		
+		if (networkModel.getData().getExternalIp(getLabel()) != null) {
+			addRequiredIngress("255.255.255.255", getRequiredListen().toArray(new Integer[getRequiredListen().size()]));
+		}
 	}
 
-	public Vector<IUnit> getUnits() {		
+	void registerService(ServerModel service) {
+		services.addElement(service);
+	}
+	
+	public ServerModel getMetal() {
+		return networkModel.getServerModel(getNetworkData().getMetal(getLabel()));
+	}
+	
+	public Vector<ServerModel> getServices() {
+		return services;
+	}
+	
+	public Boolean isRouter() {
+		return Arrays.stream(getTypes()).anyMatch("router"::equals);
+	}
+
+	public Boolean isMetal() {
+		return Arrays.stream(getTypes()).anyMatch("metal"::equals);
+	}
+	
+	public Boolean isService() {
+		return Arrays.stream(getTypes()).anyMatch("service"::equals);
+	}
+
+	public Boolean isDedi() {
+		return Arrays.stream(getTypes()).anyMatch("dedicated"::equals);
+	}
+
+	public Vector<IUnit> getUnits() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		int i = 0;
 		
@@ -112,33 +164,24 @@ public class ServerModel extends AModel {
 				"",
 				"touch ~/script.pid; [ -f ~/script.pid ] && echo pass || echo fail", "pass", "pass"), i);
 		
-		units.insertElementAt(new SimpleUnit("host", "proceed", "echo \"ERROR: Configuring with hostname mismatch\";",
-				"sudo -S hostname;", networkData.getHostname(this.getLabel()), "pass"), ++i);
-		String configcmd = "";
-		if (networkData.getUpdate(this.getLabel()).equals("true")) {
-			configcmd = "sudo apt-get --assume-yes upgrade;";
-		} else {
-			configcmd = "echo \"There are `sudo apt-get upgrade -s |grep -P '^\\\\d+ upgraded'|cut -d\\\" \\\" -f1` updates available, of which `sudo apt-get upgrade -s | grep ^Inst | grep Security | wc -l` are security updates\"";
+		units.insertElementAt(new SimpleUnit("host", "proceed",
+				"echo \"ERROR: Configuring with hostname mismatch\";",
+				"sudo -S hostname;", getNetworkData().getHostname(getLabel()), "pass"), ++i);
+
+		//Should we be autoupdating?
+		String aptCommand = "";
+		if (getNetworkData().autoUpdate(getLabel())) {
+			aptCommand = "sudo apt-get --assume-yes upgrade;";
 		}
-		units.insertElementAt(new SimpleUnit("update", "proceed", configcmd,
+		else {
+			aptCommand = "echo \"There are `sudo apt-get upgrade -s |grep -P '^\\\\d+ upgraded'|cut -d\\\" \\\" -f1` updates available, of which `sudo apt-get upgrade -s | grep ^Inst | grep Security | wc -l` are security updates\"";
+		}
+		units.insertElementAt(new SimpleUnit("update", "proceed",
+				aptCommand,
 				"sudo apt-get update > /dev/null; sudo apt-get --assume-no upgrade | grep \"[0-9] upgraded, [0-9] newly installed, [0-9] to remove and [0-9] not upgraded.\";",
 				"0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.", "pass",
-				"There are `sudo apt-get upgrade -s |grep -P '^\\\\d+ upgraded'|cut -d\" \" -f1` updates available, of which `sudo apt-get upgrade -s | grep ^Inst | grep Security | wc -l` are security updates\""), ++i);
+				"There are $(sudo apt-get upgrade -s |grep -P '^\\\\d+ upgraded'|cut -d\" \" -f1) updates available, of which $(sudo apt-get upgrade -s | grep ^Inst | grep Security | wc -l) are security updates\""), ++i);
 
-		if (isService()) {
-			//haveged is not perfect, but according to
-			//https://security.stackexchange.com/questions/34523/is-it-appropriate-to-use-haveged-as-a-source-of-entropy-on-virtual-machines
-			//is OK for producing entropy in VMs.
-			//It is also recommended by novell for VM entropy http://www.novell.com/support/kb/doc.php?id=7011351
-			units.insertElementAt(new InstalledUnit("entropy_generator", "proceed", "haveged"), ++i);
-			units.insertElementAt(new RunningUnit("entropy_generator", "haveged", "haveged"), ++i);
-			units.insertElementAt(new SimpleUnit("enough_entropy_available", "entropy_generator_installed",
-					"while [ `cat /proc/sys/kernel/random/entropy_avail` -le 600 ]; do sleep 2; done;",
-					"(($(cat /proc/sys/kernel/random/entropy_avail) > 600)) && echo pass || echo fail", "pass", "pass"), ++i);
-			
-			this.pm.addProcess("/usr/sbin/haveged --Foreground --verbose=1 -w 1024$");
-		}
-		
 		//Remove rdnssd (problematic as hell...)
 		units.insertElementAt(new SimpleUnit("rdnssd_uninstalled", "proceed",
 				"sudo apt remove rdnssd --purge -y;",
@@ -147,11 +190,27 @@ public class ServerModel extends AModel {
 		
 		units.insertElementAt(new RunningUnit("syslog", "rsyslog", "rsyslog"), ++i);
 		
-		SSH ssh = new SSH();
-		units.addAll(ssh.getUnits(this.getLabel(), networkModel));
+		for (String admin : networkModel.getData().getAdmins(getLabel())) {
+			String adminDefaultPassword = networkModel.getData().getUserDefaultPassword(admin);
+			
+			units.insertElementAt(new SimpleUnit("user_" + admin + "_created", "proceed",
+					"sudo useradd"
+						+ " -m " + admin //Username
+						+ " -c \"" + networkModel.getData().getUserFullName(admin) + "\"" //Full name
+						+ " -G sudo" //Groups
+						+ " -s /bin/bash;"
+						+ "echo " + admin + ":" + adminDefaultPassword + " | sudo chpasswd;" //Set their password
+						+ "sudo passwd -e " + admin //Expire their password immediately
+					,
+					"id " + admin + " 2>&1", "id: ‘" + admin + "’: no such user", "fail",
+					"The user " + admin + " couldn't be created on this machine."), ++i);
+		}
+		
+		SSH ssh = new SSH(this, networkModel);
+		units.addAll(ssh.getUnits());
 
-		this.pm.addProcess("sshd: " + networkModel.getData().getUser() + " \\[priv\\]$");
-		this.pm.addProcess("sshd: " + networkModel.getData().getUser() + "@pts/0$");
+		this.runningProcesses.addProcess("sshd: " + networkModel.getData().getUser() + " \\[priv\\]$");
+		this.runningProcesses.addProcess("sshd: " + networkModel.getData().getUser() + "@pts/0$");
 		
 		//Useful packages
 		units.addElement(new InstalledUnit("sysstat", "proceed", "sysstat"));
@@ -160,46 +219,30 @@ public class ServerModel extends AModel {
 		units.addElement(new InstalledUnit("htop", "proceed", "htop"));
 		units.addElement(new InstalledUnit("sendmail", "proceed", "sendmail"));
 		
-		for (String type : this.getTypes()) {
-			switch (type) {
-				case "router":
-					units.addAll(router.getUnits(this.getLabel(), networkModel));
-					break;
-				case "metal":
-					Metal metal = new Metal();
-					units.addAll(metal.getUnits(this.getLabel(), networkModel));
-					break;
-				case "service":
-					Service service = new Service();
-					units.addAll(service.getUnits(this.getLabel(), networkModel));
-					break;
-				default:
-					System.out.println("Unsupported type: " + type);
-			}
-
+		units.addAll(initUnits);
+		
+		for (AStructuredProfile type : types) {
+			units.addAll(type.getUnits());
 		}
 		
-		for (String profile : this.getProfiles()) {
+		for (AProfile profile : this.profiles) {
 			try {
-				if (profile.equals("")) { continue; }
-				
-				AProfile profileClass = (AProfile) Class.forName("profile." + profile).newInstance();
-				units.addAll(profileClass.getUnits(this.getLabel(), networkModel));
+				units.addAll(profile.getUnits());
 			} catch (Exception e) {
-				System.err.println(profile);
-				System.err.println(e.getMessage());
+				JOptionPane.showMessageDialog(null, profile + " has thrown an error.\n\nThe program will terminate");
+				System.exit(1);
 			}
 		}
 
 		units.addAll(serverConfig());
 		
-		units.addAll(2, fm.getUnits());
-		units.addAll(2, bfm.getUnits());
-		units.addAll(2, aptm.getUnits());
-		units.addAll(2, im.getUnits());
-		units.addAll(configs.getUnits());
-		units.addAll(pm.getUnits());
-		units.addAll(um.getUnits());
+		units.addAll(2, firewall.getUnits());
+		units.addAll(2, bindMounts.getUnits());
+		units.addAll(2, aptSources.getUnits());
+		units.addAll(2, getNetworkIfaces().getUnits());
+		units.addAll(configFiles.getUnits());
+		units.addAll(runningProcesses.getUnits());
+		units.addAll(users.getUnits());
 
 		units.addElement(new FileAppendUnit("auto_logout", "proceed",
 				"TMOUT=" + ( ( 2*60 ) *60 ) + "\n" + //two hour timeout 
@@ -248,10 +291,10 @@ public class ServerModel extends AModel {
 
 		//Check for random SSH keys
 		//https://security.stackexchange.com/a/151581
-		String excludeKnownKeys = "";
+		String excludeKnownSSHKeys = "";
 
 		for (String admin : networkModel.getData().getAdmins(getLabel())) {
-			excludeKnownKeys += " | grep -v \"" + networkModel.getData().getSSHKey(admin) + "\"";
+			excludeKnownSSHKeys += " | grep -v \"" + networkModel.getData().getUserSSHKey(admin) + "\"";
 		}
 		
 		units.addElement(new SimpleUnit("no_additional_ssh_keys", "proceed",
@@ -263,12 +306,12 @@ public class ServerModel extends AModel {
 				+ "       fi;"
 				+ "   done;"
 				+ "done"
-				+ excludeKnownKeys,
+				+ excludeKnownSSHKeys,
 				"", "pass",
 				"There are unexpected SSH keys on this machine.  This is almost certainly an indicator that this machine has been compromised!"));
 
 		//Check for unexpected executables
-		if (isService()) {
+		if (this.isService()) {
 			units.addElement(new SimpleUnit("no_unexpected_executables", "proceed",
 					"",
 					"find /proc/*/exe -exec readlink {} + | xargs sudo dpkg -S 2>&1 | egrep -v \"/opt/VBoxGuestAdditions-[5-9]{1}\\\\.[0-9]{1,2}\\\\.[0-9]{1,2}/sbin/VBoxService\" | grep 'no path' | grep -v 'deleted'", "", "pass",
@@ -340,61 +383,63 @@ public class ServerModel extends AModel {
 		sshdPAM += "@include common-password\n";
 		sshdPAM += "session optional pam_exec.so seteuid /etc/pamEmails.sh";
 		
-		units.addElement(networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFile("pam_sshd_script_created", "email_on_pam_script_created", sshdPAM, "/etc/pam.d/sshd"));
+		units.addElement(this.getConfigsModel().addConfigFile("pam_sshd_script_created", "email_on_pam_script_created", sshdPAM, "/etc/pam.d/sshd"));
 
-		JsonArray egress = (JsonArray) networkModel.getData().getPropertyObjectArray(this.getLabel(), "allowegress");
-		if (egress != null) {
-			for (int i = 0; i < egress.size(); ++i) {
-				JsonObject row = egress.getJsonObject(i);
+//		JsonArray egress = (JsonArray) networkModel.getData().getPropertyObjectArray(me.getLabel(), "allowegress");
+//		if (egress != null) {
+//			for (int i = 0; i < egress.size(); ++i) {
+//				JsonObject row = egress.getJsonObject(i);
 				
-				String   destination = row.getString("destination");
-				String[] ports       = row.getString("ports").split(",;");
+//				String destination = row.getString("destination");
+//				int[] parsedPorts = Arrays.stream(row.getString("ports").split("[^0-9]", -1)).mapToInt(Integer::parseInt).toArray();
+//				Integer[] ports = IntStream.of(parsedPorts).boxed().toArray( Integer[]::new );
 				
-				addRouterEgressFirewallRule(this.getLabel(), networkModel, destination, destination, ports);
-			}
-		}
+//				addRequiredEgress(destination, ports);
+//			}
+//		}
 
-		JsonArray forward = (JsonArray) networkModel.getData().getPropertyObjectArray(this.getLabel(), "allowforward");
-		if (forward != null) {
-			for (int i = 0; i < forward.size(); ++i) {
-				JsonObject row = forward.getJsonObject(i);
-				
-				String   destination = row.getString("destination");
-				String[] ports       = row.getString("ports").split(",;");
-				
-				addRouterForwardFirewallRule(this.getLabel(), networkModel, destination, destination, ports);
-			}
-		}
+//		JsonArray forward = (JsonArray) networkModel.getData().getPropertyObjectArray(this.getLabel(), "allowforward");
+//		if (forward != null) {
+//			for (int i = 0; i < forward.size(); ++i) {
+//				JsonObject row = forward.getJsonObject(i);
+//				
+//				String destination = row.getString("destination");
+//				int[] parsedPorts = Arrays.stream(row.getString("ports").split("[^0-9]", -1)).mapToInt(Integer::parseInt).toArray();
+//				Integer[] ports = IntStream.of(parsedPorts).boxed().toArray( Integer[]::new );				
+//				
+//				addRequiredForward(destination, ports);
+//			}
+//		}
 		
 		return units;
 	}
 
-	public FirewallModel getFirewallModel() {
-		return this.fm;
+	public String getLabel() {
+		return this.label;
 	}
 	
-	public InterfaceModel getInterfaceModel() {
-		return this.im;
+	public FirewallModel getFirewallModel() {
+		return this.firewall;
 	}
 	
 	public ProcessModel getProcessModel() {
-		return this.pm;
+		return this.runningProcesses;
 	}
 	
 	public BindFsModel getBindFsModel() {
-		return this.bfm;
+		return this.bindMounts;
 	}
 	
 	public AptSourcesModel getAptSourcesModel() {
-		return this.aptm;
+		return this.aptSources;
 	}
 	
 	public UserModel getUserModel() {
-		return this.um;
+		return this.users;
 	}
 	
 	public ConfigFileModel getConfigsModel() {
-		return this.configs;
+		return this.configFiles;
 	}
 	
 	public Router getRouter() {
@@ -406,189 +451,14 @@ public class ServerModel extends AModel {
 	}
 
 	public String[] getProfiles() {
-		return this.networkData.getServerProfiles(this.getLabel());
+		return getNetworkData().getServerProfiles(getLabel());
 	}
 	
 	public String[] getTypes() {
-		return this.networkData.getTypes(this.getLabel());
-	}
-
-	private String ipFromClass() {
-		String subnet = this.networkData.getSubnet(this.getLabel());
-		if (this.networkData.getIPClass().equals("c")) {
-			return "192.168." + subnet;
-		} else if (this.networkData.getIPClass().equals("b")) {
-			return "172.16." + subnet;
-		} else if (this.networkData.getIPClass().equals("a")) {
-			return "10.0." + subnet;
-		} else {
-			return "0.0.0";
-		}
-	}
-	
-	public String getBroadcast() {
-		return ipFromClass() + ".3";
-	}
-	
-	public String getIP() {
-		return ipFromClass() + ".2";
-	}
-	
-	public String getGateway() {
-		return ipFromClass() + ".1";
-
-	}
-
-	public String getSubnet() {
-		return ipFromClass() + ".0";
-	}
-	
-	public String getMac() {
-		return this.networkData.getMac(this.getLabel());
+		return getNetworkData().getTypes(getLabel());
 	}
 	
 	public String getExtConn() {
-		return this.networkData.getExtConn(this.getLabel());
-	}
-	
-	public boolean isRouter() {
-		String[] types = this.networkData.getTypes(this.getLabel());
-		return Arrays.stream(types).anyMatch("router"::equals);
-	}
-
-	public boolean isMetal() {
-		String[] types = this.networkData.getTypes(this.getLabel());
-		return Arrays.stream(types).anyMatch("metal"::equals);
-	}
-
-	public boolean isService() {
-		String[] types = this.networkData.getTypes(this.getLabel());
-		return Arrays.stream(types).anyMatch("service"::equals);
-	}
-	
-	public void addRouterForwardFirewallRule(String server, NetworkModel model, String name, String destination, String[] ports) {
-		String sourceIp      = model.getServerModel(server).getIP();
-		String destinationIp = model.getServerModel(destination).getIP();
-		
-		String sourceClean      = cleanString(server);
-		String destinationClean = cleanString(destination);
-
-		String sourceFwdChain      = sourceClean + "_forward";
-		String destinationFwdChain = destinationClean + "_forward";
-		
-		for (String router : model.getRouters()) {
-			model.getServerModel(router).getFirewallModel().addFilter(sourceClean + "_allow_fwd_" + destinationClean, sourceFwdChain,
-					"-s " + sourceIp
-					+ " -d " + destinationIp
-					+ " -p tcp"
-					+ " -m tcp -m multiport"
-					+ " --sports " + String.join(",", ports)
-					+ " -j ACCEPT");
-			model.getServerModel(router).getFirewallModel().addFilter(destinationClean + "_allow_fwd_" + sourceClean, destinationFwdChain,
-					"-d " + destinationIp
-					+ " -s " + sourceIp
-					+ " -p tcp"
-					+ " -m tcp -m multiport"
-					+ " --dports " + String.join(",", ports)
-					+ " -j ACCEPT");
-		}
-	}
-	
-	public void addRouterEgressFirewallRule(String server, NetworkModel model, String name, String hostname, String[] ports) {
-		try {
-			InetAddress ips[] = InetAddress.getAllByName(hostname);
-			
-			//This Comparator taken from https://thilosdevblog.wordpress.com/2010/09/15/sorting-ip-addresses-in-java/
-
-			/**
-			 * LGPL
-			 */
-			Arrays.sort(ips, new Comparator<InetAddress>() {
-			    @Override
-			    public int compare(InetAddress adr1, InetAddress adr2) {
-			        byte[] ba1 = adr1.getAddress();
-			        byte[] ba2 = adr2.getAddress();
-			  
-			        // general ordering: ipv4 before ipv6
-			        if(ba1.length < ba2.length) return -1;
-			        if(ba1.length > ba2.length) return 1;
-			  
-			        // we have 2 ips of the same type, so we have to compare each byte
-			        for(int i = 0; i < ba1.length; i++) {
-			            int b1 = unsignedByteToInt(ba1[i]);
-			            int b2 = unsignedByteToInt(ba2[i]);
-			            if(b1 == b2)
-			                continue;
-			            if(b1 < b2)
-			                return -1;
-			            else
-			                return 1;
-			        }
-			        return 0;
-			    }
-			  
-			    private int unsignedByteToInt(byte b) {
-			        return (int) b & 0xFF;
-			    }
-			});
-			
-			String serverIp     = model.getServerModel(server).getIP();
-			String cleanName    = cleanString(server);
-			String egressChain  = cleanName + "_egress";
-			
-			for (String router : model.getRouters()) {
-				for (InetAddress ip : ips) {
-					if (!ip.getHostAddress().contains(":")) { //no IPv6, please
-						model.getServerModel(router).getFirewallModel().addFilter(cleanName + "_allow_out_" + cleanString(hostname), egressChain,
-								"-d " + ip.getHostAddress()
-								+ " -s " + serverIp
-								+ " -p tcp"
-								+ " -m state --state NEW,ESTABLISHED,RELATED"
-								+ " -m tcp -m multiport"
-								+ " --dports " + String.join(",", ports)
-								+ " -j ACCEPT");
-					}
-				}
-			}
-		}
-		catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void addRouterPoison(String server, NetworkModel model, String domain, String ip, String[] ports) {
-		String serverIp     = model.getServerModel(server).getIP();
-		String cleanName    = cleanString(server);
-		String ingressChain = cleanName + "_ingress";
-		String egressChain  = cleanName + "_egress";
-		
-		for (String router : model.getRouters()) {
-			DNS dns = model.getServerModel(router).getRouter().getDNS();
-			
-			dns.addPoison(domain, ip);
-
-			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_in_" + cleanString(domain), ingressChain,
-					"-s " + ip
-					+ " -d " + serverIp
-					+ " -p tcp"
-					+ " -m tcp -m multiport"
-					+ " --sports " + String.join(",", ports)
-					+ " -j ACCEPT");
-			model.getServerModel(router).getFirewallModel().addFilter(server + "_allow_out_" + cleanString(domain), egressChain,
-					"-d " + ip
-					+ " -s " + serverIp
-					+ " -p tcp"
-					+ " -m tcp -m multiport"
-					+ " --dports " + String.join(",", ports)
-					+ " -j ACCEPT");
-		}
-	}
-
-	
-	private String cleanString(String string) {
-		String invalidChars = "[^a-zA-Z0-9-]";
-		String safeChars    = "_";
-		
-		return string.replaceAll(invalidChars, safeChars);
+		return getNetworkData().getExtConnectionType(getLabel());
 	}
 }
