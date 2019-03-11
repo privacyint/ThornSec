@@ -2,16 +2,24 @@ package core.model;
 
 public abstract class AModel {
 
-	private String label;
+	protected String label;
+	protected MachineModel me;
+	protected NetworkModel networkModel;
 
-	public AModel(String label) {
-		this.label = label;
+	AModel(String label, MachineModel me, NetworkModel networkModel) {
+		this.label        = label;
+		this.me           = me;
+		this.networkModel = networkModel;
+	}
+	
+	public AModel(String label, NetworkModel networkModel) {
+		this(label, null, networkModel);
 	}
 
 	public String getLabel() {
 		return label;
 	}
 	
-	public abstract void init(NetworkModel model);
+	public abstract void init();
 
 }

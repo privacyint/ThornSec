@@ -1,15 +1,16 @@
 package core.exec;
 
-public class OutputExec {
+class OutputExec {
 
 	private String cmd;
 
-	public OutputExec(String cmd) {
+	OutputExec(String cmd) {
 		this.cmd = cmd;
 	}
 
 	public String getOutput() {
 		String value = "";
+		
 		try {
 			Process proc3 = Runtime.getRuntime().exec(cmd);
 			int read = proc3.getInputStream().read();
@@ -17,9 +18,11 @@ public class OutputExec {
 				value += (char) read;
 				read = proc3.getInputStream().read();
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			e.printStackTrace();
 		}
+		
 		return value;
 	}
 

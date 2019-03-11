@@ -7,11 +7,13 @@ import core.model.NetworkModel;
 public class PasswordExec {
 
 	private String server;
-	private NetworkModel network;
+	private NetworkModel model;
+	private Boolean isDefaultPass;
 
-	public PasswordExec(String server, NetworkModel network) {
+	public PasswordExec(String server, NetworkModel model) {
 		this.server = server;
-		this.network = network;
+		this.model = model;
+		this.isDefaultPass = true;
 	}
 
 	public Boolean init() {
@@ -19,31 +21,42 @@ public class PasswordExec {
 
 		if (Objects.equals(checkInit.getOutput(), "Error: password store is empty. Try \"pass init\".")) {
 			System.out.println("\nPassword store is empty.  Creating you a new one.");
-			System.out.println(new OutputExec("pass init " + network.getData().getGPG()).getOutput());
+			System.out.println(new OutputExec("pass init " + model.getData().getGPG()).getOutput());
 		}
 		
 		return true;
 	}
 	
 	public String getPassword() {
-		OutputExec passwordGetExec = new OutputExec("pass Thornsec/" + network.getData().getDomain(server) + "/" + network.getLabel() + "/" + server);
+		OutputExec passwordGetExec = new OutputExec("pass Thornsec/" + model.getData().getDomain(server) + "/" + model.getLabel() + "/" + server);
 		String password = passwordGetExec.getOutput();
 	
-		if (Objects.equals(password, "") || Objects.equals(password, "Error: Thornsec/" + network.getData().getDomain(server) + "/" + network.getLabel() + "/" + server +" is not in the password store.")) {
+		if (Objects.equals(password, "") || Objects.equals(password, "Error: Thornsec/" + model.getData().getDomain(server) + "/" + model.getLabel() + "/" + server +" is not in the password store.")) {
 			System.out.println("\nPassword for " + server + " isn't stored.");
-			if (Objects.equals(network.getData().getAutoGenPasswds(), "true")) {
+			if (model.getData().getAutoGenPasswds()) {
 				System.out.println("\nGenerating you a password for " + server);
-				OutputExec passwordSetExec = new OutputExec("pass generate Thornsec/" + network.getData().getDomain(server) + "/" + network.getLabel() + "/" + server + " 31 | tail -n1");
+				OutputExec passwordSetExec = new OutputExec("pass generate Thornsec/" + model.getData().getDomain(server) + "/" + model.getLabel() + "/" + server + " 31 | tail -n1");
 				password = passwordSetExec.getOutput();
+
+				isDefaultPass = false;
 			}
 			else {
 				System.out.println("Add the password to the store by issuing the following command:");
-				System.out.println("pass add Thornsec/"  + network.getData().getDomain(server) + "/" + network.getLabel() + "/" + server);
-				password = "";
+				System.out.println("pass add Thornsec/"  + model.getData().getDomain(server) + "/" + model.getLabel() + "/" + server);
+				System.out.println("Using your user's default password");
+				
+				password = model.getData().getUserDefaultPassword(model.getData().getUser());
+				password += " " + server;
+				
+				isDefaultPass = true;
 			}
 		}
 		
 		return password;
+	}
+	
+	public Boolean isDefaultPassword() {
+		return isDefaultPass;
 	}
 
 }

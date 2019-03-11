@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.util.Vector;
+import java.net.InetAddress;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -22,7 +22,11 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeSelectionModel;
 
+import core.data.InterfaceData;
+
+import core.model.DeviceModel;
 import core.model.NetworkModel;
+import core.model.ServerModel;
 import core.model.ThornsecModel;
 
 public class FullFrame {
@@ -96,44 +100,21 @@ public class FullFrame {
 
 		DefaultMutableTreeNode root  = new DefaultMutableTreeNode(model.getLabel());
 
-		Vector<String> userDevices         = new Vector<String>();
-		Vector<String> internalOnlyDevices = new Vector<String>();
-		Vector<String> externalOnlyDevices = new Vector<String>();
-
-		//Let's just get this out of the way up here rather than repeating over and over
-		//This class is difficult enough to follow already!! 
-		for (String device : model.getDeviceLabels()) {
-			switch (model.getDeviceModel(device).getType()) {
-				case "User":
-					userDevices.add(device);
-					break;
-				case "Internal":
-					internalOnlyDevices.add(device);
-					break;
-				case "External":
-					externalOnlyDevices.add(device);
-					break;
-				default:
-					//In theory, we should never get here. Theory is a fine thing.
-					System.out.println("Encountered an unsupported device type for " + device);
-			}
-		}
-
 		DefaultMutableTreeNode usersNode = new DefaultMutableTreeNode("Users");
-		for (String user : userDevices) {
-			usersNode.add(new DefaultMutableTreeNode(user));
+		for (DeviceModel user : model.getUserDevices()) {
+			usersNode.add(new DefaultMutableTreeNode(user.getLabel()));
 		}
 		root.add(usersNode);
 
 		DefaultMutableTreeNode intOnlyNode = new DefaultMutableTreeNode("Internal-Only Devices");
-		for (String intO : internalOnlyDevices) {
-			intOnlyNode.add(new DefaultMutableTreeNode(intO));
+		for (DeviceModel intO : model.getInternalOnlyDevices()) {
+			intOnlyNode.add(new DefaultMutableTreeNode(intO.getLabel()));
 		}
 		root.add(intOnlyNode);
 
 		DefaultMutableTreeNode extOnlyNode = new DefaultMutableTreeNode("External-Only Devices");
-		for (String extO : externalOnlyDevices) {
-			extOnlyNode.add(new DefaultMutableTreeNode(extO));
+		for (DeviceModel extO : model.getExternalOnlyDevices()) {
+			extOnlyNode.add(new DefaultMutableTreeNode(extO.getLabel()));
 		}
 		root.add(extOnlyNode);
 
@@ -147,6 +128,8 @@ public class FullFrame {
 
 				String device = e.getPath().getLastPathComponent().toString();
 
+				if (model.getDeviceModel(device) == null) { return; } //Stop it crashing on labels!
+				
 				detailsPanel.removeAll();
 
 				g.fill = GridBagConstraints.VERTICAL;
@@ -170,7 +153,18 @@ public class FullFrame {
 				detailsPanel.add(new JLabel("Subnets:"), g);
 				g.gridx = 2;
 				g.anchor = GridBagConstraints.LINE_END;
-				detailsPanel.add(new JLabel(model.getDeviceModel(device).getSubnets()[0] + "/24"), g);
+				JLabel ips = new JLabel();
+				if (model.getDeviceModel(device).getInterfaces().size() > 1) {
+					ips.setText("<html><body><ul>");
+					for (InterfaceData ip : model.getDeviceModel(device).getInterfaces()) {
+						ips.setText(ips.getText() + "<li>" + ip.getAddress().getHostAddress() + "/30</li>");
+					}
+					ips.setText(ips.getText() + "</ul></body></html>");
+				}
+				else {
+					ips.setText(model.getDeviceModel(device).getInterfaces().firstElement().getAddress().getHostAddress() + "/30");
+				}
+				detailsPanel.add(ips, g);
 
 				//MACs
 				g.gridy += 1;
@@ -181,8 +175,15 @@ public class FullFrame {
 				g.gridx = 2;
 				g.anchor = GridBagConstraints.LINE_END;
 				JLabel macs = new JLabel();
-				for (String mac : model.getDeviceModel(device).getMacs()) {
-					macs.setText(macs.getText() + mac + " ");
+				if (model.getDeviceModel(device).getMacs().size() > 1) {
+					macs.setText("<html><body><ul>");
+					for (String mac : model.getDeviceModel(device).getMacs()) {
+						macs.setText(macs.getText() + "<li>" + mac + "</li>");
+					}
+					macs.setText(macs.getText() + "</body></html>");
+				}
+				else {
+					macs.setText(model.getDeviceModel(device).getMacs().firstElement());
 				}
 				detailsPanel.add(macs, g);
 
@@ -217,20 +218,25 @@ public class FullFrame {
 		JPanel                 serverPanel = getNewPanel();
 		DefaultMutableTreeNode serverRoot  = new DefaultMutableTreeNode(model.getLabel());
 
-		for (String router : model.getRouters()) {
-			if (!model.getServerModel(router).isMetal()) {
-				serverRoot.add(new DefaultMutableTreeNode(router));
+		for (ServerModel router : model.getRouterServers()) {
+			if (!router.isMetal()) {
+				serverRoot.add(new DefaultMutableTreeNode(router.getLabel()));
 			}
 		}
 
-		for (String metal : model.getMetals()) {
-			DefaultMutableTreeNode metalNode = new DefaultMutableTreeNode(metal);
-			for (String service : model.getServerModel(metal).getServices()) {
-				metalNode.add(new DefaultMutableTreeNode(service));
+		for (ServerModel metal : model.getMetalServers()) {
+			DefaultMutableTreeNode metalNode = new DefaultMutableTreeNode(metal.getLabel());
+			for (ServerModel service : metal.getServices()) {
+				metalNode.add(new DefaultMutableTreeNode(service.getLabel()));
 			}
 			serverRoot.add(metalNode);
 		}
 
+		for (ServerModel dedi : model.getDediServers()) {
+			DefaultMutableTreeNode dediNode = new DefaultMutableTreeNode(dedi.getLabel());
+			serverRoot.add(dediNode);
+		}
+		
 		final JTree serverTree = new JTree(serverRoot);
 		serverTree.setCellRenderer(new CustomServerIconRenderer(model));
 		serverTree.setRootVisible(false);
@@ -239,9 +245,10 @@ public class FullFrame {
 			public void valueChanged(TreeSelectionEvent e) {
 				GridBagConstraints g = new GridBagConstraints();
 
-				String server = e.getPath().getLastPathComponent().toString();
+				String serverLabel = e.getPath().getLastPathComponent().toString();
+				ServerModel server = model.getServerModel(serverLabel);
 
-				ServerListener listener = new ServerListener(server, model, out, System.in);
+				ServerListener listener = new ServerListener(serverLabel, model, out, System.in);
 
 				detailsPanel.removeAll();
 
@@ -252,7 +259,7 @@ public class FullFrame {
 				g.gridy = 0;
 				g.gridwidth = 4;
 				g.ipady = 40;
-				detailsPanel.add(new JLabel(server), g);
+				detailsPanel.add(new JLabel(serverLabel), g);
 
 				//Reset values
 				g.gridwidth = 1;
@@ -263,11 +270,25 @@ public class FullFrame {
 
 				g.gridx = 1;
 				g.anchor = GridBagConstraints.LINE_START;
-				detailsPanel.add(new JLabel("IP:"), g);
+				detailsPanel.add(new JLabel("IPs:"), g);
 				g.gridx = 2;
 				g.anchor = GridBagConstraints.LINE_END;
-				detailsPanel.add(new JLabel(model.getServerModel(server).getIP()), g);
-
+				
+				JLabel addresses = new JLabel();
+				
+				if (server.getAddresses().size() > 1) {
+					addresses.setText("<html><body><ul>");
+					for (InetAddress address : model.getServerModel(serverLabel).getAddresses()) {
+						if (address == null) { continue; }
+						addresses.setText(addresses.getText() + "<li>" + address.getHostAddress() + "</li>");
+					}
+					addresses.setText(addresses.getText() + "</ul></body></html>");
+				}
+				else {
+					addresses.setText(server.getAddresses().firstElement().getHostAddress());
+				}
+				detailsPanel.add(addresses, g);
+				
 				//SSH
 				g.gridy += 1;
 
@@ -276,22 +297,33 @@ public class FullFrame {
 				detailsPanel.add(new JLabel("External SSH Port:"), g);
 				g.gridx = 2;
 				g.anchor = GridBagConstraints.LINE_END;
-				detailsPanel.add(new JLabel(model.getData().getAdminPort(server)), g);
+				detailsPanel.add(new JLabel(model.getData().getAdminPort(serverLabel) + ""), g);
 
 				//Profiles
-				g.gridy += 1;
-
-				g.gridx = 1;
-				g.anchor = GridBagConstraints.LINE_START;
-				detailsPanel.add(new JLabel("Profiles:"), g);
-				g.gridx = 2;
-				g.anchor = GridBagConstraints.LINE_END;
-				JLabel profiles = new JLabel();
-				for (String profile : model.getServerModel(server).getProfiles()) {
-					profiles.setText(profiles.getText() + profile + " ");
+				if (server.getProfiles().length > 0) {
+					g.gridy += 1;
+	
+					g.gridx = 1;
+					g.anchor = GridBagConstraints.LINE_START;
+					detailsPanel.add(new JLabel("Profiles:"), g);
+					g.gridx = 2;
+					g.anchor = GridBagConstraints.LINE_END;
+					JLabel profiles = new JLabel();
+					
+					if (server.getProfiles().length > 1) {
+						profiles.setText("<html><body><ul>");
+						for (String profile : model.getServerModel(serverLabel).getProfiles()) {
+							profiles.setText(profiles.getText() + "<li>" + profile + "</li> ");
+						}
+						profiles.setText(profiles.getText() + "</ul></body></html>");
+					}
+					else {
+						profiles.setText(server.getProfiles()[0]);
+					}
+					
+					detailsPanel.add(profiles, g);
 				}
-				detailsPanel.add(profiles, g);
-
+				
 				//FQDN
 				g.gridy += 1;
 
@@ -300,57 +332,86 @@ public class FullFrame {
 				detailsPanel.add(new JLabel("FQDN:"), g);
 				g.gridx = 2;
 				g.anchor = GridBagConstraints.LINE_END;
-				detailsPanel.add(new JLabel(model.getData().getHostname(server) + "." + model.getData().getDomain(server)), g);
+				detailsPanel.add(new JLabel(model.getData().getHostname(serverLabel) + "." + model.getData().getDomain(serverLabel)), g);
 
 				//CNAMEs
-				g.gridy += 1;
-
-				g.gridx = 1;
-				g.anchor = GridBagConstraints.LINE_START;
-				detailsPanel.add(new JLabel("CNAMEs:"), g);
-				g.gridx = 2;
-				g.anchor = GridBagConstraints.LINE_END;
-				JLabel cnames = new JLabel();
-				for (String cname : model.getData().getCnames(server)) {
-					cnames.setText(cnames.getText() + cname + " ");
+				if (model.getData().getCnames(serverLabel).length > 0) {
+					g.gridy += 1;
+	
+					g.gridx = 1;
+					g.anchor = GridBagConstraints.LINE_START;
+					detailsPanel.add(new JLabel("CNAMEs:"), g);
+					g.gridx = 2;
+					g.anchor = GridBagConstraints.LINE_END;
+					JLabel cnames = new JLabel();
+					if (model.getData().getCnames(serverLabel).length > 1) {
+						cnames.setText("<html><body><ul>");
+						for (String cname : model.getData().getCnames(serverLabel)) {
+							cnames.setText(cnames.getText() + "<li>" + cname + "</li>");
+						}
+						cnames.setText(cnames.getText() + "</li></body></html>");
+					}
+					else {
+						cnames.setText(model.getData().getCnames(serverLabel)[0]);
+					}
+				
+					detailsPanel.add(cnames, g);
 				}
-				detailsPanel.add(cnames, g);
-
+				
 				//MAC
-				g.gridy += 1;
+				if (!server.getMacs().isEmpty()) {
+					g.gridy += 1;
+	
+					g.gridx = 1;
+					g.anchor = GridBagConstraints.LINE_START;
+					detailsPanel.add(new JLabel("MAC Addresses:"), g);
+					g.gridx = 2;
+					g.anchor = GridBagConstraints.LINE_END;
+					JLabel macs = new JLabel();
 
-				g.gridx = 1;
-				g.anchor = GridBagConstraints.LINE_START;
-				detailsPanel.add(new JLabel("MAC Address:"), g);
-				g.gridx = 2;
-				g.anchor = GridBagConstraints.LINE_END;
-				detailsPanel.add(new JLabel(model.getData().getMac(server)), g);
+					if (server.getMacs().size() == 1) {
+						macs.setText(server.getMacs().firstElement());
+					}
+					else {
+						macs.setText("<html><body><ul>");
+						for (String mac : server.getMacs()) {
+							macs.setText(macs.getText() + "<li>" + mac + "</li>");
+						}
+						macs.setText(macs.getText() + "</ul></body></html>");
+					}
+
+					detailsPanel.add(macs, g);
+				}
 
 				//Buttons
 				g.gridwidth = 2;
 				g.gridx = 1;
 				g.fill = GridBagConstraints.HORIZONTAL;
 
-				g.gridy += 1;
-				JButton buildiso = new JButton("Build ISO");
-				buildiso.addActionListener(listener);
-				detailsPanel.add(buildiso, g);
-
-				g.gridy += 1;
-				JButton audit = new JButton("Audit");
-				audit.addActionListener(listener);
-				detailsPanel.add(audit, g);
-
-				g.gridy += 1;
-				JButton dryrun = new JButton("Dry Run");
-				dryrun.addActionListener(listener);
-				detailsPanel.add(dryrun, g);
-
-				g.gridy += 1;
-				JButton config = new JButton("Config");
-				config.addActionListener(listener);
-				detailsPanel.add(config, g);
-
+				if (!server.isService() ) {
+					g.gridy += 1;
+					JButton buildiso = new JButton("Build ISO");
+					buildiso.addActionListener(listener);
+					detailsPanel.add(buildiso, g);
+				}
+				
+				if (!server.isDedi()) {
+					g.gridy += 1;
+					JButton audit = new JButton("Audit");
+					audit.addActionListener(listener);
+					detailsPanel.add(audit, g);
+	
+					g.gridy += 1;
+					JButton dryrun = new JButton("Dry Run");
+					dryrun.addActionListener(listener);
+					detailsPanel.add(dryrun, g);
+	
+					g.gridy += 1;
+					JButton config = new JButton("Config");
+					config.addActionListener(listener);
+					detailsPanel.add(config, g);
+				}
+				
 				detailsPanel.repaint();
 				detailsPanel.validate();
 			}
@@ -402,7 +463,7 @@ class CustomServerIconRenderer extends DefaultTreeCellRenderer {
 			if (model.getServerModel(node).isRouter()) {
 				setIcon(routerIcon);
 			}
-			else if (model.getServerModel(node).isMetal()) {
+			else if (model.getServerModel(node).isMetal() || model.getServerModel(node).isDedi()) {
 				setIcon(metalIcon);
 			}
 			else if (model.getServerModel(node).isService()) {
@@ -419,14 +480,12 @@ class CustomServerIconRenderer extends DefaultTreeCellRenderer {
 
 class DeviceIconRenderer extends DefaultTreeCellRenderer {
 	private static final long serialVersionUID = 513044252716923403L;
-	private ImageIcon superUserIcon;
 	private ImageIcon userIcon;
 	private ImageIcon intOnlyIcon;
 	private ImageIcon extOnlyIcon;
 	private NetworkModel model;
 
 	public DeviceIconRenderer(NetworkModel model) {
-		superUserIcon = new ImageIcon(DeviceIconRenderer.class.getResource("images/superuser.png"));
 		userIcon      = new ImageIcon(DeviceIconRenderer.class.getResource("images/user.png"));
 		intOnlyIcon   = new ImageIcon(DeviceIconRenderer.class.getResource("images/intonly.png"));
 		extOnlyIcon   = new ImageIcon(DeviceIconRenderer.class.getResource("images/extonly.jpeg"));
@@ -437,8 +496,27 @@ class DeviceIconRenderer extends DefaultTreeCellRenderer {
 		super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
 		Object nodeObj = ((DefaultMutableTreeNode)value).getUserObject();
 
-		setIcon(null);
-
+		String node = nodeObj.toString();
+		
+		if (row > 0 && !node.equals("Users") && !node.equals("Internal-Only Devices") && !node.equals("External-Only Devices")) {
+			switch (model.getDeviceModel(node).getType()) {
+				case "Internal":
+					setIcon(intOnlyIcon);
+					break;
+				case "External":
+					setIcon(extOnlyIcon);
+					break;
+				case "User":
+					setIcon(userIcon);
+					break;
+				default:
+					setIcon(null);
+			}
+		}
+		else {
+			setIcon(null);
+		}
+		
 		return this;
 	}
 }

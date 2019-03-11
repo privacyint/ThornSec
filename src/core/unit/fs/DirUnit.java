@@ -12,7 +12,7 @@ public class DirUnit extends SimpleUnit {
 	 * @param message      Custom fail message
 	 */
 	public DirUnit(String name, String precondition, String dir, String message) {
-		super(name + "_created", precondition, "sudo mkdir -p " + dir + ";", "sudo [ -d " + dir + " ] && echo pass;", "pass", "pass", message);
+		super(name + "_created", precondition, "sudo mkdir -p " + dir + ";", "sudo [ -d " + dir + " ] && echo pass || echo fail;", "pass", "pass", message);
 	}
 	
 	/**

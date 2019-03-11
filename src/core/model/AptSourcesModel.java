@@ -14,20 +14,20 @@ public class AptSourcesModel extends AModel {
 	private String dir;
 	private Vector<IUnit> gpg;
 	
-	public AptSourcesModel(String label) {
-		super(label);
+	AptSourcesModel(String label, ServerModel me, NetworkModel networkModel) {
+		super(label, me, networkModel);
+
+		sources = new Vector<IUnit>();
+		gpg     = new Vector<IUnit>();
+		repo    = networkModel.getData().getDebianMirror(me.getLabel());
+		dir     = networkModel.getData().getDebianDirectory(me.getLabel());
+
+		me.addRequiredEgress(repo, new Integer[]{80});
+		me.addRequiredEgress("security.debian.org", new Integer[]{80});
+		((ServerModel)me).getProcessModel().addProcess("dirmngr --daemon --homedir /tmp/apt-key-gpghome.[a-zA-Z0-9]*$");
 	}
 
-	public void init(NetworkModel model) {
-		sources = new Vector<IUnit>();
-		gpg = new Vector<IUnit>();
-		repo = model.getData().getDebianMirror(this.getLabel());
-		dir = model.getData().getDebianDirectory(this.getLabel());
-		
-		model.getServerModel(this.getLabel()).getProcessModel().addProcess("dirmngr --daemon --homedir /tmp/apt-key-gpghome.[a-zA-Z0-9]*$");
-
-		model.getServerModel(this.getLabel()).addRouterEgressFirewallRule(this.getLabel(), model, "base_debian", repo, new String[]{"80"});
-		model.getServerModel(this.getLabel()).addRouterEgressFirewallRule(this.getLabel(), model, "security_debian", "security.debian.org", new String[]{"80"});
+	public void init() {
 	}
 
 	public Vector<IUnit> getUnits() {
@@ -43,18 +43,20 @@ public class AptSourcesModel extends AModel {
 		timeoutConf += "Acquire::http::Timeout \"3\";\n"; 
 		timeoutConf += "Acquire::ftp::Timeout \"3\";";
 		
-		units.addElement(new FileUnit("decrease_apt_timeout", "proceed", timeoutConf, "/etc/apt/apt.conf.d/99timeout"));
+		units.addElement(new FileUnit("decrease_apt_timeout", "proceed", timeoutConf, "/etc/apt/apt.conf.d/99timeout",
+						"Couldn't decrease the apt timeout. If your network connection is poor, the machine may appear to hang during configuration"));
 		
 		units.addAll(gpg);
 		units.addAll(sources);
 		
+		
 		return units;
 	}
 
-	public void addAptSource(String server, NetworkModel model, String name, String precondition, String sourceLine, String keyserver, String fingerprint) {
+	public void addAptSource(String name, String precondition, String sourceLine, String keyserver, String fingerprint) {
 		sources.addElement(new FileUnit("source_" + name, precondition, sourceLine, "/etc/apt/sources.list.d/" + name + ".list"));
 		
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, name, keyserver, new String[]{"11371"});
+		me.addRequiredEgress(keyserver, new Integer[] {11371});
 		
 		addGpgKey(name, keyserver, fingerprint);
 	}
@@ -74,5 +76,4 @@ public class AptSourcesModel extends AModel {
 		
 		return list;
 	}
-	
 }

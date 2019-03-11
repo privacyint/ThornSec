@@ -9,14 +9,14 @@ public class UserModel extends AModel {
 
 	private Vector<String> usernames;
 
-	public UserModel(String label) {
-		super(label);
+	UserModel(String label, ServerModel me, NetworkModel networkModel) {
+		super(label, me, networkModel);
 	}
 
-	public void init(NetworkModel model) {
+	public void init() {
 		this.usernames = new Vector<String>();
 
-		for (String admin : model.getData().getAdmins(getLabel())) {
+		for (String admin : networkModel.getData().getAdmins(getLabel())) {
 			usernames.addElement(admin);
 		}
 		

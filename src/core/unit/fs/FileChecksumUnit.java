@@ -3,7 +3,6 @@ package core.unit.fs;
 import core.unit.SimpleUnit;
 
 public class FileChecksumUnit extends SimpleUnit {
-
 	/**
 	 * Unit test for checking a file's SHA512 checksum, with custom fail message
 	 * @param name         Name of the unit test (with _checksum appended)
@@ -29,5 +28,4 @@ public class FileChecksumUnit extends SimpleUnit {
 	public FileChecksumUnit(String name, String precondition, String file, String sha512) {
 		this(name, precondition, file, sha512, name + "'s checksum doesn't match.  This could indicate a failed download, MITM attack, or a newer version than our code supports.");
 	}
-
 }
