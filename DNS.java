@@ -34,7 +34,7 @@ public class DNS extends AStructuredProfile {
 
 		useDtls = networkModel.getData().getDTLS();
 
-		invalidChars = "[^\\-a-zA-Z0-9]";
+		invalidChars = "[^\\.\\-a-zA-Z0-9]";
 	}
 
 	private void addGateway(InetAddress gatewayIp) {
