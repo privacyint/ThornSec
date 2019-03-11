@@ -2,6 +2,7 @@ package profile;
 
 import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Vector;
 
 import core.iface.IUnit;
@@ -17,62 +18,60 @@ import core.unit.pkg.InstalledUnit;
 public class IPSet extends AModel {
 
 	private HashMap<String, Vector<InetAddress>> ipsets;
-	
+	private HashMap<String, Integer> cidrs;
+
 	public IPSet(NetworkModel networkModel) {
 		super("ipset", networkModel);
 		
 		ipsets = new HashMap<String, Vector<InetAddress>>();
+		cidrs  = new HashMap<String, Integer>();
 	}
 
 	public void init() {
 		//Add users
-		Vector<InetAddress> addresses = new Vector<InetAddress>();
-		
 		for (DeviceModel user : networkModel.getUserDevices()) {
-			addresses.addAll(user.getAddresses());
+			addToSet("user", 32, user.getAddresses());
 		}
-		
-		ipsets.put("user", addresses);
 		
 		//Add external-only devices
-		addresses = new Vector<InetAddress>();
-
 		for (DeviceModel device : networkModel.getExternalOnlyDevices()) {
-			addresses.addAll(device.getAddresses());
+			addToSet("externalonly", 32, device.getAddresses());
 		}
-		
-		ipsets.put("externalonly", addresses);
 
 		//Add internal-only devices
-		addresses = new Vector<InetAddress>();
-
 		for (DeviceModel device : networkModel.getInternalOnlyDevices()) {
-			addresses.addAll(device.getAddresses());
+			addToSet("internalonly", 32, device.getAddresses());
 		}
-		
-		ipsets.put("internalonly", addresses);
 		
 		//Add admins for each server
 		for (ServerModel server : networkModel.getAllServers()) {
 			String[] admins = networkModel.getData().getAdmins(server.getLabel());
-			addresses = new Vector<InetAddress>();
 			
 			for (String admin : admins) {
-				addresses.addAll(networkModel.getDeviceModel(admin).getAddresses());
+				addToSet(server.getLabel() + "_admins", 32, networkModel.getDeviceModel(admin).getAddresses());
 			}
+		}
+
+		//Managed devicen need admins, too
+		for (DeviceModel device : networkModel.getAllDevices()) {
+			if (!device.isManaged()) { continue; }
+
+			String[] admins = networkModel.getData().getAdmins(device.getLabel());
 			
-			ipsets.put(server.getLabel() + "_admins", addresses);
+			for (String admin : admins) {
+				addToSet(device.getLabel() + "_admins", 32, networkModel.getDeviceModel(admin).getAddresses());
+			}
 		}
-
-		addresses = new Vector<InetAddress>();
 		
+		//Now add all our servers
 		for (ServerModel server : networkModel.getAllServers()) {
-			addresses.addAll(server.getAddresses());			
+			addToSet("servers", 32, server.getAddresses());
 		}
-
-		ipsets.put("servers", addresses);
+		
+		if (networkModel.getData().getAutoGuest()) {
+			addToSet("autoguest", 22, networkModel.stringToIP("10.250.0.0"));
+		}
 	}
-
 	private Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
@@ -129,7 +128,7 @@ public class IPSet extends AModel {
 				break; //We've hit wildcard, zero point in continuing!
 			}
 			
-			conf += "\nadd " + set + " " + address.getHostAddress() + "/32";
+			conf += "\nadd " + set + " " + address.getHostAddress() + "/" + this.cidrs.get(set);
 
 		}
 		
@@ -138,18 +137,28 @@ public class IPSet extends AModel {
 		return units;
 	}
 	
-	void addSet(String set, Vector<InetAddress> addresses) {
-		Vector<InetAddress> extant = ipsets.get(set);
-		
-		if (extant == null) {
-			ipsets.put(set, addresses);
-		}
-		else {
-			//We've already resolved this set, meh!
-			return;
+	void addToSet(String set, Integer cidr, Vector<InetAddress> addresses) {
+		for (InetAddress address : addresses) {
+			addToSet(set, cidr, address);
 		}
 	}
 
+	void addToSet(String set, Integer cidr, InetAddress address) {
+		Vector<InetAddress> extant = ipsets.get(set);
+		Vector<InetAddress> addresses = new Vector<InetAddress>();
+		
+		if (extant != null) {
+			addresses.addAll(extant);
+		}
+
+		addresses.add(address);
+		
+		addresses = new Vector<InetAddress>(new LinkedHashSet<InetAddress>(addresses)); //enforce uniqueness
+
+		this.ipsets.put(set, addresses);
+		this.cidrs.put(set, cidr);
+	}
+	
 	public Vector<IUnit> getUnits() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
