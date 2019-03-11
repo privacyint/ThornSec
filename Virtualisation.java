@@ -25,8 +25,6 @@ public class Virtualisation extends AStructuredProfile {
 	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		((ServerModel)me).getAptSourcesModel().addAptSource("virtualbox", "proceed", "deb http://download.virtualbox.org/virtualbox/debian stretch contrib", "keyserver.ubuntu.com", "0xa2f683c52980aecf");
-
 		units.addElement(new InstalledUnit("build_essential", "build-essential"));
 		units.addElement(new InstalledUnit("linux_headers", "build_essential_installed", "linux-headers-$(uname -r)"));
 		
@@ -52,6 +50,8 @@ public class Virtualisation extends AStructuredProfile {
 	
 	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
+
+		((ServerModel)me).getAptSourcesModel().addAptSource("virtualbox", "proceed", "deb http://download.virtualbox.org/virtualbox/debian stretch contrib", "keyserver.ubuntu.com", "0xa2f683c52980aecf");
 
 		me.addRequiredEgress("download.virtualbox.org", new Integer[]{80});
 

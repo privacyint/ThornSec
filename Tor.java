@@ -25,8 +25,6 @@ public class Tor extends AStructuredProfile {
 	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		((ServerModel)me).getAptSourcesModel().addAptSource("tor", "proceed", "deb http://deb.torproject.org/torproject.org stretch main", "keys.gnupg.net", "A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
-		
 		units.addElement(new InstalledUnit("tor_keyring", "tor_gpg", "deb.torproject.org-keyring"));
 		units.addElement(new InstalledUnit("tor", "tor_keyring_installed", "tor"));
 		
@@ -188,9 +186,10 @@ public class Tor extends AStructuredProfile {
 
 		units.addAll(proxy.getNetworking());
 
-		//Allow the server to call out to torproject.org to download mainline
-		me.addRequiredEgress("deb.torproject.org");
-		me.addRequiredEgress("");
+		((ServerModel)me).getAptSourcesModel().addAptSource("tor", "proceed", "deb http://deb.torproject.org/torproject.org stretch main", "keys.gnupg.net", "A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
+
+		//Allow the server to call out everywhere
+		me.addRequiredEgress("255.255.255.255");
 		
 		return units;
 	}

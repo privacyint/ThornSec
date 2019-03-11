@@ -64,8 +64,6 @@ public class MariaDB extends AStructuredProfile {
 		
 		units.addElement(new InstalledUnit("openssl", "proceed", "openssl"));
 		
-		((ServerModel)me).getAptSourcesModel().addAptSource("mariadb", "proceed", "deb http://mirror.sax.uk.as61049.net/mariadb/repo/10.2/debian stretch main", "keyserver.ubuntu.com", "0xF1656F24C74CD1D8");
-		
 		units.addAll(((ServerModel)me).getBindFsModel().addLogBindPoint("mysql", "proceed", "mysql", "0750"));
 
 		//Generate a root password, if not already installed
@@ -302,6 +300,8 @@ public class MariaDB extends AStructuredProfile {
 	
 	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
+
+		((ServerModel)me).getAptSourcesModel().addAptSource("mariadb", "proceed", "deb http://mirror.sax.uk.as61049.net/mariadb/repo/10.2/debian stretch main", "keyserver.ubuntu.com", "0xF1656F24C74CD1D8");
 
 		me.addRequiredEgress("mirror.sax.uk.as61049.net");
 		

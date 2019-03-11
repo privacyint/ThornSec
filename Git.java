@@ -27,8 +27,6 @@ public class Git extends AStructuredProfile {
 		
 		units.addElement(new InstalledUnit("java", "proceed", "default-jre-headless"));
 				
-		((ServerModel)me).getAptSourcesModel().addAptSource("scm_manager", "proceed", "deb http://maven.scm-manager.org/nexus/content/repositories/releases ./", "keyserver.ubuntu.com", "D742B261");
-		
 		units.addElement(new InstalledUnit("scm_server", "scm_manager_gpg", "scm-server"));
 		
 		units.addAll(webserver.getInstalled());
@@ -101,6 +99,7 @@ public class Git extends AStructuredProfile {
 	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
+		((ServerModel)me).getAptSourcesModel().addAptSource("scm_manager", "proceed", "deb http://maven.scm-manager.org/nexus/content/repositories/releases ./", "keyserver.ubuntu.com", "D742B261");
 		me.addRequiredEgress("maven.scm-manager.org");
 
 		units.addAll(webserver.getNetworking());

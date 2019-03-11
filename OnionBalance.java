@@ -21,8 +21,6 @@ public class OnionBalance extends AStructuredProfile {
 	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		((ServerModel)me).getAptSourcesModel().addAptSource("tor", "proceed", "deb http://deb.torproject.org/torproject.org stretch main", "keys.gnupg.net", "A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
-		
 		units.addElement(new InstalledUnit("tor_keyring", "tor_gpg", "deb.torproject.org-keyring"));
 		units.addElement(new InstalledUnit("tor", "tor_keyring_installed", "tor"));
 		
@@ -142,6 +140,8 @@ public class OnionBalance extends AStructuredProfile {
 	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
+		((ServerModel)me).getAptSourcesModel().addAptSource("tor", "proceed", "deb http://deb.torproject.org/torproject.org stretch main", "keys.gnupg.net", "A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
+
 		me.addRequiredEgress("255.255.255.255"); //Needs to be able to call out to everywhere
 		
 		return units;

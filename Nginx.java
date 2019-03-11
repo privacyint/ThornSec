@@ -26,8 +26,6 @@ public class Nginx extends AStructuredProfile {
 	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		((ServerModel)me).getAptSourcesModel().addAptSource("nginx", "proceed", "deb http://nginx.org/packages/mainline/debian/ stretch nginx", "keyserver.ubuntu.com", "ABF5BD827BD9BF62");
-		
 		//If we don't give the nginx user a home dir, it can cause problems with npm etc
 		units.addElement(new SimpleUnit("nginx_user", "proceed",
 				"sudo useradd -r -d /media/data/www nginx",
@@ -153,10 +151,12 @@ public class Nginx extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		me.addRequiredListen(80);
-		
+
+		((ServerModel)me).getAptSourcesModel().addAptSource("nginx", "proceed", "deb http://nginx.org/packages/mainline/debian/ stretch nginx", "keyserver.ubuntu.com", "ABF5BD827BD9BF62");
+
 		//Allow the server to call out to nginx.org to download mainline
 		me.addRequiredEgress("nginx.org");
-
+		
 		return units;
 	}
 }
