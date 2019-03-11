@@ -33,7 +33,7 @@ public class SSH extends AStructuredProfile {
 		String sshdconf = "";
 		
 		sshdconf += "Port " + networkModel.getData().getSSHPort(me.getLabel()) + "\n";
-		sshdconf += (((ServerModel)me).isRouter()) ? "ListenAddress " + networkModel.getData().getIP().getHostAddress() + "\n" : "";
+		//sshdconf += (((ServerModel)me).isRouter()) ? "ListenAddress " + networkModel.getData().getIP().getHostAddress() + "\n" : "";
 		sshdconf += "Protocol 2\n";
 		sshdconf += "HostKey /etc/ssh/ssh_host_rsa_key\n";
 		sshdconf += "HostKey /etc/ssh/ssh_host_ed25519_key\n";
