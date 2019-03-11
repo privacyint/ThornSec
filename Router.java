@@ -141,10 +141,11 @@ public class Router extends AStructuredProfile {
 
 		for (String uri : ingress.keySet()) {
 			InetAddress[] destinations = hostToInetAddress(uri);
+			Integer cidr = machine.getCIDR(uri);
 			
 			String setName = networkModel.getIPSet().getSetName(name);
 			
-			networkModel.getIPSet().addSet(setName, new Vector<InetAddress>(Arrays.asList(destinations)));
+			networkModel.getIPSet().addToSet(setName, cidr, new Vector<InetAddress>(Arrays.asList(destinations)));
 			
 			String rule = "";
 			rule += "-p tcp";
@@ -174,7 +175,7 @@ public class Router extends AStructuredProfile {
 			
 			String setName = networkModel.getIPSet().getSetName(uri);
 			
-			networkModel.getIPSet().addSet(setName, new Vector<InetAddress>(Arrays.asList(destinations)));
+			networkModel.getIPSet().addToSet(setName, machine.getCIDR(uri), new Vector<InetAddress>(Arrays.asList(destinations)));
 			
 			String rule = "";
 			rule += "-p tcp";
@@ -853,11 +854,11 @@ public class Router extends AStructuredProfile {
 
 		//Force traffic to/from a given subnet to jump to our chains
 		this.firewall.addFilterForward(machine.getHostname() + "_ipt_server_src",
-				"-s " + machine.getSubnets().elementAt(0).getHostAddress() + "/24"
+				"-s " + machine.getSubnets().elementAt(0).getHostAddress() + "/" + machine.getCIDR()
 				+ " -j "+ machine.getForwardChain(),
 				"Force any internal traffic coming from " + machine.getHostname() + " to its own chain");
 		this.firewall.addFilterForward(machine.getHostname() + "_ipt_server_dst",
-				"-d " + machine.getSubnets().elementAt(0).getHostAddress() + "/24"
+				"-d " + machine.getSubnets().elementAt(0).getHostAddress() + "/" + machine.getCIDR()
 				+ " -j " + machine.getForwardChain(),
 				"Force any internal traffic going to " + machine.getHostname() + " to its own chain");
 
