@@ -119,8 +119,6 @@ public class Webproxy extends AStructuredProfile {
 				String   domain  = networkModel.getData().getDomain(backend);
 				String   logDir  = "/var/log/nginx/" + me.getLabel() + "." + networkModel.getData().getDomain(me.getLabel()) + "/";
 
-				units.addAll(((ServerModel)me).getBindFsModel().addBindPoint("nginx_backend_logs", "nginx_installed", logDir, logDir, "nginx", "nginx", "0750", "/media/metaldata", false));
-
 				String nginxConf = "";
 			
 				units.addAll(((ServerModel)me).getBindFsModel().addBindPoint(backend + "_tls_certs", "proceed", "/media/metaldata/tls/" + backend, "/media/data/tls/" + backend, "root", "root", "600", "/media/metaldata", false));
