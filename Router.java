@@ -98,6 +98,7 @@ public class Router extends AStructuredProfile {
 		units.addElement(new InstalledUnit("xsltproc", "xsltproc"));
 		units.addElement(new InstalledUnit("bridge_utils", "bridge-utils"));
 		units.addElement(new InstalledUnit("traceroute", "traceroute"));
+		units.addElement(new InstalledUnit("speedtest_cli", "speedtest-cli"));
 		
 		units.addAll(this.dns.getInstalled());
 		units.addAll(this.dhcp.getInstalled());
@@ -1052,6 +1053,16 @@ public class Router extends AStructuredProfile {
 			admin += "}\n";
 			admin += "\n";
 		}
+		admin += "function speedtest {\n";
+		admin += "        clear\n";
+		admin += "\n";
+		admin += "        echo \\\"Running a speed test - please wait...\\\"\n";
+		admin += "        echo \n";
+		admin += "        speedtest-cli\n";
+		admin += "        echo \n";
+		admin += "        read -n 1 -s -r -p \\\"Press any key to return to the main menu...\\\"\n"; 
+		admin += "}\n";
+		admin += "\n";
 		admin += "if [ \\\"\\${EUID}\\\" -ne 0 ]\n";
 		admin += "    then echo -e \\\"\\${RED}This script requires running as root.  Please sudo and try again.\\${NC}\\\"\n";
 		admin += "    exit\n";
@@ -1070,6 +1081,7 @@ public class Router extends AStructuredProfile {
 			admin += "        echo \\\"7) Restart PPPoE (Internet) Connection\\\"\n";
 			admin += "        echo \\\"C) Configure PPPoE credentials\\\"\n";
 		}
+		admin += "        echo \\\"S) Run a line speed test\\\"\n";
 		admin += "        echo \\\"R) Reboot Router\\\"\n";
 		admin += "        echo \\\"Q) Quit\\\"\n";
 		admin += "        read -r -p \\\"Select your option: \\\" opt\n";
@@ -1084,6 +1096,7 @@ public class Router extends AStructuredProfile {
 			admin += "                7   ) restartPPPoE;;\n";
 			admin += "                c|C ) configurePPPoE;;\n";
 		}
+		admin += "                s|S ) speedtest;;\n";
 		admin += "                r|R ) reboot;;\n";
 		admin += "                q|Q ) exit;;\n";
 		admin += "        esac\n";
