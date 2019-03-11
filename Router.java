@@ -756,20 +756,51 @@ public class Router extends AStructuredProfile {
 				address, //address
 				netmask, //netmask
 				null, //broadcast
-				null, //gateway
+				address, //gateway
 				"bridge all physical interfaces" //comment
 		));
 		
 		//Now add for our servers
-		for (ServerModel srv : networkModel.getAllServers()) {
+		//for (ServerModel srv : networkModel.getAllServers()) {
+		for (MachineModel machine : networkModel.getAllMachines()) {
+			Integer classifier = null;
 			
-			if (srv.equals(me)) { continue; } //Skip if we're talking about ourself
+			if (machine instanceof ServerModel) {
+				classifier = 0; 
+			}
+			else if (machine instanceof DeviceModel) {
+				classifier = 1;
+			}
 			
-			for (InterfaceData srvLanIface : ((ServerModel)srv).getInterfaceModel().getIfaces()) {
+			if (machine.equals(me)) { continue; } //Skip if we're talking about ourself
+			
+			for (InterfaceData machineLanIface : machine.getInterfaceModel().getIfaces()) {
 				//Parse our MAC address into an integer to stop collisions when adding/removing interfaces
-				String alias = getAlias(srvLanIface.getMac());
-
+				String alias = null; //getAlias(machineLanIface.getMac());
+				
+				if (machineLanIface.getMac() == null) {
+					alias = getAlias(machineLanIface.getIface());
+				}
+				else {
+					alias = getAlias(machineLanIface.getMac());
+				}
+				
 				interfaces.addIface(new InterfaceData(
+						machine.getLabel(), //host
+						bridge + ":" + classifier + alias, //iface
+						machineLanIface.getMac(), //mac
+						"static", //inet
+						machineLanIface.getBridgePorts(), //bridgeports
+						machineLanIface.getSubnet(), //subnet
+						machineLanIface.getAddress(), //address
+						netmask, //netmask
+						machineLanIface.getBroadcast(), //broadcast
+						machineLanIface.getGateway(), //gateway
+						"router interface" //comment
+				));
+
+				
+/*				interfaces.addIface(new InterfaceData(
 						srv.getLabel(), //host
 						bridge + ":0" + alias, //iface
 						srvLanIface.getMac(), //mac
