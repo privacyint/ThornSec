@@ -297,6 +297,7 @@ public class Router extends AStructuredProfile {
 		Vector<IUnit> units = new Vector<IUnit>();
 
 		Vector<Integer> listen = machine.getRequiredListen();
+		String machineName = machine.getLabel();
 		
 		if (machine instanceof ServerModel && listen.size() > 0) {
 			String rule = "";
@@ -308,26 +309,46 @@ public class Router extends AStructuredProfile {
 			rule += " -j ACCEPT";
 	
 			this.firewall.addFilter(
-					machine.getHostname() + "_users_forward",
+					machineName + "_users_forward",
 					machine.getForwardChain(),
 					rule,
 					"Allow traffic from users"
 			);
 		}
 		else if (machine instanceof DeviceModel && networkModel.getInternalOnlyDevices().contains(machine)) {
-			String rule = "";
-			rule += "-p tcp";
-			rule += (!listen.isEmpty()) ? " -m multiport --dports " + collection2String(listen) : "";
-			rule += " -m set";
-			rule += " --match-set user src";
-			rule += " -j ACCEPT";
+			//First, iterate through everything which should be listening for everyone
+			String listenRule = "";
+			listenRule += "-p tcp";
+			listenRule += (!listen.isEmpty()) ? " -m multiport --dports " + collection2String(listen) : "";
+			listenRule += " -m set";
+			listenRule += " --match-set user src";
+			listenRule += " -j ACCEPT";
 	
 			this.firewall.addFilter(
-					machine.getHostname() + "_users_forward",
+					machineName + "_users_forward",
 					machine.getForwardChain(),
-					rule,
+					listenRule,
 					"Allow traffic from users"
 			);
+
+			//These are management ports
+			Set<Integer> ports = ((DeviceModel) machine).getManagementPorts();
+			
+			if (!ports.isEmpty() && ports != null) {
+				String managementRule = "";
+				managementRule += "-p tcp";
+				managementRule += " -m multiport --dports " + collection2String(ports);
+				managementRule += " -m set";
+				managementRule += " --match-set " + machineName + "_admins src";
+				managementRule += " -j ACCEPT";
+		
+				this.firewall.addFilter(
+						machineName + "_admins_management_forward",
+						machine.getForwardChain(),
+						managementRule,
+						"Allow management traffic from admins"
+				);
+			}
 		}
 		
 		return units;
@@ -456,6 +477,7 @@ public class Router extends AStructuredProfile {
 		for (DeviceModel device : networkModel.getExternalOnlyDevices()) {
 			//No need for forward or ingress rules here
 			machineDnatRules(device); //May be behind a load balancer
+			machineAllowUserForwardRules(device);
 			machineEgressRules(device);
 		}
 		
