@@ -73,9 +73,9 @@ public class DNS extends AStructuredProfile {
 		domainRecords.put(domain,  records);
 	}
 	
-	public void addPoison(String domain, InetAddress ip) {
-		poison.put(domain, ip);
-	}
+	//public void addPoison(String domain, InetAddress ip) {
+	//	poison.put(domain, ip);
+	//}
 	
 	public Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
