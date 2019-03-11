@@ -82,6 +82,8 @@ public class StrongSwan extends AStructuredProfile {
 				));
 			}
 		}
+
+		networkModel.getIPSet().addToSet("user", 32, me.getIP());
 		
 		for (ServerModel router : networkModel.getRouterServers()) {
 			InetAddress ip = networkModel.getServerModel(me.getLabel()).getIP();
