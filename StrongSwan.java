@@ -48,9 +48,9 @@ public class StrongSwan extends AStructuredProfile {
 
 				String roadWarriorClass = "";
 				roadWarriorClass += "\n\n";
-				roadWarriorClass += "class \\\"" + user.getLabel() + "\\\" {\n";
-				roadWarriorClass += "\tmatch if ((substring(hardware, 1, 2) = 7a:a7) and (option dhcp-client-identifier = \\\"" + user.getLabel() + "\\\"));\n";
-				roadWarriorClass += "}";
+				roadWarriorClass += "\tclass \\\"" + user.getLabel() + "\\\" {\n";
+				roadWarriorClass += "\t\tmatch if ((substring(hardware, 1, 2) = 7a:a7) and (option dhcp-client-identifier = \\\"" + user.getLabel() + "\\\"));\n";
+				roadWarriorClass += "\t}";
 				
 				dhcp.addClass(roadWarriorClass);
 				
