@@ -49,22 +49,23 @@ public class DHCP extends AStructuredProfile {
 		//Build listening interfaces
 		for (InterfaceData iface : me.getInterfaces()) {
 			//Skip over non-LAN interfaces, or we'll potentially offer DHCP to the whole internet!
-			if (!iface.getIface().contains("lan")) { continue; }
+			if (!iface.getIface().contains("lan") || iface.getMac() == null) { continue; }
 			
 			ifaceAutoString += iface.getIface() + " ";
+			stanzas.add(iface.getDhcpStanza());
 		}
 
 		//Then build the DHCP offer stanzas
-		for (MachineModel machine : networkModel.getAllMachines()) {
-			if (Objects.equals(machine, me)) { continue; }
-
-			for (InterfaceData iface : machine.getInterfaceModel().getIfaces()) {
-				if (iface.getMac() != null) {
-					ifaceAutoString += iface.getIface() + " ";
-					stanzas.add(iface.getDhcpStanza());
-				}
-			}
-		}
+//		for (MachineModel machine : networkModel.getAllMachines()) {
+//			if (Objects.equals(machine, me)) { continue; }
+//
+//			for (InterfaceData iface : machine.getInterfaceModel().getIfaces()) {
+//				if (iface.getMac() != null) {
+//					ifaceAutoString += iface.getIface() + " ";
+//					stanzas.add(iface.getDhcpStanza());
+//				}
+//			}
+//		}
 		
 		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("dhcp_defiface", "dhcp_installed", "INTERFACES=\\\"" + ifaceAutoString + "\\\"", "/etc/default/isc-dhcp-server"));
 		((ServerModel)me).getProcessModel().addProcess("/usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf " + ifaceAutoString + "$");
