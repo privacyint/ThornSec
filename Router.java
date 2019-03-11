@@ -813,18 +813,18 @@ public class Router extends AStructuredProfile {
 						null, //gateway
 						"router interface" //comment
 				));
+*/
+				String[] cnames  = networkModel.getData().getCnames(machine.getLabel());
+				String[] subdomains = new String[cnames.length + 1];
+				System.arraycopy(new String[] {machine.getHostname()},0,subdomains,0, 1);
+				System.arraycopy(cnames,0,subdomains,1, cnames.length);
 
-				String[] serverCnames  = networkModel.getData().getCnames(srv.getLabel());
-				String[] subdomains = new String[serverCnames.length + 1];
-				System.arraycopy(new String[] {srv.getHostname()},0,subdomains,0, 1);
-				System.arraycopy(serverCnames,0,subdomains,1, serverCnames.length);
-
-				this.dns.addDomainRecord(networkModel.getData().getDomain(srv.getLabel()), srvLanIface.getGateway(), subdomains, srvLanIface.getAddress());
+				this.dns.addDomainRecord(networkModel.getData().getDomain(machine.getLabel()), machineLanIface.getGateway(), subdomains, machineLanIface.getAddress());
 			}
 		}
 
 		
-		for (DeviceModel device : networkModel.getAllDevices()) {
+		/*for (DeviceModel device : networkModel.getAllDevices()) {
 			for (InterfaceData devLanIface : device.getInterfaces()) {
 				//Parse our MAC address into an integer to stop collisions when adding/removing interfaces
 				String alias = null;
@@ -836,8 +836,6 @@ public class Router extends AStructuredProfile {
 					alias = getAlias(devLanIface.getMac());
 				}
 
-				String subdomain = device.getHostname() + "." + networkModel.getLabel() + ".lan." + alias;
-				
 				interfaces.addIface(new InterfaceData(
 						device.getLabel(), //host
 						bridge + ":1" + alias, //iface
@@ -851,10 +849,16 @@ public class Router extends AStructuredProfile {
 						null, //gateway
 						devLanIface.getMac() //comment
 				));
+
+				String subdomain = device.getHostname() + "." + networkModel.getLabel() + ".lan." + alias;
+				String[] deviceCnames  = networkModel.getData().getCnames(device.getLabel());
+				String[] subdomains = new String[deviceCnames.length + 1];
+				System.arraycopy(new String[] {subdomain},0,subdomains,0, 1);
+				System.arraycopy(deviceCnames,0,subdomains,1, deviceCnames.length);
 				
 				this.dns.addDomainRecord(this.domain, devLanIface.getGateway(), new String[] {subdomain}, devLanIface.getAddress());
 			}
-		}
+		}*/
 
 		units.addElement(new SimpleUnit("ifaces_up", "proceed",
 				"sudo service networking restart",
