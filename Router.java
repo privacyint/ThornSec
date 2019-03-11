@@ -150,8 +150,7 @@ public class Router extends AStructuredProfile {
 			String rule = "";
 			rule += "-p tcp";
 			rule += (ingress.get(uri).isEmpty() || ingress.get(uri).contains(0)) ? "" : " -m multiport --dports " + collection2String(ingress.get(uri));
-			rule += " -m set";
-			rule += " --match-set " + setName + " src";
+			rule += (uri.equals("255.255.255.255")) ? "" : " -m set --match-set " + setName + " src";
 			rule += " -j ACCEPT";
 			
 			this.firewall.addFilter(
@@ -180,8 +179,7 @@ public class Router extends AStructuredProfile {
 			String rule = "";
 			rule += "-p tcp";
 			rule += (egress.get(uri).isEmpty() || egress.get(uri).contains(0)) ? "" : " -m multiport --dports " + collection2String(egress.get(uri));
-			rule += " -m set";
-			rule += " --match-set " + setName + " dst";
+			rule += (uri.equals("255.255.255.255")) ? "" : " -m set --match-set " + setName + " dst";
 			rule += " -j ACCEPT";
 			
 			this.firewall.addFilter(
