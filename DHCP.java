@@ -42,14 +42,14 @@ public class DHCP extends AStructuredProfile {
 	public Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		String ifaceAutoString = "";
+		String ifaceAutoString = "lan0";
 
 		//Build listening interfaces
 		for (InterfaceData iface : me.getInterfaces()) {
 			//Skip over non-LAN interfaces, or we'll potentially offer DHCP to the whole internet!
 			if (!iface.getIface().contains("lan") || iface.getMac() == null) { continue; }
 			
-			ifaceAutoString += iface.getIface() + " ";
+			//ifaceAutoString += iface.getIface() + " ";
 			stanzas.add(iface.getDhcpStanza());
 		}
 		
@@ -97,6 +97,9 @@ public class DHCP extends AStructuredProfile {
 		dhcpconf += "log-facility local7;\n";
 		dhcpconf += "\n";
 		dhcpconf += "shared-network " + networkModel.getLabel() + " {\n";
+		dhcpconf += "\n";
+		dhcpconf += "\tsubnet 10.0.0.0 netmask 255.0.0.0 {\n"; 
+		dhcpconf += "\t}\n";
 		
 		for (int i = 0; i < classes.size(); ++i) {
 			dhcpconf += classes.elementAt(i);
