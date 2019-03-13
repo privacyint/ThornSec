@@ -10,9 +10,7 @@ import core.unit.SimpleUnit;
 import core.unit.fs.FileChecksumUnit;
 import core.unit.fs.FileDownloadUnit;
 import core.unit.fs.FilePermsUnit;
-import core.unit.fs.GitCloneUnit;
 import core.unit.pkg.InstalledUnit;
-import core.unit.pkg.RunningUnit;
 
 public class NodeJS extends AStructuredProfile {
 	

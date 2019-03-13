@@ -1,13 +1,11 @@
 package profile;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Vector;
 
 import core.data.InterfaceData;
 import core.iface.IUnit;
 import core.model.FirewallModel;
-import core.model.MachineModel;
 import core.model.NetworkModel;
 import core.model.ServerModel;
 import core.profile.AStructuredProfile;
@@ -54,18 +52,6 @@ public class DHCP extends AStructuredProfile {
 			ifaceAutoString += iface.getIface() + " ";
 			stanzas.add(iface.getDhcpStanza());
 		}
-
-		//Then build the DHCP offer stanzas
-//		for (MachineModel machine : networkModel.getAllMachines()) {
-//			if (Objects.equals(machine, me)) { continue; }
-//
-//			for (InterfaceData iface : machine.getInterfaceModel().getIfaces()) {
-//				if (iface.getMac() != null) {
-//					ifaceAutoString += iface.getIface() + " ";
-//					stanzas.add(iface.getDhcpStanza());
-//				}
-//			}
-//		}
 		
 		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("dhcp_defiface", "dhcp_installed", "INTERFACES=\\\"" + ifaceAutoString + "\\\"", "/etc/default/isc-dhcp-server"));
 		((ServerModel)me).getProcessModel().addProcess("/usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf " + ifaceAutoString + "$");
@@ -110,7 +96,7 @@ public class DHCP extends AStructuredProfile {
 		dhcpconf += "authoritative;\n";
 		dhcpconf += "log-facility local7;\n";
 		dhcpconf += "\n";
-		dhcpconf += "shared-network " + networkModel.getLabel() + " {";
+		dhcpconf += "shared-network " + networkModel.getLabel() + " {\n";
 		
 		for (int i = 0; i < classes.size(); ++i) {
 			dhcpconf += classes.elementAt(i);

@@ -799,21 +799,6 @@ public class Router extends AStructuredProfile {
 						"router interface" //comment
 				));
 
-				
-/*				interfaces.addIface(new InterfaceData(
-						srv.getLabel(), //host
-						bridge + ":0" + alias, //iface
-						srvLanIface.getMac(), //mac
-						"static", //inet
-						null, //bridgeports
-						null, //subnet
-						srvLanIface.getGateway(), //address
-						netmask, //netmask
-						null, //broadcast
-						null, //gateway
-						"router interface" //comment
-				));
-*/
 				String[] cnames  = networkModel.getData().getCnames(machine.getLabel());
 				String[] subdomains = new String[cnames.length + 1];
 				System.arraycopy(new String[] {machine.getHostname()},0,subdomains,0, 1);
