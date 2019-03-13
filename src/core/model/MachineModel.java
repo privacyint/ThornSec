@@ -52,16 +52,23 @@ public abstract class MachineModel extends AModel {
 		this.dnat        = new HashMap<String, Set<Integer>>();
 		this.listen      = new Vector<Integer>();
 		
-		if (networkModel.getAllMachines().contains(this)) {
+		if (networkModel.getData().getRequiredIngress(getLabel()) != null) {
 			for (String source : networkModel.getData().getRequiredIngress(getLabel())) {
 				addRequiredIngress(source);
 			}
+		}
 			
+		if (networkModel.getData().getRequiredForward(getLabel()) != null) {
 			for (String destination : networkModel.getData().getRequiredForward(getLabel())) {
 				addRequiredForward(destination);
 			}
-			
-			this.egress.putAll(networkModel.getData().getRequiredEgress(getLabel()));
+		}
+		
+		if (networkModel.getData().getRequiredEgress(getLabel()) != null) {
+			for (String uri : networkModel.getData().getRequiredEgress(getLabel()).keySet()) {
+				this.egress.put(uri, networkModel.getData().getRequiredEgress(getLabel()).get(uri));
+				this.egressCIDRs.put(uri, networkModel.getData().getCIDR(getLabel(), uri));
+			}
 		}
 	}
 
