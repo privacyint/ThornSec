@@ -42,8 +42,6 @@ public abstract class MachineModel extends AModel {
 		this.thirdOctet  = null;
 		this.cidr        = 24;
 		
-		//this.listen = null;
-		
 		this.setNetworkIfaces(new InterfaceModel(label, this, networkModel));
 		this.getNetworkIfaces().init();
 		

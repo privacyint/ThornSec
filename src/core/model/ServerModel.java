@@ -69,12 +69,6 @@ public class ServerModel extends MachineModel {
 		
 		this.configFiles = new ConfigFileModel(getLabel(), this, networkModel);
 		this.configFiles.init();
-		
-		addRequiredEgress("cdn.debian.net");
-		addRequiredEgress("security-cdn.debian.org");
-		addRequiredEgress("prod.debian.map.fastly.net");
-		addRequiredEgress("255.255.255.255", 25);
-
 	}
 	
 	public void init() {
@@ -126,6 +120,11 @@ public class ServerModel extends MachineModel {
 		if (networkModel.getData().getExternalIp(getLabel()) != null) {
 			addRequiredIngress("255.255.255.255", getRequiredListen().toArray(new Integer[getRequiredListen().size()]));
 		}
+
+		addRequiredEgress("cdn.debian.net");
+		addRequiredEgress("security-cdn.debian.org");
+		addRequiredEgress("prod.debian.map.fastly.net");
+		addRequiredEgress("255.255.255.255", 25);
 	}
 
 	void registerService(ServerModel service) {
@@ -384,32 +383,6 @@ public class ServerModel extends MachineModel {
 		sshdPAM += "session optional pam_exec.so seteuid /etc/pamEmails.sh";
 		
 		units.addElement(this.getConfigsModel().addConfigFile("pam_sshd_script_created", "email_on_pam_script_created", sshdPAM, "/etc/pam.d/sshd"));
-
-//		JsonArray egress = (JsonArray) networkModel.getData().getPropertyObjectArray(me.getLabel(), "allowegress");
-//		if (egress != null) {
-//			for (int i = 0; i < egress.size(); ++i) {
-//				JsonObject row = egress.getJsonObject(i);
-				
-//				String destination = row.getString("destination");
-//				int[] parsedPorts = Arrays.stream(row.getString("ports").split("[^0-9]", -1)).mapToInt(Integer::parseInt).toArray();
-//				Integer[] ports = IntStream.of(parsedPorts).boxed().toArray( Integer[]::new );
-				
-//				addRequiredEgress(destination, ports);
-//			}
-//		}
-
-//		JsonArray forward = (JsonArray) networkModel.getData().getPropertyObjectArray(this.getLabel(), "allowforward");
-//		if (forward != null) {
-//			for (int i = 0; i < forward.size(); ++i) {
-//				JsonObject row = forward.getJsonObject(i);
-//				
-//				String destination = row.getString("destination");
-//				int[] parsedPorts = Arrays.stream(row.getString("ports").split("[^0-9]", -1)).mapToInt(Integer::parseInt).toArray();
-//				Integer[] ports = IntStream.of(parsedPorts).boxed().toArray( Integer[]::new );				
-//				
-//				addRequiredForward(destination, ports);
-//			}
-//		}
 		
 		return units;
 	}
