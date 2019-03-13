@@ -486,6 +486,46 @@ public class Router extends AStructuredProfile {
 			machineIngressEgressForwardRules(machine);
 		}
 		
+		if (networkModel.getData().getAutoGuest()) {
+			DeviceModel autoguest = new DeviceModel("autoguest", networkModel);
+			autoguest.setCIDR(22);
+			autoguest.setFirstOctet(10);;
+			autoguest.setSecondOctet(250);
+			autoguest.setThirdOctet(0);
+			
+			autoguest.getInterfaceModel().addIface(new InterfaceData(
+					"autoguest", //host
+					"lan0:9001", //iface
+					null, //mac
+					"static", //inet
+					null, //bridgeports
+					networkModel.stringToIP("10.250.0.0"), //subnet
+					networkModel.stringToIP("10.250.0.0"), //address
+					networkModel.stringToIP("255.255.252.0"), //netmask
+					null, //broadcast
+					networkModel.stringToIP("10.0.0.1"), //gateway
+					"Auto Guest pool" //comment
+			));
+			
+			baseIptConfig(autoguest);
+			
+			networkModel.getIPSet().addToSet("autoguest", 22, networkModel.stringToIP("10.250.0.0"));
+			
+			String rule = "";
+			rule += "-p tcp";
+			rule += " -m set --match-set autoguest src";
+			rule += " -j ACCEPT";
+						
+			this.firewall.addFilter(
+					autoguest.getEgressChain(),
+					"autoguest_egress",
+					rule,
+					"Allow automatic guest pool to call out to the internet"
+			);
+			
+			machineIngressEgressForwardRules(autoguest);
+		}
+		
 		return units;
 	}
 	
@@ -807,44 +847,23 @@ public class Router extends AStructuredProfile {
 				this.dns.addDomainRecord(networkModel.getData().getDomain(machine.getLabel()), machineLanIface.getGateway(), subdomains, machineLanIface.getAddress());
 			}
 		}
-
 		
-		/*for (DeviceModel device : networkModel.getAllDevices()) {
-			for (InterfaceData devLanIface : device.getInterfaces()) {
-				//Parse our MAC address into an integer to stop collisions when adding/removing interfaces
-				String alias = null;
-				
-				if (devLanIface.getMac() == null) {
-					alias = getAlias(devLanIface.getIface());
-				}
-				else {
-					alias = getAlias(devLanIface.getMac());
-				}
-
-				interfaces.addIface(new InterfaceData(
-						device.getLabel(), //host
-						bridge + ":1" + alias, //iface
-						devLanIface.getMac(), //mac
-						"static", //inet
-						null, //bridgeports
-						null, //subnet
-						devLanIface.getGateway(), //address
-						netmask, //netmask
-						null, //broadcast
-						null, //gateway
-						devLanIface.getMac() //comment
-				));
-
-				String subdomain = device.getHostname() + "." + networkModel.getLabel() + ".lan." + alias;
-				String[] deviceCnames  = networkModel.getData().getCnames(device.getLabel());
-				String[] subdomains = new String[deviceCnames.length + 1];
-				System.arraycopy(new String[] {subdomain},0,subdomains,0, 1);
-				System.arraycopy(deviceCnames,0,subdomains,1, deviceCnames.length);
-				
-				this.dns.addDomainRecord(this.domain, devLanIface.getGateway(), new String[] {subdomain}, devLanIface.getAddress());
-			}
-		}*/
-
+		if (networkModel.getData().getAutoGuest()) {
+			interfaces.addIface(new InterfaceData(
+					"autoguest", //host
+					"lan0:9001", //iface
+					null, //mac
+					"static", //inet
+					null, //bridgeports
+					networkModel.stringToIP("10.250.0.0"), //subnet
+					null, //address
+					networkModel.stringToIP("255.255.252.0"), //netmask
+					null, //broadcast
+					networkModel.stringToIP("10.250.0.1"), //gateway
+					"Auto Guest pool" //comment
+			));
+		}
+		
 		units.addElement(new SimpleUnit("ifaces_up", "proceed",
 				"sudo service networking restart",
 				"sudo ip addr | grep " + bridge, "", "fail",

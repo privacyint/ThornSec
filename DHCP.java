@@ -111,6 +111,17 @@ public class DHCP extends AStructuredProfile {
 			dhcpconf += stanza;
 		}
 		
+		if (networkModel.getData().getAutoGuest()) {
+			dhcpconf += "\n\n";
+			dhcpconf += "\tsubnet 10.250.0.0 netmask 255.255.252.0 {\n";
+			dhcpconf += "\t\tpool {\n";
+			dhcpconf += "\t\t\trange 10.250.0.15 10.250.3.255;\n";
+			dhcpconf += "\t\t\toption routers 10.0.0.1;\n";
+			dhcpconf += "\t\t\toption domain-name-servers 1.1.1.1;\n";
+			dhcpconf += "\t\t}";
+			dhcpconf += "\t}";
+		}
+		
 		dhcpconf += "\n}";
 
 		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("dhcp", "dhcp_installed", dhcpconf, "/etc/dhcp/dhcpd.conf"));
