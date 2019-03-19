@@ -663,6 +663,16 @@ public class NetworkData extends AData {
 		return null;
 	}
 	
+	public Integer getCIDR(String endpoint, String uri) {
+		ADeviceData endpointData = getEndpointData(endpoint);
+		
+		if (endpointData != null) {
+			return endpointData.getRequiredEgressCIDR(uri);
+		}
+		
+		return null;
+	}
+	
 	public Vector<String> getRequiredForward(String endpoint) {
 		ADeviceData endpointData = getEndpointData(endpoint);
 		
