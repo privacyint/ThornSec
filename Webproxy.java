@@ -58,7 +58,7 @@ public class Webproxy extends AStructuredProfile {
 		sslConf += "\n";
 		sslConf += "    ssl_stapling on;\n";
 		sslConf += "    ssl_stapling_verify on;\n";
-		sslConf += "    resolver " + networkModel.getData().getDNS()[0] + " valid=300s;\n";
+		sslConf += "    resolver " + networkModel.getData().getDNS()[0].getHostAddress() + " valid=300s;\n";
 		sslConf += "    resolver_timeout 5s;";
 		
 		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("nginx_ssl", "proceed", sslConf, "/etc/nginx/includes/ssl_params"));
