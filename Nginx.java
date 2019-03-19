@@ -34,6 +34,8 @@ public class Nginx extends AStructuredProfile {
 
 		((ServerModel)me).getUserModel().addUsername("nginx");
 		
+		units.addAll(((ServerModel)me).getBindFsModel().addLogBindPoint("nginx", "proceed", "nginx", "0600"));
+
 		units.addElement(new InstalledUnit("nginx", "nginx_gpg", "nginx"));
 		
 		return units;
@@ -43,7 +45,6 @@ public class Nginx extends AStructuredProfile {
 		Vector<IUnit> units =  new Vector<IUnit>();
 		
 		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("www", "proceed", "nginx", "nginx", "0750"));
-		units.addAll(((ServerModel)me).getBindFsModel().addLogBindPoint("nginx", "proceed", "nginx", "0600"));
 		
 		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("nginx_includes", "nginx_installed", "nginx", "nginx", "0750"));
 		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("nginx_modules", "nginx_installed", "nginx", "nginx", "0750"));
