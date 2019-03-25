@@ -24,6 +24,7 @@ abstract class ADeviceData extends AData {
 	private String fullname;
 	private String sshKey;
 	private String defaultPassword;
+	private String emailAddress;
 	
 	private HashMap<String, Set<Integer>> requiredEgress;
 	private HashMap<String, Integer> requiredEgressCIDR;
@@ -50,6 +51,7 @@ abstract class ADeviceData extends AData {
 		this.fullname        = null;
 		this.sshKey          = null;
 		this.defaultPassword = null;
+		this.emailAddress    = null;
 		
 		this.requiredEgress     = new HashMap<String, Set<Integer>>();
 		this.requiredEgressCIDR = new HashMap<String, Integer>();
@@ -102,6 +104,10 @@ abstract class ADeviceData extends AData {
 	
 	protected void setHostname(String hostname) {
 		this.hostname = hostname;
+	}
+	
+	protected void setEmailAddress(String address) {
+		this.emailAddress = address;
 	}
 	
 	protected void setMacs(String[] macs) {
@@ -179,6 +185,10 @@ abstract class ADeviceData extends AData {
 	
 	public String getFullName() {
 		return this.fullname;
+	}
+	
+	public String getEmailAddress() {
+		return this.emailAddress;
 	}
 	
 	public String getDefaultPassword() {

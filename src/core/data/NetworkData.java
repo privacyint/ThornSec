@@ -653,6 +653,10 @@ public class NetworkData extends AData {
 		return this.devices.get(user).getDefaultPassword();
 	}
 	
+	public String getEmailAddress(String device) {
+		return this.devices.get(device).getEmailAddress();
+	}
+	
 	public HashMap<String, Set<Integer>> getRequiredEgress(String endpoint) {
 		ADeviceData endpointData = getEndpointData(endpoint);
 		

@@ -23,5 +23,7 @@ class UserDeviceData extends ADeviceData {
 
 		super.setFirstOctet(10);
 		super.setSecondOctet(getIsManaged() ? 51 : 50);
+		
+		super.setEmailAddress(getProperty("email", getLabel() + "@" + getDomain()));
 	}
 }
