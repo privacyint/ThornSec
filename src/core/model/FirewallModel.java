@@ -57,8 +57,8 @@ public class FirewallModel extends AModel {
 		this.addFilterOutput("iptables_out_icmp", "-p icmp -j ACCEPT", "Allow outbound ping");
 	}
 	
-	public void init() { /* ... */ }
-
+	/**
+	 * Gets the firewall configuration units.
 	public Vector<IUnit> getUnits() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		

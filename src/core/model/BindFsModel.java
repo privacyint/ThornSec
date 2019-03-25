@@ -15,9 +15,6 @@ public class BindFsModel extends AModel {
 		super(label, me, networkModel);
 	}
 
-	public void init() {
-	}
-
 	public Vector<IUnit> getUnits() {
 		Vector<IUnit> units = new Vector<IUnit>();
 

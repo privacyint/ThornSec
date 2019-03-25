@@ -20,6 +20,9 @@ public abstract class AModel {
 		return label;
 	}
 	
-	public abstract void init();
+	/**
+	public void init() {
+		/* Stub */
+	}
 
 }

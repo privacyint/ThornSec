@@ -16,9 +16,9 @@ public class ConfigFileModel extends AModel {
 		this.configFiles = new Vector<String>();
 	}
 
-	public void init() {
-	}
-
+	/**
+	 * Gets the units.
+	 *
 	public Vector<IUnit> getUnits() {
 		String grepString = "sudo dpkg -V";
 		Vector<IUnit> units = new Vector<IUnit>();

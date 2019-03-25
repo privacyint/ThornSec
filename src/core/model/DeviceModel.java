@@ -70,10 +70,4 @@ public class DeviceModel extends MachineModel {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	@Override
-	public void init() {
-		// TODO Auto-generated method stub
-		
-	}
 }

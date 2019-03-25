@@ -27,9 +27,6 @@ public class AptSourcesModel extends AModel {
 		((ServerModel)me).getProcessModel().addProcess("dirmngr --daemon --homedir /tmp/apt-key-gpghome.[a-zA-Z0-9]*$");
 	}
 
-	public void init() {
-	}
-
 	public Vector<IUnit> getUnits() {
 		Vector<IUnit> units = new Vector<IUnit>();
 

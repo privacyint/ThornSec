@@ -113,9 +113,9 @@ public class ProcessModel extends AModel {
 		//processStrings.addElement("");
 	}
 
-	public void init() {
-	}
-
+	/**
+	 * Checks for unexpected processes
+	 *
 	public Vector<IUnit> getUnits() {
 		String grepString = "sudo ps -Awwo pid,user,comm,args | grep -v grep | grep -v 'ps -Awwo pid,user,comm,args$'";
 		Vector<IUnit> units = new Vector<IUnit>();
