@@ -653,8 +653,19 @@ public class NetworkData extends AData {
 		return this.devices.get(user).getDefaultPassword();
 	}
 	
-	public String getEmailAddress(String device) {
-		return this.devices.get(device).getEmailAddress();
+	public String getEmailAddress(String machine) {
+		String emailAddress = null;
+		
+		if (this.servers.containsKey(machine)) {
+			emailAddress = this.servers.get(machine).getEmailAddress();
+		}
+		else if (this.devices.containsKey(machine)) {
+			emailAddress = this.devices.get(machine).getEmailAddress();
+		}
+		
+		assert emailAddress != null;
+		
+		return emailAddress;
 	}
 	
 	public HashMap<String, Set<Integer>> getRequiredEgress(String endpoint) {

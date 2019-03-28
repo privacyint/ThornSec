@@ -20,5 +20,7 @@ class ExternalDeviceData extends ADeviceData {
 
 		super.setFirstOctet(10);
 		super.setSecondOctet(super.getIsManaged() ? 101 : 100);
+		
+		super.setEmailAddress(getProperty("email", getLabel() + "@" + getDomain()));
 	}
 }

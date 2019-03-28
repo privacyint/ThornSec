@@ -23,6 +23,8 @@ public abstract class MachineModel extends AModel {
 	private Integer thirdOctet;
 	private Integer cidr;
 	
+	private String emailAddress;
+	
 	//Networking stuff
 	private Vector<Integer> listen;
 
@@ -41,6 +43,8 @@ public abstract class MachineModel extends AModel {
 		this.secondOctet = null;
 		this.thirdOctet  = null;
 		this.cidr        = 24;
+		
+		this.emailAddress = networkModel.getData().getEmailAddress(label);
 		
 		this.setNetworkIfaces(new InterfaceModel(label, this, networkModel));
 		this.getNetworkIfaces().init();
@@ -330,6 +334,10 @@ public abstract class MachineModel extends AModel {
 	
 	public HashMap<String, Set<Integer>> getRequiredForward() {
 		return this.forward;
+	}
+	
+	public String getEmailAddress() {
+		return this.emailAddress;
 	}
 	
 	protected abstract Vector<IUnit> getUnits();
