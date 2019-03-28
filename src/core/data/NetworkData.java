@@ -667,21 +667,11 @@ public class NetworkData extends AData {
 		return emailAddress;
 	}
 	
-	public HashMap<String, Set<Integer>> getRequiredEgress(String endpoint) {
+	public HashMap<String, HashMap<Integer, Set<Integer>>> getRequiredEgress(String endpoint) {
 		ADeviceData endpointData = getEndpointData(endpoint);
 		
 		if (endpointData != null) {
 			return endpointData.getRequiredEgress();
-		}
-		
-		return null;
-	}
-	
-	public Integer getCIDR(String endpoint, String uri) {
-		ADeviceData endpointData = getEndpointData(endpoint);
-		
-		if (endpointData != null) {
-			return endpointData.getRequiredEgressCIDR(uri);
 		}
 		
 		return null;

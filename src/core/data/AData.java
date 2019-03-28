@@ -1,6 +1,7 @@
 package core.data;
 
 import java.net.Inet4Address;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Set;
@@ -116,5 +117,21 @@ public abstract class AData {
 	
 	public JsonArray getPropertyObjectArray(String property) {
 		return getData().getJsonArray(property);
+	}
+	
+	
+	public final Boolean isValidURI(String uriToCheck) {
+        try { 
+            new URL(uriToCheck).toURI(); 
+        } 
+        catch (Exception e) { 
+            return false; 
+        } 
+
+        return true; 
+	}
+	
+	public final Boolean isValidIP(String ipToCheck){
+		return stringToIP(ipToCheck) != null; 
 	}
 }

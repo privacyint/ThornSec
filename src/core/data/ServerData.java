@@ -142,7 +142,7 @@ class ServerData extends ADeviceData {
 				Set<Integer> ports = super.parseIntList(row.getString("ports", "80,443"));
 				Integer cidr = super.parseInt(row.getString("cidr", "32"));
 				
-				super.addRequiredEgress(destination, ports, cidr);
+				super.addRequiredEgress(destination, cidr, ports);
 			}
 		}
 

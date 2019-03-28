@@ -3,6 +3,10 @@ package core.data;
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Vector;
+
+import javax.json.JsonObject;
+import javax.swing.JOptionPane;
+
 import java.util.Set;
 
 abstract class ADeviceData extends AData {
@@ -26,8 +30,7 @@ abstract class ADeviceData extends AData {
 	private String defaultPassword;
 	private String emailAddress;
 	
-	private HashMap<String, Set<Integer>> requiredEgress;
-	private HashMap<String, Integer> requiredEgressCIDR;
+	private HashMap<String, HashMap<Integer, Set<Integer>>> requiredEgress;
 	private Vector<String> requiredForward;
 	private Vector<String> requiredIngress;
 
@@ -53,8 +56,7 @@ abstract class ADeviceData extends AData {
 		this.defaultPassword = null;
 		this.emailAddress    = null;
 		
-		this.requiredEgress     = new HashMap<String, Set<Integer>>();
-		this.requiredEgressCIDR = new HashMap<String, Integer>();
+		this.requiredEgress     = new HashMap<String, HashMap<Integer, Set<Integer>>>();
 		this.requiredForward    = new Vector<String>();
 		this.requiredIngress    = new Vector<String>();
 	}
@@ -62,31 +64,73 @@ abstract class ADeviceData extends AData {
 	/*
 	 * Setters
 	 */
-	protected void addRequiredEgress(String destination, Set<Integer> ports, Integer cidr) {
-		this.requiredEgress.put(destination, ports);
-		this.requiredEgressCIDR.put(destination, cidr);
+	final protected void addRequiredEgress(String destination, Integer cidr, Set<Integer> ports) {
+        //First check we're not trying to ingest garbage
+		if (!isValidURI(destination) && !isValidIP(destination)) {
+			JOptionPane.showMessageDialog(null, destination + " appears to be an invalid address.");
+			System.exit(1);
+        }
+
+        if (cidr < 1 || cidr > 32) {
+			JOptionPane.showMessageDialog(null, cidr + " is an invalid CIDR. Its value must be 1-32 (inclusive).");
+			System.exit(1);
+		}
+        
+        for (Integer port : ports) {
+        	if (port < 1 || port > 65535) {
+    			JOptionPane.showMessageDialog(null, port + " is an invalid port number. Its value must be 1-65535 (inclusive).");
+    			System.exit(1);
+        	}
+        }
+        
+        //We still here? Good!
+		HashMap<Integer, Set<Integer>> deets = new HashMap<Integer, Set<Integer>>();
+		deets.put(cidr, ports);
+		
+		this.requiredEgress.put(destination, deets);
 	}
 	
-	protected void addRequiredEgress(String destination, Set<Integer> ports) {
-		addRequiredEgress(destination, ports, 32);
+	final protected void addRequiredEgress(String destination, Set<Integer> ports) {
+		addRequiredEgress(destination, 32, ports);
 	}
 	
-	protected void addRequiredForward(String destination) {
+	final protected void addRequiredForward(String destination) {
 		this.requiredForward.addElement(destination);
 	}
 
-	protected void addRequiredIngress(String source) {
-		this.requiredIngress.addElement(source);
+	final protected void addRequiredIngress(String sourceIP) {
+		if (!isValidIP(sourceIP)) {
+			JOptionPane.showMessageDialog(null, sourceIP + " appears to be an invalid address.");
+			System.exit(1);
+        }
+		
+		this.requiredIngress.addElement(sourceIP);
 	}
-	protected void setFirstOctet(Integer octet) {
+	
+	final protected void setFirstOctet(Integer octet) {
+		if (octet < 0 || octet > 255) {
+			JOptionPane.showMessageDialog(null, octet + " is an invalid octet. Its value must be 0-255 (inclusive).");
+			System.exit(1);
+		}
+		
 		this.firstOctet = octet;
 	}
 
-	protected void setSecondOctet(Integer octet) {
+	final protected void setSecondOctet(Integer octet) {
+		if (octet < 0 || octet > 255) {
+			JOptionPane.showMessageDialog(null, octet + " is an invalid octet. Its value must be 0-255 (inclusive).");
+			System.exit(1);
+		}
+
 		this.secondOctet = octet;
 	}
 	
-	protected void setThirdOctet(Integer octet) {
+	final protected void setThirdOctet(Integer octet) {
+		if (octet < 0 || octet > 255) {
+			JOptionPane.showMessageDialog(null, octet + " is an invalid octet. Its value must be 0-255 (inclusive).");
+			System.exit(1);
+		}
+
 		this.thirdOctet = octet;
 	}
 
@@ -203,12 +247,8 @@ abstract class ADeviceData extends AData {
 		return stringToIP("255.255.255.252");
 	}
 	
-	public HashMap<String, Set<Integer>> getRequiredEgress() {
+	public HashMap<String, HashMap<Integer, Set<Integer>>> getRequiredEgress() {
 		return this.requiredEgress;
-	}
-	
-	public Integer getRequiredEgressCIDR(String destination) {
-		return this.requiredEgressCIDR.get(destination);
 	}
 	
 	public Vector<String> getRequiredForward() {

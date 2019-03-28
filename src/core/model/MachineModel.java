@@ -29,8 +29,7 @@ public abstract class MachineModel extends AModel {
 	private Vector<Integer> listen;
 
 	private HashMap<String, Set<Integer>> ingress;
-	private HashMap<String, Set<Integer>> egress;
-	private HashMap<String, Integer> egressCIDRs;
+	private HashMap<String, HashMap<Integer, Set<Integer>>> egress;
 	private HashMap<String, Set<Integer>> forward;
 	private HashMap<String, Set<Integer>> dnat;
 
@@ -50,8 +49,7 @@ public abstract class MachineModel extends AModel {
 		this.getNetworkIfaces().init();
 		
 		this.ingress     = new HashMap<String, Set<Integer>>();
-		this.egress      = new HashMap<String, Set<Integer>>();
-		this.egressCIDRs = new HashMap<String, Integer>();
+		this.egress      = new HashMap<String, HashMap<Integer, Set<Integer>>>();
 		this.forward     = new HashMap<String, Set<Integer>>();
 		this.dnat        = new HashMap<String, Set<Integer>>();
 		this.listen      = new Vector<Integer>();
@@ -70,8 +68,10 @@ public abstract class MachineModel extends AModel {
 		
 		if (networkModel.getData().getRequiredEgress(getLabel()) != null) {
 			for (String uri : networkModel.getData().getRequiredEgress(getLabel()).keySet()) {
-				this.egress.put(uri, networkModel.getData().getRequiredEgress(getLabel()).get(uri));
-				this.egressCIDRs.put(uri, networkModel.getData().getCIDR(getLabel(), uri));
+				HashMap<Integer, Set<Integer>> value = networkModel.getData().getRequiredEgress(getLabel()).get(uri);
+				for (Integer cidr : value.keySet()) {
+					addRequiredEgress(uri, cidr, value.get(cidr).toArray(new Integer[value.get(cidr).size()]));
+				}
 			}
 		}
 	}
@@ -275,22 +275,21 @@ public abstract class MachineModel extends AModel {
 	}
 	
 	public void addRequiredEgress(String uri, Integer cidr, Integer[] ports) {
-		Set<Integer> extant = this.egress.get(uri);
+		HashMap<Integer, Set<Integer>> extant = this.egress.get(uri);
 		
 		if (extant == null) {
-			extant = new HashSet<Integer>();
+			extant = new HashMap<Integer, Set<Integer>>();
 		}
 		
-		extant.addAll(Arrays.asList(ports));
+		extant.put(cidr, new HashSet<Integer>(Arrays.asList(ports)));
 		this.egress.put(uri, extant);
-		this.egressCIDRs.put(uri, cidr);
 	}
 	
 	public Integer getCIDR(String uri) {
-		return this.egressCIDRs.get(uri);
+		return (Integer) this.egress.get(uri).keySet().toArray()[0];
 	}
 	
-	public HashMap<String, Set<Integer>> getRequiredEgress() {
+	public HashMap<String, HashMap<Integer, Set<Integer>>> getRequiredEgress() {
 		return this.egress;
 	}
 	
