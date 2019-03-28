@@ -167,7 +167,7 @@ public class Router extends AStructuredProfile {
 	private Vector<IUnit> machineEgressRules(MachineModel machine) {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		HashMap<String, Set<Integer>> egress = machine.getRequiredEgress();
+		HashMap<String, HashMap<Integer, Set<Integer>>> egress = machine.getRequiredEgress();
 
 		for (String uri : egress.keySet()) {
 			InetAddress[] destinations = hostToInetAddress(uri);
@@ -178,7 +178,7 @@ public class Router extends AStructuredProfile {
 			
 			String rule = "";
 			rule += "-p tcp";
-			rule += (egress.get(uri).isEmpty() || egress.get(uri).contains(0)) ? "" : " -m multiport --dports " + collection2String(egress.get(uri));
+			rule += (egress.get(uri).isEmpty() || egress.get(uri).containsValue(0)) ? "" : " -m multiport --dports " + collection2String(egress.get(uri));
 			rule += (uri.equals("255.255.255.255")) ? "" : " -m set --match-set " + setName + " dst";
 			rule += " -j ACCEPT";
 			
