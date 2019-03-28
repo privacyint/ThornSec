@@ -6,7 +6,6 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 
 import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 
@@ -537,10 +536,8 @@ public class NetworkData extends AData {
 
 			        this.defaultServerData.setDebianIsoUrl(url);
 
-				} catch (MalformedURLException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
+				}
+				catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
@@ -569,10 +566,8 @@ public class NetworkData extends AData {
 			        
 		            this.defaultServerData.setDebianIsoSha512(hash);
 
-				} catch (MalformedURLException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
+				}
+				catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
@@ -646,7 +641,11 @@ public class NetworkData extends AData {
 	}
 	
 	public String getDeviceType(String device) {
-		return this.devices.get(device).getClass().getSimpleName().replace("DeviceData", "");
+		String type = this.devices.get(device).getClass().getSimpleName().replace("DeviceData", "");
+		
+		assert !type.isEmpty();
+		
+		return type;
 	}
 	
 	public String getUserDefaultPassword(String user) {
