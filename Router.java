@@ -22,6 +22,7 @@ import core.model.InterfaceModel;
 import core.model.MachineModel;
 import core.model.NetworkModel;
 import core.model.ServerModel;
+import core.model.UserModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileOwnUnit;
@@ -544,16 +545,16 @@ public class Router extends AStructuredProfile {
 				.replace(",null", "");
 	}
 	
-	private String buildUserDailyBandwidthEmail(String sender, String recipient, String subject, String username, boolean includeBlurb) {
+	private String buildUserDailyBandwidthEmail(String sender, String subject, DeviceModel user, Boolean includeBlurb) {
 		String email = "";
 		email += "echo -e \\\"";
 		
 		email += "subject:" + subject + "\\n";
 		email += "from:" + sender + "\\n";
-		email += "recipients:" + recipient + "\\n";
+		email += "recipients:" + user.getEmailAddress() + "\\n";
 		email += "\\n";
-		email += "UL: \\`iptables -L " + cleanString(username) + "_egress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
-		email += "DL: \\`iptables -L " + cleanString(username) + "_ingress -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`";
+		email += "UL: \\`iptables -L " + user.getEgressChain() + " -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`\\n";
+		email += "DL: \\`iptables -L " + user.getIngressChain() + " -v -n | tail -n 2 | head -n 1 | awk '{ print \\$2 }'\\`";
 		
 		if (includeBlurb) {
 			email += "\\n";
@@ -581,7 +582,7 @@ public class Router extends AStructuredProfile {
 		}
 		
 		email += "\\\"";
-		email += "|sendmail \"" + recipient + "\"\n\n";
+		email += "|sendmail \"" + user.getEmailAddress() + "\"\n\n";
 		
 		return email;
 	}
@@ -597,11 +598,12 @@ public class Router extends AStructuredProfile {
 			if (!networkModel.getDeviceModel(user.getLabel()).getInterfaces().isEmpty()) { //But only if they're an internal user 
 				//Email the user only
 				script += "\n\n";
+
 				script += buildUserDailyBandwidthEmail(networkModel.getData().getAdminEmail(),
-												user.getLabel() + "@" + networkModel.getData().getDomain(me.getLabel()),
 												"[" + user.getLabel() + "." + networkModel.getData().getLabel() + "] Daily Bandwidth Digest",
-												user.getLabel(),
+												user,
 												true);
+
 				script += "iptables -Z " + user.getIngressChain() + "\n";
 				script += "iptables -Z " + user.getEgressChain();
 			}
