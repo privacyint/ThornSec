@@ -270,4 +270,7 @@ abstract class ADeviceData extends AData {
 		
 		return this.hostname;
 	}
+
+	@Override
+	public void read(JsonObject data) {	/* Stub */ }
 }

@@ -3,16 +3,19 @@ package core.data;
 import java.net.Inet4Address;
 import java.net.URL;
 import java.net.UnknownHostException;
+
 import java.util.HashSet;
 import java.util.Set;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+
 import javax.swing.JOptionPane;
 
 public abstract class AData {
 
-	private String     label;
+	private final String label;
+	
 	private JsonObject data;
 
 	protected AData(String label) {
@@ -24,25 +27,25 @@ public abstract class AData {
 	/*
 	 * Getters
 	 */
-	public String getLabel() {
+	public final String getLabel() {
 		return this.label;
 	}
 	
-	public JsonObject getData() {
+	public final JsonObject getData() {
 		return this.data;
 	}
 	
 	/*
 	 * Setters
 	 */
-	protected void setData(JsonObject data) {
+	protected final void setData(JsonObject data) {
 		this.data = data;
 	}
 
 	/*
 	 * Helpers
 	 */
-	protected Set<Integer> parseIntList(String toParse) {
+	protected final Set<Integer> parseIntList(String toParse) {
 		Set<Integer> integers = new HashSet<Integer>();
 		
 		if (toParse != null && !toParse.isEmpty()) {
@@ -65,7 +68,7 @@ public abstract class AData {
 		return integers;
 	}
 	
-	protected Integer parseInt(String toParse) {
+	protected final Integer parseInt(String toParse) {
 		Integer dave;
 		
 		try {
@@ -78,7 +81,7 @@ public abstract class AData {
 		return dave;
 	}
 	
-	protected Inet4Address stringToIP(String toParse) {
+	protected final Inet4Address stringToIP(String toParse) {
 		Object ip = null;
 		
 		//If we don't check this, null == 127.0.0.1, which throws everything :)
@@ -95,11 +98,11 @@ public abstract class AData {
 		return (Inet4Address) ip;
 	}
 	
-	public String getProperty(String property, String defaultVal) {
-		return this.getData().getString(property, defaultVal);
+	public final String getProperty(String property, String defaultVal) {
+		return getData().getString(property, defaultVal);
 	}
 	
-	public String[] getPropertyArray(String property) {
+	public final String[] getPropertyArray(String property) {
 		JsonArray jsonProperties = getPropertyObjectArray(property);
 
 		if (jsonProperties != null) {
@@ -115,7 +118,7 @@ public abstract class AData {
 		}
 	}
 	
-	public JsonArray getPropertyObjectArray(String property) {
+	public final JsonArray getPropertyObjectArray(String property) {
 		return getData().getJsonArray(property);
 	}
 	
