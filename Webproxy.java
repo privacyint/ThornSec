@@ -92,7 +92,7 @@ public class Webproxy extends AStructuredProfile {
 		sslConfig += "    return 301 https://\\$host\\$request_uri;\n";
 		sslConfig += "}";
 
-		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("nginx_backend_custom_blocks", "nginx_installed", "nginx", "nginx", "0750"));
+		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("nginx_custom_blocks", "nginx_installed", "nginx", "nginx", "0750"));
 
 		webserver.addLiveConfig("default", sslConfig);
 		
@@ -117,10 +117,11 @@ public class Webproxy extends AStructuredProfile {
 				
 				String[] cnames  = networkModel.getData().getCnames(backend);
 				String   domain  = networkModel.getData().getDomain(backend);
-				String   logDir  = "/var/log/nginx/" + me.getLabel() + "." + networkModel.getData().getDomain(me.getLabel()) + "/";
+				String   logDir  = "/var/log/nginx/" + backend + "." + domain + "/";
 
 				String nginxConf = "";
-			
+				
+				units.addElement(new DirUnit(backend + "_log_dir", "proceed", logDir, "Could not create the directory for " + backend + "'s logs. Nginx will refuse to start."));
 				units.addAll(((ServerModel)me).getBindFsModel().addBindPoint(backend + "_tls_certs", "proceed", "/media/metaldata/tls/" + backend, "/media/data/tls/" + backend, "root", "root", "600", "/media/metaldata", false));
 				
 				//Generated from https://mozilla.github.io/server-side-tls/ssl-config-generator/ (Nginx/Modern) & https://cipherli.st/
@@ -173,7 +174,7 @@ public class Webproxy extends AStructuredProfile {
 				
 				webserver.addLiveConfig(backend, nginxConf);
 				
-				units.addElement(new CustomFileUnit("nginx_custom_block_" + backend, "nginx_backend_custom_bindpoint_created", "/media/data/nginx_custom_blocks/" + backend + ".conf"));
+				units.addElement(new CustomFileUnit("nginx_custom_block_" + backend, "nginx_custom_blocks_data_bindpoint_created", "/media/data/nginx_custom_blocks/" + backend + ".conf"));
 			}
 		}
 		else {
