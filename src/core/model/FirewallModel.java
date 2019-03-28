@@ -59,6 +59,9 @@ public class FirewallModel extends AModel {
 	
 	/**
 	 * Gets the firewall configuration units.
+	 * 
+	 * @return Configuration units
+	 */
 	public Vector<IUnit> getUnits() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		

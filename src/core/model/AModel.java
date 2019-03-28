@@ -19,10 +19,7 @@ public abstract class AModel {
 	public String getLabel() {
 		return label;
 	}
-	
-	/**
-	public void init() {
-		/* Stub */
-	}
 
+	public void init() { /* stub */	}
+	
 }

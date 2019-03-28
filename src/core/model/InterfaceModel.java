@@ -27,6 +27,7 @@ public class InterfaceModel extends AModel {
 	 * Gets the configuration/audit units.
 	 *
 	 * @return the units
+	 */
 	public Vector<IUnit> getUnits() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		units.addElement(new SimpleUnit("net_conf_persist", "proceed",
