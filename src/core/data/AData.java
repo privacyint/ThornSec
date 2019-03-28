@@ -44,15 +44,19 @@ public abstract class AData {
 	protected Set<Integer> parseIntList(String toParse) {
 		Set<Integer> integers = new HashSet<Integer>();
 		
-		if (toParse != null) {
+		if (toParse != null && !toParse.isEmpty()) {
 			//Don't really care what delimiters people use, tbh
-			String[] intStrings = toParse.split("[^0-9]");
+			String[] intStrings = toParse.trim().split("[^0-9]");
 			
 			for (String intString : intStrings) {
 				Integer parsed = parseInt(intString);
 				
 				if (parsed != null) {
 					integers.add(parsed);
+				}
+				else {
+					JOptionPane.showMessageDialog(null, "I've tried to parse a non-integer.\n\nThere's a problem with " + toParse + "\n\nPlease fix this in your JSON");
+					System.exit(1);
 				}
 			}
 		}
@@ -77,7 +81,7 @@ public abstract class AData {
 		Object ip = null;
 		
 		//If we don't check this, null == 127.0.0.1, which throws everything :)
-		if (toParse == null) { return null; }
+		if (toParse == null || toParse.isEmpty()) { return null; }
 		
 		try {
 			ip = Inet4Address.getByName(toParse);
