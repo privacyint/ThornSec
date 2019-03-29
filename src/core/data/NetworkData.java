@@ -637,7 +637,7 @@ public class NetworkData extends AData {
 	}
 
 	public Set<Integer> getDevicePorts(String device) {
-		return this.devices.get(device).getPorts();
+		return this.devices.get(device).getListenPorts();
 	}
 	
 	public String getDeviceType(String device) {

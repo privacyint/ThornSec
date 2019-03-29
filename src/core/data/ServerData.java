@@ -81,7 +81,7 @@ class ServerData extends ADeviceData {
 
 		super.setFirstOctet(10);
 		super.setDomain(super.getProperty("domain", null));
-		super.setPorts(getProperty("ports", null));
+		super.setListenPorts(getProperty("ports", null));
 		super.setCnames(super.getPropertyArray("cnames"));
 		super.setHostname(super.getProperty("hostname", null));
 		super.setEmailAddress(getProperty("email", getLabel() + "@" + getDomain()));

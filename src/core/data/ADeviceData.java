@@ -138,10 +138,20 @@ abstract class ADeviceData extends AData {
 		this.domain = domain;
 	}
 	
-	protected void setPorts(String ports) {
-		this.ports = super.parseIntList(ports);
+	/**
+	 * Sets the ports.
+	 *
+	 * @param ports the new ports
+	 */
+	protected void setListenPorts(String ports) {
+		for (Integer port : super.parseIntList(ports)) {
+			addListenPort(port);
+		}
 	}
 	
+	protected void addListenPort(Integer port) {
+		this.listenPorts.add(port);
+	}
 	protected void setCnames(String[] cnames) {
 		this.cnames = cnames;
 	}
@@ -211,8 +221,13 @@ abstract class ADeviceData extends AData {
 		return this.isManaged;
 	}
 	
-	public Set<Integer> getPorts() {
-		return this.ports;
+	/**
+	 * Gets the ports this device requires listening on.
+	 *
+	 * @return the ports
+	 */
+	public Set<Integer> getListenPorts() {
+		return this.listenPorts;
 	}
 	
 	public String[] getMacs() {

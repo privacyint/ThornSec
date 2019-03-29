@@ -15,7 +15,7 @@ class InternalDeviceData extends ADeviceData {
 		super.setMacs(super.getPropertyArray("macs"));
 		super.setIsThrottled(Boolean.parseBoolean(super.getProperty("throttle", "true")));
 		super.setIsManaged(Boolean.parseBoolean(super.getProperty("managed", "false")));
-		super.setPorts(getProperty("ports", null));
+		super.setListenPorts(getProperty("ports", null));
 		super.setCnames(super.getPropertyArray("cnames"));
 
 		super.setFirstOctet(10);

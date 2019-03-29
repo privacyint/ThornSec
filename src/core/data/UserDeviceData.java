@@ -18,7 +18,7 @@ class UserDeviceData extends ADeviceData {
 		super.setMacs(getPropertyArray("macs"));
 		super.setIsThrottled(Boolean.parseBoolean(getProperty("throttle", "true")));
 		super.setIsManaged(Boolean.parseBoolean(getProperty("managed", "false")));
-		super.setPorts(getProperty("ports", null));
+		super.setListenPorts(getProperty("ports", null));
 		super.setCnames(super.getPropertyArray("cnames"));
 
 		super.setFirstOctet(10);

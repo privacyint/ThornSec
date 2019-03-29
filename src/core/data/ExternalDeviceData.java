@@ -12,7 +12,7 @@ class ExternalDeviceData extends ADeviceData {
 		super.setData(data);
 		
 		super.setMacs(super.getPropertyArray("macs"));
-		super.setPorts(getProperty("ports", null));
+		super.setListenPorts(getProperty("ports", null));
 
 		super.setIsThrottled(Boolean.parseBoolean(getProperty("throttle", "true")));
 		super.setIsManaged(Boolean.parseBoolean(getProperty("managed", "false")));
