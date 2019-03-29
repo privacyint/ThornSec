@@ -228,7 +228,7 @@ public class ServerModel extends MachineModel {
 			try {
 				units.addAll(profile.getUnits());
 			} catch (Exception e) {
-				JOptionPane.showMessageDialog(null, profile + " has thrown an error.\n\nThe program will terminate");
+				JOptionPane.showMessageDialog(null, profile + " has thrown an error.\n\nThe program will terminate.\n\n" + e);
 				System.exit(1);
 			}
 		}
