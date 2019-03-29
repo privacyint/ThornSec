@@ -386,10 +386,6 @@ public class ServerModel extends MachineModel {
 		
 		return units;
 	}
-
-	public String getLabel() {
-		return this.label;
-	}
 	
 	public FirewallModel getFirewallModel() {
 		return this.firewall;

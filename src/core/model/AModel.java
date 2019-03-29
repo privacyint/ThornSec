@@ -16,7 +16,7 @@ public abstract class AModel {
 		this(label, null, networkModel);
 	}
 
-	public String getLabel() {
+	public final String getLabel() {
 		return label;
 	}
 
