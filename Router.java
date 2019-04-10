@@ -179,7 +179,7 @@ public class Router extends AStructuredProfile {
 			
 			String rule = "";
 			rule += "-p tcp";
-			rule += (egress.get(uri).isEmpty() || egress.get(uri).containsValue(0)) ? "" : " -m multiport --dports " + collection2String(egress.get(uri));
+			rule += (egress.get(uri).values().isEmpty() || collection2String(egress.get(uri).values()).equals("0")) ? "" : " -m multiport --dports " + collection2String(egress.get(uri).values());
 			rule += (uri.equals("255.255.255.255")) ? "" : " -m set --match-set " + setName + " dst";
 			rule += " -j ACCEPT";
 			
@@ -335,7 +335,7 @@ public class Router extends AStructuredProfile {
 			//These are management ports
 			Set<Integer> ports = ((DeviceModel) machine).getManagementPorts();
 			
-			if (!ports.isEmpty() && ports != null) {
+			if (ports != null && !ports.isEmpty()) {
 				String managementRule = "";
 				managementRule += "-p tcp";
 				managementRule += " -m multiport --dports " + collection2String(ports);
