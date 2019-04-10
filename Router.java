@@ -22,7 +22,6 @@ import core.model.InterfaceModel;
 import core.model.MachineModel;
 import core.model.NetworkModel;
 import core.model.ServerModel;
-import core.model.UserModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileOwnUnit;
