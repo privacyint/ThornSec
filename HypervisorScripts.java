@@ -114,10 +114,10 @@ public class HypervisorScripts extends AStructuredProfile {
 		mountDataScript += "fi\n";
 		mountDataScript += "\n";
 		mountDataScript += "vm=\\${1}\n";
-		mountDataScript += "src=/srv/VMs/disks/data/\\${vm}/\\${vm}_data.v*\n";
+		mountDataScript += "src=\\$(sudo -u vboxuser_\\\"\\${vm}\\\" VBoxManage showvminfo \\\"\\${vm}\\\" --machinereadable | grep \\\"SAS-1-0\\\" | awk -F\\\" '{print \\$4}')\n";
 		mountDataScript += "dst=/srv/VMs/disks/data/\\${vm}/live/\n";
 		mountDataScript += "\n";
-		mountDataScript += "echo \\\"Mounting \\${vm}'s data disk\\\"\n";
+		mountDataScript += "echo \\\"Mounting \\${vm}'s data disk (\\${src})\\\"\n";
 		mountDataScript += "\n";
 		mountDataScript += "export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;\n";
 		mountDataScript += "\n";
@@ -253,11 +253,11 @@ public class HypervisorScripts extends AStructuredProfile {
 		backupScript += "#!/bin/bash\n";
 		backupScript += "echo \\\"=== Starting internal backup at \\$(date) ===\\\"\n";
 		backupScript += "emailTo=" + networkModel.getData().getAdminEmail() + "\n";
-		backupScript += "emailFrom=" + me.getLabel() + "." + networkModel.getLabel() + "@" + networkModel.getData().getDomain(me.getLabel()) + "\n";
+		backupScript += "emailFrom=" + me.getEmailAddress() + "\n";
 		backupScript += "emailFromRealName=\\\"ThornSec Backup Daemon™ on " + me.getLabel() + "\\\"\n";
 		backupScript += "backupBase=" + backupDirBase + "\n";
 		backupScript += "\n";
-		backupScript += "warnings=\\\"\\n\\\"";
+		backupScript += "warnings=\\\"\\\"\n";
 		backupScript += "\n";
 		backupScript += "for dirPath in " + dataDirBase + "/*/\n";
 		backupScript += "do\n";
@@ -275,12 +275,21 @@ public class HypervisorScripts extends AStructuredProfile {
 		backupScript += "done\n";
 		backupScript += "echo \\\"=== Finished internal backup at \\$(date) ===\\\"\n";
 		backupScript += "\n";
-		backupScript += "(echo -e \\\"\\${warnings}\\nBackup précis:\\n\\\"; egrep -w '===|Backing|sent|total' " + backupScriptsBase + "/backup.latest) |\n"; 
-		backupScript += "mutt \\${emailTo} -e \\\"set realname='\\${emailFromRealName}️' from=\\${emailFrom}\\\" -s \\\"[" + me.getLabel() + "] Backup Complete\\\" -a \\\"" + backupScriptsBase + "/backup.latest\\\"\n";
-		backupScript += "\n";
 		backupScript += "if [ -f external_backup.sh ]; then\n";
 		backupScript += "    ./external_backup.sh\n";
 		backupScript += "fi";
+		backupScript += "\n";
+		backupScript += "(echo -e \\\"\\n\\${warnings}\\nBackup précis:\\n\\\"; egrep -w '===|Backing|sent|total' " + backupScriptsBase + "/backup.latest) |\n"; 
+		backupScript += "mutt \\${emailTo} -e \\\"set realname='\\${emailFromRealName}️' from=\\${emailFrom}\\\" -s \\\"[INFO] [" + me.getLabel() + "] Backup Complete\\\" -a \\\"" + backupScriptsBase + "/backup.latest\\\"\n";
+		backupScript += "\n";
+		backupScript += "if [ ! -z \\\"\\${warnings} \\\" ]; then\n";
+		backupScript += "    (echo -e \\\"\\n\\${warnings}\\\") |\n"; 
+		backupScript += "    mutt ";
+		for (String admin : getNetworkModel().getData().getAdmins(me.getLabel())) {
+			backupScript += getNetworkModel().getDeviceModel(admin).getEmailAddress() + " ";
+		}
+		backupScript += "-e \\\"set realname='\\${emailFromRealName}️' from=\\${emailFrom}\\\" -s \\\"[WARN] [" + me.getLabel() + "] Backup Failed!\\\" -a \\\"" + backupScriptsBase + "/backup.latest\\\"\n";
+		backupScript += "fi\n";
 
 		units.addElement(new FileUnit("metal_backup_script", "proceed", backupScript, backupScriptsBase + "/backup.sh"));
 		units.addElement(new FileOwnUnit("metal_backup_script", "metal_backup_script", backupScriptsBase + "/backup.sh", "root"));
