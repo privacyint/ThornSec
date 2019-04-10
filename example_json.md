@@ -6,7 +6,7 @@
 		* Mandatory, per-network, cannot be declared/overridden on per-server basis *
 		****************************************************************************/
 		//Configuration IP for the network
-		"ip":"10.0.1.1",
+		"ip":"10.0.0.1",
 		//Domain to use on the network
 		"domain":"myorganisation.org",
 		//Password storage/generation GPG key
@@ -17,18 +17,16 @@
 		/****************************************************************************
 		* Optional, per-network, cannot be declared/overridden on per-server basis  *
 		****************************************************************************/
-		//IP address class ({a,b,c}, default a)
-		"class":"a",
-		//External DNS server IP (default 1.1.1.1/1.0.0.1)
+		//Upstream DNS server IP (default 1.1.1.1/1.0.0.1)
 		"dns":["1.1.1.1", "1.0.0.1"],
 		//DNS over TLS? (default false)
 		"dtls":"true",
-		//Whether to ad-block at the router. Rather blunt, use wisely. (default no)
-		"adblocking":"no",
+		//Whether to ad-block at the router. Uses Steven Black's hosts list, use wisely. (default false)
+		"adblocking":"false",
 		//Whether to auto-generate secure passphrases for VMs if they don't already have one in the password store. (default false)
 		"autogenpasswds":"false",
-		//Where to put all VM files on the hypervisor (default /media/VMs)
-		"vmbase":"/media/VMs",		
+		//Where to put all ThornSec-related files on the hypervisor (default /srv/VMs)
+		"vmbase":"/srv/VMs",		
 
 		/****************************************************************************
 		* Optional, server defaults, can be overridden on a per-server basis        *
@@ -43,22 +41,22 @@
 		"sshport":"65422",
 		//Run updates on server if require (default false)
 		"update":"false",
-		//Default "external" interface for a given server. (default enp0s3)
-		"iface":"enp0s3",
+		//Default "external" interface for a given server. (default enp0s17)
+		"lan":[{"iface":"enp0s17"}]
 		//Amount of RAM, in mb, to assign to a service (default 1024)
 		"ram":"1024",
-		//Non-exclusive number of cpus to assign to a service (default 1)
+		//Non-exclusive number of cpus to assign to a service (default 1) - this should be <= the number of *physical* CPUs in the hypervisor
 		"cpus":"8",
 		//Disk size, in mb, to be allocated to the root filesystem of a service (default 8096)
 		"disksize":"8096",
 		//Disk size, in mb, to be allocated to the data storage of a service (default 8096)
 		"datadisksize":"8096",
-		//URL of the debian ISO you wish to use to build VMs (>= 9.0 supported, default 9.1.0-amd64-netinst)
+		//URL of the debian ISO you wish to use to build VMs (>= 9.0 supported, default is pulled from the latest netinst on cdimage.debian.org)
 		"debianisourl":"cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-9.1.0-amd64-netinst.iso",
-		//Known-good sha512 checksum of the above ISO (this comes from debian.org, default 9.1.0-amd64-netinst)
+		//Known-good sha512 checksum of the above ISO (this comes from debian.org, default is pulled from the SHA512SUM file on cdimage.debian.org)
 		"debianisosha512":"697600a110c7a5a1471fbf45c8030dd99b3c570db612044730f09b4624aa49f2a3d79469d55f1c18610c2414e9fffde1533b9a6fab6f3af4b5ba7c2d59003dc1",		
-		//Debian mirror to be used for packages (default ftp.uk.debian.org)
-		"debianmirror":"ftp.uk.debian.org",
+		//Debian mirror to be used for packages (default free.hands.com)
+		"debianmirror":"free.hands.com",
 		//Subdirectory to be used for pulling packages (default /debian)
 		"debiandirectory":"/debian",
 		//Admins (accounts to create on our services)
@@ -78,16 +76,12 @@
 			"ppp_router":{
 				//Declare it's a router
 				"types":["router"],
-				//Give it the subnet of 1
-				"subnet":"1",
-				//Tell it to use PPPoE for external connection
-				"extconnection":"ppp",
-				//Declare the PPPoE iface
-				"extiface":"ppp0",
-				//Physical external iface to negotiate ppp
-				"pppiface":"enp2s0",
-				//Physical internal iface
-				"iface":"enp3s0"
+				//Declare the PPPoE iface on WAN
+				"wan":[ {"iface":"enp0s0", "inettype":"ppp"} ],
+				//Declare the LAN iface (bridged to lan0 internally)
+				"lan":[ {"iface":"enp2s2"} ],
+				//Verbose logging from iptables
+				"debug":"true",
 			},
 			//Example of a router configured using dhcp
 			//This is probably only used if you're trying to create a network inside your main network (VMs, perhaps)
@@ -95,51 +89,35 @@
 			"dhcp_router":{
 				//Declare it's a router
 				"types":["router"],
-				//Give it the subnet of 1
-				"subnet":"1",
-				//Tell it to use dhcp for external connection
-				"extconnection":"dhcp",
-				//Declare the external iface to listen to
-				"extiface":"enp2s0",
-				//Physical internal iface
-				"iface":"enp3s0"
+				"wan":[ {"iface":"enp1s2", "inettype":"dhcp"} ],
+				"lan":[ {"iface":"enp4s2"} ],
+				"debug":"true",
 			},
 			//Example of a router configured statically
 			//You'll probably only use this for externally hosted networks
 			"static_router":{
 				//Declare it's a router
 				"types":["router"],
-				//Give it the subnet of 1
-				"subnet":"1",
-				//Tell it to use static external connection
-				"extconnection":"static",
-				//Declare the external iface to listen to
-				"extiface":"enp2s0",
-				//Static configuration array
-				"extconfig":[ {"address":"123.321.123.321", "netmask":"255.255.255.224", "broadcast":"123.321.123.255", "gateway":"123.321.123.1"}
-				]
-				//Physical internal iface
-				"iface":"enp3s0"
+				//Tell it to use static external connection(s)
+				"wan":[
+					{ "iface":"eno1", "inettype":"static", "address":"1.2.3.4", "netmask":"255.255.255.0", "broadcast":"1.2.3.255", "gateway":"1.2.3.1" },
+					{ "iface":"eno1", "inettype":"static", "address":"2.3.4.5", "netmask":"255.255.255.0", "broadcast":"2.3.4.255"}
+				],
+				"lan":[ { "iface":"eno2" } ],
 			},
 			"hypervisor":{
 				//Tell it to be a hypervisor machine
 				"types":["metal"],
-				//Give it a subnet
-				"subnet":"2",
-				//This is the router-facing iface
-				"extiface":"enp3s0",
-				//This is the internal-facing iface (for VMs)
-				"iface":"enp3s0",
-				//Mac address of the physical iface
-				"mac":"de:ad:be:ef:ca:fe"
+				"lan":[ {"iface":"enp1s0f0", "mac":"de:ad:be:ef:ca:fe"} ],
+				"allowegress": [
+					{"destination":"backupserver.com", "ports":"443"}
+				]
 			},
 			"nginx_lb":{
 				//This is a service
 				"types":["service"],
-				"subnet":"5",
 				//On our hypervisor
 				"metal":"hypervisor",
-				"mac":"de:ad:be:ef:ca:fe",
 				//Which is a reverse proxy
 				"profiles":["Webproxy"],
 				//Proxying the following web services
@@ -149,21 +127,17 @@
 			},
 			"owncloud":{
 				"types":["service"],
-				"subnet":"10",
 				"metal":"hypervisor",
-				"mac":"de:ad:be:ef:ca:fe",
 				//Override the data storage for this machine
 				"datadisksize":"61440",
-				//As it's Owncloud
-				"profiles":["Owncloud"],
+				//As it's Nextcloud
+				"profiles":["Nextcloud"],
 				//Which has many names
-				"cnames":["www.owncloud", "contacts", "calendar", "documents"]
+				"cnames":["www.nextcloud", "contacts", "calendar", "documents"]
 			},
 			"etherpad":{
 				"types":["service"],
-				"subnet":"22",
 				"metal":"hypervisor",
-				"mac":"de:ad:be:ef:ca:fe",
 				"profiles":["Etherpad"],
 				"cnames":["pads"],
 				//We want a different set of admins on this machine
@@ -177,11 +151,10 @@
 				"types":["service"],
 				"subnet":"3",
 				"metal":"hypervisor",
-				"mac":"de:ad:be:ef:ca:fe",
 				"profiles":["LibreSwan"],
 				"cnames":["office"],
 				//We want to DNAT external traffic coming into the hypervisor directly to this machine on its VPN UDP ports
-				"externalip":"10.0.2.2"
+				"externalip":"1.2.3.4"
 			}
 		},
 		
@@ -198,8 +171,8 @@
 
 
 		"internaldevices":{
-			//Internal connections only
-			"printer": {"macs":["de:ad:be:ef:ca:fe"], "throttle":"true", "managed":"true"},
+			//Internal connections only, but can be managed by admins on ports {22|80}
+			"printer": {"macs":["de:ad:be:ef:ca:fe"], "throttle":"true", "managed":"true", "ports":"22,80"},
 		},
 		
 		"externaldevices":{
