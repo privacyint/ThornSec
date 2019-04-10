@@ -8,7 +8,7 @@ import java.util.Set;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 
-class ServerData extends ADeviceData {
+public class ServerData extends ADeviceData {
 
 	private String[] adminUsers;
 	private String[] remoteAdminIps;

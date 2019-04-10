@@ -25,16 +25,19 @@ import javax.json.JsonReader;
 import javax.json.stream.JsonParsingException;
 import javax.swing.JOptionPane;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class NetworkData.
+ */
 public class NetworkData extends AData {
-
 	private String myUser;
 	private String adminEmail;
 	private String gpg;
-
 	private InetAddress ip;
 
 	private Boolean adBlocking;
 	private Boolean autoGenPasswds;
+	
 	private Boolean vpnOnly;
 	private Boolean dtls;
 	private Boolean autoGuest;
@@ -84,8 +87,9 @@ public class NetworkData extends AData {
 		String include = data.getString("include", null);
 		if (include != null) {
 			this.readInclude(include);
-		} else {
-			defaultServerData.read(data);
+		}
+		else {
+			this.defaultServerData.read(data);
 			
 			this.upstreamDNS = getIPAddressArray(data, "dns");
 
@@ -101,10 +105,10 @@ public class NetworkData extends AData {
 			this.vpnOnly        = Boolean.parseBoolean(data.getString("vpnonly", "false"));
 			this.autoGuest      = Boolean.parseBoolean(data.getString("autoguest", "false"));
 
-			this.readServers(data.getJsonObject("servers"));
-			this.readInternalDevices(data.getJsonObject("internaldevices"));
-			this.readExternalDevices(data.getJsonObject("externaldevices"));
-			this.readUserDevices(data.getJsonObject("users"));
+			readServers(data.getJsonObject("servers"));
+			readInternalDevices(data.getJsonObject("internaldevices"));
+			readExternalDevices(data.getJsonObject("externaldevices"));
+			readUserDevices(data.getJsonObject("users"));
 		}
 	}
 
