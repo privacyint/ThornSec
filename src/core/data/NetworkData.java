@@ -46,6 +46,11 @@ public class NetworkData extends AData {
 	private LinkedHashMap<String, ServerData>  servers;
 	private LinkedHashMap<String, ADeviceData> devices;
 	
+	/**
+	 * Instantiates a new network data.
+	 *
+	 * @param label the network label
+	 */
 	public NetworkData(String label) {
 		super(label);
 		
@@ -69,6 +74,9 @@ public class NetworkData extends AData {
 		this.devices = new LinkedHashMap<String, ADeviceData>();
 	}
 
+	/**
+	 * Reads in and populates this network's data
+	 */
 	@Override
 	public void read(JsonObject data) {
 		super.setData(data);
@@ -100,6 +108,13 @@ public class NetworkData extends AData {
 		}
 	}
 
+	/**
+	 * Gets the IP address array.
+	 *
+	 * @param data the data
+	 * @param property the property
+	 * @return the IP address array (or empty array if nothing to convert)
+	 */
 	private InetAddress[] getIPAddressArray(JsonObject data, String property) {
 		JsonArray jsonIPAddresses = data.getJsonArray(property);
 
@@ -117,6 +132,11 @@ public class NetworkData extends AData {
 		}
 	}
 	
+	/**
+	 * Read included JSON files.
+	 *
+	 * @param include the path to the file to include
+	 */
 	private void readInclude(String include) {
 		String rawIncludeData = null;
 		
@@ -138,6 +158,11 @@ public class NetworkData extends AData {
 		}
 	}
 
+	/**
+	 * Read servers.
+	 *
+	 * @param jsonServers the json servers
+	 */
 	private void readServers(JsonObject jsonServers) {
 		String[] servers = jsonServers.keySet().toArray(new String[jsonServers.size()]);
 		
@@ -149,6 +174,11 @@ public class NetworkData extends AData {
 		}
 	}
 
+	/**
+	 * Read external devices.
+	 *
+	 * @param jsonDevices the json devices
+	 */
 	private void readExternalDevices(JsonObject jsonDevices) {
 		if (jsonDevices != null) {
 			String[] devices = jsonDevices.keySet().toArray(new String[jsonDevices.size()]);
@@ -162,6 +192,11 @@ public class NetworkData extends AData {
 		}
 	}
 
+	/**
+	 * Read internal devices.
+	 *
+	 * @param jsonDevices the json devices
+	 */
 	private void readInternalDevices(JsonObject jsonDevices) {
 		if (jsonDevices != null) {
 			String[] devices = jsonDevices.keySet().toArray(new String[jsonDevices.size()]);
@@ -175,6 +210,11 @@ public class NetworkData extends AData {
 		}
 	}
 	
+	/**
+	 * Read user devices.
+	 *
+	 * @param jsonDevices the json devices
+	 */
 	private void readUserDevices(JsonObject jsonDevices) {
 		String[] devices = jsonDevices.keySet().toArray(new String[jsonDevices.size()]);
 
@@ -192,10 +232,21 @@ public class NetworkData extends AData {
 		}
 	}
 
+	/**
+	 * Gets the server profiles.
+	 *
+	 * @param server the server
+	 * @return the server profiles
+	 */
 	public String[] getServerProfiles(String server) {
 		return this.servers.get(server).getProfiles();
 	}
 	
+	/**
+	 * Gets the user.
+	 *
+	 * @return the user
+	 */
 	// Network only data
 	public String getUser() {
 		if (this.myUser ==  null) {
@@ -206,30 +257,65 @@ public class NetworkData extends AData {
 		return this.myUser;
 	}
 
+	/**
+	 * Gets the dns.
+	 *
+	 * @return the dns
+	 */
 	public InetAddress[] getDNS() {
 		return this.upstreamDNS;
 	}
 
+	/**
+	 * Gets the dtls.
+	 *
+	 * @return the dtls
+	 */
 	public Boolean getDTLS() {
 		return this.dtls;
 	}
 	
+	/**
+	 * Gets the gpg.
+	 *
+	 * @return the gpg
+	 */
 	public String getGPG() {
 		return this.gpg;
 	}
 	
+	/**
+	 * Should we build an auto guest network?
+	 *
+	 * @return True if we should, False if not
+	 */
 	public Boolean getAutoGuest() {
 		return this.autoGuest;
 	}
 	
+	/**
+	 * Gets the admin email.
+	 *
+	 * @return the admin email
+	 */
 	public String getAdminEmail() {
 		return this.adminEmail;
 	}
 	
+	/**
+	 * Should we autogenerate passwords for users who haven't set a default?
+	 *
+	 * @return True if we should, False otherwise.
+	 */
 	public Boolean getAutoGenPasswds() {
 		return this.autoGenPasswds;
 	}
 	
+	/**
+	 * Gets the netmask - hardcoded as /30.
+	 *
+	 * @return the netmask (255.255.255.252)
+	 */
 	public InetAddress getNetmask() {
 		InetAddress netmask = null;
 		try {
@@ -246,6 +332,13 @@ public class NetworkData extends AData {
 		return netmask;
 	}
 	
+	/**
+	 * Gets the configuration ip for this network.
+	 * 
+	 * This is either the IP of our router (if we're inside) or the public IP address (if it's an external resource)
+	 *
+	 * @return the ip
+	 */
 	public InetAddress getIP() {
 		if (this.ip ==  null) {
 			JOptionPane.showMessageDialog(null, "You must specify \"ip\" for the network.\n\nThis is the IP address ThornSec uses for configuration");
@@ -255,18 +348,41 @@ public class NetworkData extends AData {
 		return this.ip;
 	}
 	
+	/**
+	 * Should we do ad blocking at the router?
+	 *
+	 * @return True if we should, False otherwise
+	 */
 	public Boolean getAdBlocking() {
 		return this.adBlocking;
 	}
 
+	/**
+	 * Will we only allow users to access our resources over VPN?
+	 *
+	 * @return True if they can only access over VPN, False if clearnet is fine
+	 */
 	public boolean getVpnOnly() {
 		return this.vpnOnly;
 	}
 	
+	/**
+	 * Gets all server labels on our network.
+	 *
+	 * @return the all server labels
+	 */
 	public String[] getAllServerLabels() {
 		return this.servers.keySet().toArray(new String[this.servers.size()]);
 	}
 
+	/**
+	 * Gets the property.
+	 *
+	 * @param server the server
+	 * @param property the property
+	 * @param isRequired the is required
+	 * @return the property
+	 */
 	// Have to be provided by server only
 	public String getProperty(String server, String property, Boolean isRequired) {
 		String value = this.servers.get(server).getProperty(property, null); 
@@ -279,6 +395,12 @@ public class NetworkData extends AData {
 		return value;
 	}
 
+	/**
+	 * Gets the data of a given device on our network.
+	 *
+	 * @param endpoint the endpoint's label
+	 * @return the endpoint data
+	 */
 	private ADeviceData getEndpointData(String endpoint) {
 		if (this.servers.containsKey(endpoint)) {
 			return this.servers.get(endpoint);
@@ -290,6 +412,13 @@ public class NetworkData extends AData {
 		return null;
 	}
 	
+	/**
+	 * Gets the property array.
+	 *
+	 * @param endpoint the endpoint
+	 * @param property the property
+	 * @return the property array
+	 */
 	public String[] getPropertyArray(String endpoint, String property) {
 		ADeviceData endpointData = getEndpointData(endpoint);
 		
@@ -300,22 +429,53 @@ public class NetworkData extends AData {
 		return new String[0];
 	}
 	
+	/**
+	 * Gets the property object array.
+	 *
+	 * @param server the server
+	 * @param property the property
+	 * @return the property object array
+	 */
 	public JsonArray getPropertyObjectArray(String server, String property) {
 		return this.servers.get(server).getPropertyObjectArray(property);
 	}
 	
+	/**
+	 * Gets the hostname.
+	 *
+	 * @param server the server
+	 * @return the hostname
+	 */
 	public String getHostname(String server) {
 		return this.servers.get(server).getHostname();
 	}
 
+	/**
+	 * Gets the metal iface.
+	 *
+	 * @param server the server
+	 * @return the metal iface
+	 */
 	public String getMetalIface(String server) {
 		return this.servers.get(server).getMetalIface();
 	}
 	
+	/**
+	 * Gets the types.
+	 *
+	 * @param server the server
+	 * @return the types
+	 */
 	public String[] getTypes(String server) {
 		return this.servers.get(server).getTypes();
 	}
 	
+	/**
+	 * Gets the cnames.
+	 *
+	 * @param endpoint the endpoint
+	 * @return the cnames
+	 */
 	public String[] getCnames(String endpoint) {
 		ADeviceData endpointData = getEndpointData(endpoint);
 		
@@ -327,6 +487,12 @@ public class NetworkData extends AData {
 		return null;
 	}
 	
+	/**
+	 * Gets the external ip.
+	 *
+	 * @param endpoint the endpoint
+	 * @return the external ip
+	 */
 	public InetAddress getExternalIp(String endpoint) {
 		InetAddress ip = null;
 		
@@ -348,10 +514,21 @@ public class NetworkData extends AData {
 	//	return sources;
 	//}
 
+	/**
+	 * Gets the admins.
+	 *
+	 * @return the admins
+	 */
 	public String[] getAdmins() {
 		return this.defaultServerData.getAdmins();
 	}
 
+	/**
+	 * Gets the admins.
+	 *
+	 * @param server the server
+	 * @return the admins
+	 */
 	public String[] getAdmins(String server) {
 		String[] admins = getAdmins();
 		
@@ -362,6 +539,12 @@ public class NetworkData extends AData {
 		return admins;
 	}
 	
+	/**
+	 * Gets the domain.
+	 *
+	 * @param endpoint the endpoint
+	 * @return the domain
+	 */
 	public String getDomain(String endpoint) {
 		String domain = null;
 		
@@ -379,6 +562,12 @@ public class NetworkData extends AData {
 		return domain;
 	}
 
+	/**
+	 * Gets the admin port.
+	 *
+	 * @param server the server
+	 * @return the admin port
+	 */
 	public Integer getAdminPort(String server) {
 		Integer port = this.servers.get(server).getAdminPort();
 		
@@ -392,6 +581,12 @@ public class NetworkData extends AData {
 		return port;
 	}
 	
+	/**
+	 * Gets the SSH port.
+	 *
+	 * @param server the server
+	 * @return the SSH port
+	 */
 	public Integer getSSHPort(String server) {
 		Integer port = this.servers.get(server).getSSHPort();
 		
@@ -405,6 +600,12 @@ public class NetworkData extends AData {
 		return port;
 	}
 
+	/**
+	 * Auto update.
+	 *
+	 * @param server the server
+	 * @return the boolean
+	 */
 	public Boolean autoUpdate(String server) {
 		Boolean update = this.servers.get(server).getUpdate();
 		
@@ -418,6 +619,12 @@ public class NetworkData extends AData {
 		return update;
 	}
 	
+	/**
+	 * Gets the lan ifaces.
+	 *
+	 * @param machine the machine
+	 * @return the lan ifaces
+	 */
 	public HashMap<String, String> getLanIfaces(String machine) {
 		HashMap<String, String> ifaces = null; 
 
@@ -434,6 +641,12 @@ public class NetworkData extends AData {
 		return ifaces;
 	}
 	
+	/**
+	 * Gets the wan ifaces.
+	 *
+	 * @param server the server
+	 * @return the wan ifaces
+	 */
 	public HashMap<String, String> getWanIfaces(String server) {
 		HashMap<String, String> wanIfaces = this.servers.get(server).getWanIfaces();
 		
@@ -444,6 +657,12 @@ public class NetworkData extends AData {
 		return wanIfaces;
 	}
 	
+	/**
+	 * Gets the metal.
+	 *
+	 * @param server the server
+	 * @return the metal
+	 */
 	public String getMetal(String server) {
 		String metal = this.servers.get(server).getMetal();
 		
@@ -454,6 +673,12 @@ public class NetworkData extends AData {
 		return metal;
 	}
 	
+	/**
+	 * Gets the ram.
+	 *
+	 * @param server the server
+	 * @return the ram
+	 */
 	public Integer getRam(String server) {
 		Integer ram = this.servers.get(server).getRam();
 		
@@ -467,6 +692,12 @@ public class NetworkData extends AData {
 		return ram;
 	}
 
+	/**
+	 * Gets the cpus.
+	 *
+	 * @param server the server
+	 * @return the cpus
+	 */
 	public Integer getCpus(String server) {
 		Integer cpus = this.servers.get(server).getCpus();
 		
@@ -480,6 +711,12 @@ public class NetworkData extends AData {
 		return cpus;
 	}
 	
+	/**
+	 * Gets the boot disk size.
+	 *
+	 * @param server the server
+	 * @return the boot disk size
+	 */
 	public Integer getBootDiskSize(String server) {
 		Integer size = this.servers.get(server).getBootDiskSize();
 		
@@ -493,6 +730,12 @@ public class NetworkData extends AData {
 		return size;
 	}
 	
+	/**
+	 * Gets the data disk size.
+	 *
+	 * @param server the server
+	 * @return the data disk size
+	 */
 	public Integer getDataDiskSize(String server) {
 		Integer size = this.servers.get(server).getDataDiskSize();
 		
@@ -506,6 +749,12 @@ public class NetworkData extends AData {
 		return size;
 	}
 	
+	/**
+	 * Gets the ext connection type.
+	 *
+	 * @param server the server
+	 * @return the ext connection type
+	 */
 	public String getExtConnectionType(String server) {
 		String connection = this.servers.get(server).getExtConn();
 		
@@ -516,6 +765,12 @@ public class NetworkData extends AData {
 		return connection;
 	}
 
+	/**
+	 * Gets the debian iso url.
+	 *
+	 * @param server the server
+	 * @return the debian iso url
+	 */
 	public String getDebianIsoUrl(String server) {
 		String url = this.servers.get(server).getDebianIsoUrl();
 		
@@ -546,6 +801,12 @@ public class NetworkData extends AData {
 		return url;
 	}
 
+	/**
+	 * Gets the debian iso sha 512.
+	 *
+	 * @param server the server
+	 * @return the debian iso sha 512
+	 */
 	public String getDebianIsoSha512(String server) {
 		String hash = this.servers.get(server).getDebianIsoSha512();
 		
@@ -576,6 +837,12 @@ public class NetworkData extends AData {
 		return hash;
 	}
 
+	/**
+	 * Gets the hypervisor thornsec base.
+	 *
+	 * @param server the server
+	 * @return the hypervisor thornsec base
+	 */
 	public String getHypervisorThornsecBase(String server) {
 		String baseDir = this.servers.get(server).getVmBase();
 		
@@ -589,6 +856,12 @@ public class NetworkData extends AData {
 		return baseDir;
 	}
 
+	/**
+	 * Gets the debian mirror.
+	 *
+	 * @param server the server
+	 * @return the debian mirror
+	 */
 	public String getDebianMirror(String server) {
 		String mirror = this.servers.get(server).getDebianMirror();
 		
@@ -602,6 +875,12 @@ public class NetworkData extends AData {
 		return mirror;
 	}
 
+	/**
+	 * Gets the debian directory.
+	 *
+	 * @param server the server
+	 * @return the debian directory
+	 */
 	public String getDebianDirectory(String server) {
 		String directory = this.servers.get(server).getDebianDirectory();
 		
@@ -615,31 +894,72 @@ public class NetworkData extends AData {
 		return directory;
 	}
 	
+	/**
+	 * Gets the all device labels.
+	 *
+	 * @return the all device labels
+	 */
 	//Device only stuff
 	public String[] getAllDeviceLabels() {
 		return this.devices.keySet().toArray(new String[devices.size()]);
 	}
 	
+	/**
+	 * Gets the user SSH key.
+	 *
+	 * @param user the user
+	 * @return the user SSH key
+	 */
 	public String getUserSSHKey(String user) {
 		return this.devices.get(user).getSSHKey();
 	}
 	
+	/**
+	 * Gets the user full name.
+	 *
+	 * @param user the user
+	 * @return the user full name
+	 */
 	public String getUserFullName(String user) {
 		return this.devices.get(user).getFullName();
 	}
 	
+	/**
+	 * Gets the device is throttled.
+	 *
+	 * @param device the device
+	 * @return the device is throttled
+	 */
 	public Boolean getDeviceIsThrottled(String device) {
 		return this.devices.get(device).getIsThrottled();
 	}
 	
+	/**
+	 * Gets the device is managed.
+	 *
+	 * @param device the device
+	 * @return the device is managed
+	 */
 	public Boolean getDeviceIsManaged(String device) {
 		return this.devices.get(device).getIsManaged();
 	}
 
+	/**
+	 * Gets the device ports.
+	 *
+	 * @param device the device
+	 * @return the device ports
+	 */
 	public Set<Integer> getDevicePorts(String device) {
 		return this.devices.get(device).getListenPorts();
 	}
 	
+	/**
+	 * Gets the device type.
+	 *
+	 * @param device the device
+	 * @return the device type
+	 */
 	public String getDeviceType(String device) {
 		String type = this.devices.get(device).getClass().getSimpleName().replace("DeviceData", "");
 		
@@ -648,10 +968,22 @@ public class NetworkData extends AData {
 		return type;
 	}
 	
+	/**
+	 * Gets the user default password.
+	 *
+	 * @param user the user
+	 * @return the user default password
+	 */
 	public String getUserDefaultPassword(String user) {
 		return this.devices.get(user).getDefaultPassword();
 	}
 	
+	/**
+	 * Gets the email address.
+	 *
+	 * @param machine the machine
+	 * @return the email address
+	 */
 	public String getEmailAddress(String machine) {
 		String emailAddress = null;
 		
@@ -667,6 +999,12 @@ public class NetworkData extends AData {
 		return emailAddress;
 	}
 	
+	/**
+	 * Gets the required egress.
+	 *
+	 * @param endpoint the endpoint
+	 * @return the required egress
+	 */
 	public HashMap<String, HashMap<Integer, Set<Integer>>> getRequiredEgress(String endpoint) {
 		ADeviceData endpointData = getEndpointData(endpoint);
 		
@@ -677,6 +1015,12 @@ public class NetworkData extends AData {
 		return null;
 	}
 	
+	/**
+	 * Gets the required forward.
+	 *
+	 * @param endpoint the endpoint
+	 * @return the required forward
+	 */
 	public Vector<String> getRequiredForward(String endpoint) {
 		ADeviceData endpointData = getEndpointData(endpoint);
 		
@@ -687,6 +1031,12 @@ public class NetworkData extends AData {
 		return null;
 	}
 
+	/**
+	 * Gets the required ingress.
+	 *
+	 * @param endpoint the endpoint
+	 * @return the required ingress
+	 */
 	public Vector<String> getRequiredIngress(String endpoint) {
 		ADeviceData endpointData = getEndpointData(endpoint);
 		

@@ -2,12 +2,25 @@ package core.data;
 
 import javax.json.JsonObject;
 
+/**
+ * The Class ExternalDeviceData
+ * Represents an external-only device on our network.
+ */
 class ExternalDeviceData extends ADeviceData {
 
+	/**
+	 * Instantiates a new external-only device's data.
+	 *
+	 * @param label the device label
+	 */
 	ExternalDeviceData(String label) {
 		super(label);
 	}
 
+	/**
+	 * Reads in and populates this device's data
+	 */
+	@Override
 	public void read(JsonObject data) {
 		super.setData(data);
 		
