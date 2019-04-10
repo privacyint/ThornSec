@@ -10,6 +10,7 @@ import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.model.ServerModel;
 import core.profile.AStructuredProfile;
+import core.unit.SimpleUnit;
 import core.unit.fs.CustomFileUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
@@ -119,28 +120,17 @@ public class DNS extends AStructuredProfile {
 		config += "    private-address: 10.0.0.0/8\n";
 		config += "    private-address: 172.16.0.0/12\n";
 		config += "    private-address: 192.168.0.0/16\n";
+		
 		for (String domain : domainRecords.keySet()) {
 			config += "    private-domain: \\\"" + domain + "\\\"\n";
 		}
+		
 		config += "    unwanted-reply-threshold: 10000\n";
 		config += "    do-not-query-localhost: no\n";
 		config += "    val-clean-additional: yes\n";
 
 		if (networkModel.getData().getAdBlocking()) {
-			config += "    local-zone: \\\"doubleclick.net\\\" redirect\n";
-			config += "    local-data: \\\"doubleclick.net A 127.0.0.1\\\"\n";
-			config += "    local-zone: \\\"googlesyndication.com\\\" redirect\n";
-			config += "    local-data: \\\"googlesyndication.com A 127.0.0.1\\\"\n";
-			config += "    local-zone: \\\"googleadservices.com\\\" redirect\n";
-			config += "    local-data: \\\"googleadservices.com A 127.0.0.1\\\"\n";
-			config += "    local-zone: \\\"google-analytics.com\\\" redirect\n";
-			config += "    local-data: \\\"google-analytics.com A 127.0.0.1\\\"\n";
-			config += "    local-zone: \\\"ads.youtube.com\\\" redirect\n";
-			config += "    local-data: \\\"ads.youtube.com A 127.0.0.1\\\"\n";
-			config += "    local-zone: \\\"adserver.yahoo.com\\\" redirect\n";
-			config += "    local-data: \\\"adserver.yahoo.com A 127.0.0.1\\\"\n";
-			config += "    local-zone: \\\"ask.com\\\" redirect\n";
-			config += "    local-data: \\\"ask.com A 127.0.0.1\\\"\n";
+			config += "    include: \\\"/etc/unbound/unbound.conf.d/adblock.zone\\\"\n";
 		}
 		for (String domain : domainRecords.keySet()) {
 			config += "    include: \\\"/etc/unbound/unbound.conf.d/" + domain + ".zone\\\"\n";
@@ -148,6 +138,7 @@ public class DNS extends AStructuredProfile {
 		if (!poison.isEmpty()) {
 			config += "    include: \\\"/etc/unbound/unbound.conf.d/poison.zone\\\"\n";
 		}
+
 		config += "    include: \\\"/etc/unbound/unbound.conf.d/custom.zone\\\"\n";
 		//rDNS
 		config += "    local-zone: \\\"10.in-addr.arpa.\\\" nodefault\n";
@@ -280,6 +271,13 @@ public class DNS extends AStructuredProfile {
 				poisonConfig += "\n    local-data: \\\"" + record.getKey() + " A " + record.getValue().toString() + "\\\"";
 			}
 			units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("dns_poison_zone", "dns_installed", poisonConfig.replaceAll("\\s+$", ""), "/etc/unbound/unbound.conf.d/poison.zone"));
+		}
+		
+		if (networkModel.getData().getAdBlocking()) {
+			units.addElement(new SimpleUnit("adblock_up_to_date", "proceed",
+					"sudo wget -O /etc/unbound/rawhosts https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts;"
+					+ "cat /etc/unbound/rawhosts | grep '^0\\.0\\.0\\.0' | sudo awk '{print \"local-zone: \\\"\"$2\"\\\" redirect\\nlocal-data: \\\"\"$2\" A 0.0.0.0\\\"\"}' > /etc/unbound/unbound.conf.d/adblock.zone",				
+					"[ ! -f /etc/unbound/rawhosts ] && echo fail || wget -O - -o /dev/null https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts | cmp /etc/unbound/rawhosts 2>&1", "", "pass"));
 		}
 		
 		units.addElement(new RunningUnit("dns", "unbound", "unbound"));
