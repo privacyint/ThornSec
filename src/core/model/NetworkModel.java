@@ -147,6 +147,9 @@ public class NetworkModel {
 		}
 
 		for(ServerModel metal : metals) {
+			if (metal.isRouter()) { //If it's an external server...
+				continue; //Skip it, otherwise we'll be duplicating its ifaces!
+			}
 			metal.getNetworking();
 		}
 
