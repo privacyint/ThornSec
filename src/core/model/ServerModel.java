@@ -173,13 +173,13 @@ public class ServerModel extends MachineModel {
 			aptCommand = "sudo apt-get --assume-yes upgrade;";
 		}
 		else {
-			aptCommand = "echo \"There are `sudo apt-get upgrade -s |grep -P '^\\\\d+ upgraded'|cut -d\\\" \\\" -f1` updates available, of which `sudo apt-get upgrade -s | grep ^Inst | grep Security | wc -l` are security updates\"";
+			aptCommand = "echo \"There are $(sudo apt-get upgrade -s | grep -P '^\\d+ upgraded'| cut -d' ' -f1) updates available, of which $(sudo apt-get upgrade -s | grep ^Inst | grep Security | wc -l) are security updates\"";
 		}
 		units.insertElementAt(new SimpleUnit("update", "proceed",
 				aptCommand,
 				"sudo apt-get update > /dev/null; sudo apt-get --assume-no upgrade | grep \"[0-9] upgraded, [0-9] newly installed, [0-9] to remove and [0-9] not upgraded.\";",
 				"0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.", "pass",
-				"There are $(sudo apt-get upgrade -s |grep -P '^\\\\d+ upgraded'|cut -d\" \" -f1) updates available, of which $(sudo apt-get upgrade -s | grep ^Inst | grep Security | wc -l) are security updates\""), ++i);
+				"There are $(sudo apt-get upgrade -s | grep -P '^\\d+ upgraded'| cut -d' ' -f1) updates available, of which $(sudo apt-get upgrade -s | grep ^Inst | grep Security | wc -l) are security updates\""), ++i);
 
 		//Remove rdnssd (problematic as hell...)
 		units.insertElementAt(new SimpleUnit("rdnssd_uninstalled", "proceed",
