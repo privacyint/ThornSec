@@ -32,7 +32,7 @@ import javax.swing.JOptionPane;
 public class NetworkData extends AData {
 	private String myUser;
 	private String adminEmail;
-	private String gpg;
+	private String pgp;
 	private InetAddress ip;
 
 	private Boolean adBlocking;
@@ -59,7 +59,7 @@ public class NetworkData extends AData {
 		
 		this.myUser     = null;
 		this.adminEmail = null;
-		this.gpg        = null;
+		this.pgp        = null;
 		
 		this.ip = null;
 		
@@ -96,7 +96,7 @@ public class NetworkData extends AData {
 			this.ip = stringToIP(data.getString("ip", null));
 
 			this.myUser         = data.getString("myuser", null);
-			this.gpg            = data.getString("gpg", null);
+			this.pgp            = data.getString("gpg", null);
 			this.adminEmail     = data.getString("adminemail", null);
 			
 			this.dtls           = Boolean.parseBoolean(data.getString("dtls", "false"));
@@ -284,8 +284,8 @@ public class NetworkData extends AData {
 	 *
 	 * @return the gpg
 	 */
-	public String getGPG() {
-		return this.gpg;
+	public String getPGP() {
+		return this.pgp;
 	}
 	
 	/**

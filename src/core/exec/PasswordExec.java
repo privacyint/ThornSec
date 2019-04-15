@@ -21,7 +21,7 @@ public class PasswordExec {
 
 		if (Objects.equals(checkInit.getOutput(), "Error: password store is empty. Try \"pass init\".")) {
 			System.out.println("\nPassword store is empty.  Creating you a new one.");
-			System.out.println(new OutputExec("pass init " + model.getData().getGPG()).getOutput());
+			System.out.println(new OutputExec("pass init " + model.getData().getPGP()).getOutput());
 		}
 		
 		return true;

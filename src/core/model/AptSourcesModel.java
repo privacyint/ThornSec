@@ -12,13 +12,13 @@ public class AptSourcesModel extends AModel {
 	private Vector<IUnit> sources;
 	private String repo;
 	private String dir;
-	private Vector<IUnit> gpg;
+	private Vector<IUnit> pgp;
 	
 	AptSourcesModel(String label, ServerModel me, NetworkModel networkModel) {
 		super(label, me, networkModel);
 
 		sources = new Vector<IUnit>();
-		gpg     = new Vector<IUnit>();
+		this.pgp     = new Vector<IUnit>();
 		repo    = networkModel.getData().getDebianMirror(me.getLabel());
 		dir     = networkModel.getData().getDebianDirectory(me.getLabel());
 
@@ -32,7 +32,7 @@ public class AptSourcesModel extends AModel {
 
 		units.addElement(new FileUnit("sources_list", "proceed", getPersistent(), "/etc/apt/sources.list"));
 		units.addElement(new InstalledUnit("dirmngr", "proceed", "dirmngr",
-						 "Couldn't install dirmngr.  Anything which requires a GPG key to be downloaded and installed won't work. "
+						 "Couldn't install dirmngr.  Anything which requires a PGP key to be downloaded and installed won't work. "
 						 + "You can possibly fix this by reconfiguring the service."));
 		
 		//Give it 3 seconds before timing out
@@ -43,7 +43,7 @@ public class AptSourcesModel extends AModel {
 		units.addElement(new FileUnit("decrease_apt_timeout", "proceed", timeoutConf, "/etc/apt/apt.conf.d/99timeout",
 						"Couldn't decrease the apt timeout. If your network connection is poor, the machine may appear to hang during configuration"));
 		
-		units.addAll(gpg);
+		units.addAll(pgp);
 		units.addAll(sources);
 		
 		
@@ -55,14 +55,14 @@ public class AptSourcesModel extends AModel {
 		
 		me.addRequiredEgress(keyserver, new Integer[] {11371});
 		
-		addGpgKey(name, keyserver, fingerprint);
+		addPGPKey(name, keyserver, fingerprint);
 	}
 	
-	private void addGpgKey(String name, String keyserver, String fingerprint) {
-		gpg.addElement(new SimpleUnit(name + "_gpg", "dirmngr_installed",
+	private void addPGPKey(String name, String keyserver, String fingerprint) {
+		pgp.addElement(new SimpleUnit(name + "_pgp", "dirmngr_installed",
 				"sudo apt-key adv --recv-keys --keyserver " + keyserver + " " + fingerprint,
 				"sudo apt-key list 2>&1 | grep '" + name + "'", "", "fail",
-				"Couldn't install " + name + "'s GPG signing cert.  " + name + "'s installation will fail.  You can probably fix this by re-configuring the service."));
+				"Couldn't install " + name + "'s PGP signing cert.  " + name + "'s installation will fail.  You can probably fix this by re-configuring the service."));
 	}
 	
 	private String getPersistent() {
