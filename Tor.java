@@ -25,7 +25,7 @@ public class Tor extends AStructuredProfile {
 	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addElement(new InstalledUnit("tor_keyring", "tor_gpg", "deb.torproject.org-keyring"));
+		units.addElement(new InstalledUnit("tor_keyring", "tor_pgp", "deb.torproject.org-keyring"));
 		units.addElement(new InstalledUnit("tor", "tor_keyring_installed", "tor"));
 		
 		((ServerModel)me).getUserModel().addUsername("debian-tor");

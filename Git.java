@@ -27,7 +27,7 @@ public class Git extends AStructuredProfile {
 		
 		units.addElement(new InstalledUnit("java", "proceed", "default-jre-headless"));
 				
-		units.addElement(new InstalledUnit("scm_server", "scm_manager_gpg", "scm-server"));
+		units.addElement(new InstalledUnit("scm_server", "scm_manager_pgp", "scm-server"));
 		
 		units.addAll(webserver.getInstalled());
 		

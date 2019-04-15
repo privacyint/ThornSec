@@ -36,7 +36,7 @@ public class Nginx extends AStructuredProfile {
 		
 		units.addAll(((ServerModel)me).getBindFsModel().addLogBindPoint("nginx", "proceed", "nginx", "0600"));
 
-		units.addElement(new InstalledUnit("nginx", "nginx_gpg", "nginx"));
+		units.addElement(new InstalledUnit("nginx", "nginx_pgp", "nginx"));
 		
 		return units;
 	}
