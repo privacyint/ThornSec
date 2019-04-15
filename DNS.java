@@ -280,7 +280,9 @@ public class DNS extends AStructuredProfile {
 		if (networkModel.getData().getAdBlocking()) {
 			units.addElement(new SimpleUnit("adblock_up_to_date", "proceed",
 					"sudo wget -O /etc/unbound/rawhosts https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts;"
-					+ "cat /etc/unbound/rawhosts | grep '^0\\.0\\.0\\.0' | sudo awk '{print \"local-zone: \\\"\"$2\"\\\" redirect\\nlocal-data: \\\"\"$2\" A 0.0.0.0\\\"\"}' > /etc/unbound/unbound.conf.d/adblock.zone",				
+					+ "cat /etc/unbound/rawhosts | grep '^0\\.0\\.0\\.0'"
+					+ " | awk '{print \"local-zone: \\\"\"$2\"\\\" redirect\\nlocal-data: \\\"\"$2\" A 0.0.0.0\\\"\"}'"
+					+ " | sudo tee /etc/unbound/unbound.conf.d/adblock.zone > /dev/null",				
 					"[ ! -f /etc/unbound/rawhosts ] && echo fail || wget -O - -o /dev/null https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts | cmp /etc/unbound/rawhosts 2>&1", "", "pass"));
 		}
 		
