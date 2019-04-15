@@ -17,10 +17,10 @@ public class AptSourcesModel extends AModel {
 	AptSourcesModel(String label, ServerModel me, NetworkModel networkModel) {
 		super(label, me, networkModel);
 
-		sources = new Vector<IUnit>();
+		this.sources = new Vector<IUnit>();
 		this.pgp     = new Vector<IUnit>();
-		repo    = networkModel.getData().getDebianMirror(me.getLabel());
-		dir     = networkModel.getData().getDebianDirectory(me.getLabel());
+		this.repo    = networkModel.getData().getDebianMirror(me.getLabel());
+		this.dir     = networkModel.getData().getDebianDirectory(me.getLabel());
 
 		me.addRequiredEgress(repo, new Integer[]{80});
 		me.addRequiredEgress("security.debian.org", new Integer[]{80});
