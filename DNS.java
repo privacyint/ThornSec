@@ -169,6 +169,10 @@ public class DNS extends AStructuredProfile {
 		((ServerModel)me).getUserModel().addUsername("unbound");
 		((ServerModel)me).getProcessModel().addProcess("/usr/sbin/unbound -d$");
 
+		if (networkModel.getData().getAdBlocking()) {
+			units.addElement(new InstalledUnit("ca_certificates", "ca-certificates"));
+		}
+		
 		return units;
 	}
 	
