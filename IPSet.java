@@ -180,4 +180,8 @@ public class IPSet extends AModel {
 		
 		return name;
 	}
+
+	public boolean isEmpty(String set) {
+		return ( ! this.ipsets.containsKey(set) || ! this.ipsets.get(set).isEmpty());
+	}
 }
