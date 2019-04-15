@@ -765,45 +765,71 @@ public class Router extends AStructuredProfile {
 		Vector<String> routerLanIfaces = new Vector<String>(networkModel.getData().getLanIfaces(me.getLabel()).keySet());
 		
 		String bridge = "lan0";
+
+		InetAddress netmask = networkModel.getData().getNetmask();
 		
-		//First, add this machine's own interfaces
-		for (String lanIface : routerLanIfaces) {
+		//We don't actually care about internal ifaces if we're a metal/router
+		//We very deliberately hang everything off a bridge, to stop internal traffic over the ext iface
+		if (((ServerModel) me).isMetal()) { 
+			InetAddress subnet  = networkModel.stringToIP("10.0.0.0");
+			InetAddress address = networkModel.stringToIP("10.0.0.1");
+
 			interfaces.addIface(new InterfaceData(
 					me.getLabel(), //host
-					lanIface, //iface
+					bridge, //iface
 					null, //mac
-					"manual", //inet
-					null, //bridgeports
-					null, //subnet
+					"static", //inet
+					new String[] {"none"}, //bridgeports
+					subnet, //subnet
 					null, //address
-					null, //netmask
+					netmask, //netmask
 					null, //broadcast
-					null, //gateway
-					"physical network interface" //comment
+					address, //"gateway" - because this is a router iface, it only looks at gateways
+					"VM interface on a bridge to nowhere" //comment
 			));
 		}
+		else {
+			//First, add this machine's own interfaces
+			for (String lanIface : routerLanIfaces) {
+				interfaces.addIface(new InterfaceData(
+						me.getLabel(), //host
+						lanIface, //iface
+						null, //mac
+						"manual", //inet
+						null, //bridgeports
+						null, //subnet
+						null, //address
+						null, //netmask
+						null, //broadcast
+						null, //gateway
+						"physical network interface" //comment
+				));
+
+				//Now, bridge 'em
+				InetAddress subnet  = networkModel.stringToIP("10.0.0.0");
+				InetAddress address = networkModel.stringToIP("10.0.0.1");
+				interfaces.addIface(new InterfaceData(
+						"lan", //host
+						bridge, //iface
+						null, //mac
+						"static", //inet
+						routerLanIfaces.toArray(new String[routerLanIfaces.size()]), //bridgeports
+						subnet, //subnet
+						address, //address
+						netmask, //netmask
+						null, //broadcast
+						address, //gateway
+						"bridge all physical interfaces" //comment
+				));
+			}
+		}
 		
-		//Now, bridge 'em
-		InetAddress subnet  = networkModel.stringToIP("10.0.0.0");
-		InetAddress address = networkModel.stringToIP("10.0.0.1");
-		InetAddress netmask = networkModel.getData().getNetmask();
-		interfaces.addIface(new InterfaceData(
-				"lan", //host
-				bridge, //iface
-				null, //mac
-				"static", //inet
-				routerLanIfaces.toArray(new String[routerLanIfaces.size()]), //bridgeports
-				subnet, //subnet
-				address, //address
-				netmask, //netmask
-				null, //broadcast
-				address, //gateway
-				"bridge all physical interfaces" //comment
-		));
 		
 		//Now add for our servers
 		//for (ServerModel srv : networkModel.getAllServers()) {
 		for (MachineModel machine : networkModel.getAllMachines()) {
+			if (machine.equals(me)) { continue; } //Skip if we're talking about ourself
+			
 			Integer classifier = null;
 			
 			if (machine instanceof ServerModel) {
@@ -812,8 +838,6 @@ public class Router extends AStructuredProfile {
 			else if (machine instanceof DeviceModel) {
 				classifier = 1;
 			}
-			
-			if (machine.equals(me)) { continue; } //Skip if we're talking about ourself
 			
 			for (InterfaceData machineLanIface : machine.getInterfaceModel().getIfaces()) {
 				//Parse our MAC address into an integer to stop collisions when adding/removing interfaces
