@@ -86,7 +86,11 @@ public class Metal extends AStructuredProfile {
 		int i = 0;
 		
 		//Add this machine's interfaces
-		for (Map.Entry<String, String> lanIface : networkModel.getData().getLanIfaces(me.getLabel()).entrySet() ) {	
+		for (Map.Entry<String, String> lanIface : networkModel.getData().getLanIfaces(me.getLabel()).entrySet() ) {
+			if (me.isRouter() || networkModel.getData().getWanIfaces(me.getLabel()).containsKey(lanIface.getKey())) { //Try not to duplicate ifaces if we're a Router/Metal
+				continue;
+			}
+			
 			InetAddress subnet    = networkModel.stringToIP(me.getFirstOctet() + "." + me.getSecondOctet() + "." + me.getThirdOctet() + "." + (i * 4));
 			InetAddress router    = networkModel.stringToIP(me.getFirstOctet() + "." + me.getSecondOctet() + "." + me.getThirdOctet() + "." + ((i * 4) + 1));
 			InetAddress address   = networkModel.stringToIP(me.getFirstOctet() + "." + me.getSecondOctet() + "." + me.getThirdOctet() + "." + ((i * 4) + 2));
