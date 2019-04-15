@@ -184,7 +184,7 @@ public class ServerModel extends MachineModel {
 		//Remove rdnssd (problematic as hell...)
 		units.insertElementAt(new SimpleUnit("rdnssd_uninstalled", "proceed",
 				"sudo apt remove rdnssd --purge -y;",
-				"dpkg-query --status rdnssd | grep \"Status:\";", "Status: install ok installed", "fail",
+				"dpkg-query --status rdnssd 2>&1 | grep \"Status:\";", "Status: install ok installed", "fail",
 				"Couldn't uninstall rdnssd.  This is a package which attempts to be \"clever\" in DNS configuration and just breaks everything instead."), ++i);
 		
 		units.insertElementAt(new RunningUnit("syslog", "rsyslog", "rsyslog"), ++i);
