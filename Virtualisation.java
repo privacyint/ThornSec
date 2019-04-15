@@ -20,6 +20,8 @@ public class Virtualisation extends AStructuredProfile {
 	
 	public Virtualisation(ServerModel me, NetworkModel networkModel) {
 		super("virtualisation", me, networkModel);
+
+		me.getAptSourcesModel().addAptSource("virtualbox", "proceed", "deb http://download.virtualbox.org/virtualbox/debian stretch contrib", "keyserver.ubuntu.com", "0xa2f683c52980aecf");
 	}
 
 	protected Vector<IUnit> getInstalled() {
@@ -50,8 +52,6 @@ public class Virtualisation extends AStructuredProfile {
 	
 	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
-
-		((ServerModel)me).getAptSourcesModel().addAptSource("virtualbox", "proceed", "deb http://download.virtualbox.org/virtualbox/debian stretch contrib", "keyserver.ubuntu.com", "0xa2f683c52980aecf");
 
 		me.addRequiredEgress("download.virtualbox.org", new Integer[]{80});
 
