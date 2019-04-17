@@ -9,9 +9,9 @@ import core.model.FirewallModel;
 import core.model.NetworkModel;
 import core.model.ServerModel;
 import core.profile.AStructuredProfile;
+import core.unit.SimpleUnit;
 import core.unit.fs.CustomFileUnit;
 import core.unit.pkg.InstalledUnit;
-import core.unit.pkg.RunningUnit;
 
 public class DHCP extends AStructuredProfile {
 
@@ -126,7 +126,9 @@ public class DHCP extends AStructuredProfile {
 
 		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("dhcp", "dhcp_installed", dhcpconf, "/etc/dhcp/dhcpd.conf"));
 
-		units.addElement(new RunningUnit("dhcp", "isc-dhcp-server", "isc-dhcp-server"));
+		units.addElement(new SimpleUnit("dhcp_running", "dhcp_installed",
+				"",
+				"sudo service isc-dhcp-server restart", "", "pass"));
 
 		return units;
 	}	
