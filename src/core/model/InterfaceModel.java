@@ -30,10 +30,20 @@ public class InterfaceModel extends AModel {
 	 */
 	public Vector<IUnit> getUnits() {
 		Vector<IUnit> units = new Vector<IUnit>();
+		
 		units.addElement(new SimpleUnit("net_conf_persist", "proceed",
-				"echo \"" + getPersistent() + "\" | sudo tee /etc/network/interfaces; sudo service networking restart;",
+				"echo \"" + getPersistent() + "\" | sudo tee /etc/network/interfaces;"
+				+ "sudo service networking restart;",
 				"cat /etc/network/interfaces;", getPersistent(), "pass",
 				"Couldn't create our required network interfaces.  This will cause all sorts of issues."));
+
+//		for (String name : names) {
+//			units.addElement(new SimpleUnit("iface_" + name.replaceAll(":", "_") + "_up", "net_conf_persist",
+//			"sudo ip link set " + name + " up",
+//			"ip a | grep " + name + ": ", "", "fail",
+//			"Couldn't bring the network interface " + name + " up.  This can potentially be resolved by a restart (assuming you've had no other network-related errors)."));
+//		}
+		
 		return units;
 	}
 
@@ -68,7 +78,7 @@ public class InterfaceModel extends AModel {
 		net += "\n";
 		net += "auto lo\n";
 		net += "iface lo inet loopback\n";
-		net += "pre-up /etc/ipsets/ipsets.up.sh | ipset restore\n";
+		net += "pre-up /etc/ipsets/ipsets.up.sh | ipset -! restore\n";
 		net += "pre-up /etc/iptables/iptables.conf.sh | iptables-restore\n";
 		net += "\n";
 		net += "auto";

@@ -95,11 +95,11 @@ public class FirewallModel extends AModel {
 		
 		units.addElement(new SimpleUnit("iptables_running_conf_backup", "iptables_dir_created",
 				"echo 'iptables-save > /etc/iptables/iptables.conf.bak' | sudo bash",
-				"find /etc/iptables/iptables.conf.bak -cmin -1", "", "fail",
+				"find /etc/iptables/iptables.conf.bak -cmin -1 2>&1", "/etc/iptables/iptables.conf.bak", "pass",
 				"Couldn't take a backup of the currently running iptables rules.  I won't apply the new ones as a precaution."));
 		units.addElement(new SimpleUnit("ipset_running_conf_backup", "iptables_dir_created",
 				"echo 'ipset save > /etc/ipsets/ipset.conf.bak' | sudo bash",
-				"find /etc/ipsets/ipset.conf.bak -cmin -1", "", "fail",
+				"find /etc/ipsets/ipset.conf.bak -cmin -1 2>&1", "/etc/ipsets/ipset.conf.bak", "pass",
 				"Couldn't take a backup of the currently running ipset rules.  I won't apply the new ones as a precaution."));
 		
 		String manglePolicies = "";
