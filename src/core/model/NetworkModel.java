@@ -160,7 +160,7 @@ public class NetworkModel {
 		//Now populate our ipsets before building our Router
 		this.ipsets.init();
 
-		for(ServerModel router : routers) {
+		for(ServerModel router : routers) { //This will also catch metal/routers
 			router.getNetworking();
 		}
 

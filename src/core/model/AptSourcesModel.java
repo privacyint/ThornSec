@@ -22,7 +22,7 @@ public class AptSourcesModel extends AModel {
 		this.repo    = networkModel.getData().getDebianMirror(me.getLabel());
 		this.dir     = networkModel.getData().getDebianDirectory(me.getLabel());
 
-		me.addRequiredEgress(repo, new Integer[]{80});
+		me.addRequiredEgress(this.repo, new Integer[]{80});
 		me.addRequiredEgress("security.debian.org", new Integer[]{80});
 		((ServerModel)me).getProcessModel().addProcess("dirmngr --daemon --homedir /tmp/apt-key-gpghome.[a-zA-Z0-9]*$");
 	}
@@ -43,15 +43,14 @@ public class AptSourcesModel extends AModel {
 		units.addElement(new FileUnit("decrease_apt_timeout", "proceed", timeoutConf, "/etc/apt/apt.conf.d/99timeout",
 						"Couldn't decrease the apt timeout. If your network connection is poor, the machine may appear to hang during configuration"));
 		
-		units.addAll(pgp);
-		units.addAll(sources);
-		
+		units.addAll(this.pgp);
+		units.addAll(this.sources);
 		
 		return units;
 	}
 
 	public void addAptSource(String name, String precondition, String sourceLine, String keyserver, String fingerprint) {
-		sources.addElement(new FileUnit("source_" + name, precondition, sourceLine, "/etc/apt/sources.list.d/" + name + ".list"));
+		this.sources.addElement(new FileUnit("source_" + name, precondition, sourceLine, "/etc/apt/sources.list.d/" + name + ".list"));
 		
 		me.addRequiredEgress(keyserver, new Integer[] {11371});
 		

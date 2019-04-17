@@ -110,6 +110,7 @@ public class ProcessModel extends AModel {
 		processStrings.addElement("/sbin/rpcbind -f -w$");
 		processStrings.addElement("\\[ttm_swap\\]$");
 		processStrings.addElement("/usr/sbin/irqbalance --foreground$");
+
 		//processStrings.addElement("");
 	}
 
