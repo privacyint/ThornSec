@@ -299,6 +299,9 @@ public class Router extends AStructuredProfile {
 		Vector<Integer> listen = machine.getRequiredListen();
 		String machineName = machine.getLabel();
 		
+		//Only create these rules if we actually *have* users.
+		if (networkModel.getIPSet().isEmpty("user")) { return units; }
+		
 		if (machine instanceof ServerModel && listen.size() > 0) {
 			String rule = "";
 			rule += "-p tcp";
@@ -429,21 +432,41 @@ public class Router extends AStructuredProfile {
 
 		String machineName = machine.getLabel();
 		
-		//Don't need this to be conditional... I don't think :/
-		String rule = "";
-		rule += "-p tcp";
-		rule += " --dport " + networkModel.getData().getSSHPort(machineName);
-		rule += " -m set";
-		rule += " --match-set " + machineName + "_admins src";
-		rule += " -j ACCEPT";
-
-		this.firewall.addFilter(
-				machine.getHostname() + "_allow_admin_ssh",
-				machine.getForwardChain(),
-				rule,
-				"Allow SSH from admins"
-		);
-
+		//We need to check there's anything in the set, first
+		if (networkModel.getIPSet().isEmpty(machineName + "_admins")) {
+			if (((ServerModel)machine).isRouter() && ((ServerModel)machine).isMetal()) {
+				String rule = "";
+				rule += "-p tcp";
+				rule += " --dport " + networkModel.getData().getSSHPort(machineName);
+				rule += " -j ACCEPT";
+		
+				this.firewall.addFilter(
+						machine.getHostname() + "_allow_admin_ssh",
+						machine.getForwardChain(),
+						rule,
+						"Allow SSH from admins"
+				);
+			}
+			else {
+				//Hmm. Should probably throw something here
+			}
+		}
+		else {
+			String rule = "";
+			rule += "-p tcp";
+			rule += " --dport " + networkModel.getData().getSSHPort(machineName);
+			rule += " -m set";
+			rule += " --match-set " + machineName + "_admins src";
+			rule += " -j ACCEPT";
+	
+			this.firewall.addFilter(
+					machine.getHostname() + "_allow_admin_ssh",
+					machine.getForwardChain(),
+					rule,
+					"Allow SSH from admins"
+			);
+		}
+		
 		return units;
 	}
 
@@ -460,7 +483,10 @@ public class Router extends AStructuredProfile {
 		}
 		
 		for (DeviceModel device : networkModel.getUserDevices()) {
-			//No need for ingress rules here
+			
+			if (device.getSubnets().isEmpty()) { continue; } //Unless they don't have any interfaces
+
+			//No need for further ingress rules here
 			machineDnatRules(device);
 			machineAllowUserForwardRules(device);
 			userAllowServerForwardRules(device);
@@ -483,6 +509,7 @@ public class Router extends AStructuredProfile {
 		
 		for (MachineModel machine : networkModel.getAllMachines()) {
 			//Make sure to push traffic to {in,e}gress chains
+			if (machine.getSubnets().isEmpty()) { continue; } //Unless they don't have any interfaces
 			machineIngressEgressForwardRules(machine);
 		}
 		
@@ -650,6 +677,14 @@ public class Router extends AStructuredProfile {
 	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
+		units.addElement(new FileUnit("leave_my_resolv_conf_alone", "proceed",
+				"make_resolv_conf() { :; }",
+				"/etc/dhcp/dhclient-enter-hooks.d/leave_my_resolv_conf_alone"));
+		units.addElement(new FilePermsUnit("leave_my_resolv_conf_alone", "leave_my_resolv_conf_alone",
+				"/etc/dhcp/dhclient-enter-hooks.d/leave_my_resolv_conf_alone",
+				"755",
+				"I couldn't stop various systemd services deciding to override your DNS settings. This will cause you intermittent, difficult to diagnose problems as it randomly sets your DNS to wherever it decides. Great for desktops, atrocious for servers..."));
+		
 		InterfaceModel interfaces = me.getInterfaceModel();
 
 		firewall = ((ServerModel)me).getFirewallModel();
@@ -768,9 +803,11 @@ public class Router extends AStructuredProfile {
 
 		InetAddress netmask = networkModel.getData().getNetmask();
 		
-		//We don't actually care about internal ifaces if we're a metal/router
-		//We very deliberately hang everything off a bridge, to stop internal traffic over the ext iface
-		if (((ServerModel) me).isMetal()) { 
+		//We don't actually care about LAN ifaces if we're a metal/router
+		if (((ServerModel) me).isMetal()) {
+			//We very deliberately hang everything off a bridge, to stop internal traffic over the WAN iface
+			units.addElement(new InstalledUnit("bridge_utils", "bridge-utils"));
+			
 			InetAddress subnet  = networkModel.stringToIP("10.0.0.0");
 			InetAddress address = networkModel.stringToIP("10.0.0.1");
 
@@ -889,11 +926,6 @@ public class Router extends AStructuredProfile {
 			));
 		}
 		
-		units.addElement(new SimpleUnit("ifaces_up", "proceed",
-				"sudo service networking restart",
-				"sudo ip addr | grep " + bridge, "", "fail",
-				"Couldn't bring your network interfaces up.  This can potentially be resolved by a restart (assuming you've had no other network-related errors)."));
-
 		//Initialise the basic firewall rules for everything
 		for (MachineModel machine : networkModel.getAllMachines()) {
 			if (machine.getSubnets().isEmpty()) { continue; } //Unless they don't have any interfaces

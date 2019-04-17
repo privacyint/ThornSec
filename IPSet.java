@@ -10,6 +10,7 @@ import core.model.AModel;
 import core.model.DeviceModel;
 import core.model.NetworkModel;
 import core.model.ServerModel;
+import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
@@ -82,9 +83,22 @@ public class IPSet extends AModel {
 	
 	private Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
-		
-		units.addElement(new DirUnit("ipsets_dir", "ipset_installed", "/etc/ipsets", "Couldn't create your ipsets. Your firewall will not work."));
 
+		return units;
+	}
+	
+	public Vector<IUnit> getLiveConfig() {
+		Vector<IUnit> units = new Vector<IUnit>();
+
+		units.addElement(new DirUnit("ipsets_dir", "ipset_installed",
+				"/etc/ipsets",
+				"Couldn't create the directory for your ipsets. Your firewall will not work, and you will get all sorts of errors."
+				+ " Please try rebooting the machine and re-running this configuration."));
+		
+		for (String set : ipsets.keySet()) {
+			units.addAll(getSet(set));
+		}
+		
 		String ipsetsConfSh = "";
 		ipsetsConfSh += "#!/bin/bash\n";
 		ipsetsConfSh += "cd /etc/ipsets/\n";
@@ -97,16 +111,10 @@ public class IPSet extends AModel {
 		ipsetsConfSh += "}";
 		units.addElement(new FileUnit("ipsets_conf_shell_script", "ipsets_dir_created", ipsetsConfSh, "/etc/ipsets/ipsets.up.sh"));
 		units.addElement(new FilePermsUnit("ipsets_conf_shell_script", "ipsets_conf_shell_script", "/etc/ipsets/ipsets.up.sh", "750"));
-		
-		return units;
-	}
-	
-	public Vector<IUnit> getLiveConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
-		
-		for (String set : ipsets.keySet()) {
-			units.addAll(getSet(set));
-		}
+
+		units.addElement(new SimpleUnit("ipset_applied", "ipsets_conf_shell_script_chmoded",
+				"", //This is a forced ipset update.
+				"sudo /etc/ipsets/ipsets.up.sh | sudo ipset -! restore", "", "pass"));
 		
 		return units;
 	}
@@ -163,8 +171,8 @@ public class IPSet extends AModel {
 		Vector<IUnit> units = new Vector<IUnit>();
 
 		units.addAll(this.getInstalled());
-		units.addAll(this.getPersistentConfig());
 		units.addAll(this.getLiveConfig());
+		units.addAll(this.getPersistentConfig());
 		
 		return units;
 	}
@@ -182,6 +190,6 @@ public class IPSet extends AModel {
 	}
 
 	public boolean isEmpty(String set) {
-		return ( ! this.ipsets.containsKey(set) || ! this.ipsets.get(set).isEmpty());
+		return ( ! this.ipsets.containsKey(set) || ! this.ipsets.get(set).isEmpty() );
 	}
 }
