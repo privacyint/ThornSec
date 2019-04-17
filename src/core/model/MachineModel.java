@@ -97,7 +97,7 @@ public abstract class MachineModel extends AModel {
 	}
 
 	//This *must* be implemented by descendants
-	public abstract void getNetworking();
+	public abstract Vector<IUnit> getNetworking();
 	
 	public InetAddress getIP() {
 		return this.getNetworkIfaces().getIfaces().elementAt(0).getAddress();

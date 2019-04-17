@@ -15,7 +15,7 @@ public class DeviceModel extends MachineModel {
 		super(label, networkModel);
 	}
 	
-	public void getNetworking() {
+	public Vector<IUnit> getNetworking() {
 		InterfaceModel im = getInterfaceModel();
 
 		super.setFirstOctet(10);
@@ -47,6 +47,8 @@ public class DeviceModel extends MachineModel {
 			
 			++i;
 		}
+		
+		return new Vector<IUnit>();
 	}
 	
 	public String getType() {

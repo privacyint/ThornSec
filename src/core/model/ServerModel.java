@@ -109,12 +109,15 @@ public class ServerModel extends MachineModel {
 
 	}
 	
-	public void getNetworking() {
+	@Override
+	public Vector<IUnit> getNetworking() {
+		Vector<IUnit> units = new Vector<IUnit>();
+		
 		for (AStructuredProfile type : this.types) {
-			type.getNetworking();
+			units.addAll(type.getNetworking());
 		}
 		for (AProfile profile : this.profiles) {
-			profile.getNetworking();
+			units.addAll(profile.getNetworking());
 		}
 		
 		if (networkModel.getData().getExternalIp(getLabel()) != null) {
@@ -125,6 +128,8 @@ public class ServerModel extends MachineModel {
 		addRequiredEgress("security-cdn.debian.org");
 		addRequiredEgress("prod.debian.map.fastly.net");
 		addRequiredEgress("255.255.255.255", 25);
+		
+		return units;
 	}
 
 	void registerService(ServerModel service) {
@@ -239,6 +244,7 @@ public class ServerModel extends MachineModel {
 		units.addAll(2, bindMounts.getUnits());
 		units.addAll(2, aptSources.getUnits());
 		units.addAll(2, getNetworkIfaces().getUnits());
+		units.addAll(2, getNetworking());
 		units.addAll(configFiles.getUnits());
 		units.addAll(runningProcesses.getUnits());
 		units.addAll(users.getUnits());
