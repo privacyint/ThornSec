@@ -97,10 +97,10 @@ public class DNS extends AStructuredProfile {
 		config += "    do-tcp: yes\n";
 		config += "    access-control: 127.0.0.0/8 allow\n";
 		config += "    access-control: 10.0.0.0/8 allow\n";
-		config += "    access-control: 172.16.0.0/12 allow\n";
-		config += "    access-control: 192.168.0.0/16 allow\n";
+		//config += "    access-control: 172.16.0.0/12 allow\n";
+		//config += "    access-control: 192.168.0.0/16 allow\n";
 		config += "    access-control: 0.0.0.0/0 refuse\n";
-		config += "    access-control: " + networkModel.getData().getIP().getHostAddress() + "/32 allow\n";
+		//config += "    access-control: " + networkModel.getData().getIP().getHostAddress() + "/32 allow\n";
 		config += "    hide-identity: yes\n";
 		config += "    hide-version: yes\n";
 		config += "    harden-glue: yes\n";
@@ -118,8 +118,8 @@ public class DNS extends AStructuredProfile {
 		config += "    msg-cache-size: " + (cpus / 8) + "m\n";
 		config += "    so-rcvbuf: 1m\n";
 		config += "    private-address: 10.0.0.0/8\n";
-		config += "    private-address: 172.16.0.0/12\n";
-		config += "    private-address: 192.168.0.0/16\n";
+		//config += "    private-address: 172.16.0.0/12\n";
+		//config += "    private-address: 192.168.0.0/16\n";
 		
 		for (String domain : domainRecords.keySet()) {
 			config += "    private-domain: \\\"" + domain + "\\\"\n";
@@ -291,7 +291,7 @@ public class DNS extends AStructuredProfile {
 		
 		String resolv = "";
 		resolv += "search " + networkModel.getData().getDomain(me.getLabel()) + "\n";
-		resolv += "nameserver 127.0.0.1";
+		resolv += "nameserver 10.0.0.1";
 		units.addElement(new FileUnit("dns_resolv_conf", "dns_running", resolv, "/etc/resolv.conf",
 				"Unable to change your DNS to point at the local one.  This will probably cause VM building to fail, amongst other problems"));
 		
