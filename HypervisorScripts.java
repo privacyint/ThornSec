@@ -19,12 +19,14 @@ import core.unit.pkg.InstalledUnit;
 public class HypervisorScripts extends AStructuredProfile {
 	
 	private String vmBase;
-	private String dataDirBase;
+
+	private String disksDirBase;
+	private String dataDiskDirBase;
+	private String bootDiskDirBase;
+
 	private String backupDirBase;
-	private String bootDirBase;
 	private String isoDirBase;
 	private String logDirBase;
-	private String disksDirBase;
 
 	private String scriptsBase;
 	private String recoveryScriptsBase;
@@ -50,46 +52,47 @@ public class HypervisorScripts extends AStructuredProfile {
 	protected Vector<IUnit> getPersistentConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		vmBase       = networkModel.getData().getHypervisorThornsecBase(me.getLabel());
-		scriptsBase  = vmBase + "/scripts";
-		disksDirBase = vmBase + "/disks";
-
-		dataDirBase   = disksDirBase + "/data";
-		bootDirBase   = disksDirBase + "/boot";
-		backupDirBase = vmBase + "/backups";
-		isoDirBase    = vmBase + "/isos";
-		logDirBase    = vmBase + "/logs";
-
-		recoveryScriptsBase = scriptsBase + "/recovery";
-		backupScriptsBase   = scriptsBase + "/backup";
-		controlScriptsBase  = scriptsBase + "/vm";
-		watchdogScriptsBase = scriptsBase + "/watchdog";
-		helperScriptsBase   = scriptsBase + "/helper";
+		this.vmBase = super.networkModel.getData().getHypervisorThornsecBase(me.getLabel());
 		
-		units.addElement(new DirUnit("recovery_scripts_dir", "proceed", recoveryScriptsBase));
-		units.addElement(new DirOwnUnit("recovery_scripts_dir", "recovery_scripts_dir_created", recoveryScriptsBase, "root"));
-		units.addElement(new DirPermsUnit("recovery_scripts_dir", "recovery_scripts_dir_chowned", recoveryScriptsBase, "400"));
+		this.disksDirBase    = this.vmBase + "/disks";
+		this.dataDiskDirBase = this.disksDirBase + "/data";
+		this.bootDiskDirBase = this.disksDirBase + "/boot";
+
+		this.backupDirBase = this.vmBase + "/backups";
+		this.isoDirBase    = this.vmBase + "/isos";
+		this.logDirBase    = this.vmBase + "/logs";
+
+		this.scriptsBase         = this.vmBase + "/scripts";
+		this.recoveryScriptsBase = this.scriptsBase + "/recovery";
+		this.backupScriptsBase   = this.scriptsBase + "/backup";
+		this.controlScriptsBase  = this.scriptsBase + "/vm";
+		this.watchdogScriptsBase = this.scriptsBase + "/watchdog";
+		this.helperScriptsBase   = this.scriptsBase + "/helper";
 		
-		units.addElement(new DirUnit("backup_scripts_dir", "proceed", backupScriptsBase));
-		units.addElement(new DirOwnUnit("backup_scripts_dir", "backup_scripts_dir_created", backupScriptsBase, "root"));
-		units.addElement(new DirPermsUnit("backup_scripts_dir", "backup_scripts_dir_chowned", backupScriptsBase, "400"));
+		units.addElement(new DirUnit("recovery_scripts_dir", "proceed", this.recoveryScriptsBase));
+		units.addElement(new DirOwnUnit("recovery_scripts_dir", "recovery_scripts_dir_created", this.recoveryScriptsBase, "root"));
+		units.addElement(new DirPermsUnit("recovery_scripts_dir", "recovery_scripts_dir_chowned", this.recoveryScriptsBase, "400"));
+		
+		units.addElement(new DirUnit("backup_scripts_dir", "proceed", this.backupScriptsBase));
+		units.addElement(new DirOwnUnit("backup_scripts_dir", "backup_scripts_dir_created", this.backupScriptsBase, "root"));
+		units.addElement(new DirPermsUnit("backup_scripts_dir", "backup_scripts_dir_chowned", this.backupScriptsBase, "400"));
 
-		units.addElement(new DirUnit("control_scripts_dir", "proceed", controlScriptsBase));
-		units.addElement(new DirOwnUnit("control_scripts_dir", "control_scripts_dir_created", controlScriptsBase, "root"));
-		units.addElement(new DirPermsUnit("control_scripts_dir", "control_scripts_dir_chowned", controlScriptsBase, "400"));
+		units.addElement(new DirUnit("control_scripts_dir", "proceed", this.controlScriptsBase));
+		units.addElement(new DirOwnUnit("control_scripts_dir", "control_scripts_dir_created", this.controlScriptsBase, "root"));
+		units.addElement(new DirPermsUnit("control_scripts_dir", "control_scripts_dir_chowned", this.controlScriptsBase, "400"));
 
-		units.addElement(new DirUnit("watchdog_scripts_dir", "proceed", watchdogScriptsBase));
-		units.addElement(new DirOwnUnit("watchdog_scripts_dir", "watchdog_scripts_dir_created", watchdogScriptsBase, "root"));
-		units.addElement(new DirPermsUnit("watchdog_scripts_dir", "watchdog_scripts_dir_chowned", watchdogScriptsBase, "400"));
+		units.addElement(new DirUnit("watchdog_scripts_dir", "proceed", this.watchdogScriptsBase));
+		units.addElement(new DirOwnUnit("watchdog_scripts_dir", "watchdog_scripts_dir_created", this.watchdogScriptsBase, "root"));
+		units.addElement(new DirPermsUnit("watchdog_scripts_dir", "watchdog_scripts_dir_chowned", this.watchdogScriptsBase, "400"));
 
-		units.addElement(new DirUnit("helper_scripts_dir", "proceed", helperScriptsBase));
-		units.addElement(new DirOwnUnit("helper_scripts_dir", "helper_scripts_dir_created", helperScriptsBase, "root"));
-		units.addElement(new DirPermsUnit("helper_scripts_dir", "helper_scripts_dir_chowned", helperScriptsBase, "400"));
+		units.addElement(new DirUnit("helper_scripts_dir", "proceed", this.helperScriptsBase));
+		units.addElement(new DirOwnUnit("helper_scripts_dir", "helper_scripts_dir_created", this.helperScriptsBase, "root"));
+		units.addElement(new DirPermsUnit("helper_scripts_dir", "helper_scripts_dir_chowned", this.helperScriptsBase, "400"));
 
 		//This is for our internal backups
 		units.addElement(new GitCloneUnit("backup_script", "metal_git_installed",
 				"https://github.com/JohnKaul/rsync-time-backup.git",
-				backupScriptsBase + "/rsync-time-backup",
+				this.backupScriptsBase + "/rsync-time-backup",
 				"The backup script couldn't be retrieved from github.  Backups won't work."));
 		
 		units.addAll(helperScripts());
@@ -131,9 +134,9 @@ public class HypervisorScripts extends AStructuredProfile {
 		mountDataScript += "    exit \\$?\n";
 		mountDataScript += "fi";
 		
-		units.addElement(new FileUnit("mount_data_script", "proceed", mountDataScript, helperScriptsBase + "/mountData.sh"));
-		units.addElement(new FileOwnUnit("mount_data_script", "mount_data_script", helperScriptsBase + "/mountData.sh", "root"));
-		units.addElement(new FilePermsUnit("mount_data_script", "mount_data_script_chowned", helperScriptsBase + "/mountData.sh", "750"));
+		units.addElement(new FileUnit("mount_data_script", "proceed", mountDataScript, this.helperScriptsBase + "/mountData.sh"));
+		units.addElement(new FileOwnUnit("mount_data_script", "mount_data_script", this.helperScriptsBase + "/mountData.sh", "root"));
+		units.addElement(new FilePermsUnit("mount_data_script", "mount_data_script_chowned", this.helperScriptsBase + "/mountData.sh", "750"));
 		
 		String umountDataScript = "";
 		umountDataScript += "#!/bin/bash\n";
@@ -145,12 +148,12 @@ public class HypervisorScripts extends AStructuredProfile {
 		umountDataScript += "vm=\\${1}\n";
 		umountDataScript += "echo \\\"Unmounting \\${vm}'s data disk\\\"\n"; 
 		umountDataScript += "\n"; 
-		umountDataScript += "umount \\\"" + dataDirBase + "/\\${vm}/live/\\\"\n";
+		umountDataScript += "umount \\\"" + this.dataDiskDirBase + "/\\${vm}/live/\\\"\n";
 		umountDataScript += "exit \\$?";
 		
-		units.addElement(new FileUnit("umount_data_script", "proceed", umountDataScript, helperScriptsBase + "/umountData.sh"));
-		units.addElement(new FileOwnUnit("umount_data_script", "umount_data_script", helperScriptsBase + "/umountData.sh", "root"));
-		units.addElement(new FilePermsUnit("umount_data_script", "umount_data_script_chowned", helperScriptsBase + "/umountData.sh", "750"));
+		units.addElement(new FileUnit("umount_data_script", "proceed", umountDataScript, this.helperScriptsBase + "/umountData.sh"));
+		units.addElement(new FileOwnUnit("umount_data_script", "umount_data_script", this.helperScriptsBase + "/umountData.sh", "root"));
+		units.addElement(new FilePermsUnit("umount_data_script", "umount_data_script_chowned", this.helperScriptsBase + "/umountData.sh", "750"));
 		
 		return units;
 	}
@@ -259,15 +262,15 @@ public class HypervisorScripts extends AStructuredProfile {
 		backupScript += "\n";
 		backupScript += "warnings=\\\"\\\"\n";
 		backupScript += "\n";
-		backupScript += "for dirPath in " + dataDirBase + "/*/\n";
+		backupScript += "for dirPath in " + dataDiskDirBase + "/*/\n";
 		backupScript += "do\n";
 		backupScript += "    dirPath=\\\"\\${dirPath%*/}\\\"\n";
 		backupScript += "    vm=\\\"\\${dirPath##*/}\\\"\n";
 		backupScript += "\n";
 		backupScript += "    echo \\\"Backing up \\${vm}\\\"\n";
-		backupScript += "    " + helperScriptsBase + "/umountData.sh \\\"\\${vm}\\\" 2>/dev/null\n";
-        backupScript += "    " + helperScriptsBase + "/mountData.sh \\\"\\${vm}\\\" &&" + backupScriptsBase + "/rsync-time-backup/rsync_tmbackup.sh -s " + dataDirBase + "/\\\"\\${vm}\\\"/live/ -d \\\"\\${backupBase}/\\${vm}\\\"\n";
-		backupScript += "    " + helperScriptsBase + "/umountData.sh \\\"\\${vm}\\\" 2>/dev/null\n";
+		backupScript += "    " + this.helperScriptsBase + "/umountData.sh \\\"\\${vm}\\\" 2>/dev/null\n";
+        backupScript += "    " + this.helperScriptsBase + "/mountData.sh \\\"\\${vm}\\\" && " + backupScriptsBase + "/rsync-time-backup/rsync_tmbackup.sh -s " + dataDiskDirBase + "/\\\"\\${vm}\\\"/live/ -d \\\"\\${backupBase}/\\${vm}\\\"\n";
+		backupScript += "    " + this.helperScriptsBase + "/umountData.sh \\\"\\${vm}\\\" 2>/dev/null\n";
 		backupScript += "\n";
 		backupScript += "    if [ ! \\\"\\$(ls -A \\${backupBase}/\\${vm}/latest)\\\" ]; then\n";
 		backupScript += "         warnings+=\\\"WARNING: \\${vm}'s latest backup is empty.\\n\\\"\n";
@@ -332,7 +335,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		stopScript += "\n";
 		stopScript += "function stopAll {\n";
 		stopScript += "    echo \\\"=== Stopping all VMs at \\$(date) ===\\\"\n";
-		stopScript += "    for dirPath in " + dataDirBase + "/*/\n";
+		stopScript += "    for dirPath in " + dataDiskDirBase + "/*/\n";
 		stopScript += "    do\n";
 		stopScript += "        dirPath=\\\"\\${dirPath%*/}\\\"\n";
 		stopScript += "        vm=\\\"\\${dirPath##*/}\\\"\n";
@@ -370,7 +373,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		startScript += "\n";
 		startScript += "function startAll {\n";
 		startScript += "    echo \\\"=== Starting all VMs at \\$(date) ===\\\"\n";
-		startScript += "    for dirPath in " + dataDirBase + "/*/\n";
+		startScript += "    for dirPath in " + dataDiskDirBase + "/*/\n";
 		startScript += "    do\n";
 		startScript += "        dirPath=\\\"\\${dirPath%*/}\\\"\n";
 		startScript += "        vm=\\\"\\${dirPath##*/}\\\"\n";
@@ -406,7 +409,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		deleteVmScript += "wait\n";
 		deleteVmScript += "\n";
 		deleteVmScript += "echo \\\"Deleting \\${vm}'s files\\\"\n";
-		deleteVmScript += "rm -R \\\"" + bootDirBase + "/\\${vm}\\\" 2>/dev/null\n";
+		deleteVmScript += "rm -R \\\"" + bootDiskDirBase + "/\\${vm}\\\" 2>/dev/null\n";
 		deleteVmScript += "rm -R \\\"" + isoDirBase + "/\\${vm}\\\" 2>/dev/null\n";
 		deleteVmScript += "rm -R \\\"" + logDirBase + "/\\${vm}\\\" 2>/dev/null\n";
 		deleteVmScript += "rm -R \\\"/home/vboxuser_\\${vm}/VirtualBox VMs\\\" 2>/dev/null\n";
@@ -454,7 +457,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		backupRecoveryScript += controlScriptsBase + "/stopVm.sh \\\"\\${vm}\\\"\n";
 		backupRecoveryScript += "rm -rf /mnt/*\n";
 		backupRecoveryScript += "cp -R \\\"" + backupDirBase + "/\\${vm}/latest/*\\\" /mnt/\n";
-		backupRecoveryScript += helperScriptsBase + "/unmountVdi.sh\n";
+		backupRecoveryScript += this.helperScriptsBase + "/unmountVdi.sh\n";
 		backupRecoveryScript += controlScriptsBase + "/startVm.sh \\\"\\${vm}\\\"\n";
 		backupRecoveryScript += "echo \\\"=== Finished restoring latest internal backup of \\${vm} at \\$(date) ===\\\"";
 		
@@ -465,7 +468,7 @@ public class HypervisorScripts extends AStructuredProfile {
 		String prevToVbox = "";
 		prevToVbox += "#!/bin/bash\n";
 		prevToVbox += "echo \\\"=== Restoring all vbox-prev files ===\\\"\n";
-		prevToVbox += "for dirPath in " + dataDirBase + "/*/\n";
+		prevToVbox += "for dirPath in " + dataDiskDirBase + "/*/\n";
 		prevToVbox += "do\n";
 		prevToVbox += "    dirPath=\\${dirPath%*/}\n";
 		prevToVbox += "    vm=${dirPath##*/}\n";
@@ -487,9 +490,9 @@ public class HypervisorScripts extends AStructuredProfile {
 		String adminScript = "";
 		adminScript += "#!/bin/bash\n";
 		adminScript += "\n";
-		adminScript += "VMS_BASE=" + dataDirBase + "\n";
+		adminScript += "VMS_BASE=" + dataDiskDirBase + "\n";
 		adminScript += "SCRIPTS_BASE=" + scriptsBase + "\n";
-		adminScript += "HELPER_SCRIPTS=" + helperScriptsBase + "\n";
+		adminScript += "HELPER_SCRIPTS=" + this.helperScriptsBase + "\n";
 		adminScript += "CONTROL_SCRIPTS=" + controlScriptsBase + "\n";
 		adminScript += "RECOVERY_SCRIPTS=" + recoveryScriptsBase + "\n";
 		adminScript += "BACKUP_SCRIPTS=" + backupScriptsBase + "\n";
