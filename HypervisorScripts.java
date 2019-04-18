@@ -292,7 +292,7 @@ public class HypervisorScripts extends AStructuredProfile {
 			backupScript += getNetworkModel().getDeviceModel(admin).getEmailAddress() + " ";
 		}
 		backupScript += "-e \\\"set realname='\\${emailFromRealName}️' from=\\${emailFrom}\\\" -s \\\"[WARN] [" + me.getLabel() + "] Backup Failed!\\\" -a \\\"" + backupScriptsBase + "/backup.latest\\\"\n";
-		backupScript += "fi\n";
+		backupScript += "fi";
 
 		units.addElement(new FileUnit("metal_backup_script", "proceed", backupScript, backupScriptsBase + "/backup.sh"));
 		units.addElement(new FileOwnUnit("metal_backup_script", "metal_backup_script", backupScriptsBase + "/backup.sh", "root"));
