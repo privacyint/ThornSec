@@ -100,26 +100,28 @@ public class DHCP extends AStructuredProfile {
 		dhcpconf += "\n";
 		dhcpconf += "\tsubnet 10.0.0.0 netmask 255.0.0.0 {\n"; 
 		dhcpconf += "\t}\n";
-		
-		for (int i = 0; i < classes.size(); ++i) {
-			dhcpconf += classes.elementAt(i);
-		}
 
-		dhcpconf += "\n";
-
-		for (String stanza : stanzas) {
-			dhcpconf += stanza;
-		}
-		
 		if (networkModel.getData().getAutoGuest()) {
-			dhcpconf += "\n\n";
+			dhcpconf += "\n";
+			dhcpconf += "\t#This is our pool for guest connections\n";
+			dhcpconf += "\t#We put it first, because everyone is a guest until they aren't!\n";
 			dhcpconf += "\tsubnet 10.250.0.0 netmask 255.255.252.0 {\n";
 			dhcpconf += "\t\tpool {\n";
 			dhcpconf += "\t\t\trange 10.250.0.15 10.250.3.255;\n";
 			dhcpconf += "\t\t\toption routers 10.0.0.1;\n";
 			dhcpconf += "\t\t\toption domain-name-servers 1.1.1.1;\n";
-			dhcpconf += "\t\t}";
+			dhcpconf += "\t\t}\n";
 			dhcpconf += "\t}";
+		}
+
+		for (int i = 0; i < this.classes.size(); ++i) {
+			dhcpconf += this.classes.elementAt(i);
+		}
+
+		dhcpconf += "\n";
+
+		for (String stanza : this.stanzas) {
+			dhcpconf += stanza;
 		}
 		
 		dhcpconf += "\n}";
