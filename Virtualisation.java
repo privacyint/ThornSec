@@ -22,8 +22,14 @@ public class Virtualisation extends AStructuredProfile {
 		super("virtualisation", me, networkModel);
 
 		me.getAptSourcesModel().addAptSource("virtualbox", "proceed", "deb http://download.virtualbox.org/virtualbox/debian stretch contrib", "keyserver.ubuntu.com", "0xa2f683c52980aecf");
+	
+		me.getProcessModel().addProcess("/usr/lib/virtualbox/VBoxXPCOMIPCD$");
+		me.getProcessModel().addProcess("/usr/lib/virtualbox/VBoxSVC --auto-shutdown$");
+		me.getProcessModel().addProcess("\\[iprt-VBoxWQueue\\]$");
+		me.getProcessModel().addProcess("\\[iprt-VBoxTscThr\\]$");
+		me.getProcessModel().addProcess("\\[kvm-irqfd-clean\\]$");
 	}
-
+	
 	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
@@ -41,11 +47,7 @@ public class Virtualisation extends AStructuredProfile {
 	protected Vector<IUnit> getLiveConfig() {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		((ServerModel)me).getProcessModel().addProcess("/usr/lib/virtualbox/VBoxXPCOMIPCD$");
-		((ServerModel)me).getProcessModel().addProcess("/usr/lib/virtualbox/VBoxSVC --auto-shutdown$");
-		((ServerModel)me).getProcessModel().addProcess("\\[iprt-VBoxWQueue\\]$");
-		((ServerModel)me).getProcessModel().addProcess("\\[iprt-VBoxTscThr\\]$");
-		((ServerModel)me).getProcessModel().addProcess("\\[kvm-irqfd-clean\\]$");
+
 		
 		return units;
 	}
