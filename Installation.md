@@ -1,38 +1,12 @@
 # Thornsec Installation Guide
-## What is Thornsec and why would I want it
-Thornsec is service management system that uses virtualisation (with VirtualBox) to run applications in secure and separate environments. 
-
-Thornec's purpose is to help small and medium group of people easily deploy, manage and maintain services in a secure way instead of relying on third-party providers. Whether you are an organisation, a small company, a wanna-be service provider or a very motivated individual, Thornsec offers a simple way to quickly and securely deploy,  audit, configure, and manage services such as Nextcloud, Etherpad or a CMS such as Drupal in secured virtual machines.  A full list of currently supported profiles can be found at https://github.com/privacyint/thornsec-profiles/.
-
-Here is a list of the feature it offers:
-- Entire network configuration (from router management to iptables rules for each service)
-- Fully-routed network, using whitelisting for egress
-- Easy integration via profiles with existing web services (Nextcloud, Etherpad, Redmine, Drupal, Grav...)
-- User and external devices management (printers, wifi hotspots...)
-- Automated backup management
-- Automated updates
-- Hypervisor to easily monitor and manage services through VMs (restart, wipe and rebuild, add, remove...)
-- Bandwidth alerts on potential exfiltration
-
-
-As an example, Thornsec is used by PI to run all of our internal and external services on a mix of locally owned and hosted machines. So if you are an organisation using Dropbox for file sharing, Google Drive for collaborative editing and Slack for project management and are looking to get away from these private services (for cost or political reasons), Thornsec can help you set up and manage the open-source equivalent of these services on a server you own or rent.
-
-## How does it work
-You get a VM, you get a VM, everybody gets a VM! 
-Thornsec basically runs services in securly configured VMs only allowed to talk to the hypervisor and specific authorised destination (e.g.: Drupal.com to update your drupal instance)
-
-Indeed, ThornSec, as a framework, has two major components:
-
-```
-- Router
-- Hypervisor
-```
-
-ThornSec provides a fully-routed network, meaning all networking comms go via the Router.  Each user, device, and machine on a network can have their own tightly-defined subnet, and a tight set of whitelisted rules on what is allowed to talk to where.
-The Hypervisor allows the quick spinning up/tearing down of VMs, and handles automated daily backups.
 
 ## Requirements
 Thornsec can be deployed in a variety of environments. To install and run it you will need:
+
+### 0. Router
+
+In terms of hardware, it needs (at the very least) a computer to function as a router, with two ethernet ports.  This router need not be expensive - for a small organisation (say 10 endpoints) a Raspberry Pi 3 is more than capable (although it will require an ethernet dongle).  We at Privacy International bought an enterprise-grade HP machine which cost us £..., and I have recently bought a thin client for £19 (Intel Atom, 2GB RAM, 20GB SSD), which will be more than up to the task.
+
 
 ### 1. Server
 
@@ -47,6 +21,8 @@ The machine(s) you will be using need to fit the minimum requirements to run Tho
 ```
 
 If you want to host services internally, a £175 machine (Core i5, 8GB RAM, 500GB SSD), can easily run ThornSec as it is designed to run on consumer-grade hardware (so for instance a ThinkPad, which can be picked up very cheaply). If you are a bit short on power running everything on this machine you can add a Raspberry Pi 3 to function as a router (although it will require an ethernet dongle).
+
+> Both the Router and the Hypervisor need to be able to run Debian GNU/Linux, and the machine you will use to do the configuration needs to have (at the very least) a Java Runtime installed.  To take fuller advantage of the inbuilt functionality for password management, and one-click configuration, you should have a PGP key (I recommend one only for this use), have [pass](https://www.passwordstore.org/) installed, and be on a machine with the SSH private key installed.
 
 ### 2. Local machine
 
