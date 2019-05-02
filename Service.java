@@ -68,8 +68,8 @@ public class Service extends AStructuredProfile {
 		units.addElement(new RunningUnit("entropy_generator", "haveged", "haveged"));
 		//Block until we have enough entropy to continue
 		units.addElement(new SimpleUnit("enough_entropy_available", "entropy_generator_installed",
-				"while [ `cat /proc/sys/kernel/random/entropy_avail` -le 600 ]; do sleep 2; done;",
-				"(($(cat /proc/sys/kernel/random/entropy_avail) > 600)) && echo pass || echo fail", "pass", "pass"));
+				"while [ $(cat /proc/sys/kernel/random/entropy_avail) -le 600 ]; do sleep 2; done;",
+				"(( $(cat /proc/sys/kernel/random/entropy_avail) > 600 )) && echo pass || echo fail", "pass", "pass"));
 		
 		((ServerModel)me).getProcessModel().addProcess("/usr/sbin/haveged --Foreground --verbose=1 -w 1024$");
 		
