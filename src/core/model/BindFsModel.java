@@ -11,11 +11,8 @@ import core.unit.pkg.InstalledUnit;
 
 public class BindFsModel extends AModel {
 
-	public BindFsModel(String label) {
-		super(label);
-	}
-
-	public void init(NetworkModel model) {
+	BindFsModel(String label, ServerModel me, NetworkModel networkModel) {
+		super(label, me, networkModel);
 	}
 
 	public Vector<IUnit> getUnits() {
@@ -26,19 +23,19 @@ public class BindFsModel extends AModel {
 		return units;
 	}
 
-	public Vector<IUnit> addLogBindPoint(String server, NetworkModel model, String name, String precondition, String username, String permissions) {
-		return addBindPoint(server, model, name + "_log", precondition, "/var/log/." + name.replaceAll("-",  "_"), "/var/log/" + name.replaceAll("-",  "_"), username, username, permissions, "/var/log", true);
+	public Vector<IUnit> addLogBindPoint(String name, String precondition, String username, String permissions) {
+		return addBindPoint(name + "_log", precondition, "/var/log/." + name.replaceAll("-",  "_"), "/var/log/" + name.replaceAll("-",  "_"), username, username, permissions, "/var/log", true);
 	}
 
-	public Vector<IUnit> addDataBindPoint(String server, NetworkModel model, String name, String precondition, String username, String group, String permissions) {
-		return addBindPoint(server, model, name + "_data", precondition, "/media/metaldata/" + name.replaceAll("-",  "_"), "/media/data/" + name.replaceAll("-",  "_"), username, group, permissions, "/media/metaldata", false);
+	public Vector<IUnit> addDataBindPoint(String name, String precondition, String username, String group, String permissions) {
+		return addBindPoint(name + "_data", precondition, "/media/metaldata/" + name.replaceAll("-",  "_"), "/media/data/" + name.replaceAll("-",  "_"), username, group, permissions, "/media/metaldata", false);
 	}
 	
-	public Vector<IUnit> addBindPoint(String server, NetworkModel model, String name, String precondition, String baseDirectory, String bindPoint, String username, String group, String permissions) {
-		return addBindPoint(server, model, name, precondition, baseDirectory, bindPoint, username, group, permissions, "", false);
+	public Vector<IUnit> addBindPoint(String name, String precondition, String baseDirectory, String bindPoint, String username, String group, String permissions) {
+		return addBindPoint(name, precondition, baseDirectory, bindPoint, username, group, permissions, "", false);
 	}
 		
-	public Vector<IUnit> addBindPoint(String server, NetworkModel model, String name, String precondition, String baseDirectory, String bindPoint, String username, String group, String permissions, String mountAfter, Boolean isNetDev) {
+	public Vector<IUnit> addBindPoint(String name, String precondition, String baseDirectory, String bindPoint, String username, String group, String permissions, String mountAfter, Boolean isNetDev) {
 		Vector<IUnit> units = new Vector<IUnit>();
 
 		String requires = (Objects.equals(mountAfter, "")) ? "" : ",x-systemd.after=" + mountAfter;
@@ -58,7 +55,7 @@ public class BindFsModel extends AModel {
 		//Mount!
 		units.addElement(new DirMountedUnit(name, "fstab_appended", bindPoint, "Couldn't mount " + bindPoint + ".  This means the directory will have the wrong permissions and there will be other failures."));
 
-		model.getServerModel(server).getProcessModel().addProcess("bindfs " + baseDirectory + " " + bindPoint + " -o rw,force-user=" + username + ",force-group=" + group + ",create-for-user=" + username + ",create-for-group=" + group + ",perms=" + permissions + ",dev,suid$");
+		((ServerModel)me).getProcessModel().addProcess("bindfs " + baseDirectory + " " + bindPoint + " -o rw,force-user=" + username + ",force-group=" + group + ",create-for-user=" + username + ",create-for-group=" + group + ",perms=" + permissions + ",dev,suid$");
 	
 		return units;
 	}

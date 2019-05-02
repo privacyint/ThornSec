@@ -12,22 +12,19 @@ public class AptSourcesModel extends AModel {
 	private Vector<IUnit> sources;
 	private String repo;
 	private String dir;
-	private Vector<IUnit> gpg;
+	private Vector<IUnit> pgp;
 	
-	public AptSourcesModel(String label) {
-		super(label);
-	}
+	AptSourcesModel(String label, ServerModel me, NetworkModel networkModel) {
+		super(label, me, networkModel);
 
-	public void init(NetworkModel model) {
-		sources = new Vector<IUnit>();
-		gpg = new Vector<IUnit>();
-		repo = model.getData().getDebianMirror(this.getLabel());
-		dir = model.getData().getDebianDirectory(this.getLabel());
-		
-		model.getServerModel(this.getLabel()).getProcessModel().addProcess("dirmngr --daemon --homedir /tmp/apt-key-gpghome.[a-zA-Z0-9]*$");
+		this.sources = new Vector<IUnit>();
+		this.pgp     = new Vector<IUnit>();
+		this.repo    = networkModel.getData().getDebianMirror(me.getLabel());
+		this.dir     = networkModel.getData().getDebianDirectory(me.getLabel());
 
-		model.getServerModel(this.getLabel()).addRouterEgressFirewallRule(this.getLabel(), model, "base_debian", repo, new String[]{"80"});
-		model.getServerModel(this.getLabel()).addRouterEgressFirewallRule(this.getLabel(), model, "security_debian", "security.debian.org", new String[]{"80"});
+		me.addRequiredEgress(this.repo, new Integer[]{80});
+		me.addRequiredEgress("security.debian.org", new Integer[]{80});
+		((ServerModel)me).getProcessModel().addProcess("dirmngr --daemon --homedir /tmp/apt-key-gpghome.[a-zA-Z0-9]*$");
 	}
 
 	public Vector<IUnit> getUnits() {
@@ -35,7 +32,7 @@ public class AptSourcesModel extends AModel {
 
 		units.addElement(new FileUnit("sources_list", "proceed", getPersistent(), "/etc/apt/sources.list"));
 		units.addElement(new InstalledUnit("dirmngr", "proceed", "dirmngr",
-						 "Couldn't install dirmngr.  Anything which requires a GPG key to be downloaded and installed won't work. "
+						 "Couldn't install dirmngr.  Anything which requires a PGP key to be downloaded and installed won't work. "
 						 + "You can possibly fix this by reconfiguring the service."));
 		
 		//Give it 3 seconds before timing out
@@ -43,27 +40,28 @@ public class AptSourcesModel extends AModel {
 		timeoutConf += "Acquire::http::Timeout \"3\";\n"; 
 		timeoutConf += "Acquire::ftp::Timeout \"3\";";
 		
-		units.addElement(new FileUnit("decrease_apt_timeout", "proceed", timeoutConf, "/etc/apt/apt.conf.d/99timeout"));
+		units.addElement(new FileUnit("decrease_apt_timeout", "proceed", timeoutConf, "/etc/apt/apt.conf.d/99timeout",
+						"Couldn't decrease the apt timeout. If your network connection is poor, the machine may appear to hang during configuration"));
 		
-		units.addAll(gpg);
-		units.addAll(sources);
+		units.addAll(this.pgp);
+		units.addAll(this.sources);
 		
 		return units;
 	}
 
-	public void addAptSource(String server, NetworkModel model, String name, String precondition, String sourceLine, String keyserver, String fingerprint) {
-		sources.addElement(new FileUnit("source_" + name, precondition, sourceLine, "/etc/apt/sources.list.d/" + name + ".list"));
+	public void addAptSource(String name, String precondition, String sourceLine, String keyserver, String fingerprint) {
+		this.sources.addElement(new FileUnit("source_" + name, precondition, sourceLine, "/etc/apt/sources.list.d/" + name + ".list"));
 		
-		model.getServerModel(server).addRouterEgressFirewallRule(server, model, name, keyserver, new String[]{"11371"});
+		me.addRequiredEgress(keyserver, new Integer[] {11371});
 		
-		addGpgKey(name, keyserver, fingerprint);
+		addPGPKey(name, keyserver, fingerprint);
 	}
 	
-	private void addGpgKey(String name, String keyserver, String fingerprint) {
-		gpg.addElement(new SimpleUnit(name + "_gpg", "dirmngr_installed",
+	private void addPGPKey(String name, String keyserver, String fingerprint) {
+		pgp.addElement(new SimpleUnit(name + "_pgp", "dirmngr_installed",
 				"sudo apt-key adv --recv-keys --keyserver " + keyserver + " " + fingerprint,
 				"sudo apt-key list 2>&1 | grep '" + name + "'", "", "fail",
-				"Couldn't install " + name + "'s GPG signing cert.  " + name + "'s installation will fail.  You can probably fix this by re-configuring the service."));
+				"Couldn't install " + name + "'s PGP signing cert.  " + name + "'s installation will fail.  You can probably fix this by re-configuring the service."));
 	}
 	
 	private String getPersistent() {
@@ -74,5 +72,4 @@ public class AptSourcesModel extends AModel {
 		
 		return list;
 	}
-	
 }

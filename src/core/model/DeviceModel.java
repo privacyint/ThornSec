@@ -1,124 +1,75 @@
 package core.model;
 
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Objects;
+import java.net.InetAddress;
+
+import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
-import core.data.NetworkData;
+import core.data.InterfaceData;
 import core.iface.IUnit;
 
-public class DeviceModel extends AModel {
+public class DeviceModel extends MachineModel {
 
-	private NetworkData networkData;
-	
-	private int subnetOffset;
-	
-	public DeviceModel(String label) {
-		super(label);
-		this.subnetOffset = 100;
+	public DeviceModel(String label, NetworkModel networkModel) {
+		super(label, networkModel);
 	}
+	
+	public Vector<IUnit> getNetworking() {
+		InterfaceModel im = getInterfaceModel();
 
-	public void setData(NetworkData data) {
-		this.networkData = data;
-	}
-
-	public void init(NetworkModel model) {
-	}
-	
-	public Vector<IUnit> getUnits() {		
-		Vector<IUnit> units = new Vector<IUnit>();
-				
-		//Make sure we have no duplication in our unit tests (this can happen occasionally)
-		units = new Vector<IUnit>(new LinkedHashSet<IUnit>(units));
+		super.setFirstOctet(10);
+		super.setSecondOctet(50);
+		super.setThirdOctet(networkModel.getAllDevices().indexOf(this) + 1);
 		
-		return units;
-	}
-
-	public String ipFromClass() {
-		String subnet  = get3rdOctet();
-		String ipClass = networkData.getIPClass();
+		int i = 0;
 		
-		if (Objects.equals(ipClass,"c")) {
-			return "192.168." + subnet;
-		} else if (Objects.equals(ipClass, "b")) {
-			return "172.16." + subnet;
-		} else if (Objects.equals(ipClass, "a")) {
-			return "10.0." + subnet;
-		} else {
-			return "0.0.0";
-		}
-	}
-	
-	public String get3rdOctet() {
-		return (subnetOffset + Arrays.asList(this.networkData.getDeviceLabels()).indexOf(getLabel())) + "";
-	}
-	
-	public String[] getSubnets() {
-		String[] macs    = getMacs();
-		String[] subnets = new String[macs.length];
-		
-		for (int i = 0; i < macs.length; ++i) {
-			subnets[i] = ipFromClass() + "." + (i*4);
+		//Add this machine's interfaces
+		for (Map.Entry<String, String> lanIface : networkModel.getData().getLanIfaces(getLabel()).entrySet() ) {	
+			InetAddress subnet    = networkModel.stringToIP(getFirstOctet() + "." + getSecondOctet() + "." + getThirdOctet() + "." + (i * 4));
+			InetAddress router    = networkModel.stringToIP(getFirstOctet() + "." + getSecondOctet() + "." + getThirdOctet() + "." + ((i * 4) + 1));
+			InetAddress address   = networkModel.stringToIP(getFirstOctet() + "." + getSecondOctet() + "." + getThirdOctet() + "." + ((i * 4) + 2));
+			InetAddress broadcast = networkModel.stringToIP(getFirstOctet() + "." + getSecondOctet() + "." + getThirdOctet() + "." + ((i * 4) + 3));
+			InetAddress netmask   = networkModel.getData().getNetmask();
+			
+			im.addIface(new InterfaceData(getLabel(),
+					lanIface.getKey(),
+					lanIface.getValue(),
+					"static",
+					null,
+					subnet,
+					address,
+					netmask,
+					broadcast,
+					router,
+					"comment goes here")
+			);
+			
+			++i;
 		}
 		
-		return subnets;
-	}
-	
-	public String[] getGateways() {
-		String[] macs     = getMacs();
-		String[] gateways = new String[macs.length];
-		
-		for (int i = 0; i < macs.length; ++i) {
-			gateways[i] = ipFromClass() + "." + ((i*4)+1);
-		}
-		
-		return gateways;
-	}
-	
-	public String[] getIPs() {
-		String[] macs = getMacs();
-		String[] ips  = new String[macs.length];
-		
-		for (int i = 0; i < macs.length; ++i) {
-			ips[i] = ipFromClass() + "." + ((i*4)+2);
-		}
-		
-		return ips;
-	}
-	
-	public String[] getBroadcasts() {
-		String[] macs       = getMacs();
-		String[] broadcasts = new String[macs.length];
-		
-		for (int i = 0; i < macs.length; ++i) {
-			broadcasts[i] = ipFromClass() + "." + ((i*4)+3);
-		}
-		
-		return broadcasts;
-	}
-	
-	public String getNetmask() {
-		return "255.255.255.252";
-	}
-	
-	public String[] getMacs() {
-		return this.networkData.getDeviceMacs(this.getLabel());
+		return new Vector<IUnit>();
 	}
 	
 	public String getType() {
-		return this.networkData.getDeviceType(this.getLabel());
+		return getNetworkData().getDeviceType(getLabel());
 	}
 	
 	public Boolean isThrottled() {
-		return this.networkData.getDeviceThrottled(this.getLabel());
+		return getNetworkData().getDeviceIsThrottled(getLabel());
 	}
 
 	public Boolean isManaged() {
-		return this.networkData.getDeviceManaged(this.getLabel());
+		return getNetworkData().getDeviceIsManaged(getLabel());
 	}
 	
-	public String[] getPorts() {
-		return this.networkData.getDevicePorts(this.getLabel());
+	public Set<Integer> getManagementPorts() {
+		return getNetworkData().getDevicePorts(getLabel());
+	}
+
+	@Override
+	protected Vector<IUnit> getUnits() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

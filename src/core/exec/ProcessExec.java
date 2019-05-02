@@ -2,11 +2,11 @@ package core.exec;
 
 import java.io.OutputStream;
 
-public class ProcessExec {
+class ProcessExec {
 
 	private Process proc;
 
-	public ProcessExec(String cmd, OutputStream out, OutputStream err) {
+	ProcessExec(String cmd, OutputStream out, OutputStream err) {
 		try {
 			proc = Runtime.getRuntime().exec(cmd);
 			InputExec procin = new InputExec(proc.getInputStream(), out);
@@ -20,7 +20,7 @@ public class ProcessExec {
 		}
 	}
 
-	public void waitFor() {
+	void waitFor() {
 		try {
 			proc.waitFor();
 		} catch (InterruptedException e) {
@@ -28,7 +28,7 @@ public class ProcessExec {
 		}
 	}
 
-	public void writeAllOpen(byte[] bytes) {
+	void writeAllOpen(byte[] bytes) {
 		try {
 			proc.getOutputStream().write(bytes);
 			proc.getOutputStream().flush();
@@ -37,7 +37,7 @@ public class ProcessExec {
 		}
 	}
 
-	public void writeAllClose(byte[] bytes) {
+	void writeAllClose(byte[] bytes) {
 		try {
 			proc.getOutputStream().write(bytes);
 			proc.getOutputStream().flush();

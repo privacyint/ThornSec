@@ -9,14 +9,11 @@ public class ProcessModel extends AModel {
 
 	private Vector<String> processStrings;
 
-	public ProcessModel(String label) {
-		super(label);
-	}
+	ProcessModel(String label, ServerModel me, NetworkModel networkModel) {
+		super(label, me, networkModel);
 
-	public void init(NetworkModel model) {
 		this.processStrings = new Vector<String>();
 		//These are processes related to TS
-		//vec.addElement("bash -c \\./script.sh; rm -rf script\\.sh; exit;kill \\$\\(lsof -ti:65432\\);$");
 		processStrings.addElement("\\./script.sh; rm -rf script\\.sh; exit;");
 		processStrings.addElement("/bin/bash \\./script.sh$");
 		processStrings.addElement("/sbin/agetty --noclear tty[0-9] linux$");
@@ -113,10 +110,14 @@ public class ProcessModel extends AModel {
 		processStrings.addElement("/sbin/rpcbind -f -w$");
 		processStrings.addElement("\\[ttm_swap\\]$");
 		processStrings.addElement("/usr/sbin/irqbalance --foreground$");
-		//processStrings.addElement("");
 
+		//processStrings.addElement("");
 	}
 
+	/**
+	 * Checks for unexpected processes
+	 *
+	 */
 	public Vector<IUnit> getUnits() {
 		String grepString = "sudo ps -Awwo pid,user,comm,args | grep -v grep | grep -v 'ps -Awwo pid,user,comm,args$'";
 		Vector<IUnit> units = new Vector<IUnit>();

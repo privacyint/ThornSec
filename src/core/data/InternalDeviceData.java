@@ -1,21 +1,38 @@
 package core.data;
 
-import java.util.Objects;
-
 import javax.json.JsonObject;
 
-public class InternalDeviceData extends ADeviceData {
+/**
+ * The Class InternalDeviceData
+ * Represents an internal-only device on our network.
+ */
+class InternalDeviceData extends ADeviceData {
 
-	public InternalDeviceData(String label) {
+	/**
+	 * Instantiates a new internal-only device's data.
+	 *
+	 * @param label the device label
+	 */
+	InternalDeviceData(String label) {
 		super(label);
 	}
 
+	/**
+	 * Reads in and populates this device's data
+	 */
+	@Override
 	public void read(JsonObject data) {
-		super.data = data;
+		super.setData(data);
 		
-		super.macs      = getPropertyArray("macs");
-		super.throttled = Objects.equals(getProperty("throttle", "true"), "true");
-		super.managed   = Objects.equals(getProperty("managed", "false"), "true");
-		super.ports     = getPropertyArray("ports");
+		super.setMacs(super.getPropertyArray("macs"));
+		super.setIsThrottled(Boolean.parseBoolean(super.getProperty("throttle", "true")));
+		super.setIsManaged(Boolean.parseBoolean(super.getProperty("managed", "false")));
+		super.setListenPorts(getProperty("ports", null));
+		super.setCnames(super.getPropertyArray("cnames"));
+
+		super.setFirstOctet(10);
+		super.setSecondOctet(super.getIsManaged() ? 151 : 150);
+		
+		super.setEmailAddress(getProperty("email", getLabel() + "@" + getDomain()));
 	}
 }

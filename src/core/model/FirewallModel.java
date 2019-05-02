@@ -2,7 +2,6 @@ package core.model;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.Objects;
 import java.util.Vector;
 
 import core.iface.IUnit;
@@ -17,11 +16,9 @@ public class FirewallModel extends AModel {
 
 	private LinkedHashMap<String, LinkedHashMap<String, Vector<String>>> iptTables;
 
-	public FirewallModel(String label) {
-		super(label);
-	}
+	FirewallModel(String label, ServerModel me, NetworkModel networkModel) {
+		super(label, me, networkModel);
 
-	public void init(NetworkModel model) {
 		iptTables = new LinkedHashMap<>();
 
 		iptTables.put("mangle", new LinkedHashMap<String, Vector<String>>());
@@ -47,51 +44,64 @@ public class FirewallModel extends AModel {
 		filterTable.put("FORWARD", new Vector<String>());
 		filterTable.put("OUTPUT", new Vector<String>());
 
-		this.addFilterInput("iptables_in_tcp", "-p tcp -j ACCEPT");
-		this.addFilterInput("iptables_in_udp", "-p udp -j ACCEPT");
-		this.addFilterInput("iptables_in_icmp", "-p icmp -j ACCEPT");
+		this.addFilterInput("iptables_in_tcp", "-p tcp -j ACCEPT", "Allow inbound TCP");
+		this.addFilterInput("iptables_in_udp", "-p udp -j ACCEPT", "Allow inbound UDP");
+		this.addFilterInput("iptables_in_icmp", "-p icmp -j ACCEPT", "Allow inbound ping");
 
-		this.addFilterForward("iptables_fwd_tcp", "-p tcp -j ACCEPT");
-		this.addFilterForward("iptables_fwd_udp", "-p udp -j ACCEPT");
-		this.addFilterForward("iptables_fwd_icmp", "-p icmp -j ACCEPT");
+		this.addFilterForward("iptables_fwd_tcp", "-p tcp -j ACCEPT", "Allow internal comms on TCP");
+		this.addFilterForward("iptables_fwd_udp", "-p udp -j ACCEPT", "Allow internal comms on UDP");
+		this.addFilterForward("iptables_fwd_icmp", "-p icmp -j ACCEPT", "Allow internal machines to ping each other");
 
-		this.addFilterOutput("iptables_out_tcp", "-p tcp -j ACCEPT");
-		this.addFilterOutput("iptables_out_udp", "-p udp -j ACCEPT");
-		this.addFilterOutput("iptables_out_icmp", "-p icmp -j ACCEPT");
+		this.addFilterOutput("iptables_out_tcp", "-p tcp -j ACCEPT", "Allow outbound TCP");
+		this.addFilterOutput("iptables_out_udp", "-p udp -j ACCEPT", "Allow outbound UDP");
+		this.addFilterOutput("iptables_out_icmp", "-p icmp -j ACCEPT", "Allow outbound ping");
 	}
-
+	
+	/**
+	 * Gets the firewall configuration units.
+	 * 
+	 * @return Configuration units
+	 */
 	public Vector<IUnit> getUnits() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
+		//Need to do IPSet stuff up here, as iptables now relies on it
+		units.addAll(networkModel.getIPSet().getUnits());
+		
 		units.addElement(new InstalledUnit("iptables", "proceed", "iptables", "I was unable to install your firewall. This is bad."));
+
 		units.addElement(new DirUnit("iptables_dir", "proceed", "/etc/iptables"));
 		
 		String iptablesConfSh = "";
 		iptablesConfSh += "#!/bin/bash\n";
 		iptablesConfSh += "cd /etc/iptables/\n";
-		iptablesConfSh += "{";
-		iptablesConfSh += " cat iptables.mangle.policies.conf | awk /./;";
-		iptablesConfSh += " cat iptables.mangle.forward.conf | awk /./;";
-		iptablesConfSh += " cat iptables.mangle.custom.conf | awk /./;";
-		iptablesConfSh += " cat iptables.nat.prerouting.policies.conf | awk /./;";
-		iptablesConfSh += " cat iptables.nat.prerouting.custom.conf | awk /./;";
-		iptablesConfSh += " cat iptables.nat.prerouting.rules.conf | awk /./;";
-		iptablesConfSh += " cat iptables.nat.postrouting.policies.conf | awk /./;";
-		iptablesConfSh += " cat iptables.nat.postrouting.custom.conf | awk /./;";
-		iptablesConfSh += " cat iptables.nat.postrouting.rules.conf | awk /./;";
-		iptablesConfSh += " cat iptables.filter.policies.conf | awk /./;";
-		iptablesConfSh += " cat iptables.filter.custom.conf | awk /./;";
-		iptablesConfSh += " cat iptables.filter.rules.conf | awk /./;";
-		iptablesConfSh += " }\n";
+		iptablesConfSh += "{\n";
+		iptablesConfSh += "    cat iptables.mangle.policies.conf | awk /./;\n";
+		iptablesConfSh += "    cat iptables.mangle.forward.conf | awk /./;\n";
+		iptablesConfSh += "    cat iptables.mangle.custom.conf | awk /./;\n";
+		iptablesConfSh += "    cat iptables.nat.prerouting.policies.conf | awk /./;\n";
+		iptablesConfSh += "    cat iptables.nat.prerouting.custom.conf | awk /./;\n";
+		iptablesConfSh += "    cat iptables.nat.prerouting.rules.conf | awk /./;\n";
+		iptablesConfSh += "    cat iptables.nat.postrouting.policies.conf | awk /./;\n";
+		iptablesConfSh += "    cat iptables.nat.postrouting.custom.conf | awk /./;\n";
+		iptablesConfSh += "    cat iptables.nat.postrouting.rules.conf | awk /./;\n";
+		iptablesConfSh += "    cat iptables.filter.policies.conf | awk /./;\n";
+		iptablesConfSh += "    cat iptables.filter.custom.conf | awk /./;\n";
+		iptablesConfSh += "    cat iptables.filter.rules.conf | awk /./;\n";
+		iptablesConfSh += "}\n";
 		iptablesConfSh += "echo 'COMMIT'";
 		units.addElement(new FileUnit("iptables_conf_shell_script", "iptables_dir_created", iptablesConfSh, "/etc/iptables/iptables.conf.sh"));
 		units.addElement(new FilePermsUnit("iptables_conf_shell_script", "iptables_conf_shell_script", "/etc/iptables/iptables.conf.sh", "750"));
 		
 		units.addElement(new SimpleUnit("iptables_running_conf_backup", "iptables_dir_created",
 				"echo 'iptables-save > /etc/iptables/iptables.conf.bak' | sudo bash",
-				"find /etc/iptables/iptables.conf.bak -cmin -1", "", "fail",
+				"find /etc/iptables/iptables.conf.bak -cmin -1 2>&1", "/etc/iptables/iptables.conf.bak", "pass",
 				"Couldn't take a backup of the currently running iptables rules.  I won't apply the new ones as a precaution."));
-
+		units.addElement(new SimpleUnit("ipset_running_conf_backup", "iptables_dir_created",
+				"echo 'ipset save > /etc/ipsets/ipset.conf.bak' | sudo bash",
+				"find /etc/ipsets/ipset.conf.bak -cmin -1 2>&1", "/etc/ipsets/ipset.conf.bak", "pass",
+				"Couldn't take a backup of the currently running ipset rules.  I won't apply the new ones as a precaution."));
+		
 		String manglePolicies = "";
 		manglePolicies += "*mangle\n";
 		manglePolicies += ":PREROUTING ACCEPT [0:0]\n";
@@ -136,40 +146,40 @@ public class FirewallModel extends AModel {
 				+ " &&"
 				+ " sudo /etc/iptables/iptables.conf.sh | sudo iptables-restore;",
 				"echo 'This is a hardcoded fail for now. Don\t worry!'", "", "pass"));
-	
+		
 		return units;
 	}
-
-	public void addFilterInput(String name, String rule) {
-		add(name, "filter", "INPUT", rule);
+	
+	public void addFilterInput(String name, String rule, String comment) {
+		add(name, "filter", "INPUT", rule, comment);
 	}
 
-	public void addFilterForward(String name, String rule) {
-		add(name, "filter", "FORWARD", rule);
+	public void addFilterForward(String name, String rule, String comment) {
+		add(name, "filter", "FORWARD", rule, comment);
 	}
 
-	public void addFilterOutput(String name, String rule) {
-		add(name, "filter", "OUTPUT", rule);
+	public void addFilterOutput(String name, String rule, String comment) {
+		add(name, "filter", "OUTPUT", rule, comment);
 	}
 
-	public void addFilter(String name, String chain, String rule) {
-		add(name, "filter", chain, rule);
+	public void addFilter(String name, String chain, String rule, String comment) {
+		add(name, "filter", chain, rule, comment);
 	}
 
-	public void addFilter(String name, String chain, int position, String rule) {
-		add(name, "filter", chain, position, rule);
+	public void addFilter(String name, String chain, int position, String rule, String comment) {
+		add(name, "filter", chain, position, rule, comment);
 	}
 	
-	public void addNatPostrouting(String name, String rule) {
-		add(name, "nat", "POSTROUTING", rule);
+	public void addNatPostrouting(String name, String rule, String comment) {
+		add(name, "nat", "POSTROUTING", rule, comment);
 	}
 
-	public void addNatPrerouting(String name, String rule) {
-		add(name, "nat", "PREROUTING", rule);
+	public void addNatPrerouting(String name, String rule, String comment) {
+		add(name, "nat", "PREROUTING", rule, comment);
 	}
 	
-	public void addMangleForward(String name, String rule) {
-		add(name, "mangle", "FORWARD", rule);
+	public void addMangleForward(String name, String rule, String comment) {
+		add(name, "mangle", "FORWARD", rule, comment);
 	}
 
 	public SimpleUnit addChain(String name, String table, String chain) {
@@ -186,26 +196,32 @@ public class FirewallModel extends AModel {
 		if (ch == null) {
 			tab.put(chain, new Vector<String>());
 		}
-		return new SimpleUnit(name, "proceed", "echo \\\"handled by model\\\";",
+		return new SimpleUnit(name + "_chain", "proceed", "echo \\\"handled by model\\\";",
 				"cat /etc/iptables/iptables.conf | iptables-xml | xsltproc --stringparam table " + table
 						+ " /etc/iptables/iptables.xslt - | " + "grep \":" + chain + " -\"",
 				":" + chain + " - [0:0]", "pass");
 	}
 
-	private void add(String name, String table, String chain, int position, String rule) {
+	private void add(String name, String table, String chain, int position, String rule, String comment) {
 		chain = cleanString(chain);
 		table = cleanString(table);
-						
+		
+		if (comment.equals("")) {
+			comment = "This is probably important, but there is no associated comment - sorry!";
+		}
+		
+		rule += " -m comment --comment \\\"" + comment + "\\\"";
+		
 		this.getChain(table, chain).add(position, rule);
 	}
 
-	private void add(String name, String table, String chain, String rule) {
+	private void add(String name, String table, String chain, String rule, String comment) {
 		table = cleanString(table);
 		chain = cleanString(chain);
 		
 		int position = this.getChain(table, chain).size();
 		
-		add(name, table, chain, position, rule);
+		add(name, table, chain, position, rule, comment);
 	}
 
 	private String getNatPostrouting() {
@@ -242,7 +258,7 @@ public class FirewallModel extends AModel {
 		String filters  = "";
 		
 		for (String policy : filterTable.keySet()) {
-			if (!Objects.equals(policy, "INPUT") && !Objects.equals(policy, "FORWARD") && !Objects.equals(policy, "OUTPUT"))
+			if (!policy.equals("INPUT") && !policy.equals("FORWARD") && !policy.equals("OUTPUT"))
 				policies += ":" + policy + " - [0:0]\n";
 			
 			Vector<String> chain = new Vector<String>(new LinkedHashSet<String>(this.getChain("filter", policy)));
@@ -257,7 +273,6 @@ public class FirewallModel extends AModel {
 	private Vector<String> getChain(String table, String chain) {
 		chain = cleanString(chain);
 		table = cleanString(table);
-		
 		
 		Vector<String> ch = iptTables.get(table).get(chain);
 		if (ch == null) {

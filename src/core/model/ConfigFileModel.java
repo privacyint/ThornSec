@@ -10,14 +10,16 @@ public class ConfigFileModel extends AModel {
 
 	private Vector<String> configFiles;
 
-	public ConfigFileModel(String label) {
-		super(label);
-	}
+	ConfigFileModel(String label, ServerModel me, NetworkModel networkModel) {
+		super(label, me, networkModel);
 
-	public void init(NetworkModel model) {
 		this.configFiles = new Vector<String>();
 	}
 
+	/**
+	 * Gets the units.
+	 *
+	 */
 	public Vector<IUnit> getUnits() {
 		String grepString = "sudo dpkg -V";
 		Vector<IUnit> units = new Vector<IUnit>();
