@@ -22,21 +22,21 @@ public class DHCP extends AStructuredProfile {
 	public DHCP(ServerModel me, NetworkModel networkModel) {
 		super("dhcp", me, networkModel);
 
-		classes         = new Vector<String>();
-		stanzas         = new Vector<String>();
-		listeningIfaces = new Vector<String>();
+		this.classes         = new Vector<String>();
+		this.stanzas         = new Vector<String>();
+		this.listeningIfaces = new Vector<String>();
 	}
 	
 	public void addStanza(String stanza) {
-		stanzas.add(stanza);
+		this.stanzas.add(stanza);
 	}
 	
 	public void addClass(String stanza) {
-		classes.add(stanza);
+		this.classes.add(stanza);
 	}
 
 	public void addListeningIface(String iface) {
-		listeningIfaces.add(iface);
+		this.listeningIfaces.add(iface);
 	}
 
 	public Vector<IUnit> getPersistentConfig() {
@@ -50,7 +50,7 @@ public class DHCP extends AStructuredProfile {
 			if (!iface.getIface().contains("lan") || iface.getMac() == null) { continue; }
 			
 			//ifaceAutoString += iface.getIface() + " ";
-			stanzas.add(iface.getDhcpStanza());
+			this.stanzas.add(iface.getDhcpStanza());
 		}
 		
 		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("dhcp_defiface", "dhcp_installed", "INTERFACES=\\\"" + ifaceAutoString + "\\\"", "/etc/default/isc-dhcp-server"));
