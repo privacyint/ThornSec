@@ -1,6 +1,10 @@
 package profile;
 
+import java.net.URI;
+import java.nio.file.Paths;
 import java.util.Vector;
+
+import javax.swing.JOptionPane;
 
 import core.data.InterfaceData;
 import core.iface.IUnit;
@@ -147,6 +151,16 @@ public class Virtualisation extends AStructuredProfile {
 		
 		String isoDir =  networkModel.getData().getHypervisorThornsecBase(me.getLabel()) + "/isos/" + service + "/";
 
+		String filename = null;
+		
+		try {
+			filename = Paths.get(new URI(networkModel.getData().getDebianIsoUrl(service)).getPath()).getFileName().toString();
+		}
+		catch (Exception e) {
+			JOptionPane.showMessageDialog(null, "You shouldn't have been able to arrive here. Well done!");
+			System.exit(1);
+		}
+		
 		units.addElement(new DirUnit("iso_dir_" + service, "proceed", isoDir));
 		units.addElement(new FileUnit("preseed_" + service, "debian_netinst_iso_downloaded", preseed, isoDir + "preseed.cfg"));
 		units.addElement(new FileOwnUnit("preseed_" + service, "preseed_" + service, isoDir + "preseed.cfg", "root"));
@@ -157,7 +171,7 @@ public class Virtualisation extends AStructuredProfile {
 		//Create a working copy of the iso for preseeding
 		buildIso += 	" cd " + isoDir + ";";
 		buildIso += 	" mkdir loopdir;";
-		buildIso += 	" mount -o loop " + networkModel.getData().getHypervisorThornsecBase(me.getLabel()) + "/debian-netinst.iso loopdir;";
+		buildIso += 	" mount -o loop " + networkModel.getData().getHypervisorThornsecBase(me.getLabel()) + "/" + filename + " loopdir;";
 		buildIso += 	" mkdir cd;";
 		buildIso += 	" rsync -a -H --exclude=TRANS.TBL loopdir/ cd;";
 		buildIso += 	" umount loopdir;";
