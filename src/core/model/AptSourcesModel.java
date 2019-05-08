@@ -37,8 +37,8 @@ public class AptSourcesModel extends AModel {
 		
 		//Give it 3 seconds before timing out
 		String timeoutConf = "";
-		timeoutConf += "Acquire::http::Timeout \"3\";\n"; 
-		timeoutConf += "Acquire::ftp::Timeout \"3\";";
+		timeoutConf += "Acquire::http::Timeout \\\"3\\\";\n"; 
+		timeoutConf += "Acquire::ftp::Timeout \\\"3\\\";";
 		
 		units.addElement(new FileUnit("decrease_apt_timeout", "proceed", timeoutConf, "/etc/apt/apt.conf.d/99timeout",
 						"Couldn't decrease the apt timeout. If your network connection is poor, the machine may appear to hang during configuration"));
