@@ -178,6 +178,10 @@ public class ServerData extends ADeviceData {
 	public String getMetalIface() {
 		return this.metalIface;
 	}
+	
+	public void setMetalIface(String metalIface) {
+		this.metalIface = metalIface;
+	}
 
 	public Integer getAdminPort() {
 		return this.adminPort;
