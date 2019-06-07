@@ -84,7 +84,7 @@ public class ServerData extends ADeviceData {
 		super.setListenPorts(getProperty("ports", null));
 		super.setCnames(super.getPropertyArray("cnames"));
 		super.setHostname(super.getProperty("hostname", null));
-		super.setEmailAddress(getProperty("email", getLabel() + "@" + getDomain()));
+		super.setEmailAddress(getProperty("email", null));
 
 		this.adminUsers     = super.getPropertyArray("admins");
 		this.remoteAdminIps = super.getPropertyArray("sshsource");
