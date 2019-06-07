@@ -49,7 +49,7 @@ public class DHCP extends AStructuredProfile {
 			//Skip over non-LAN interfaces, or we'll potentially offer DHCP to the whole internet!
 			if (!iface.getIface().contains("lan") || iface.getMac() == null) { continue; }
 			
-			//ifaceAutoString += iface.getIface() + " ";
+			ifaceAutoString += " " + iface.getIface();
 			this.stanzas.add(iface.getDhcpStanza());
 		}
 		
