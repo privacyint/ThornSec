@@ -198,7 +198,10 @@ public class Webproxy extends AStructuredProfile {
 		
 		for (String backend : backends) {
 			me.addRequiredForward(backend, 80);
-			me.addRequiredDnat(backend);
+			//Only create these rules if we actually *have* users.
+			if (!networkModel.getIPSet().isEmpty("user")) {
+				me.addRequiredDnat(backend);
+			}
 		}
 		
 		return units;
