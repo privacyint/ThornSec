@@ -235,7 +235,7 @@ public class Virtualisation extends AStructuredProfile {
 		//Metal user setup
 		units.addElement(new SimpleUnit("metal_virtualbox_" + service + "_user", "metal_virtualbox_installed",
 				"sudo adduser " + user + " --system --shell=/bin/false --disabled-login --ingroup " + group,
-				"id " + user + " 2>&1", "id: ‘" + user + "’: no such user", "fail",
+				"id -u " + user + " 2>&1 | grep 'no such user'", "", "pass",
 				"Couldn't create the user for " + service + " on its metal.  This is fatal, " + service + " will not be installed."));
 		
 		//Metal storage setup
