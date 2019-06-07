@@ -179,6 +179,7 @@ public class InterfaceData {
 		ifaceConf += "#" + host + " interface\n";
 		ifaceConf += "#" + comment + "\n";
 		ifaceConf += "iface " + iface + " inet " + inet;
+		ifaceConf += (bridgePorts != null) ?  "\n" + "bridge_ports " + String.join(" ", bridgePorts) : "";
 		ifaceConf += (gateway != null) ? "\n" + "address " + gateway.getHostAddress() : "";
 		ifaceConf += (netmask != null) ? "\n" + "netmask " + netmask.getHostAddress() : "";
 //		ifaceConf += (broadcast != null) ? "\n" + "broadcast " + broadcast.getHostAddress() : "";
