@@ -280,6 +280,7 @@ public class FullFrame {
 					addresses.setText("<html><body><ul>");
 					for (InetAddress address : model.getServerModel(serverLabel).getAddresses()) {
 						if (address == null) { continue; }
+						if (addresses.getText().contains(address.getHostAddress())) { continue; }
 						addresses.setText(addresses.getText() + "<li>" + address.getHostAddress() + "</li>");
 					}
 					addresses.setText(addresses.getText() + "</ul></body></html>");
@@ -375,6 +376,7 @@ public class FullFrame {
 					else {
 						macs.setText("<html><body><ul>");
 						for (String mac : server.getMacs()) {
+							if (macs.getText().contains(mac)) { continue; }
 							macs.setText(macs.getText() + "<li>" + mac + "</li>");
 						}
 						macs.setText(macs.getText() + "</ul></body></html>");
