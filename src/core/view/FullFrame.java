@@ -447,10 +447,18 @@ class CustomServerIconRenderer extends DefaultTreeCellRenderer {
 	private NetworkModel model;
 
 	public CustomServerIconRenderer(NetworkModel model) {
-		routerIcon  = new ImageIcon(CustomServerIconRenderer.class.getResource("images/router.png"));
-		metalIcon   = new ImageIcon(CustomServerIconRenderer.class.getResource("images/metal.jpeg"));
-		serviceIcon = new ImageIcon(CustomServerIconRenderer.class.getResource("images/service.jpeg"));
+		this.routerIcon  = null;
+		this.metalIcon   = null;
+		this.serviceIcon = null;
 
+		try {
+			this.routerIcon  = new ImageIcon(CustomServerIconRenderer.class.getResource("images/router.png"));
+			this.metalIcon   = new ImageIcon(CustomServerIconRenderer.class.getResource("images/metal.jpeg"));
+			this.serviceIcon = new ImageIcon(CustomServerIconRenderer.class.getResource("images/service.jpeg"));
+		}
+		catch (Exception e) {
+			;;
+		}
 		this.model = model;
 	}
 	public Component getTreeCellRendererComponent(JTree tree, Object value,boolean sel,boolean expanded,boolean leaf,int row,boolean hasFocus) {
@@ -486,12 +494,23 @@ class DeviceIconRenderer extends DefaultTreeCellRenderer {
 	private NetworkModel model;
 
 	public DeviceIconRenderer(NetworkModel model) {
-		userIcon      = new ImageIcon(DeviceIconRenderer.class.getResource("images/user.png"));
-		intOnlyIcon   = new ImageIcon(DeviceIconRenderer.class.getResource("images/intonly.png"));
-		extOnlyIcon   = new ImageIcon(DeviceIconRenderer.class.getResource("images/extonly.jpeg"));
-
-		this.model = model;
+		this.userIcon    = null;
+		this.intOnlyIcon = null;
+		this.extOnlyIcon = null;
+		
+		try {
+			this.userIcon    = new ImageIcon(DeviceIconRenderer.class.getResource("images/user.png"));
+			this.intOnlyIcon = new ImageIcon(DeviceIconRenderer.class.getResource("images/intonly.png"));
+			this.extOnlyIcon = new ImageIcon(DeviceIconRenderer.class.getResource("images/extonly.jpeg"));
+		}
+		catch (Exception e) {
+			;;
+		}
+		finally {
+			this.model = model;
+		}
 	}
+	
 	public Component getTreeCellRendererComponent(JTree tree, Object value,boolean sel,boolean expanded,boolean leaf,int row,boolean hasFocus) {
 		super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
 		Object nodeObj = ((DefaultMutableTreeNode)value).getUserObject();
