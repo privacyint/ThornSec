@@ -17,8 +17,10 @@ public class SMBServer extends AStructuredProfile {
 
 	public Vector<IUnit> getNetworking() {
 		Vector<IUnit> units = new Vector<IUnit>();
-
-		for (ServerModel router : networkModel.getRouterServers()) {
+		
+		me.addRequiredListen(new Integer[] {137, 138, 139, 445});
+		
+/*		for (ServerModel router : networkModel.getRouterServers()) {
 			
 			FirewallModel fm = router.getFirewallModel();
 			
@@ -55,6 +57,7 @@ public class SMBServer extends AStructuredProfile {
 						"Comment");
 			}
 		}
+		*/
 		
 		return units;
 	}
