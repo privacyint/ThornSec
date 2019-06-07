@@ -201,8 +201,8 @@ public class Nextcloud extends AStructuredProfile {
 		units.addAll(db.getLiveConfig());
 		
 		units.addElement(new SimpleUnit("nextcloud_up_to_date", "nextcloud_unizipped",
-				"sudo -u nginx php updater/updater.phar --no-interaction",
-				"sudo -u nginx php updater/updater.phar | grep \"No update available\"", "No update available.", "pass"));
+				"sudo -u nginx php /media/data/www/nextcloud/updater/updater.phar --no-interaction",
+				"sudo -u nginx php /media/data/www/nextcloud/updater/updater.phar | grep \"No update available\"", "No update available.", "pass"));
 		
 		return units;
 	}
