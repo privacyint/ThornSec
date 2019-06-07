@@ -253,24 +253,27 @@ public class Router extends AStructuredProfile {
 
 		HashMap<String, Set<Integer>> dnat = machine.getRequiredDnat();
 
-		for (String destinationName : dnat.keySet()) {
-			MachineModel destinationMachine = networkModel.getMachineModel(destinationName);
-			
-			String rule = "";
-			rule += "-p tcp";
-			rule += " -m tcp";
-			rule += " -m multiport";
-			rule += " --dports " + collection2String(dnat.get(destinationName));
-			rule += " ! -s " + collection2String(machine.getAddresses());
-			rule += " -d " + collection2String(destinationMachine.getAddresses());
-			rule += " -j DNAT";
-			rule += " --to-destination " + collection2String(machine.getAddresses());
-			
-			this.firewall.addNatPrerouting(
-					machine.getHostname() + "_" + destinationMachine.getHostname() + "_dnat",
-					rule,
-					"DNAT traffic for " + destinationName + " to " + machine.getHostname()
-			);
+		//Only create these rules if we actually *have* users.
+		if (networkModel.getIPSet().isEmpty("user")) {
+			for (String destinationName : dnat.keySet()) {
+				MachineModel destinationMachine = networkModel.getMachineModel(destinationName);
+				
+				String rule = "";
+				rule += "-p tcp";
+				rule += " -m tcp";
+				rule += " -m multiport";
+				rule += " --dports " + collection2String(dnat.get(destinationName));
+				rule += " ! -s " + collection2String(machine.getAddresses());
+				rule += " -d " + collection2String(destinationMachine.getAddresses());
+				rule += " -j DNAT";
+				rule += " --to-destination " + collection2String(machine.getAddresses());
+				
+				this.firewall.addNatPrerouting(
+						machine.getHostname() + "_" + destinationMachine.getHostname() + "_dnat",
+						rule,
+						"DNAT traffic for " + destinationName + " to " + machine.getHostname()
+				);
+			}
 		}
 		
 		//If we've given it an external IP, and it's actually listening, let it have it!
