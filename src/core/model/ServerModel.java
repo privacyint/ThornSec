@@ -203,10 +203,10 @@ public class ServerModel extends MachineModel {
 						+ " -c \"" + networkModel.getData().getUserFullName(admin) + "\"" //Full name
 						+ " -G sudo" //Groups
 						+ " -s /bin/bash;"
-						+ "echo " + admin + ":" + adminDefaultPassword + " | sudo chpasswd;" //Set their password
+						+ "echo " + admin + ":" + adminDefaultPassword + " " + getLabel() + " | sudo chpasswd;" //Set their password
 						+ "sudo passwd -e " + admin //Expire their password immediately
 					,
-					"id " + admin + " 2>&1", "id: ‘" + admin + "’: no such user", "fail",
+					"id " + admin + " 2>&1 | grep 'no such'", "", "pass",
 					"The user " + admin + " couldn't be created on this machine."), ++i);
 		}
 		
