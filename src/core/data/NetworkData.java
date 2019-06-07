@@ -471,7 +471,13 @@ public class NetworkData extends AData {
 	 * @return the types
 	 */
 	public String[] getTypes(String server) {
-		return this.servers.get(server).getTypes();
+		String[] types = this.servers.get(server).getTypes();
+		
+		if (types.length == 0) {
+			types = this.defaultServerData.getTypes();
+		}
+		
+		return types;
 	}
 	
 	/**
