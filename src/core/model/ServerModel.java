@@ -121,7 +121,7 @@ public class ServerModel extends MachineModel {
 		}
 		
 		if (networkModel.getData().getExternalIp(getLabel()) != null) {
-			addRequiredIngress("255.255.255.255", getRequiredListen().toArray(new Integer[getRequiredListen().size()]));
+			addRequiredIngress("255.255.255.255", getRequiredListenTCP().toArray(new Integer[getRequiredListenTCP().size()]));
 		}
 
 		addRequiredEgress("cdn.debian.net");

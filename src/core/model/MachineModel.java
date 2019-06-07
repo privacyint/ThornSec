@@ -26,7 +26,8 @@ public abstract class MachineModel extends AModel {
 	private String emailAddress;
 	
 	//Networking stuff
-	private Vector<Integer> listen;
+	private Vector<Integer> listenTCP;
+	private Vector<Integer> listenUDP;
 
 	private HashMap<String, Set<Integer>> ingress;
 	private HashMap<String, HashMap<Integer, Set<Integer>>> egress;
@@ -48,11 +49,12 @@ public abstract class MachineModel extends AModel {
 		this.setNetworkIfaces(new InterfaceModel(label, this, networkModel));
 		this.getNetworkIfaces().init();
 		
-		this.ingress     = new HashMap<String, Set<Integer>>();
-		this.egress      = new HashMap<String, HashMap<Integer, Set<Integer>>>();
-		this.forward     = new HashMap<String, Set<Integer>>();
-		this.dnat        = new HashMap<String, Set<Integer>>();
-		this.listen      = new Vector<Integer>();
+		this.ingress   = new HashMap<String, Set<Integer>>();
+		this.egress    = new HashMap<String, HashMap<Integer, Set<Integer>>>();
+		this.forward   = new HashMap<String, Set<Integer>>();
+		this.dnat      = new HashMap<String, Set<Integer>>();
+		this.listenTCP = new Vector<Integer>();
+		this.listenUDP = new Vector<Integer>(); 
 		
 		if (networkModel.getData().getRequiredIngress(getLabel()) != null) {
 			for (String source : networkModel.getData().getRequiredIngress(getLabel())) {
@@ -248,20 +250,38 @@ public abstract class MachineModel extends AModel {
 		return this.ingress;
 	}
 
+	//Defaults to TCP
 	public void addRequiredListen(Integer[] ports) {
+		addRequiredListen(ports, true);
+	}
+	
+	public void addRequiredListen(Integer[] ports, Boolean tcp) {
 		for (Integer port : ports ) {
-			addRequiredListen(port);
+			addRequiredListen(port, tcp);
 		}
 	}
 	
-	public void addRequiredListen(Integer port) { 
-		this.listen.add(port);
+	public void addRequiredListen(Integer port) {
+		addRequiredListen(port, true);
 	}
 	
-	public Vector<Integer> getRequiredListen() {
-		return this.listen;
+	public void addRequiredListen(Integer port, Boolean tcp) {
+		if (tcp) {
+			this.listenTCP.add(port);
+		}
+		else {
+			this.listenUDP.add(port);
+		}
 	}
 	
+	public Vector<Integer> getRequiredListenTCP() {
+		return this.listenTCP;
+	}
+
+	public Vector<Integer> getRequiredListenUDP() {
+		return this.listenUDP;
+	}
+
 	public void addRequiredEgress(String uri) {
 		addRequiredEgress(uri, 32, new Integer[] { 80, 443 });
 	}
