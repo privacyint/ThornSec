@@ -86,20 +86,6 @@ public class StrongSwan extends AStructuredProfile {
 						gateway, //gateway
 						"VPN interface" //comment
 				));
-				
-				//router.getInterfaceModel().addIface(new InterfaceData(
-				//		user.getLabel(), //host
-				//		"lan0:2" + user.getThirdOctet() + vpnSubnet, //iface
-				//		null, //mac
-				//		"static", //inet
-				//		null, //bridgeports
-				//		subnet, //subnet
-				//		startIp, //address
-				//		netmask, //netmask
-				//		null, //broadcast
-				//		gateway, //gateway
-				//		"VPN interface" //comment
-				//));
 			}
 		}
 
@@ -142,10 +128,6 @@ public class StrongSwan extends AStructuredProfile {
 					+ " -j ACCEPT",
 					"Allow the VPN to respond to valid traffic");
 		}
-		
-		//for (ServerModel server : networkModel.getAllServers()) {
-		//	server.addRequiredForward(me.getLabel());
-		//}
 		
 		return units;
 	}

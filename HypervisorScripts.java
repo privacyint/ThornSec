@@ -490,12 +490,12 @@ public class HypervisorScripts extends AStructuredProfile {
 		String adminScript = "";
 		adminScript += "#!/bin/bash\n";
 		adminScript += "\n";
-		adminScript += "VMS_BASE=" + dataDiskDirBase + "\n";
-		adminScript += "SCRIPTS_BASE=" + scriptsBase + "\n";
+		adminScript += "VMS_BASE=" + this.bootDiskDirBase + "\n";
+		adminScript += "SCRIPTS_BASE=" + this.scriptsBase + "\n";
 		adminScript += "HELPER_SCRIPTS=" + this.helperScriptsBase + "\n";
-		adminScript += "CONTROL_SCRIPTS=" + controlScriptsBase + "\n";
-		adminScript += "RECOVERY_SCRIPTS=" + recoveryScriptsBase + "\n";
-		adminScript += "BACKUP_SCRIPTS=" + backupScriptsBase + "\n";
+		adminScript += "CONTROL_SCRIPTS=" + this.controlScriptsBase + "\n";
+		adminScript += "RECOVERY_SCRIPTS=" + this.recoveryScriptsBase + "\n";
+		adminScript += "BACKUP_SCRIPTS=" + this.backupScriptsBase + "\n";
 		adminScript += "\n";
 		adminScript += "vms=\\$(find \\${VMS_BASE}/* -maxdepth 0 -type d ! -name '.*' -printf '%f ')\n";
 		adminScript += "PS3=\\\"Number: \\\"\n";
@@ -653,9 +653,9 @@ public class HypervisorScripts extends AStructuredProfile {
 		adminScript += "    esac\n";
 		adminScript += "done";
 		
-		units.addElement(new FileUnit("hypervisor_admin_script", "proceed", adminScript, "/root/hvAdmin.sh"));
-		units.addElement(new FileOwnUnit("hypervisor_admin_script", "hypervisor_admin_script", "/root/hvAdmin.sh", "root"));
-		units.addElement(new FilePermsUnit("hypervisor_admin_script", "hypervisor_admin_script_chowned", "/root/hvAdmin.sh", "750"));
+		units.addElement(new FileUnit("hypervisor_admin_script", "proceed", adminScript, "/root/hvAdmin"));
+		units.addElement(new FileOwnUnit("hypervisor_admin_script", "hypervisor_admin_script", "/root/hvAdmin", "root"));
+		units.addElement(new FilePermsUnit("hypervisor_admin_script", "hypervisor_admin_script_chowned", "/root/hvAdmin", "750"));
 		
 		return units;
 	}

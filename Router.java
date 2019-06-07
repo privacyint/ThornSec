@@ -23,7 +23,6 @@ import core.model.MachineModel;
 import core.model.NetworkModel;
 import core.model.ServerModel;
 import core.profile.AStructuredProfile;
-import core.unit.SimpleUnit;
 import core.unit.fs.FileOwnUnit;
 import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
@@ -95,8 +94,7 @@ public class Router extends AStructuredProfile {
 	protected Vector<IUnit> getInstalled() {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
-		units.addElement(new InstalledUnit("xsltproc", "xsltproc"));
-		units.addElement(new InstalledUnit("bridge_utils", "bridge-utils"));
+		//units.addElement(new InstalledUnit("xsltproc", "xsltproc"));
 		units.addElement(new InstalledUnit("traceroute", "traceroute"));
 		units.addElement(new InstalledUnit("speedtest_cli", "speedtest-cli"));
 		
@@ -277,19 +275,19 @@ public class Router extends AStructuredProfile {
 		}
 		
 		//If we've given it an external IP, and it's actually listening, let it have it!
-		if (networkModel.getData().getExternalIp(machine.getLabel()) != null && !machine.getRequiredListen().isEmpty()) {
+		if (networkModel.getData().getExternalIp(machine.getLabel()) != null && !machine.getRequiredListenTCP().isEmpty()) {
 			String rule = "";
-			rule += "-i " + collection2String(networkModel.getData().getWanIfaces(me.getLabel()));
+			rule += "-d " + networkModel.getData().getExternalIp(machine.getLabel()).getHostAddress();
 			rule += " -p tcp";
 			rule += " -m multiport";
-			rule += " --dports " + collection2String(machine.getRequiredListen());
+			rule += " --dports " + collection2String(machine.getRequiredListenTCP());
 			rule += " -j DNAT";
 			rule += " --to-destination " + collection2String(machine.getAddresses());
 			
 			this.firewall.addNatPrerouting(
 					machine.getHostname() + "_external_ip_dnat",
 					rule,
-					"DNAT external traffic to " + machine.getHostname() + " if it has an external IP & is listening"
+					"DNAT external traffic on " + networkModel.getData().getExternalIp(machine.getLabel()).getHostAddress() + " to " + machine.getHostname() + " if it has an external IP & is listening"
 			);
 		}
 
@@ -299,7 +297,7 @@ public class Router extends AStructuredProfile {
 	private Vector<IUnit> machineAllowUserForwardRules(MachineModel machine) {
 		Vector<IUnit> units = new Vector<IUnit>();
 
-		Vector<Integer> listen = machine.getRequiredListen();
+		Vector<Integer> listen = machine.getRequiredListenTCP();
 		String machineName = machine.getLabel();
 		
 		//Only create these rules if we actually *have* users.
@@ -936,7 +934,7 @@ public class Router extends AStructuredProfile {
 					networkModel.stringToIP("255.255.252.0"), //netmask
 					null, //broadcast
 					networkModel.stringToIP("10.250.0.1"), //gateway
-					"Auto Guest pool" //comment
+					"Auto Guest pool, bridged to our lan" //comment
 			));
 		}
 		
@@ -1046,7 +1044,7 @@ public class Router extends AStructuredProfile {
 				"-p tcp"
 				+ " -m state --state ESTABLISHED,RELATED"
 				+ " -j ACCEPT",
-				"Allow " + machine.getHostname() + " to send responses to accepted inbound tcptraffic");
+				"Allow " + machine.getHostname() + " to send responses to accepted inbound tcp traffic");
 		this.firewall.addFilter(machine.getHostname() + "_allow_outbound_traffic_udp", machine.getEgressChain(),
 				"-p udp"
 				+ " -j ACCEPT",
@@ -1240,12 +1238,12 @@ public class Router extends AStructuredProfile {
 		return units;
 	}
 	
-	private String cleanString(String string) {
-		String invalidChars = "[^a-zA-Z0-9-]";
-		String safeChars    = "_";
-		
-		return string.replaceAll(invalidChars, safeChars);
-	}
+//	private String cleanString(String string) {
+//		String invalidChars = "[^a-zA-Z0-9-]";
+//		String safeChars    = "_";
+//		
+//		return string.replaceAll(invalidChars, safeChars);
+//	}
 	
 	private String getAlias(String toParse) {
 		MessageDigest digest = null;
