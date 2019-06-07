@@ -32,17 +32,12 @@ public class InterfaceModel extends AModel {
 		Vector<IUnit> units = new Vector<IUnit>();
 		
 		units.addElement(new SimpleUnit("net_conf_persist", "proceed",
-				"echo \"" + getPersistent() + "\" | sudo tee /etc/network/interfaces;"
-				+ "sudo service networking restart;",
+				"echo \"" + getPersistent() + "\" | sudo tee /etc/network/interfaces > /dev/null;"
+				+ "sudo ip address flush lan0 &;"
+				+ "ip addr show lan0 | grep -q '10.0.0.1' || (sudo ifdown lan0 &>/dev/null; sudo ifup lan0 &>/dev/null; ) &;"
+				+ "sudo service networking restart &;",
 				"cat /etc/network/interfaces;", getPersistent(), "pass",
 				"Couldn't create our required network interfaces.  This will cause all sorts of issues."));
-
-//		for (String name : names) {
-//			units.addElement(new SimpleUnit("iface_" + name.replaceAll(":", "_") + "_up", "net_conf_persist",
-//			"sudo ip link set " + name + " up",
-//			"ip a | grep " + name + ": ", "", "fail",
-//			"Couldn't bring the network interface " + name + " up.  This can potentially be resolved by a restart (assuming you've had no other network-related errors)."));
-//		}
 		
 		return units;
 	}
