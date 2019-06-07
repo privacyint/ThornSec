@@ -110,6 +110,7 @@ public class DHCP extends AStructuredProfile {
 			dhcpconf += "\t\t\trange 10.250.0.15 10.250.3.255;\n";
 			dhcpconf += "\t\t\toption routers 10.0.0.1;\n";
 			dhcpconf += "\t\t\toption domain-name-servers 1.1.1.1;\n";
+			dhcpconf += "\t\t\tdeny members of \"VPN\";\n";
 			dhcpconf += "\t\t}\n";
 			dhcpconf += "\t}";
 		}

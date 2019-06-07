@@ -46,11 +46,17 @@ public class StrongSwan extends AStructuredProfile {
 				String domain    = networkModel.getData().getDomain(router.getLabel());
 				String subdomain = user.getLabel() + "." + networkModel.getLabel() + ".vpn";
 
+				String vpnClass = "";
+				vpnClass += "\n\n";
+				vpnClass += "\tclass \\\"VPN\\\" {\n";
+				vpnClass += "\t\tmatch if ((substring(hardware, 1, 2) = 7a:a7));\n";
+				vpnClass += "\t\tmatch option dhcp-client-identifier;\n";
+				vpnClass += "\t}";
+				dhcp.addClass(vpnClass);
+
 				String roadWarriorClass = "";
 				roadWarriorClass += "\n\n";
-				roadWarriorClass += "\tclass \\\"" + user.getLabel() + "\\\" {\n";
-				roadWarriorClass += "\t\tmatch if ((substring(hardware, 1, 2) = 7a:a7) and (option dhcp-client-identifier = \\\"" + user.getLabel() + "\\\"));\n";
-				roadWarriorClass += "\t}";
+				roadWarriorClass += "\tsubclass \\\"VPN\\\"" + user.getLabel() + "\\\" { }";
 				
 				dhcp.addClass(roadWarriorClass);
 				
