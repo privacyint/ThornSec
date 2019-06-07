@@ -152,9 +152,11 @@ public class Virtualisation extends AStructuredProfile {
 		String isoDir =  networkModel.getData().getHypervisorThornsecBase(me.getLabel()) + "/isos/" + service + "/";
 
 		String filename = null;
+		String cleanedFilename = null;
 		
 		try {
 			filename = Paths.get(new URI(networkModel.getData().getDebianIsoUrl(service)).getPath()).getFileName().toString();
+			cleanedFilename = filename.replaceAll("[^A-Za-z0-9]", "_");
 		}
 		catch (Exception e) {
 			JOptionPane.showMessageDialog(null, "You shouldn't have been able to arrive here. Well done!");
@@ -162,7 +164,7 @@ public class Virtualisation extends AStructuredProfile {
 		}
 		
 		units.addElement(new DirUnit("iso_dir_" + service, "proceed", isoDir));
-		units.addElement(new FileUnit("preseed_" + service, "debian_netinst_iso_downloaded", preseed, isoDir + "preseed.cfg"));
+		units.addElement(new FileUnit("preseed_" + service, "debian_netinst_iso_" + cleanedFilename + "_downloaded", preseed, isoDir + "preseed.cfg"));
 		units.addElement(new FileOwnUnit("preseed_" + service, "preseed_" + service, isoDir + "preseed.cfg", "root"));
 		units.addElement(new FilePermsUnit("preseed_" + service, "preseed_" + service + "_chowned", isoDir + "preseed.cfg", "700"));
 		
@@ -200,7 +202,7 @@ public class Virtualisation extends AStructuredProfile {
 		buildIso += 	" rm -R cd loopdir;";
 		buildIso += "'";
 		
-		units.addElement(new SimpleUnit("build_iso_" + service, "debian_netinst_iso_downloaded",
+		units.addElement(new SimpleUnit("build_iso_" + service, "debian_netinst_iso_" + cleanedFilename + "_downloaded",
 				buildIso,
 				"test -f " + isoDir + service + ".iso && echo 'pass' || echo 'fail'", "pass", "pass",
 				"Couldn't create the install ISO for " + service + ".  This service won't be able to install."));
