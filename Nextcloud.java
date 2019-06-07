@@ -7,6 +7,7 @@ import core.model.NetworkModel;
 import core.model.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
+import core.unit.fs.CrontabUnit;
 import core.unit.fs.FileChecksumUnit;
 import core.unit.fs.FileDownloadUnit;
 import core.unit.pkg.InstalledUnit;
@@ -110,7 +111,8 @@ public class Nextcloud extends AStructuredProfile {
 		units.addAll(webserver.getPersistentConfig());
 		units.addAll(db.getPersistentConfig());
 		units.addAll(php.getPersistentConfig());
-		
+		units.addElement(new CrontabUnit("nextcloud", "nextcloud_unzipped", true, "nginx", "php -f /media/data/www/nextcloud/cron.php", "*", "*", "*", "*", "*/5", "Failed to get Nextcloud's cron job setup."));
+
 		return units;
 	}
 
