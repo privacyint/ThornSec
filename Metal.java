@@ -182,7 +182,7 @@ public class Metal extends AStructuredProfile {
 			String bridge = networkModel.getData().getMetalIface(serviceLabel);
 			
 			if (bridge == null || bridge.equals("")) {
-				bridge = me.getInterfaceModel().getIfaces().elementAt(0).getIface();
+				bridge = me.getNetworkData().getLanIfaces(me.getLabel()).getOrDefault(0, "vm" + service.getThirdOctet());
 			}
 			
 			units.addAll(hypervisor.buildIso(service.getLabel(), hypervisor.preseed(service.getLabel(), expirePasswords)));
