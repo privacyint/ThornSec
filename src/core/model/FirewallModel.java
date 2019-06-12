@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Vector;
 
+import core.StringUtils;
 import core.iface.IUnit;
 import core.unit.SimpleUnit;
 import core.unit.fs.CustomFileUnit;
@@ -183,8 +184,8 @@ public class FirewallModel extends AModel {
 	}
 
 	public SimpleUnit addChain(String name, String table, String chain) {
-		chain = cleanString(chain);
-		table = cleanString(table);
+		chain = StringUtils.stringToAlphaNumeric(chain, "_");
+		table = StringUtils.stringToAlphaNumeric(table, "_");
 		
 		LinkedHashMap<String, Vector<String>> tab = iptTables.get(table);
 		
@@ -203,8 +204,8 @@ public class FirewallModel extends AModel {
 	}
 
 	private void add(String name, String table, String chain, int position, String rule, String comment) {
-		chain = cleanString(chain);
-		table = cleanString(table);
+		chain = StringUtils.stringToAlphaNumeric(chain, "_");
+		table = StringUtils.stringToAlphaNumeric(table, "_");
 		
 		if (comment.equals("")) {
 			comment = "This is probably important, but there is no associated comment - sorry!";
@@ -216,8 +217,8 @@ public class FirewallModel extends AModel {
 	}
 
 	private void add(String name, String table, String chain, String rule, String comment) {
-		table = cleanString(table);
-		chain = cleanString(chain);
+		chain = StringUtils.stringToAlphaNumeric(chain, "_");
+		table = StringUtils.stringToAlphaNumeric(table, "_");
 		
 		int position = this.getChain(table, chain).size();
 		
@@ -237,8 +238,8 @@ public class FirewallModel extends AModel {
 	}
 
 	private String getRules(String table, String chain) {
-		chain = cleanString(chain);
-		table = cleanString(table);
+		chain = StringUtils.stringToAlphaNumeric(chain, "_");
+		table = StringUtils.stringToAlphaNumeric(table, "_");
 		
 		Vector<String> ch = new Vector<String>(new LinkedHashSet<String>(this.getChain(table, chain)));
 
@@ -271,8 +272,8 @@ public class FirewallModel extends AModel {
 	}
 
 	private Vector<String> getChain(String table, String chain) {
-		chain = cleanString(chain);
-		table = cleanString(table);
+		chain = StringUtils.stringToAlphaNumeric(chain, "_");
+		table = StringUtils.stringToAlphaNumeric(table, "_");
 		
 		Vector<String> ch = iptTables.get(table).get(chain);
 		if (ch == null) {
@@ -281,12 +282,4 @@ public class FirewallModel extends AModel {
 		
 		return iptTables.get(table).get(chain);
 	}
-	
-	private String cleanString(String string) {
-		String invalidChars = "[^a-zA-Z0-9-]";
-		String safeChars    = "_";
-		
-		return string.replaceAll(invalidChars, safeChars);
-	}
-
 }
