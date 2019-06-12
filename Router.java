@@ -254,7 +254,7 @@ public class Router extends AStructuredProfile {
 		HashMap<String, Set<Integer>> dnat = machine.getRequiredDnat();
 
 		//Only create these rules if we actually *have* users.
-		if (networkModel.getIPSet().isEmpty("user")) {
+		if (!networkModel.getIPSet().isEmpty("user")) {
 			for (String destinationName : dnat.keySet()) {
 				MachineModel destinationMachine = networkModel.getMachineModel(destinationName);
 				
