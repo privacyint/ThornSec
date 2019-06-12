@@ -44,6 +44,7 @@ public class Router extends AStructuredProfile {
 	private String domain;
 	
 	private boolean isPPP;
+	private boolean isStatic;
 
 	public Router(ServerModel me, NetworkModel networkModel) {
 		super("router", me, networkModel);
@@ -58,7 +59,8 @@ public class Router extends AStructuredProfile {
 
 		this.wanIfaces = new Vector<String>();
 		
-		this.isPPP = false;
+		this.isPPP    = false;
+		this.isStatic = false;
 		
 		this.resolved = new HashMap<String, InetAddress[]>();
 	}
@@ -274,10 +276,11 @@ public class Router extends AStructuredProfile {
 			}
 		}
 		
-		//If we've given it an external IP, and it's actually listening, let it have it!
+		//If we've given it an external IP, it's listening, and a request comes in from the outside world, let it have it!
 		if (networkModel.getData().getExternalIp(machine.getLabel()) != null && !machine.getRequiredListenTCP().isEmpty()) {
 			String rule = "";
-			rule += "-d " + networkModel.getData().getExternalIp(machine.getLabel()).getHostAddress();
+			rule += "-i " + collection2String(me.getNetworkData().getWanIfaces(getLabel()));
+			rule += (this.isStatic) ? " -d " + networkModel.getData().getExternalIp(machine.getLabel()).getHostAddress() : "";
 			rule += " -p tcp";
 			rule += " -m multiport";
 			rule += " --dports " + collection2String(machine.getRequiredListenTCP());
@@ -771,7 +774,7 @@ public class Router extends AStructuredProfile {
 							"-p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1400:1536 -j TCPMSS --clamp-mss-to-pmtu",
 							"Clamp the MSS to PMTU. This makes sure the packets over PPPoE are the correct size (and take into account the PPPoE overhead)");
 					
-					isPPP = true;
+					this.isPPP = true;
 					
 					break;
 				case "static":
@@ -788,6 +791,9 @@ public class Router extends AStructuredProfile {
 							gateway, //gateway
 							"Static WAN physical network interface" //comment
 					));
+					
+					this.isStatic = true;
+					
 					break;
 				default:
 					JOptionPane.showMessageDialog(null, "Valid options for your router's WAN inettype are 'ppp', 'static', and 'dhcp'");
