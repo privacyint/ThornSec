@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.util.Map;
 import java.util.Vector;
 
+import core.StringUtils;
 import core.data.InterfaceData;
 import core.iface.IUnit;
 import core.model.DeviceModel;
@@ -105,14 +106,14 @@ public class QoS extends AStructuredProfile {
 
 		for (Map.Entry<String, String> wanIface : networkModel.getData().getWanIfaces(me.getLabel()).entrySet() ) {
 	        //Mark any connection which has uploaded > markAfter bytes
-			fm.addMangleForward(name.replaceAll("-",  "_") + "_mark_large_uploads", 
+			fm.addMangleForward(StringUtils.stringToAlphaNumeric(name,  "_") + "_mark_large_uploads", 
 					"-s " + subnet
 					+ " -o " + wanIface.getKey()
 					+ " -m connbytes --connbytes " + markAfter + ": --connbytes-dir original --connbytes-mode bytes"
 					+ " -j MARK --set-mark " + mark,
 					"Mark (tag) packets which are related to large uploads, so they can be treated differently");
 			//Log any connection which has uploaded > markAfter bytes
-	        fm.addMangleForward(name.replaceAll("-",  "_") + "_log_large_uploads", 
+	        fm.addMangleForward(StringUtils.stringToAlphaNumeric(name,  "_") + "_log_large_uploads", 
 					"-s " + subnet
 					+ " -o " + wanIface.getKey()
 					+ " -m connbytes --connbytes " + markAfter + ": --connbytes-dir original --connbytes-mode bytes"

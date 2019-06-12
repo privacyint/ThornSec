@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Vector;
 
+import core.StringUtils;
 import core.iface.IUnit;
 import core.model.AModel;
 import core.model.DeviceModel;
@@ -152,6 +153,7 @@ public class IPSet extends AModel {
 	}
 
 	void addToSet(String set, Integer cidr, InetAddress address) {
+		set = StringUtils.stringToAlphaNumeric(set, "_");
 		Vector<InetAddress> extant = ipsets.get(set);
 		Vector<InetAddress> addresses = new Vector<InetAddress>();
 		
@@ -180,7 +182,7 @@ public class IPSet extends AModel {
 	//ipsets will only allow a set name which is <= 30 chars
 	public String getSetName(String name) {
 		
-		name = name.toLowerCase().replaceAll("[^0-9a-z]", "_");
+		name = StringUtils.stringToAlphaNumeric(name.toLowerCase(), "_");
 		
 		if (name.length() > 25) {
 			name = name.substring(0, 25);
