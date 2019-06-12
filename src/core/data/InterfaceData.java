@@ -2,6 +2,8 @@ package core.data;
 
 import java.net.InetAddress;
 
+import core.StringUtils;
+
 /**
  * The Class InterfaceData.
  * 
@@ -68,6 +70,10 @@ public class InterfaceData {
 		return this.subnet;
 	}
 	
+	public String getComment() {
+		return this.comment;
+	}
+	
 	/**
 	 * Gets the address.
 	 *
@@ -75,6 +81,10 @@ public class InterfaceData {
 	 */
 	public InetAddress getAddress() {
 		return this.address;
+	}
+	
+	public String getHost() {
+		return this.host;
 	}
 	
 	/**
@@ -131,40 +141,28 @@ public class InterfaceData {
 		return this.inet;
 	}
 	
-	/**
-	 * Gets the metal stanza for this interface.
-	 *
-	 * @return the metal's stanza
-	 */
-	public String getMetalStanza() {
+	private String getHeader() {
 		String ifaceConf = "";
-		ifaceConf += "#" + host + " interface\n";
-		ifaceConf += "#" + comment + "\n";
-		ifaceConf += "iface " + iface + " inet " + inet;
-		ifaceConf += (bridgePorts != null) ?  "\n" + "bridge_ports " + bridgePorts : "";
-		ifaceConf += (address != null) ? "\n" + "address " + address.getHostAddress() : "";
-		ifaceConf += (netmask != null) ? "\n" + "netmask " + netmask.getHostAddress() : "";
-		ifaceConf += (broadcast != null) ? "\n" + "broadcast " + broadcast.getHostAddress() : "";
-		ifaceConf += (gateway != null) ? "\n" + "gateway " + gateway.getHostAddress() : "";
+		ifaceConf += "#" + this.getHost() + " interface\n";
+		ifaceConf += "#" + this.getComment() + "\n";
+		ifaceConf += "iface " + this.getIface() + " inet " + this.getInet();
 		
 		return ifaceConf;
 	}
 	
 	/**
-	 * Gets the server's stanza for this interface.
+	 * Gets the metal stanza for this interface.
 	 *
-	 * @return the server stanza
+	 * @return the metal's stanza
 	 */
 	public String getServerStanza() {
 		String ifaceConf = "";
-		ifaceConf += "#" + host + " interface\n";
-		ifaceConf += "#" + comment + "\n";
-		ifaceConf += "iface " + iface + " inet " + inet;
-		ifaceConf += (bridgePorts != null) ?  "\n" + "bridge_ports " + String.join(" ", bridgePorts) : "";
-		ifaceConf += (address != null) ? "\n" + "address " + address.getHostAddress() : "";
-		ifaceConf += (netmask != null) ? "\n" + "netmask " + netmask.getHostAddress() : "";
-		ifaceConf += (broadcast != null) ? "\n" + "broadcast " + broadcast.getHostAddress() : "";
-		ifaceConf += (gateway != null) ? "\n" + "gateway " + gateway.getHostAddress() : "";
+		ifaceConf += this.getHeader();
+		ifaceConf += (this.getBridgePorts() != null) ? "\n" + "bridge_ports " + String.join(" ", this.getBridgePorts()) : "";
+		ifaceConf += (this.getAddress()     != null) ? "\n" + "address " + this.getAddress().getHostAddress() : "";
+		ifaceConf += (this.getNetmask()     != null) ? "\n" + "netmask " + this.getNetmask().getHostAddress() : "";
+		ifaceConf += (this.getBroadcast()   != null) ? "\n" + "broadcast " + this.getBroadcast().getHostAddress() : "";
+		ifaceConf += (this.getGateway()     != null) ? "\n" + "gateway " + this.getGateway().getHostAddress() : "";
 		
 		return ifaceConf;
 	}
@@ -176,14 +174,11 @@ public class InterfaceData {
 	 */
 	public String getRouterStanza() {
 		String ifaceConf = "";
-		ifaceConf += "#" + host + " interface\n";
-		ifaceConf += "#" + comment + "\n";
-		ifaceConf += "iface " + iface + " inet " + inet;
-		ifaceConf += (bridgePorts != null) ?  "\n" + "bridge_ports " + String.join(" ", bridgePorts) : "";
-		ifaceConf += (gateway != null) ? "\n" + "address " + gateway.getHostAddress() : "";
-		ifaceConf += (netmask != null) ? "\n" + "netmask " + netmask.getHostAddress() : "";
-//		ifaceConf += (broadcast != null) ? "\n" + "broadcast " + broadcast.getHostAddress() : "";
-//		ifaceConf += (gateway != null) ? "\n" + "gateway " + gateway.getHostAddress() : "";		
+		ifaceConf += this.getHeader();
+		ifaceConf += (this.getBridgePorts() != null) ? "\n" + "bridge_ports " + String.join(" ", this.getBridgePorts()) : "";
+		ifaceConf += (this.getGateway()     != null) ? "\n" + "address " + this.getGateway().getHostAddress() : "";
+		ifaceConf += (this.getNetmask()     != null) ? "\n" + "netmask " + this.getNetmask().getHostAddress() : "";
+
 		return ifaceConf;
 	}
 	
@@ -196,32 +191,19 @@ public class InterfaceData {
 		if (mac != null) {
 			String ifaceConfDhcp = "";
 			ifaceConfDhcp = "\n\n";
-			ifaceConfDhcp += "\t#" + host + " interface\n";
-			ifaceConfDhcp += "\t#" + comment + "\n";
-			ifaceConfDhcp += "\tsubnet " + subnet.getHostAddress() + " netmask " + netmask.getHostAddress() + " {\n";
-			ifaceConfDhcp += "\t\thost " + cleanString(host) + "-" + mac.replaceAll(":", "") + " {\n";
-			ifaceConfDhcp += "\t\t\thardware ethernet " + mac + ";\n";
-			ifaceConfDhcp += "\t\t\tfixed-address " + address.getHostAddress() + ";\n";
-			ifaceConfDhcp += "\t\t\toption routers " + gateway.getHostAddress() + ";\n";
+			ifaceConfDhcp += "\t#" + this.getHost() + " interface\n";
+			ifaceConfDhcp += "\t#" + this.getComment() + "\n";
+			ifaceConfDhcp += "\tsubnet " + this.getSubnet().getHostAddress() + " netmask " + this.getNetmask().getHostAddress() + " {\n";
+			ifaceConfDhcp += "\t\thost " + StringUtils.stringToAlphaNumeric(this.getHost(), "_") + "-" + StringUtils.stringToAlphaNumeric(this.getMac(), "") + " {\n";
+			ifaceConfDhcp += "\t\t\thardware ethernet " + this.getMac() + ";\n";
+			ifaceConfDhcp += "\t\t\tfixed-address " + this.getAddress().getHostAddress() + ";\n";
+			ifaceConfDhcp += "\t\t\toption routers " + this.getGateway().getHostAddress() + ";\n";
 			ifaceConfDhcp += "\t\t}\n";
 			ifaceConfDhcp += "\t}";
 			
 			return ifaceConfDhcp;
 		}
 		
-		return "";
-	}
-	
-	/**
-	 * Cleans a string of all non-alphanumeric characters.
-	 *
-	 * @param string the dirty string
-	 * @return the clean string, with all impermissable characters replaced with _
-	 */
-	private String cleanString(String string) {
-		String invalidChars = "[^a-zA-Z0-9_]";
-		String safeChars    = "_";
-		
-		return string.replaceAll(invalidChars, safeChars);
+		return null;
 	}
 }
