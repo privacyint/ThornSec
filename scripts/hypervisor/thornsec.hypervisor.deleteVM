@@ -1,0 +1,25 @@
+#!/bin/bash
+if [ $# -eq 0 ]
+then
+        echo "No parameter supplied. You need to provide the name of the VM as a parameter"
+        exit 1;
+fi
+
+vm=${1}
+
+${TS_SCRIPTS_BASE}/vm/thornsec.vm.control.stopVM "${vm}"
+wait
+
+echo "Unregistering the ${vm} VM"
+sudo -u vboxuser_"${vm}" VBoxManage unregistervm "${vm}"
+wait
+
+echo "Deleting ${vm}'s files"
+rm -R "${TS_BOOT_BASE}/${vm}" 2>/dev/null
+rm -R "${TS_ISOS_BASE}/${vm}" 2>/dev/null
+rm -R "${TS_LOGS_BASE}/${vm}" 2>/dev/null
+rm -R "/home/vboxuser_${vm}/VirtualBox VMs" 2>/dev/null
+
+#echo "Deleting ${vm}'s user"
+#userdel -r -f vboxuser_"${vm}" 2>/dev/null
+echo "=== /fin/ ==="

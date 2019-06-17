@@ -1,0 +1,165 @@
+#!/bin/bash
+
+VMS_BASE=${TS_DATA_BASE};
+CONTROL_SCRIPTS=${TS_SCRIPTS_BASE}/vm;
+RECOVERY_SCRIPTS=${TS_SCRIPTS_BASE}/recovery;
+BACKUP_SCRIPTS=${TS_SCRIPTS_BASE}/backup;
+
+vms=$(find ${VMS_BASE}/* -maxdepth 0 -type d ! -name '.*' ! -name 'lost+found' -printf '%f ')
+PS3="Number: "
+
+function stopVM {
+    clear
+
+    echo "Choose a VM to stop:"
+    echo ""
+
+    select vm in ${vms} "all" "Back to main menu" "Quit to command line";
+    do
+        case "${vm}" in
+            "Back to main menu")
+                break
+                ;;
+            "Quit to command line")
+                exit
+                ;;
+            *)
+                "${CONTROL_SCRIPTS}"/thornsec.vm.control.startVM "${vm}"
+                ;;
+        esac
+    done
+}
+
+function startVM {
+    clear
+
+    echo "Choose a VM to start:"
+    echo 
+
+    select vm in ${vms} "all" "Back to main menu" "Quit to command line";
+    do
+        case "${vm}" in
+            "Back to main menu")
+                break
+                ;;
+            "Quit to command line")
+                exit
+                ;;
+            *)
+                "${CONTROL_SCRIPTS}"/thornsec.vm.control.startVM "${vm}"
+                ;;
+        esac
+    done
+}
+
+function deleteVM {
+    clear
+
+    echo -e "\033[0;31m"
+    echo "************** WARNING *************"
+    echo "* THIS WILL BLINDLY DELETE YOUR VM *"
+    echo "*  ~THIS ACTION CANNOT BE UNDONE~  *"
+    echo "*      _YOU HAVE BEEN WARNED!_     *"
+    echo "************** WARNING *************"
+    echo -e "\033[0m"
+
+    echo "Choose a VM to delete:"
+    echo 
+
+    select vm in ${vms} "Back to main menu" "Quit to command line";
+    do
+        case "${vm}" in
+            "Back to main menu")
+                break
+                ;;
+            "Quit to command line")
+                exit
+                ;;
+            *)
+                "${CONTROL_SCRIPTS}"/deleteVm.sh "${vm}"
+                ;;
+        esac
+    done
+}
+
+function internalBackups {
+    echo -e "\033[0;31m"
+    echo "************** WARNING *************"
+    echo "*  THIS WILL STOP EACH VM IN TURN  *"
+    echo "*     IN ORDER TO BACK THEM UP     *"
+    echo "*  THIS WILL ALSO TRIGGER EXTERNAL *"
+    echo "*    BACKUPS, IF YOU HAVE THEM     *"
+    echo "*    THIS WILL TAKE SOME TIME!     *"
+    echo "************** WARNING *************"
+    echo -e "\033[0m"
+    read -r -p "Please type 'fg' to continue in the foreground, 'bg' to continue in the background, or 'c' to cancel: " go
+
+    case "${go}" in
+        fg ) "${BACKUP_SCRIPTS}"/backup.sh;;
+        bg ) "${BACKUP_SCRIPTS}"/backup.sh &;;
+        c  ) exit;;
+    esac
+}
+
+function rebuildVbox {
+    clear
+    "${RECOVERY_SCRIPTS}"/prevToVbox.sh
+    sleep 5
+}
+
+function restoreVmBackup {
+    clear 
+
+    echo "Choose a VM to restore from the latest backup:"
+    echo 
+
+    select vm in ${vms} "Back to main menu" "Quit to command line";
+    do
+        case "$vm" in
+            "Back to main menu")
+                break
+                ;;
+            "Quit to command line")
+                exit
+                ;;
+            *)
+                "${RECOVERY_SCRIPTS}"/recoverFromLatest.sh "${vm}"
+                ;;
+        esac
+    done
+}
+
+function changePassword {
+    read -r -p "Please enter the username whose password you'd like to change: " user
+    passwd "${user}"
+    sleep 5
+}
+
+if [ "${EUID}" -ne 0 ]
+    then echo "Please run as root"
+    exit
+fi
+
+while true; do
+    clear
+    echo "Choose an option:"
+    echo "1) Stop a VM"
+    echo "2) Start a VM"
+    echo "3) Delete a VM"
+    echo "4) Start internal & external backups (manually)"
+    echo "5) Rebuild VM configuration from previous"
+    echo "6) Restore VM data to most recent backup"
+    echo "7) Change a user's password"
+    echo "Q) Quit"
+    read -r -p "Select your option: " opt
+    case "${opt}" in
+        1   ) stopVM;;
+        2   ) startVM;;
+        3   ) deleteVM;;
+        4   ) internalBackups;;
+        5   ) rebuildVbox;;
+        6   ) restoreVmBackup;;
+        7   ) changePassword;;
+        q|Q ) exit;;
+    esac
+done

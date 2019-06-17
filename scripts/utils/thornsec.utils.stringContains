@@ -1,0 +1,8 @@
+#!/bin/bash
+#https://stackoverflow.com/a/25535717
+
+needle="$1";
+shift;
+haystack="$@";
+
+case $needle in *$haystack*):;;esac;
