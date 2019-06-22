@@ -1,16 +1,17 @@
 package core.data;
 
-import java.net.Inet4Address;
-import java.net.URL;
-import java.net.UnknownHostException;
-
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonValue;
+import javax.json.stream.JsonParsingException;
 
-import javax.swing.JOptionPane;
+import core.exception.data.ADataException;
+import core.exception.data.InvalidPropertyArrayException;
 
 /**
  * Abstract class for something representing "Data" on our network 
@@ -18,7 +19,6 @@ import javax.swing.JOptionPane;
 public abstract class AData {
 
 	private final String label;
-	
 	private JsonObject data;
 
 	/**
@@ -28,14 +28,20 @@ public abstract class AData {
 	 */
 	protected AData(String label) {
 		this.label = label;
+		
 	}
 
 	/**
 	 * Abstract JSON read method - must be overridden by descendants
 	 *
 	 * @param data the JSON data
+	 * @throws ADataException 
+	 * @throws IOException 
+	 * @throws JsonParsingException 
+	 * @throws URISyntaxException 
 	 */
-	public abstract void read(JsonObject data);
+	protected abstract void read(JsonObject data)
+	throws ADataException, JsonParsingException, IOException, URISyntaxException;
 
 	/**
 	 * Gets the object label.
@@ -71,69 +77,22 @@ public abstract class AData {
 	 *                character used as a delimiter
 	 * @return Integers
 	 */
-	protected final Set<Integer> parseIntList(String toParse) {
+	protected final Set<Integer> parseIntList(String toParse)
+	throws NumberFormatException {
 		Set<Integer> integers = new HashSet<Integer>();
 		
 		if (toParse != null && !toParse.isEmpty()) {
 			//Don't really care what delimiters people use, tbh
 			String[] intStrings = toParse.trim().split("[^0-9]");
 			
-			for (String intString : intStrings) {
-				Integer parsed = parseInt(intString);
-				
-				if (parsed != null) {
-					integers.add(parsed);
-				}
-				else {
-					JOptionPane.showMessageDialog(null, "I've tried to parse a non-integer.\n\nThere's a problem with " + toParse + "\n\nPlease fix this in your JSON");
-					System.exit(1);
-				}
+			assert intStrings.length > 0;
+			
+			for (String intString : intStrings) {		
+				integers.add(Integer.parseInt(intString));
 			}
 		}
 		
 		return integers;
-	}
-	
-	/**
-	 * Parses a String representation of a single Integer.
-	 *
-	 * @param toParse the Integer to parse
-	 * @return the Integer
-	 */
-	protected final Integer parseInt(String toParse) {
-		Integer dave;
-		
-		try {
-			dave = Integer.parseInt(toParse);
-		}
-		catch (NumberFormatException e) {
-			dave = null; //This is OK, we check for null values elsewhere
-		}
-		
-		return dave;
-	}
-	
-	/**
-	 * String to Inet4Address.
-	 *
-	 * @param toParse the string (IP/Hostname) to parse
-	 * @return an Inet4Address
-	 */
-	protected final Inet4Address stringToIP(String toParse) {
-		Object ip = null;
-		
-		//If we don't check this, null == 127.0.0.1, which throws everything :)
-		if (toParse == null || toParse.isEmpty()) { return null; }
-		
-		try {
-			ip = Inet4Address.getByName(toParse);
-		}
-		catch (UnknownHostException e) {
-			JOptionPane.showMessageDialog(null, toParse + " appears to be an invalid address, or you're currently offline. Please check your network connection and try again.");
-			System.exit(1);
-		}
-		
-		return (Inet4Address) ip;
 	}
 	
 	/**
@@ -146,8 +105,28 @@ public abstract class AData {
 	 * @param defaultVal the default value
 	 * @return the property's value
 	 */
-	public final String getProperty(String property, String defaultVal) {
+	public final String getStringProperty(String property, String defaultVal) {
 		return getData().getString(property, defaultVal);
+	}
+	
+	public final String getStringProperty(String property) {
+		return getStringProperty(property, null);
+	}
+	
+	public final Boolean getBooleanProperty(String property) {
+		if (getStringProperty(property, null) != null) {
+			return getData().getBoolean(property);
+		}
+
+		return null;
+	}
+
+	public final Integer getIntegerProperty(String property) {
+		if (getStringProperty(property, null) != null) {
+			return getData().getInt(property);
+		}
+
+		return null;
 	}
 	
 	/**
@@ -155,21 +134,20 @@ public abstract class AData {
 	 *
 	 * @param property the property array to read
 	 * @return the property values array, or empty array if unset
+	 * @throws InvalidPropertyArrayException 
 	 */
-	public final String[] getPropertyArray(String property) {
+	public final Set<String> getPropertyArray(String property)
+	throws InvalidPropertyArrayException {
 		JsonArray jsonProperties = getPropertyObjectArray(property);
-
-		if (jsonProperties != null) {
-			String[] properties = new String[jsonProperties.size()];
-			for (int i = 0; i < properties.length; ++i) {
-				properties[i] = jsonProperties.getString(i);
-			}
+		Set<String> properties = new HashSet<String>();
+		
+		if (jsonProperties == null) { throw new InvalidPropertyArrayException(); }
 			
-			return properties;
+		for (JsonValue jsonProperty : jsonProperties) {
+			properties.add(jsonProperty.toString());
 		}
-		else {
-			return new String[0];
-		}
+		
+		return properties;
 	}
 	
 	/**
@@ -180,33 +158,5 @@ public abstract class AData {
 	 */
 	public final JsonArray getPropertyObjectArray(String property) {
 		return getData().getJsonArray(property);
-	}
-	
-	
-	/**
-	 * Checks if a string is a valid URI.
-	 *
-	 * @param uriToCheck the uri to check
-	 * @return True if valid, False otherwise
-	 */
-	public final Boolean isValidURI(String uriToCheck) {
-        try { 
-            new URL(uriToCheck).toURI(); 
-        } 
-        catch (Exception e) { 
-            return false; 
-        } 
-
-        return true; 
-	}
-	
-	/**
-	 * Checks if a string is a valid IP.
-	 *
-	 * @param ipToCheck the ip to check
-	 * @return True if valid, False otherwise
-	 */
-	public final Boolean isValidIP(String ipToCheck){
-		return stringToIP(ipToCheck) != null; 
 	}
 }
