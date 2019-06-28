@@ -25,7 +25,7 @@ import core.exception.data.ADataException;
  * a computer which is providing a function on your network.
  * 
  *  I'd not be expecting you to instantiate this directly,
- *  rather one of its descendants.
+ *  (although you may, of course!) rather one of its descendants.
  */
 public class ServerData extends AMachineData {
 
@@ -46,8 +46,8 @@ public class ServerData extends AMachineData {
 	private SSHConnection sshConnection;
 	private WANConnection wanConnection;
 
-	private URI debianMirror;
 	private String debianDirectory;
+	private URI    debianMirror;
 
 	private String keePassDB;
 	
@@ -67,8 +67,8 @@ public class ServerData extends AMachineData {
 		this.sshConnection = null;
 		this.wanConnection    = null;
 		
-		this.debianMirror    = null;
 		this.debianDirectory = null;
+		this.debianMirror    = null;
 		
 		this.keePassDB = null;
 	}
@@ -78,26 +78,27 @@ public class ServerData extends AMachineData {
 		super.read(data);
 		
 		this.adminUsernames = getPropertyArray("admins");
-		
 		Set<String> sources = getPropertyArray("sshsource");
-		if (sources != null) {
+		if (sources != null) { //There must be a way to make this better
 			for (String source : sources) {
 				this.remoteAdminIPAddresses.add(new IPAddressString(source).getAddress());
 			}
 		}
-		
 		this.types           = getPropertyArray("types");
 		this.profiles        = getPropertyArray("profiles");
 
+		this.adminSSHConnectPort = getIntegerProperty("adminport");
+		this.sshListenPort       = getIntegerProperty("sshport");
+
+		this.update = Boolean.valueOf(super.getStringProperty("update", null));
+
 		this.sshConnection   = SSHConnection.valueOf(getStringProperty("connection"));
 		this.wanConnection   = WANConnection.valueOf(getStringProperty("extconnection"));
+
 		this.debianMirror    = new URI(getStringProperty("debianmirror"));
 		this.debianDirectory = getStringProperty("debiandirectory");
 
 		this.keePassDB = getStringProperty("keepassdb");
-		this.adminSSHConnectPort = getIntegerProperty("adminport");
-
-		this.update = Boolean.valueOf(super.getStringProperty("update", null));
 	}
 
 	public final Set<String> getAdminUsernames() {

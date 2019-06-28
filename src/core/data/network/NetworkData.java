@@ -445,7 +445,7 @@ public class NetworkData extends AData {
 		return port;
 	}
 
-	public Boolean autoUpdate(String server) {
+	public Boolean getAutoUpdate(String server) {
 		Boolean update = this.servers.get(server).getUpdate();
 		
 		if (update == null) {
