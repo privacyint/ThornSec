@@ -80,6 +80,7 @@ public class NetworkData extends AData {
 	private static final String DEFAULT_DEBIANMIRROR   = "free.hands.com";
 	private static final String DEFAULT_DEBIANDIR      = "/debian";
 	private static final String DEFAULT_NETMASK        = "/30";
+	private static final String DEFAULT_KEEPASS_DB   = "ThornSec.kdbx";
 	
 	private static final Integer DEFAULT_RAM          = 2048;
 	private static final Integer DEFAULT_CPUS         = 1;
@@ -455,6 +456,20 @@ public class NetworkData extends AData {
 		}
 		
 		return update;
+	}
+
+	public String getKeePassDB(String server)
+	throws URISyntaxException {
+		String db = this.servers.get(server).getKeePassDB();
+		
+		if (db == null) {
+			db = this.defaultServiceData.getKeePassDB();
+			if (db == null) {
+				db = NetworkData.DEFAULT_KEEPASS_DB;
+			}
+		}
+		
+		return db;
 	}
 	
 	public Set<NetworkInterfaceData> getLanIfaces(String machine)

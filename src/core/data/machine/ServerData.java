@@ -48,6 +48,8 @@ public class ServerData extends AMachineData {
 
 	private URI debianMirror;
 	private String debianDirectory;
+
+	private String keePassDB;
 	
 	public ServerData(String label) {
 		super(label);
@@ -67,6 +69,8 @@ public class ServerData extends AMachineData {
 		
 		this.debianMirror    = null;
 		this.debianDirectory = null;
+		
+		this.keePassDB = null;
 	}
 
 	public void read(JsonObject data)
@@ -90,7 +94,7 @@ public class ServerData extends AMachineData {
 		this.debianMirror    = new URI(getStringProperty("debianmirror"));
 		this.debianDirectory = getStringProperty("debiandirectory");
 
-		this.sshListenPort       = getIntegerProperty("sshport");
+		this.keePassDB = getStringProperty("keepassdb");
 		this.adminSSHConnectPort = getIntegerProperty("adminport");
 
 		this.update = Boolean.valueOf(super.getStringProperty("update", null));
@@ -158,5 +162,9 @@ public class ServerData extends AMachineData {
 
 	public final Set<IPAddress> getSSHSources() {
 		return this.remoteAdminIPAddresses;
+	}
+	
+	public final String getKeePassDB() {
+		return this.keePassDB;
 	}
 }
