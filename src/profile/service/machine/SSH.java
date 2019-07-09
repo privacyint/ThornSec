@@ -1,8 +1,14 @@
+/*
+ * This code is part of the ThornSec project.
+ * 
+ * To learn more, please head to its GitHub repo: @privacyint
+ * 
+ * Pull requests encouraged.
+ */
 package profile.service.machine;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Vector;
 
 import core.data.machine.AMachineData.Encapsulation;
 import core.exception.data.InvalidPortException;
@@ -12,7 +18,6 @@ import core.exception.data.machine.InvalidUserException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
-import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirOwnUnit;
@@ -24,6 +29,9 @@ import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
+/**
+ * This configures our SSH daemon.
+ */
 public class SSH extends AStructuredProfile {
 
 	public SSH(String label, NetworkModel networkModel) {
@@ -41,6 +49,8 @@ public class SSH extends AStructuredProfile {
 	protected Set<IUnit> getPersistentConfig()
 	throws InvalidServerModelException, InvalidUserException, InvalidMachineException {
 		Set<IUnit> units = new HashSet<IUnit>();
+		
+		//TODO: Update to new config file format, many of these are derecated now
 		
 		FileUnit sshdConf = new FileUnit("sshd_config", "sshd_installed", "/etc/ssh/sshd_config");
 		units.add(sshdConf);

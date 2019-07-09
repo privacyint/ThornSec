@@ -1,10 +1,10 @@
-package profile;
+package profile.service.web;
 
 import java.util.Vector;
 
 import core.iface.IUnit;
-import core.model.NetworkModel;
-import core.model.ServerModel;
+import core.model.network.NetworkModel;
+
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileChecksumUnit;
@@ -17,12 +17,12 @@ public class Piwik extends AStructuredProfile {
 	private PHP php;
 	private MariaDB db;
 	
-	public Piwik(ServerModel me, NetworkModel networkModel) {
-		super("piwik", me, networkModel);
+	public Piwik(String label, NetworkModel networkModel) {
+		super("piwik", networkModel);
 		
-		this.webserver = new Nginx(me, networkModel);
-		this.php = new PHP(me, networkModel);
-		this.db = new MariaDB(me, networkModel);
+		this.webserver = new Nginx(getLabel(), networkModel);
+		this.php = new PHP(getLabel(), networkModel);
+		this.db = new MariaDB(getLabel(), networkModel);
 		
 		this.db.setUsername("piwik");
 		this.db.setUserPrivileges("SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES");
@@ -30,26 +30,26 @@ public class Piwik extends AStructuredProfile {
 		this.db.setDb("piwik");
 	}
 
-	protected Vector<IUnit> getInstalled() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getInstalled() {
+		Set<IUnit> units = new HashSet<IUnit>();
 				
 		units.addAll(webserver.getInstalled());
 		units.addAll(php.getInstalled());
 		units.addAll(db.getInstalled());
 
-		units.addElement(new InstalledUnit("unzip", "proceed", "unzip"));
-		units.addElement(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
-		units.addElement(new InstalledUnit("php_mysql", "php_fpm_installed", "php-mysql"));
-		units.addElement(new InstalledUnit("php_mbstring", "php_fpm_installed", "php-mbstring"));
-		units.addElement(new InstalledUnit("php_gd", "php_fpm_installed", "php-gd"));
-		units.addElement(new InstalledUnit("php_xml", "php_fpm_installed", "php-xml"));
+		units.add(new InstalledUnit("unzip", "proceed", "unzip"));
+		units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
+		units.add(new InstalledUnit("php_mysql", "php_fpm_installed", "php-mysql"));
+		units.add(new InstalledUnit("php_mbstring", "php_fpm_installed", "php-mbstring"));
+		units.add(new InstalledUnit("php_gd", "php_fpm_installed", "php-gd"));
+		units.add(new InstalledUnit("php_xml", "php_fpm_installed", "php-xml"));
 
-		units.addElement(new FileDownloadUnit("piwik", "proceed", "https://builds.matomo.org/piwik.zip", "/root/piwik.zip",
+		units.add(new FileDownloadUnit("piwik", "proceed", "https://builds.matomo.org/piwik.zip", "/root/piwik.zip",
 				"Couldn't download Piwik.  This could mean you ave no network connection, or that the specified download is no longer available."));
-		units.addElement(new FileChecksumUnit("piwik", "piwik_downloaded", "/root/piwik.zip", "449a91225b0f942f454bbccd5fba1ff9ea9d0459b37f69004d43060c24e3626b6303373c66711b316314ec72ed96fda3c76b4a4f6a930c1569a2a72ed6ff6a1f",
+		units.add(new FileChecksumUnit("piwik", "piwik_downloaded", "/root/piwik.zip", "449a91225b0f942f454bbccd5fba1ff9ea9d0459b37f69004d43060c24e3626b6303373c66711b316314ec72ed96fda3c76b4a4f6a930c1569a2a72ed6ff6a1f",
 				"Piwik's checksum doesn't match.  This could indicate a failed download, MITM attack, or a newer version than our code supports.  Piwik's installation will fail."));
 
-		units.addElement(new SimpleUnit("piwik_installed", "piwik_checksum",
+		units.add(new SimpleUnit("piwik_installed", "piwik_checksum",
 				"sudo unzip /root/piwik.zip -d /media/data/www",
 				"[ -d /media/data/www/piwik ] && echo pass || echo fail", "pass", "pass",
 				"Piwik couldn't be extracted to the required directory."));
@@ -57,8 +57,8 @@ public class Piwik extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig() {
-		Vector<IUnit> units =  new Vector<IUnit>();
+	protected Set<IUnit> getPersistentConfig() {
+		Set<IUnit> units =  new HashSet<IUnit>();
 		
 		units.addAll(webserver.getPersistentConfig());
 		units.addAll(php.getPersistentConfig());
@@ -67,10 +67,10 @@ public class Piwik extends AStructuredProfile {
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getLiveConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		units.addElement(new SimpleUnit("piwik_mysql_password", "piwik_installed",
+		units.add(new SimpleUnit("piwik_mysql_password", "piwik_installed",
 				"PIWIK_PASSWORD=`sudo grep \"password\" /media/data/www/piwik/config/config.ini.php | head -1 | awk '{ print $3 }' | tr -d \"\\\",\"`; [[ -z $PIWIK_PASSWORD ]] && PIWIK_PASSWORD=`openssl rand -hex 32`;"
 				+ "echo \"Your database password is ${PIWIK_PASSWORD}\"",
 				"echo $PIWIK_PASSWORD", "", "fail",
@@ -121,11 +121,11 @@ public class Piwik extends AStructuredProfile {
 		return units;
 	}
 	
-	public Vector<IUnit> getNetworking() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	public Set<IUnit> getPersistentFirewall() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		units.addAll(webserver.getNetworking());
-		me.addRequiredEgress("builds.matomo.org", new Integer[]{443});
+		units.addAll(webserver.getPersistentFirewall());
+		networkModel.getServerModel(getLabel()).addEgress("builds.matomo.org", new Integer[]{443});
 
 		return units;
 	}

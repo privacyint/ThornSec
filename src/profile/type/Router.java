@@ -141,16 +141,16 @@ public class Router extends AStructuredProfile {
 		return units;
 	}
 	
-	public Set<IUnit> getNetworking() {
+	public Set<IUnit> getPersistentFirewall() {
 		Set<IUnit> units = new HashSet<IUnit>();
 
 		
 		NetworkInterfaceModel interfaces = me.getLANInterfaces();
 
 		firewall = ((ServerModel)me).getFirewallModel();
-		domain   = networkModel.getData().getDomain(me.getLabel());
+		domain   = networkModel.getData().getDomain(getLabel());
 		
-		JsonArray extInterfaces = (JsonArray) networkModel.getData().getPropertyObjectArray(me.getLabel(), "wan");
+		JsonArray extInterfaces = (JsonArray) networkModel.getData().getPropertyObjectArray(getLabel(), "wan");
 
 		if (extInterfaces.size() == 0) {
 			JOptionPane.showMessageDialog(null, "You must specify at least one WAN interface for your router.\n\nValid options are 'ppp', 'static', and 'dhcp'");
@@ -198,7 +198,7 @@ public class Router extends AStructuredProfile {
 					dhclient += "	dhcp6.name-servers, dhcp6.domain-search,\n";
 					dhclient += "	netbios-name-servers, netbios-scope, interface-mtu,\n";
 					dhclient += "	rfc3442-classless-static-routes, ntp-servers;";
-					units.addElement(new FileUnit("router_ext_dhcp_persist", "proceed", dhclient, "/etc/dhcp/dhclient.conf"));
+					units.add(new FileUnit("router_ext_dhcp_persist", "proceed", dhclient, "/etc/dhcp/dhclient.conf"));
 
 					firewall.addFilterInput("router_ext_dhcp_in",
 							"-i " + wanIface
@@ -217,14 +217,14 @@ public class Router extends AStructuredProfile {
 							"Make sure the Router can receive DHCP responses");
 					break;
 				case "ppp":
-					units.addElement(new InstalledUnit("ext_ppp", "ppp"));
-					units.addElement(me.getLANInterfaces().addPPPIface("router_ext_ppp_iface", wanIface));
-					((ServerModel)me).getProcessModel().addProcess("/usr/sbin/pppd call provider$");
+					units.add(new InstalledUnit("ext_ppp", "ppp"));
+					units.add(me.getLANInterfaces().addPPPIface("router_ext_ppp_iface", wanIface));
+					networkModel.getServerModel(getLabel()).addProcessString("/usr/sbin/pppd call provider$");
 					
 					((ServerModel)me).getConfigsModel().addConfigFilePath("/etc/ppp/peers/dsl-provider$");
 					((ServerModel)me).getConfigsModel().addConfigFilePath("/etc/ppp/options$");
 					
-					units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("resolv_conf", "proceed", "nameserver 127.0.0.1", "/etc/ppp/resolv.conf"));
+					units.add(((ServerModel)me).getConfigsModel().addConfigFile("resolv_conf", "proceed", "nameserver 127.0.0.1", "/etc/ppp/resolv.conf"));
 					
 					firewall.addMangleForward("clamp_mss_to_pmtu",
 							"-p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1400:1536 -j TCPMSS --clamp-mss-to-pmtu",
@@ -235,7 +235,7 @@ public class Router extends AStructuredProfile {
 					break;
 				case "static":
 					interfaces.addIface(new InterfaceData(
-							me.getLabel(), //host
+							getLabel(), //host
 							wanIface, //iface
 							null, //mac
 							"static", //inet
@@ -257,10 +257,10 @@ public class Router extends AStructuredProfile {
 					break;
 			}
 			
-			wanIfaces.addElement(wanIface);
+			wanIfaces.add(wanIface);
 		}
 
-		Vector<String> routerLanIfaces = new Vector<String>(networkModel.getData().getLanIfaces(me.getLabel()).keySet());
+		Vector<String> routerLanIfaces = new Vector<String>(networkModel.getData().getLanIfaces(getLabel()).keySet());
 		
 		String lanBridge = "lan0";
 
@@ -269,13 +269,13 @@ public class Router extends AStructuredProfile {
 		//We don't actually care about LAN ifaces if we're a metal/router
 		if (((ServerModel) me).isMetal()) {
 			//We very deliberately hang everything off a bridge, to stop internal traffic over the WAN iface
-			units.addElement(new InstalledUnit("bridge_utils", "bridge-utils"));
+			units.add(new InstalledUnit("bridge_utils", "bridge-utils"));
 			
 			InetAddress subnet  = networkModel.stringToIP("10.0.0.0");
 			InetAddress address = networkModel.stringToIP("10.0.0.1");
 
 			interfaces.addIface(new InterfaceData(
-					me.getLabel(), //host
+					getLabel(), //host
 					lanBridge, //iface
 					null, //mac
 					"static", //inet
@@ -292,7 +292,7 @@ public class Router extends AStructuredProfile {
 			//First, add this machine's own interfaces
 			for (String lanIface : routerLanIfaces) {
 				interfaces.addIface(new InterfaceData(
-						me.getLabel(), //host
+						getLabel(), //host
 						lanIface, //iface
 						null, //mac
 						"manual", //inet

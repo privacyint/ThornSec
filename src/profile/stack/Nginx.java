@@ -1,5 +1,6 @@
 package profile.stack;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -23,6 +24,8 @@ import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidServerModelException;
 
 public class Nginx extends AStructuredProfile {
+	public static final File CONF_D_DIRECTORY = new File("/etc/nginx/conf.d/");
+	
 	private HashSet<FileUnit> liveConfigs;
 	
 	public Nginx(String label, NetworkModel networkModel) {
@@ -32,7 +35,7 @@ public class Nginx extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled()
+	public Set<IUnit> getInstalled()
 	throws InvalidServerModelException {
 		Set<IUnit> units = new HashSet<IUnit>();
 
@@ -52,7 +55,7 @@ public class Nginx extends AStructuredProfile {
 	}
 	
 	@Override
-	protected Set<IUnit> getPersistentConfig()
+	public Set<IUnit> getPersistentConfig()
 	throws InvalidServerException, InvalidServerModelException {
 		Set<IUnit> units =  new HashSet<IUnit>();
 		
@@ -115,7 +118,7 @@ public class Nginx extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig()
+	public Set<IUnit> getLiveConfig()
 	throws InvalidServerModelException {
 		Set<IUnit> units = new HashSet<IUnit>();
 		
@@ -129,7 +132,7 @@ public class Nginx extends AStructuredProfile {
 			units.addAll(liveConfigs);
 		}
 		else {
-			FileUnit defaultServerBlock = new FileUnit("nginx_default", "nginx_installed", "/etc/nginx/conf.d/default.conf");
+			FileUnit defaultServerBlock = new FileUnit("nginx_default", "nginx_installed", Nginx.CONF_D_DIRECTORY + "default.conf");
 			units.add(defaultServerBlock);
 			
 			defaultServerBlock.appendLine("server {");
@@ -169,5 +172,10 @@ public class Nginx extends AStructuredProfile {
 		networkModel.getServerModel(getLabel()).addEgress("nginx.org");
 		
 		return units;
+	}
+	
+	@Override
+	public Set<IUnit> getLiveFirewall() {
+		return new HashSet<IUnit>(); //Empty (for now?)
 	}
 }

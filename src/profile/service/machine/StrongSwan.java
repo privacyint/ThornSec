@@ -1,32 +1,41 @@
-package profile;
+/*
+ * This code is part of the ThornSec project.
+ * 
+ * To learn more, please head to its GitHub repo: @privacyint
+ * 
+ * Pull requests encouraged.
+ */
+package profile.service.machine;
 
-import java.net.InetAddress;
-import java.util.Vector;
+import java.util.HashSet;
+import java.util.Set;
 
-import core.data.InterfaceData;
 import core.iface.IUnit;
-import core.model.DeviceModel;
-import core.model.NetworkModel;
-import core.model.ServerModel;
+import core.model.network.NetworkModel;
+
 import core.profile.AStructuredProfile;
 
+/**
+ * This profile will create and configure a VPN service
+ */
 public class StrongSwan extends AStructuredProfile {
 
-	public StrongSwan(ServerModel me, NetworkModel networkModel) {
-		super("strongswan", me, networkModel);
+	public StrongSwan(String label, NetworkModel networkModel) {
+		super("strongswan", networkModel);
 	}
 	
-	protected Vector<IUnit> getPersistentConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getPersistentConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
         
 		;;
 		
 		return units;
 	}
 
-	public Vector<IUnit> getNetworking() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	public Set<IUnit> getPersistentFirewall() {
+		Set<IUnit> units = new HashSet<IUnit>();
 
+		/*
 		for (ServerModel router : networkModel.getRouterServers()) {
 			ISCDHCPServer dhcp = ((ServerModel)router).getRouter().getDHCPServer();
 			UnboundDNSServer  dns  = ((ServerModel)router).getRouter().getDNSServer();
@@ -93,42 +102,42 @@ public class StrongSwan extends AStructuredProfile {
 		networkModel.getIPSet().addToSet("user", 32, me.getIP());
 		
 		for (ServerModel router : networkModel.getRouterServers()) {
-			InetAddress ip = networkModel.getServerModel(me.getLabel()).getIP();
+			InetAddress ip = networkModel.getServerModel(getLabel()).getIP();
 			
-			((ServerModel)router).getFirewallModel().addNatPrerouting("dnat_" + networkModel.getData().getExternalIp(me.getLabel()),
+			((ServerModel)router).getFirewallModel().addNatPrerouting("dnat_" + networkModel.getData().getExternalIp(getLabel()),
 					"-p udp"
 					+ " -m multiport"
 					+ " --dports 500,4500"
 					+ " -j DNAT"
 					+ " --to-destination " + ip.getHostAddress(),
 					"Redirect all external UDP traffic on :500 and :4500 (VPN ports) to our VPN server");
-			((ServerModel)router).getFirewallModel().addFilter(me.getLabel() + "_allow_vpn_fwd", me.getForwardChain(),
+			((ServerModel)router).getFirewallModel().addFilter(getLabel() + "_allow_vpn_fwd", me.getForwardChain(),
 					"-p udp"
 					+ " -m multiport"
 					+ " --dports 500,4500"
 					+ " -j ACCEPT",
 					"Allow internal UDP traffic on :500 and :4500 (VPN ports) to our VPN server");
-			((ServerModel)router).getFirewallModel().addFilter(me.getLabel() + "_allow_vpn_internally", me.getForwardChain(),
+			((ServerModel)router).getFirewallModel().addFilter(getLabel() + "_allow_vpn_internally", me.getForwardChain(),
 					"-p udp"
 					+ " -m multiport"
 					+ " --sports 500,4500"
 					+ " -j ACCEPT",
 					"Allow internal UDP traffic on :500 and :4500 (VPN ports) to our VPN server");
-			((ServerModel)router).getFirewallModel().addFilter(me.getLabel() + "_allow_vpn_in", me.getIngressChain(),
+			((ServerModel)router).getFirewallModel().addFilter(getLabel() + "_allow_vpn_in", me.getIngressChain(),
 					"-p udp"
 					+ " -m multiport"
 					+ " --dports 500,4500"
 					+ " -j ACCEPT",
 					"Allow all external UDP traffic on :500 and :4500 (VPN ports)");
 
-			((ServerModel)router).getFirewallModel().addFilter(me.getLabel() + "_allow_egress", me.getEgressChain(),
+			((ServerModel)router).getFirewallModel().addFilter(getLabel() + "_allow_egress", me.getEgressChain(),
 					"-j ACCEPT",
 					"Allow the VPN to talk to the outside world");
-			((ServerModel)router).getFirewallModel().addFilter(me.getLabel() + "_allow_ingress", me.getIngressChain(),
+			((ServerModel)router).getFirewallModel().addFilter(getLabel() + "_allow_ingress", me.getIngressChain(),
 					"-m state --state ESTABLISHED,RELATED"
 					+ " -j ACCEPT",
 					"Allow the VPN to respond to valid traffic");
-		}
+		}*/
 		
 		return units;
 	}

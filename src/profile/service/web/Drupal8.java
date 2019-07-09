@@ -1,10 +1,10 @@
-package profile;
+package profile.service.web;
 
 import java.util.Vector;
 
 import core.iface.IUnit;
-import core.model.NetworkModel;
-import core.model.ServerModel;
+import core.model.network.NetworkModel;
+
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.pkg.InstalledUnit;
@@ -15,12 +15,12 @@ public class Drupal8 extends AStructuredProfile {
 	private PHP php;
 	private MariaDB db;
 	
-	public Drupal8(ServerModel me, NetworkModel networkModel) {
-		super("drupal8", me, networkModel);
+	public Drupal8(String label, NetworkModel networkModel) {
+		super("drupal8", networkModel);
 		
-		this.webserver = new Nginx(me, networkModel);
-		this.php = new PHP(me, networkModel);
-		this.db = new MariaDB(me, networkModel);
+		this.webserver = new Nginx(getLabel(), networkModel);
+		this.php = new PHP(getLabel(), networkModel);
+		this.db = new MariaDB(getLabel(), networkModel);
 		
 		this.db.setUsername("drupal");
 		this.db.setUserPrivileges("SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES");
@@ -28,29 +28,29 @@ public class Drupal8 extends AStructuredProfile {
 		this.db.setDb("drupal");
 	}
 
-	protected Vector<IUnit> getInstalled() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getInstalled() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		units.addAll(webserver.getInstalled());
 		units.addAll(php.getInstalled());
 		units.addAll(db.getInstalled());
 		
-		units.addElement(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
-		units.addElement(new InstalledUnit("curl", "proceed", "curl"));
-		units.addElement(new InstalledUnit("unzip", "proceed", "unzip"));
+		units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
+		units.add(new InstalledUnit("curl", "proceed", "curl"));
+		units.add(new InstalledUnit("unzip", "proceed", "unzip"));
 
-		units.addElement(new InstalledUnit("composer", "proceed", "composer"));
+		units.add(new InstalledUnit("composer", "proceed", "composer"));
 		
-		units.addElement(new InstalledUnit("php_xml", "php_fpm_installed", "php-xml"));
-		units.addElement(new InstalledUnit("php_gd", "php_fpm_installed", "php-gd"));
-		units.addElement(new InstalledUnit("php_mysql", "php_fpm_installed", "php-mysql"));
-		units.addElement(new InstalledUnit("php_common", "php_fpm_installed", "php-common"));
-		units.addElement(new InstalledUnit("php_mbstring", "php_fpm_installed", "php-mbstring"));
-		units.addElement(new InstalledUnit("php_mod_curl", "php_fpm_installed", "php-curl"));
+		units.add(new InstalledUnit("php_xml", "php_fpm_installed", "php-xml"));
+		units.add(new InstalledUnit("php_gd", "php_fpm_installed", "php-gd"));
+		units.add(new InstalledUnit("php_mysql", "php_fpm_installed", "php-mysql"));
+		units.add(new InstalledUnit("php_common", "php_fpm_installed", "php-common"));
+		units.add(new InstalledUnit("php_mbstring", "php_fpm_installed", "php-mbstring"));
+		units.add(new InstalledUnit("php_mod_curl", "php_fpm_installed", "php-curl"));
 		
-		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("drush", "composer_installed", "nginx", "nginx", "0750"));
+		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("drush", "composer_installed", "nginx", "nginx", "0750"));
 		
-		units.addElement(new SimpleUnit("drush_installed", "composer_installed",
+		units.add(new SimpleUnit("drush_installed", "composer_installed",
 				"sudo -u nginx bash -c 'composer create-project drush/drush /media/data/drush -n'",
 				"sudo [ -f /media/data/drush/drush ] && echo pass || echo fail", "pass", "pass",
 				"Couldn't install drush. The installation of Drupal will fail."));
@@ -58,8 +58,8 @@ public class Drupal8 extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig() {
-		Vector<IUnit> units =  new Vector<IUnit>();
+	protected Set<IUnit> getPersistentConfig() {
+		Set<IUnit> units =  new HashSet<IUnit>();
 		
 		units.addAll(webserver.getPersistentConfig());
 		units.addAll(db.getPersistentConfig());
@@ -68,8 +68,8 @@ public class Drupal8 extends AStructuredProfile {
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getLiveConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		String nginxConf = "";
 		nginxConf += "server {\n";
@@ -121,7 +121,7 @@ public class Drupal8 extends AStructuredProfile {
 		units.addAll(php.getLiveConfig());
 		units.addAll(db.getLiveConfig());
 		
-		units.addElement(new SimpleUnit("drupal_mysql_password", "proceed",
+		units.add(new SimpleUnit("drupal_mysql_password", "proceed",
 				"DRUPAL_PASSWORD=`sudo grep \"password\" /media/data/www/sites/default/settings.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',\"`; [[ -z $DRUPAL_PASSWORD ]] && DRUPAL_PASSWORD=`openssl rand -hex 32`",
 				"echo $DRUPAL_PASSWORD", "", "fail",
 				"Couldn't set a password for Drupal's database user. The installation will fail."));
@@ -129,7 +129,7 @@ public class Drupal8 extends AStructuredProfile {
 		units.addAll(this.db.checkUserExists());
 		units.addAll(this.db.checkDbExists());
 		
-		units.addElement(new SimpleUnit("drupal_installed", "drush_installed",
+		units.add(new SimpleUnit("drupal_installed", "drush_installed",
 				"sudo /media/data/drush/drush -y dl drupal-8 --destination=/media/data --drupal-project-rename=www"
 				+ " && sudo /media/data/drush/drush -y -r /media/data/www site-install --db-url=mysql://drupal:${DRUPAL_PASSWORD}@localhost:3306/drupal --db-prefix=drupal --account-pass=admin",
 				"sudo /media/data/drush/drush status -r /media/data/www 2>&1 | grep 'Drupal root'", "", "fail",
@@ -138,17 +138,17 @@ public class Drupal8 extends AStructuredProfile {
 		return units;
 	}
 	
-	public Vector<IUnit> getNetworking() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	public Set<IUnit> getPersistentFirewall() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		me.addRequiredEgressDestination("drupal.org");
-		me.addRequiredEgressDestination("packages.drupal.org");
-		me.addRequiredEgressDestination("packagist.org");
-		me.addRequiredEgressDestination("api.github.com");
-		me.addRequiredEgressDestination("github.com");
-		me.addRequiredEgressDestination("codeload.github.com");
+		networkModel.getServerModel(getLabel()).addEgress("drupal.org");
+		networkModel.getServerModel(getLabel()).addEgress("packages.drupal.org");
+		networkModel.getServerModel(getLabel()).addEgress("packagist.org");
+		networkModel.getServerModel(getLabel()).addEgress("api.github.com");
+		networkModel.getServerModel(getLabel()).addEgress("github.com");
+		networkModel.getServerModel(getLabel()).addEgress("codeload.github.com");
 		
-		units.addAll(webserver.getNetworking());
+		units.addAll(webserver.getPersistentFirewall());
 
 		return units;
 	}

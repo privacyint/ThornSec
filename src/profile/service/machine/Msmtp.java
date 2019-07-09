@@ -1,33 +1,36 @@
-package profile;
+package profile.service.machine;
 
-import java.util.Vector;
+import java.util.HashSet;
+import java.util.Set;
 
+import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.NetworkModel;
-import core.model.ServerModel;
+import core.model.network.NetworkModel;
+
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.pkg.InstalledUnit;
 
 public class Msmtp extends AStructuredProfile {
 	
-	public Msmtp(ServerModel me, NetworkModel networkModel) {
-		super("msmtp", me, networkModel);
+	public Msmtp(String label, NetworkModel networkModel) {
+		super("msmtp", networkModel);
 	}
 
-	protected Vector<IUnit> getInstalled() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getInstalled()
+	throws InvalidServerModelException {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		units.addAll(((ServerModel)me).getBindFsModel().addLogBindPoint("msmtp", "proceed", "nginx", "0750"));
+		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addLogBindPoint("msmtp", "proceed", "nginx", "0750"));
 
-		units.addElement(new InstalledUnit("msmtp", "proceed", "msmtp"));
-		units.addElement(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
+		units.add(new InstalledUnit("msmtp", "proceed", "msmtp"));
+		units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getLiveConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		String msmtprc = "";
 		msmtprc += "account        default\n";
@@ -41,7 +44,7 @@ public class Msmtp extends AStructuredProfile {
 		msmtprc += "tls_trust_file /etc/ssl/certs/ca-certificates.crt\n";
 		msmtprc += "logfile        /var/log/msmtp/msmtp.log";
 		
-		units.addElement(new SimpleUnit("msmtprc_exists", "msmtp_installed",
+		units.add(new SimpleUnit("msmtprc_exists", "msmtp_installed",
 				"",
 				"sudo [ -f \"/etc/msmtprc\" ] && echo pass || echo fail", "pass", "pass",
 				"You need to create the file /etc/msmtprc, using the following format:\n" + msmtprc));

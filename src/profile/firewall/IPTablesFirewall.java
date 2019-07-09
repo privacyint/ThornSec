@@ -293,7 +293,7 @@ public class IPTablesFirewall extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getNetworking() {
+	public Set<IUnit> getPersistentFirewall() {
 		// TODO Auto-generated method stub
 		return null;
 	}

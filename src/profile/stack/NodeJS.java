@@ -1,3 +1,10 @@
+/*
+ * This code is part of the ThornSec project.
+ * 
+ * To learn more, please head to its GitHub repo: @privacyint
+ * 
+ * Pull requests encouraged.
+ */
 package profile.stack;
 
 import java.util.HashSet;
@@ -13,6 +20,9 @@ import core.unit.fs.FileDownloadUnit;
 import core.unit.fs.FilePermsUnit;
 import core.unit.pkg.InstalledUnit;
 
+/**
+ * This profile installs and configures 
+ */
 public class NodeJS extends AStructuredProfile {
 	
 	public NodeJS(String label, NetworkModel networkModel) {
@@ -20,18 +30,12 @@ public class NodeJS extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() {
+	public Set<IUnit> getInstalled() {
 		Set<IUnit> units = new HashSet<IUnit>();
 
+		units.add(new InstalledUnit("build_essential", "proceed", "build-essential"));
 		units.add(new InstalledUnit("gzip", "proceed", "gzip"));
 		units.add(new InstalledUnit("git", "gzip_installed", "git"));
-		
-		return units;
-	}
-	
-	@Override
-	protected Set<IUnit> getPersistentConfig() {
-		Set<IUnit> units =  new HashSet<IUnit>();
 
 		units.add(new FileDownloadUnit("nodejs", "build_essential_installed",
 				"https://deb.nodesource.com/setup_9.x",
@@ -57,6 +61,24 @@ public class NodeJS extends AStructuredProfile {
 		
 		return units;
 	}
+	
+	@Override
+	public Set<IUnit> getPersistentConfig() {
+		Set<IUnit> units =  new HashSet<IUnit>();
+
+		//TODO: iunno. Is there something which needs to go here?
+		
+		return units;
+	}
+	
+	@Override
+	public Set<IUnit> getLiveConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
+
+		//TODO: check it's up to date, etc
+		
+		return units;
+	}
 
 	@Override
 	public Set<IUnit> getPersistentFirewall()
@@ -71,5 +93,4 @@ public class NodeJS extends AStructuredProfile {
 
 		return units;
 	}
-
 }

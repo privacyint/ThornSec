@@ -1,10 +1,10 @@
-package profile;
+package profile.service.web;
 
 import java.util.Vector;
 
 import core.iface.IUnit;
-import core.model.NetworkModel;
-import core.model.ServerModel;
+import core.model.network.NetworkModel;
+
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.pkg.InstalledUnit;
@@ -15,12 +15,12 @@ public class OpenSocial extends AStructuredProfile {
 	private PHP php;
 	private MariaDB db;
 	
-	public OpenSocial(ServerModel me, NetworkModel networkModel) {
-		super("opensocial", me, networkModel);
+	public OpenSocial(String label, NetworkModel networkModel) {
+		super("opensocial", networkModel);
 		
-		this.webserver = new Nginx(me, networkModel);
-		this.php = new PHP(me, networkModel);
-		this.db = new MariaDB(me, networkModel);
+		this.webserver = new Nginx(getLabel(), networkModel);
+		this.php = new PHP(getLabel(), networkModel);
+		this.db = new MariaDB(getLabel(), networkModel);
 		
 		this.db.setUsername("opensocial");
 		this.db.setUserPrivileges("SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES");
@@ -28,33 +28,33 @@ public class OpenSocial extends AStructuredProfile {
 		this.db.setDb("opensocial");
 	}
 
-	protected Vector<IUnit> getInstalled() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getInstalled() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		units.addAll(webserver.getInstalled());
 		units.addAll(php.getInstalled());
 		units.addAll(db.getInstalled());
 		
-		units.addElement(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
-		units.addElement(new InstalledUnit("composer", "proceed", "composer"));
-		units.addElement(new InstalledUnit("php_xml", "php_fpm_installed", "php-xml"));
-		units.addElement(new InstalledUnit("php_gd", "php_fpm_installed", "php-gd"));
-		units.addElement(new InstalledUnit("php_mysql", "php_fpm_installed", "php-mysql"));
-		units.addElement(new InstalledUnit("php_mbstring", "php_fpm_installed", "php-mbstring"));
-		units.addElement(new InstalledUnit("php_common", "php_fpm_installed", "php-common"));
-		units.addElement(new InstalledUnit("curl", "proceed", "curl"));
-		units.addElement(new InstalledUnit("unzip", "proceed", "unzip"));
-		units.addElement(new InstalledUnit("php_mod_curl", "php_fpm_installed", "php-curl"));
-		units.addElement(new InstalledUnit("sendmail", "proceed", "sendmail"));
+		units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
+		units.add(new InstalledUnit("composer", "proceed", "composer"));
+		units.add(new InstalledUnit("php_xml", "php_fpm_installed", "php-xml"));
+		units.add(new InstalledUnit("php_gd", "php_fpm_installed", "php-gd"));
+		units.add(new InstalledUnit("php_mysql", "php_fpm_installed", "php-mysql"));
+		units.add(new InstalledUnit("php_mbstring", "php_fpm_installed", "php-mbstring"));
+		units.add(new InstalledUnit("php_common", "php_fpm_installed", "php-common"));
+		units.add(new InstalledUnit("curl", "proceed", "curl"));
+		units.add(new InstalledUnit("unzip", "proceed", "unzip"));
+		units.add(new InstalledUnit("php_mod_curl", "php_fpm_installed", "php-curl"));
+		units.add(new InstalledUnit("sendmail", "proceed", "sendmail"));
 		
-		((ServerModel)me).getProcessModel().addProcess("sendmail: MTA: accepting connections$");
+		networkModel.getServerModel(getLabel()).addProcessString("sendmail: MTA: accepting connections$");
 		((ServerModel)me).getUserModel().addUsername("smmta");
 		((ServerModel)me).getUserModel().addUsername("smmpa");
 		((ServerModel)me).getUserModel().addUsername("smmsp");
 		
-		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("drush", "composer_installed", "nginx", "nginx", "0750"));
+		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("drush", "composer_installed", "nginx", "nginx", "0750"));
 		
-		units.addElement(new SimpleUnit("drush_installed", "composer_installed",
+		units.add(new SimpleUnit("drush_installed", "composer_installed",
 				"sudo -u nginx bash -c 'composer create-project drush/drush /media/data/drush -n'",
 				"sudo [ -f /media/data/drush/drush ] && echo pass || echo fail", "pass", "pass",
 				"Couldn't install drush. The installation of OpenSocial will fail."));
@@ -62,8 +62,8 @@ public class OpenSocial extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig() {
-		Vector<IUnit> units =  new Vector<IUnit>();
+	protected Set<IUnit> getPersistentConfig() {
+		Set<IUnit> units =  new HashSet<IUnit>();
 		
 		units.addAll(webserver.getPersistentConfig());
 		units.addAll(db.getPersistentConfig());
@@ -72,8 +72,8 @@ public class OpenSocial extends AStructuredProfile {
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getLiveConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		String nginxConf = "";
 		nginxConf += "server {\n";
@@ -116,12 +116,12 @@ public class OpenSocial extends AStructuredProfile {
 		units.addAll(php.getLiveConfig());
 		units.addAll(db.getLiveConfig());
 		
-		units.addElement(new SimpleUnit("opensocial_mysql_password", "proceed",
+		units.add(new SimpleUnit("opensocial_mysql_password", "proceed",
 				"OPENSOCIAL_PASSWORD=`sudo grep \"password\" /media/data/www/html/sites/default/settings.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',\"`; [[ -z $OPENSOCIAL_PASSWORD ]] && OPENSOCIAL_PASSWORD=`openssl rand -hex 32`",
 				"echo $OPENSOCIAL_PASSWORD", "", "fail",
 				"Couldn't set a password for OpenSocial's database user. The installation will fail."));
 
-		units.addElement(new SimpleUnit("opensocial_salt", "proceed",
+		units.add(new SimpleUnit("opensocial_salt", "proceed",
 				"OPENSOCIAL_SALT=`sudo grep \"hash_salt'] =\" /media/data/www/html/sites/default/settings.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',;\"`; [[ -z $OPENSOCIAL_SALT ]] && OPENSOCIAL_SALT=`openssl rand -hex 75`",
 				"echo $OPENSOCIAL_SALT", "", "fail",
 				"Couldn't set a hash salt for OpenSocial's one-time login links. Your installation may not function correctly."));
@@ -130,14 +130,14 @@ public class OpenSocial extends AStructuredProfile {
 		units.addAll(db.checkUserExists());
 		units.addAll(db.checkDbExists());
 				
-		units.addElement(new SimpleUnit("opensocial_installed", "drush_installed",
+		units.add(new SimpleUnit("opensocial_installed", "drush_installed",
 				"sudo composer create-project goalgorilla/social_template:dev-master /media/data/www --no-interaction"
 				+ " && sudo /media/data/drush/drush -y -r /media/data/www/html site-install social --db-url=mysql://opensocial:${OPENSOCIAL_PASSWORD}@localhost:3306/opensocial --account-pass=admin",
 				"sudo /media/data/drush/drush status -r /media/data/www/html 2>&1 | grep 'Install profile'", "", "fail",
 				"OpenSocial could not be installed."));
 
-		String[] cnames = networkModel.getData().getCnames(me.getLabel());
-		String   domain = networkModel.getData().getDomain(me.getLabel()).replaceAll("\\.", "\\\\.");  
+		String[] cnames = networkModel.getData().getCnames(getLabel());
+		String   domain = networkModel.getData().getDomain(getLabel()).replaceAll("\\.", "\\\\.");  
 		
 		String opensocialConf = "";
 		opensocialConf += "<?php\n";
@@ -178,23 +178,23 @@ public class OpenSocial extends AStructuredProfile {
 		opensocialConf += "\n";
 		opensocialConf += "\\$settings['install_profile'] = 'social';";
 
-		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("opensocial", "opensocial_installed", opensocialConf, "/media/data/www/html/sites/default/settings.php"));
+		units.add(((ServerModel)me).getConfigsModel().addConfigFile("opensocial", "opensocial_installed", opensocialConf, "/media/data/www/html/sites/default/settings.php"));
 		
 		return units;
 	}
 	
-	public Vector<IUnit> getNetworking() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	public Set<IUnit> getPersistentFirewall() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		units.addAll(webserver.getNetworking());
+		units.addAll(webserver.getPersistentFirewall());
 
-		me.addRequiredEgressDestination("packagist.org");
-		me.addRequiredEgressDestination("github.com");
-		me.addRequiredEgressDestination("packages.drupal.org");
-		me.addRequiredEgressDestination("asset-packagist.org");
-		me.addRequiredEgressDestination("api.github.com");
-		me.addRequiredEgressDestination("codeload.github.com");
-		me.addRequiredEgressDestination("git.drupal.org");
+		networkModel.getServerModel(getLabel()).addEgress("packagist.org");
+		networkModel.getServerModel(getLabel()).addEgress("github.com");
+		networkModel.getServerModel(getLabel()).addEgress("packages.drupal.org");
+		networkModel.getServerModel(getLabel()).addEgress("asset-packagist.org");
+		networkModel.getServerModel(getLabel()).addEgress("api.github.com");
+		networkModel.getServerModel(getLabel()).addEgress("codeload.github.com");
+		networkModel.getServerModel(getLabel()).addEgress("git.drupal.org");
 		
 		return units;
 	}

@@ -65,7 +65,7 @@ public class MariaDB extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled()
+	public Set<IUnit> getInstalled()
 	throws InvalidServerModelException {
 		Set<IUnit> units = new HashSet<IUnit>();
 
@@ -108,7 +108,7 @@ public class MariaDB extends AStructuredProfile {
 	}
 	
 	@Override
-	protected Set<IUnit> getPersistentConfig() {
+	public Set<IUnit> getPersistentConfig() {
 		Set<IUnit> units =  new HashSet<IUnit>();
 
 		units.add(new SimpleUnit("mariadb_data_dir_moved", "mariadb_installed",
@@ -198,7 +198,7 @@ public class MariaDB extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig()
+	public Set<IUnit> getLiveConfig()
 	throws InvalidServerModelException {
 		Set<IUnit> units = new HashSet<IUnit>();
 		
@@ -291,6 +291,11 @@ public class MariaDB extends AStructuredProfile {
 		networkModel.getServerModel(getLabel()).addEgress("mirror.sax.uk.as61049.net");
 		
 		return units;
+	}
+	
+	@Override
+	public Set<IUnit> getLiveFirewall() {
+		return new HashSet<IUnit>(); //Empty (for now?)
 	}
 
 }

@@ -1,10 +1,10 @@
-package profile;
+package profile.service.web;
 
 import java.util.Vector;
 
 import core.iface.IUnit;
-import core.model.NetworkModel;
-import core.model.ServerModel;
+import core.model.network.NetworkModel;
+
 import core.profile.AStructuredProfile;
 import core.unit.pkg.InstalledUnit;
 
@@ -13,34 +13,34 @@ public class Grav extends AStructuredProfile {
 	private Nginx webserver;
 	private PHP php;
 	
-	public Grav(ServerModel me, NetworkModel networkModel) {
-		super("grav", me, networkModel);
+	public Grav(String label, NetworkModel networkModel) {
+		super("grav", networkModel);
 		
-		this.webserver = new Nginx(me, networkModel);
-		this.php = new PHP(me, networkModel);
+		this.webserver = new Nginx(getLabel(), networkModel);
+		this.php = new PHP(getLabel(), networkModel);
 	}
 
-	protected Vector<IUnit> getInstalled() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getInstalled() {
+		Set<IUnit> units = new HashSet<IUnit>();
 				
 		units.addAll(webserver.getInstalled());
 		units.addAll(php.getInstalled());
 		
-		units.addElement(new InstalledUnit("php_cli", "php_fpm_installed", "php-cli"));
-		units.addElement(new InstalledUnit("php_common", "php_fpm_installed", "php-common"));
-		units.addElement(new InstalledUnit("php_curl", "php_fpm_installed", "php-curl"));
-		units.addElement(new InstalledUnit("php_gd", "php_fpm_installed", "php-gd"));
-		units.addElement(new InstalledUnit("php_json", "php_fpm_installed", "php-json"));
-		units.addElement(new InstalledUnit("php_readline", "php_fpm_installed", "php-readline"));
-		units.addElement(new InstalledUnit("php_mbstring", "php_fpm_installed", "php-mbstring"));
-		units.addElement(new InstalledUnit("php_xml", "php_fpm_installed", "php-xml"));
-		units.addElement(new InstalledUnit("php_zip", "php_fpm_installed", "php-zip"));
+		units.add(new InstalledUnit("php_cli", "php_fpm_installed", "php-cli"));
+		units.add(new InstalledUnit("php_common", "php_fpm_installed", "php-common"));
+		units.add(new InstalledUnit("php_curl", "php_fpm_installed", "php-curl"));
+		units.add(new InstalledUnit("php_gd", "php_fpm_installed", "php-gd"));
+		units.add(new InstalledUnit("php_json", "php_fpm_installed", "php-json"));
+		units.add(new InstalledUnit("php_readline", "php_fpm_installed", "php-readline"));
+		units.add(new InstalledUnit("php_mbstring", "php_fpm_installed", "php-mbstring"));
+		units.add(new InstalledUnit("php_xml", "php_fpm_installed", "php-xml"));
+		units.add(new InstalledUnit("php_zip", "php_fpm_installed", "php-zip"));
 
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig() {
-		Vector<IUnit> units =  new Vector<IUnit>();
+	protected Set<IUnit> getPersistentConfig() {
+		Set<IUnit> units =  new HashSet<IUnit>();
 		
 		units.addAll(webserver.getPersistentConfig());
 		units.addAll(php.getPersistentConfig());
@@ -48,8 +48,8 @@ public class Grav extends AStructuredProfile {
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getLiveConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		String nginxConf = "";
 		nginxConf += "server {\n";
@@ -117,12 +117,12 @@ public class Grav extends AStructuredProfile {
 		return units;
 	}
 	
-	public Vector<IUnit> getNetworking() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	public Set<IUnit> getPersistentFirewall() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		me.addRequiredEgressDestination("getgrav.com");
+		networkModel.getServerModel(getLabel()).addEgress("getgrav.com");
 		
-		units.addAll(webserver.getNetworking());
+		units.addAll(webserver.getPersistentFirewall());
 
 		return units;
 	}

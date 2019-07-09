@@ -1,10 +1,10 @@
-package profile;
+package profile.service.web;
 
 import java.util.Vector;
 
 import core.iface.IUnit;
-import core.model.NetworkModel;
-import core.model.ServerModel;
+import core.model.network.NetworkModel;
+
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.pkg.InstalledUnit;
@@ -17,12 +17,12 @@ public class MISP extends AStructuredProfile {
 	
 	String webBase;
 	
-	public MISP(ServerModel me, NetworkModel networkModel) {
-		super("misp", me, networkModel);
+	public MISP(String label, NetworkModel networkModel) {
+		super("misp", networkModel);
 		
-		this.webserver = new Nginx(me, networkModel);
-		this.php = new PHP(me, networkModel);
-		this.db = new MariaDB(me, networkModel);
+		this.webserver = new Nginx(getLabel(), networkModel);
+		this.php = new PHP(getLabel(), networkModel);
+		this.db = new MariaDB(getLabel(), networkModel);
 		this.webBase = "/media/data/www/MISP/";
 		
 		this.db.setUsername("misp");
@@ -31,10 +31,10 @@ public class MISP extends AStructuredProfile {
 		this.db.setDb("misp");
 	}
 
-	protected Vector<IUnit> getInstalled() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getInstalled() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		//units.addElement(new SimpleUnit("nginx_user", "proceed",
+		//units.add(new SimpleUnit("nginx_user", "proceed",
 		//		"sudo adduser nginx --system --shell=/bin/false --disabled-login --ingroup nginx",
 		//		"id nginx 2>&1", "id: nginx: no such user", "fail"));
 		
@@ -43,48 +43,48 @@ public class MISP extends AStructuredProfile {
 		units.addAll(db.getInstalled());
 		
 		//Hush your face, postfix config!
-		units.addElement(new SimpleUnit("postfix_mailname", "proceed",
-				"sudo debconf-set-selections <<< 'postfix postfix/mailname string " + networkModel.getData().getDomain(me.getLabel()) + "'",
+		units.add(new SimpleUnit("postfix_mailname", "proceed",
+				"sudo debconf-set-selections <<< 'postfix postfix/mailname string " + networkModel.getData().getDomain(getLabel()) + "'",
 				"sudo debconf-show postfix | grep 'postfix/mailname:' || dpkg -l | grep '^.i' | grep 'postfix'", "", "fail"));
-		units.addElement(new SimpleUnit("postfix_mailer_type", "postfix_mailname",
+		units.add(new SimpleUnit("postfix_mailer_type", "postfix_mailname",
 				"sudo debconf-set-selections <<< 'postfix postfix/main_mailer_type string \"Satellite system\"'",
 				"sudo debconf-show postfix | grep 'postfix/main_mailer_type:' || dpkg -l | grep '^.i' | grep 'postfix'", "", "fail"));
-		units.addElement(new InstalledUnit("postfix", "proceed", "postfix"));
+		units.add(new InstalledUnit("postfix", "proceed", "postfix"));
 		
 		//Install Dependencies
-		units.addElement(new InstalledUnit("curl", "proceed", "curl"));
-		units.addElement(new InstalledUnit("gcc", "proceed", "gcc"));
-		units.addElement(new InstalledUnit("git", "proceed", "git"));
-		units.addElement(new InstalledUnit("gnupg_agent", "proceed", "gnupg-agent"));
-		units.addElement(new InstalledUnit("make", "proceed", "make"));
-		units.addElement(new InstalledUnit("python", "proceed", "python"));
-		units.addElement(new InstalledUnit("openssl", "proceed", "openssl"));
-		units.addElement(new InstalledUnit("redis_server", "proceed", "redis-server"));
-		units.addElement(new InstalledUnit("zip", "proceed", "zip"));
+		units.add(new InstalledUnit("curl", "proceed", "curl"));
+		units.add(new InstalledUnit("gcc", "proceed", "gcc"));
+		units.add(new InstalledUnit("git", "proceed", "git"));
+		units.add(new InstalledUnit("gnupg_agent", "proceed", "gnupg-agent"));
+		units.add(new InstalledUnit("make", "proceed", "make"));
+		units.add(new InstalledUnit("python", "proceed", "python"));
+		units.add(new InstalledUnit("openssl", "proceed", "openssl"));
+		units.add(new InstalledUnit("redis_server", "proceed", "redis-server"));
+		units.add(new InstalledUnit("zip", "proceed", "zip"));
 		
-		units.addAll(((ServerModel)me).getBindFsModel().addBindPoint("gnupg_home", "gnupg_agent_installed", "/media/metaldata/gpg", "/media/data/gpg", "nginx", "nginx", "0750"));
+		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addBindPoint("gnupg_home", "gnupg_agent_installed", "/media/metaldata/gpg", "/media/data/gpg", "nginx", "nginx", "0750"));
 		
 		//Install PHP dependencies
-		units.addElement(new InstalledUnit("php5_cli", "php5_fpm_installed", "php5-cli"));
-		units.addElement(new InstalledUnit("php_crypt_gpg", "php5_fpm_installed", "php-crypt-gpg"));
-		units.addElement(new InstalledUnit("php5_dev", "php5_fpm_installed", "php5-dev"));
-		units.addElement(new InstalledUnit("php5_json", "php5_fpm_installed", "php5-json"));
-		units.addElement(new InstalledUnit("php5_xml", "php5_fpm_installed", "php5-xml"));
-		units.addElement(new InstalledUnit("php5_readline", "php5_fpm_installed", "php5-readline"));
-		units.addElement(new InstalledUnit("php5_redis", "php5_fpm_installed", "php5-redis"));
+		units.add(new InstalledUnit("php5_cli", "php5_fpm_installed", "php5-cli"));
+		units.add(new InstalledUnit("php_crypt_gpg", "php5_fpm_installed", "php-crypt-gpg"));
+		units.add(new InstalledUnit("php5_dev", "php5_fpm_installed", "php5-dev"));
+		units.add(new InstalledUnit("php5_json", "php5_fpm_installed", "php5-json"));
+		units.add(new InstalledUnit("php5_xml", "php5_fpm_installed", "php5-xml"));
+		units.add(new InstalledUnit("php5_readline", "php5_fpm_installed", "php5-readline"));
+		units.add(new InstalledUnit("php5_redis", "php5_fpm_installed", "php5-redis"));
 
 		//Install python dependencies
-		units.addElement(new InstalledUnit("python_dev", "proceed", "python-dev"));
-		units.addElement(new InstalledUnit("python_pip", "proceed", "python-pip"));
-		units.addElement(new InstalledUnit("libxml2_dev", "proceed", "libxml2-dev"));
-		units.addElement(new InstalledUnit("libxslt1_dev", "proceed", "libxslt1-dev"));
-		units.addElement(new InstalledUnit("zlib1g_dev", "proceed", "zlib1g-dev"));
+		units.add(new InstalledUnit("python_dev", "proceed", "python-dev"));
+		units.add(new InstalledUnit("python_pip", "proceed", "python-pip"));
+		units.add(new InstalledUnit("libxml2_dev", "proceed", "libxml2-dev"));
+		units.add(new InstalledUnit("libxslt1_dev", "proceed", "libxslt1-dev"));
+		units.add(new InstalledUnit("zlib1g_dev", "proceed", "zlib1g-dev"));
 				
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig() {
-		Vector<IUnit> units =  new Vector<IUnit>();
+	protected Set<IUnit> getPersistentConfig() {
+		Set<IUnit> units =  new HashSet<IUnit>();
 		
 		String nginxConf = "";
 		nginxConf += "server {\n";
@@ -119,20 +119,20 @@ public class MISP extends AStructuredProfile {
 		units.addAll(db.getPersistentConfig());
 		units.addAll(php.getPersistentConfig());
 		
-		units.addAll(((ServerModel)me).getBindFsModel().addBindPoint("nginx", "nginx_installed", "/media/metaldata/www/MISP/app/tmp", "/media/data/www/MISP/app/tmp", "nginx", "nginx", "0770"));
-		units.addAll(((ServerModel)me).getBindFsModel().addBindPoint("nginx", "nginx_installed", "/media/metaldata/www/MISP/app/files", "/media/data/www/MISP/app/files", "nginx", "nginx", "0770"));
+		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addBindPoint("nginx", "nginx_installed", "/media/metaldata/www/MISP/app/tmp", "/media/data/www/MISP/app/tmp", "nginx", "nginx", "0770"));
+		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addBindPoint("nginx", "nginx_installed", "/media/metaldata/www/MISP/app/files", "/media/data/www/MISP/app/files", "nginx", "nginx", "0770"));
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getLiveConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		units.addAll(webserver.getLiveConfig());
 		units.addAll(php.getLiveConfig());
 		units.addAll(db.getLiveConfig());
 		
-		units.addElement(new SimpleUnit("misp_cloned", "git_installed",
+		units.add(new SimpleUnit("misp_cloned", "git_installed",
 				"sudo -u nginx bash -c '"
 						+ "cd /media/data/www;"
 						+ "git clone https://github.com/MISP/MISP.git tmp;"
@@ -142,7 +142,7 @@ public class MISP extends AStructuredProfile {
 				+ "'",
 				"sudo [ -f " + webBase + "README.md ] && echo pass || echo fail", "pass", "pass"));
 		
-		units.addElement(new SimpleUnit("python_cybox_cloned", "git_installed",
+		units.add(new SimpleUnit("python_cybox_cloned", "git_installed",
 				"sudo -u nginx bash -c '"
 						+ "cd " + webBase + "app/files/scripts;"
 						+ "git clone https://github.com/CybOXProject/python-cybox.git;"
@@ -153,7 +153,7 @@ public class MISP extends AStructuredProfile {
 				+ "sudo python setup.py install;",
 				"sudo [ -d " + webBase + "app/files/scripts/python-cybox ] && echo pass || echo fail", "pass", "pass"));
 
-		units.addElement(new SimpleUnit("python_stix_cloned", "git_installed",
+		units.add(new SimpleUnit("python_stix_cloned", "git_installed",
 				"sudo -u nginx bash -c '"
 						+ "cd " + webBase + "app/files/scripts;"
 						+ "git clone https://github.com/STIXProject/python-stix.git;"
@@ -164,7 +164,7 @@ public class MISP extends AStructuredProfile {
 				+ "sudo python setup.py install;",
 				"sudo [ -d " + webBase + "app/files/scripts/python-stix ] && echo pass || echo fail", "pass", "pass"));
 		
-		units.addElement(new SimpleUnit("cake_cloned", "git_installed",
+		units.add(new SimpleUnit("cake_cloned", "git_installed",
 				"sudo -u nginx bash -c '"
 						+ "cd " + webBase + ";"
 						+ "git submodule init;"
@@ -176,11 +176,11 @@ public class MISP extends AStructuredProfile {
 				+ "'",
 				"sudo [ -d " + webBase + "app/Plugin/CakeResque ] && echo pass || echo fail", "pass", "pass"));
 		
-		units.addElement(new SimpleUnit("scheduler_worker_enabled", "cake_cloned",
+		units.add(new SimpleUnit("scheduler_worker_enabled", "cake_cloned",
 				"sudo -u nginx cp -fa " + webBase + "INSTALL/setup/config.php " + webBase + "app/Plugin/CakeResque/Config/config.php;",
 				"sudo [ -f " + webBase + "app/Plugin/CakeResque/Config/config.php ] && echo pass || echo fail", "pass", "pass"));
 		
-		units.addElement(new SimpleUnit("misp_mysql_password", "proceed",
+		units.add(new SimpleUnit("misp_mysql_password", "proceed",
 				"MISP_PASSWORD=`grep \"password\" " + webBase + "app/Config/database.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',\"`; [[ -z $MISP_PASSWORD ]] && MISP_PASSWORD=`openssl rand -hex 32`",
 				"echo $MISP_PASSWORD", "", "fail"));
 		
@@ -188,25 +188,25 @@ public class MISP extends AStructuredProfile {
 		units.addAll(db.checkUserExists());
 		units.addAll(db.checkDbExists());
 
-		units.addElement(new SimpleUnit("misp_database_exists", "misp_mariadb_user_exists",
+		units.add(new SimpleUnit("misp_database_exists", "misp_mariadb_user_exists",
 				"sudo -u nginx bash -c 'mysql -umisp -p${MISP_PASSWORD} < " + webBase + "INSTALL/MYSQL.sql;'",
 				"sudo [ echo $(mysqlshow -umisp -p${MISP_PASSWORD} misp attributes 1>/dev/null 2>/dev/null) == 0 ] && echo pass || echo fail", "", "fail"));
 		
-		units.addElement(new SimpleUnit("bootstrap_config", "proceed",
+		units.add(new SimpleUnit("bootstrap_config", "proceed",
 				"sudo -u nginx bash -c 'cp -a " + webBase + "app/Config/bootstrap.default.php " + webBase + "app/Config/bootstrap.php;'",
 				"sudo [ -f " + webBase + "app/Config/bootstrap.php ] && echo pass || echo fail;", "pass", "pass"));
 
-		units.addElement(new SimpleUnit("database_config", "proceed",
+		units.add(new SimpleUnit("database_config", "proceed",
 				"sudo -u nginx cp -a " + webBase + "app/Config/database.default.php " + webBase + "app/Config/database.php;"
 				+ "sudo sed -i \"s/db\\ login/misp/g\" " + webBase + "app/Config/database.php;"
 				+ "sudo sed -i \"s/db\\ password/${MISP_PASSWORD}/g\" " + webBase + "app/Config/database.php;",
 				"sudo [ -f " + webBase + "app/Config/database.php ] && echo pass || echo fail;", "pass", "pass"));
 
-		units.addElement(new SimpleUnit("core_config", "proceed",
+		units.add(new SimpleUnit("core_config", "proceed",
 				"sudo -u nginx cp -a " + webBase + "app/Config/core.default.php " + webBase + "app/Config/core.php;",
 				"sudo [ -f " + webBase + "app/Config/core.php ] && echo pass || echo fail;", "pass", "pass"));
 		
-		units.addElement(new SimpleUnit("config_config", "proceed",
+		units.add(new SimpleUnit("config_config", "proceed",
 				"sudo -u nginx cp -a " + webBase + "app/Config/config.default.php " + webBase + "app/Config/config.php;"
 				+ "sudo sed -i \"s/'salt'       => ''/'salt'       => '`openssl rand -hex 64`'/g\" " + webBase + "app/Config/config.php;",
 				"sudo [ -f " + webBase + "app/Config/config.php ] && echo pass || echo fail;", "pass", "pass"));
@@ -214,10 +214,10 @@ public class MISP extends AStructuredProfile {
 		return units;
 	}
 	
-	public Vector<IUnit> getNetworking() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	public Set<IUnit> getPersistentFirewall() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		units.addAll(webserver.getNetworking());
+		units.addAll(webserver.getPersistentFirewall());
 
 		return units;
 	}
