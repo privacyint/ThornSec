@@ -1,30 +1,29 @@
 #!/bin/bash
-if [ $# -eq 0 ]
-then
-    echo "No parameter supplied. You need to provide the name of the VM as a parameter, or 'all' to start all VMs"
+
+function startVm() {
+    vm="${1}";
+
+    sudo -u vboxuser_"${vm}" VBoxManage startvm "${vm}" --type headless;
+    wait "${!}";
+}
+function startAll() {
+    echo "=== Starting all VMs at %s ===" "$(date)";
+    for dirPath in "${TS_DATA_BASE:?}"/*/; do
+        dirPath="${dirPath%*/}";
+        vm="${dirPath##*/}";
+        startVm "${vm}";
+    done
+    printf "=== Finished starting all VMs at %s ===" "$(date)"
+}
+
+
+
+if [ $# -eq 0 ]; then
+    printf "No parameter supplied. You need to provide the name of the VM as a parameter, or 'all' to start all VMs";
     exit 1;
 fi
 
-vm="${1}"
-
-function startVm {
-    vm="${1}"
-
-    sudo -u vboxuser_"${vm}" VBoxManage startvm "${vm}" --type headless
-    wait ${!}
-
-}
-
-function startAll {
-    echo "=== Starting all VMs at $(date) ==="
-    for dirPath in "${TS_DATA_BASE}"/*/
-    do
-        dirPath="${dirPath%*/}"
-        vm="${dirPath##*/}"
-        startVm "${vm}"
-    done
-echo "=== Finished starting all VMs at $(date) ==="
-}
+vm="${1}";
 
 case "${vm}" in
     all ) startAll;;
