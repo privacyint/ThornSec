@@ -1,8 +1,4 @@
-
-<<<<<<< HEAD
 bin/
-
-src/profile
 
 src/core/\.directory
 
@@ -15,6 +11,3 @@ src/core/exec/\.directory
 src/core/iface/\.directory
 
 src/core/model/\.directory
-=======
-\.directory
->>>>>>> thornsec-profiles/master
