@@ -5,7 +5,7 @@ CONTROL_SCRIPTS=${TS_SCRIPTS_BASE}/vm;
 RECOVERY_SCRIPTS=${TS_SCRIPTS_BASE}/recovery;
 BACKUP_SCRIPTS=${TS_SCRIPTS_BASE}/backup;
 
-vms=$(find ${VMS_BASE}/* -maxdepth 0 -type d ! -name '.*' ! -name 'lost+found' -printf '%f ')
+vms=$(find "${VMS_BASE}"/* -maxdepth 0 -type d ! -name '.*' ! -name 'lost+found' -printf '%f ')
 PS3="Number: "
 
 function stopVM {

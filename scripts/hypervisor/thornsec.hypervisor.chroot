@@ -10,18 +10,18 @@ beReadWrite() {
     elif case $1 in r0,):;;esac; then
         printf "FAIL! :(\n";
         printf "Attempting remount..."
-        return doUmount && doMount ;
+        return $( doUmount && doMount );
    else
-        printf "Status unknown. Abort.\n\nDEBUG: ${1}";
+        printf "Status unknown. Abort.\n\nDEBUG: %s" "${1}";
         exit 1;
    fi
 }
 doMount() {
-    return $(guestmount -i -a $DISK -o direct_io $LIVE && printf "success!" || printf "fail :(");
+    return $( guestmount -i -a "${DISK}" -o direct_io "${LIVE}" && printf "success!" || printf "fail :(" );
 }
 doUmount() {
-    subMounts=$(umount ${LIVE}/*/* 2>/dev/null);
-    theMount=$(umount ${LIVE} 2>/dev/null);
+    subMounts=$( umount "${LIVE}"/*/* 2>/dev/null );
+    theMount=$( umount "${LIVE}" 2>/dev/null );
 
     return $( ( subMounts && theMount ) || printf "fail :(" );
 }
@@ -31,11 +31,11 @@ VM_NAME="${1}";
 DISK="${TS_BOOT_BASE}/${VM_NAME}/${VM_NAME}_boot."+(vmdk|vdi);
 LIVE="${TS_BOOT_BASE}/${VM_NAME}/live";
 
-${TS_SCRIPTS_BASE}/vm/thornsec.vm.control.stopVM ${VM_NAME};
+"${TS_SCRIPTS_BASE}"/vm/thornsec.vm.control.stopVM "${VM_NAME}";
 
-printf "Mounting ${VM_NAME}'s disk...";
+printf "Mounting %s's disk..." "${VM_NAME}";
 
-mountpoint=$( mount | grep -im1 ${LIVE} );
+mountpoint=$( mount | grep -im1 "${LIVE}" );
 
 if [ "${mountpoint}" ]; then
     printf "already mounted\n";
@@ -52,32 +52,33 @@ mount -o bind /dev "${LIVE}/dev" 2>/dev/null;
 mount -t sysfs sys "${LIVE}/sys" 2>/dev/null;
 mount -t devpts devpts "${LIVE}/dev/pts" 2>/dev/null;
 
-LOG="${TS_LOGS_BASE}/${VM_NAME}.log";
-SCREEN="${VM_NAME}_chroot_"$(date +%Y-%m-%d.%H:%M:%S);
+#LOG="${TS_LOGS_BASE}/${VM_NAME}.log";
+#SCREEN="${VM_NAME}_chroot_"$(date +%Y-%m-%d.%H:%M:%S);
 
 printf "...Done\n\n";
 
 printf "We're about to descend into our VM's boot disk\n";
-read -p "Please press any key to go!" -n1 -s;
+read -pr "Please press any key to go!" -n1 -s;
 
 screen -m bash -c "chroot ${LIVE} && PS1='chroot@${VM_NAME}'";
 
-read -p "...*pause for breath*..." -n1 start;
+read -pr "...*pause for breath*..." -n1 start;
 
-umount ${LIVE}/*/* 2>/dev/null;
-umount ${LIVE}/* 2>/dev/null;
-umount ${LIVE} 2>/dev/null;
+umount "${LIVE}"/*/* 2>/dev/null;
+umount "${LIVE}"/* 2>/dev/null;
+umount "${LIVE}" 2>/dev/null;
 
 answer=false;
-while [[ "${answer}"=="false" ]]; do
-	read -p "Start ${VM_NAME}? [y/N]: " -n1 start;
-	case ${start} in
+
+while [[ "${answer}" = "false" ]]; do
+	read -pr "Start ${VM_NAME}? [y/N]: " -n1 start;
+	case "${start}" in
 		"y|Y")
-			${TS_SCRIPTS_BASE}/vm/thornsec.vm.control.startVM ${VM_NAME};
-			$answer=true;
+			"${TS_SCRIPTS_BASE}"/vm/thornsec.vm.control.startVM "${VM_NAME}";
+			answer=true;
 			;;
 		"n|N| ")
-			$answer=true;
+			answer=true;
 			;;
 	esac
 done
