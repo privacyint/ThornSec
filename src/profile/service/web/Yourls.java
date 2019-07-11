@@ -1,109 +1,93 @@
+/*
+ * This code is part of the ThornSec project.
+ *
+ * To learn more, please head to its GitHub repo: @privacyint
+ *
+ * Pull requests encouraged.
+ */
 package profile.service.web;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Vector;
 
+import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
-
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
+import core.unit.fs.FileUnit;
 import core.unit.fs.GitCloneUnit;
-import profile.stack.MariaDB;
+import profile.stack.LEMP;
 import profile.stack.Nginx;
 import profile.stack.PHP;
 
 public class Yourls extends AStructuredProfile {
-	
-	private Nginx webserver;
-	private PHP php;
-	private MariaDB db;
-	
+
+	private final LEMP lempStack;
+
 	public Yourls(String label, NetworkModel networkModel) {
-		super("yourls", networkModel);
-		
-		this.webserver = new Nginx(getLabel(), networkModel);
-		this.php       = new PHP(getLabel(), networkModel);
-		this.db        = new MariaDB(getLabel(), networkModel);
-		
-		this.db.setUsername("yourls");
-		this.db.setUserPrivileges("ALL");
-		this.db.setUserPassword("${YOURLS_PASSWORD}");
-		this.db.setDb("yourls");
+		super(label, networkModel);
+
+		this.lempStack = new LEMP(getLabel(), networkModel);
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled()
-	throws InvalidServerModelException {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
-		units.addAll(webserver.getInstalled());
-		units.addAll(php.getInstalled());
-		units.addAll(db.getInstalled());
-		
-		return units;
-	}
-	
-	@Override
-	protected Set<IUnit> getPersistentConfig()
-	throws InvalidServerException, InvalidServerModelException {
-		Set<IUnit> units =  new HashSet<IUnit>();
-		
-		units.addAll(webserver.getPersistentConfig());
-		units.addAll(db.getPersistentConfig());
-		units.addAll(php.getPersistentConfig());
-		
-		units.add(new GitCloneUnit("yourls", "proceed", "https://github.com/YOURLS/YOURLS.git", "/media/data/www", "Could not download Yourls. This is fatal."));
-		
+	protected Set<IUnit> getInstalled() throws InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
+
+		units.addAll(this.lempStack.getInstalled());
+
 		return units;
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig() {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
-		String nginxConf = "";
-		nginxConf += "server {\n";
-		nginxConf += "    listen *:80 default;\n";
-		nginxConf += "    server_name _;\n";
-		nginxConf += "    root /media/data/www;\n";
-		nginxConf += "    index index.php;\n";
-		nginxConf += "    sendfile off;\n";
-		nginxConf += "    default_type text/plain;\n";
-		nginxConf += "    server_tokens off;\n";
-		nginxConf += "\n";
-		nginxConf += "    location / {\n";
-		nginxConf += "        try_files \\$uri @rewrite;\n";
-		nginxConf += "    }\n";
-		nginxConf += "    location @rewrite {\n";
-		nginxConf += "        rewrite ^ /index.php;\n";
-		nginxConf += "    }\n";
-		nginxConf += "    error_page   500 502 503 504  /50x.html;\n";
-		nginxConf += "    location = /50x.html {\n";
-		nginxConf += "        root   /usr/share/nginx/html;\n";
-		nginxConf += "    }\n";
-		nginxConf += "    location ~ \\.php\\$ {\n";
-		nginxConf += "        fastcgi_split_path_info ^(.+\\.php)(/.+)\\$;\n";
-		nginxConf += "        fastcgi_pass unix:" + php.SOCK_PATH + ";\n";
-		nginxConf += "        fastcgi_param SCRIPT_FILENAME  \\$document_root\\$fastcgi_script_name;\n";
-		nginxConf += "        fastcgi_index index.php;\n";
-		nginxConf += "        include fastcgi_params;\n";
-		nginxConf += "    }\n";
-		nginxConf += "    location ~ /\\.ht {\n";
-		nginxConf += "        deny all;\n";
-		nginxConf += "    }\n";
-		nginxConf += "    include /media/data/nginx_custom_conf_d/default.conf;\n";
-		nginxConf += "}";
-		
-		webserver.addLiveConfig("default", nginxConf);
-		
-		units.addAll(webserver.getLiveConfig());
-		units.addAll(php.getLiveConfig());
-		units.addAll(db.getLiveConfig());
-		
+	protected Set<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
+
+		this.lempStack.getDB().setUsername("yourls");
+		this.lempStack.getDB().setUserPrivileges("ALL");
+		this.lempStack.getDB().setUserPassword("${YOURLS_PASSWORD}");
+		this.lempStack.getDB().setDb("yourls");
+
+		units.add(new GitCloneUnit("yourls", "proceed", "https://github.com/YOURLS/YOURLS.git", "/media/data/www",
+				"Could not download Yourls. This is fatal."));
+
+		final FileUnit nginxConf = new FileUnit("yourls_nginx_config", "nginx_installed",
+				Nginx.DEFAULT_CONFIG_FILE.toString());
+		nginxConf.appendLine("server {");
+		nginxConf.appendLine("    listen *:80 default;");
+		nginxConf.appendLine("    server_name _;");
+		nginxConf.appendLine("    root /media/data/www;");
+		nginxConf.appendLine("    index index.php;");
+		nginxConf.appendLine("    sendfile off;");
+		nginxConf.appendLine("    default_type text/plain;");
+		nginxConf.appendLine("    server_tokens off;");
+		nginxConf.appendLine("");
+		nginxConf.appendLine("    location / {");
+		nginxConf.appendLine("        try_files \\$uri @rewrite;");
+		nginxConf.appendLine("    }");
+		nginxConf.appendLine("    location @rewrite {");
+		nginxConf.appendLine("        rewrite ^ /index.php;");
+		nginxConf.appendLine("    }");
+		nginxConf.appendLine("    error_page   500 502 503 504  /50x.html;");
+		nginxConf.appendLine("    location = /50x.html {");
+		nginxConf.appendLine("        root   /usr/share/nginx/html;");
+		nginxConf.appendLine("    }");
+		nginxConf.appendLine("    location ~ \\.php\\$ {");
+		nginxConf.appendLine("        fastcgi_split_path_info ^(.+\\.php)(/.+)\\$;");
+		nginxConf.appendLine("        fastcgi_pass unix:" + PHP.SOCK_PATH + ";");
+		nginxConf.appendLine("        fastcgi_param SCRIPT_FILENAME  \\$document_root\\$fastcgi_script_name;");
+		nginxConf.appendLine("        fastcgi_index index.php;");
+		nginxConf.appendLine("        include fastcgi_params;");
+		nginxConf.appendLine("    }");
+		nginxConf.appendLine("    location ~ /\\.ht {");
+		nginxConf.appendLine("        deny all;");
+		nginxConf.appendLine("    }");
+		nginxConf.appendLine("    include /media/data/nginx_custom_conf_d/default.conf;");
+		nginxConf.appendLine("}");
+
 		units.add(new SimpleUnit("yourls_mysql_password", "proceed",
 				"YOURLS_PASSWORD=`grep 'YOURLS_DB_PASS' /media/data/www/user/config.php 2>/dev/null | awk '{ print $2 }' | tr -d \"',);\");` [[ -z $YOURLS_PASSWORD ]] && YOURLS_PASSWORD=`openssl rand -hex 32`",
 				"echo $YOURLS_PASSWORD", "", "fail",
@@ -113,46 +97,56 @@ public class Yourls extends AStructuredProfile {
 				"YOURLS_COOKIEKEY=`sudo grep 'YOURLS_COOKIEKEY' /media/data/www/user/config.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',;\"`; [[ -z $YOURLS_COOKIEKEY ]] && YOURLS_COOKIEKEY=`openssl rand -hex 75`",
 				"echo $YOURLS_COOKIEKEY", "", "fail",
 				"Couldn't set a cookie hash salt for Yourls. Your installation may not function correctly."));
-		
-		//Set up our database
-		units.addAll(db.checkUserExists());
-		units.addAll(db.checkDbExists());
-				
-		String yourlsConfig = "";
-		yourlsConfig += "<?php\n";
-		yourlsConfig += "	define('YOURLS_DB_USER', 'yourls');\n";
-		yourlsConfig += "	define('YOURLS_DB_PASS', '$YOURLS_DB_PASS');\n";
-		yourlsConfig += "	define('YOURLS_DB_NAME', 'yourls');\n";
-		yourlsConfig += "	define('YOURLS_DB_HOST', 'localhost');\n";
-		yourlsConfig += "	define('YOURLS_DB_PREFIX', 'yourls_');\n";
-		yourlsConfig += "	define('YOURLS_SITE', '" + networkModel.getData().getDomain(getLabel()) + "');\n";
-		yourlsConfig += "	define('YOURLS_HOURS_OFFSET', 0);\n";
-		yourlsConfig += "	define('YOURLS_LANG', '');\n";
-		yourlsConfig += "	define('YOURLS_UNIQUE_URLS', false);\n";
-		yourlsConfig += "	define('YOURLS_PRIVATE', true);\n";
-		yourlsConfig += "	define('YOURLS_COOKIEKEY', '$YOURLS_COOKIEKEY');\n";
-		yourlsConfig += "	$yourls_user_passwords = array(\n";
-		yourlsConfig += "	        'admin' => 'password',\n";
-		yourlsConfig += "	);\n";
-		yourlsConfig += "	define('YOURLS_DEBUG', false);\n";
-		yourlsConfig += "	define('YOURLS_URL_CONVERT', 36);\n";
-		yourlsConfig += "	$yourls_reserved_URL = array(\n";
-		//The below line was fun to write, as we are children...
-		yourlsConfig += "		'porn', 'fag', 'trannie', 'tranny', 'faggot', 'sex', 'nigger', 'fuck', 'cunt', 'dick', 'shit', 'spic', 'twat', 'pussy',\n";
-		yourlsConfig += "	);";
 
-		units.add(((ServerModel)me).getConfigsModel().addConfigFile("opensocial", "opensocial_installed", yourlsConfig, "/media/data/www/user/config.php"));
-		
+		final FileUnit yourlsConfig = new FileUnit("yourls_config", "nginx_installed",
+				"/media/data/www/user/config.php");
+		units.add(yourlsConfig);
+		yourlsConfig.appendLine("<?php");
+		yourlsConfig.appendLine("	define('YOURLS_DB_USER', 'yourls');");
+		yourlsConfig.appendLine("	define('YOURLS_DB_PASS', '$YOURLS_DB_PASS');");
+		yourlsConfig.appendLine("	define('YOURLS_DB_NAME', 'yourls');");
+		yourlsConfig.appendLine("	define('YOURLS_DB_HOST', 'localhost');");
+		yourlsConfig.appendLine("	define('YOURLS_DB_PREFIX', 'yourls_');");
+		yourlsConfig.appendLine(
+				"	define('YOURLS_SITE', '" + this.networkModel.getServerModel(getLabel()).getFQDN() + "');");
+		yourlsConfig.appendLine("	define('YOURLS_HOURS_OFFSET', 0);");
+		yourlsConfig.appendLine("	define('YOURLS_LANG', '');");
+		yourlsConfig.appendLine("	define('YOURLS_UNIQUE_URLS', false);");
+		yourlsConfig.appendLine("	define('YOURLS_PRIVATE', true);");
+		yourlsConfig.appendLine("	define('YOURLS_COOKIEKEY', '$YOURLS_COOKIEKEY');");
+		yourlsConfig.appendLine("	$yourls_user_passwords = array(");
+		yourlsConfig.appendLine("	        'admin' => 'password',");
+		yourlsConfig.appendLine("	);");
+		yourlsConfig.appendLine("	define('YOURLS_DEBUG', false);");
+		yourlsConfig.appendLine("	define('YOURLS_URL_CONVERT', 36);");
+		yourlsConfig.appendLine("	$yourls_reserved_URL = array(");
+		// The below line was fun to write, as we are children...
+		yourlsConfig.appendLine(
+				"		'porn', 'fag', 'trannie', 'tranny', 'faggot', 'sex', 'nigger', 'fuck', 'cunt', 'dick', 'shit', 'spic', 'twat', 'pussy',");
+		yourlsConfig.appendLine("	);");
+
+		units.addAll(this.lempStack.getPersistentConfig());
+
 		return units;
 	}
-	
-	public Set<IUnit> getPersistentFirewall() {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
-		units.addAll(webserver.getPersistentFirewall());
 
-		networkModel.getServerModel(getLabel()).addEgress("github.com");
-		
+	@Override
+	protected Set<IUnit> getLiveConfig() throws InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
+
+		units.addAll(this.lempStack.getLiveConfig());
+
+		return units;
+	}
+
+	@Override
+	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+		final Set<IUnit> units = new HashSet<>();
+
+		units.addAll(this.lempStack.getPersistentFirewall());
+
+		this.networkModel.getServerModel(getLabel()).addEgress("github.com");
+
 		return units;
 	}
 

@@ -1,31 +1,36 @@
+/*
+ * This code is part of the ThornSec project.
+ *
+ * To learn more, please head to its GitHub repo: @privacyint
+ *
+ * Pull requests encouraged.
+ */
 package core.exec.network;
 
-import de.slackspace.openkeepass.KeePassDatabase;
-
-import core.model.machine.ServerModel;
 import core.model.network.NetworkModel;
+import de.slackspace.openkeepass.KeePassDatabase;
 
 public final class OpenKeePassPassphrase extends APassphrase {
 
 	private KeePassDatabase db;
-	
-	public OpenKeePassPassphrase(ServerModel server, NetworkModel networkModel) {
-		super(server, networkModel);
-		
+
+	public OpenKeePassPassphrase(String label, NetworkModel networkModel) {
+		super(label, networkModel);
+
 		this.db = null;
 	}
 
 	@Override
 	public Boolean init() {
-		this.db = KeePassDatabase.getInstance(this.getNetworkModel().getKeePassDBPath());
-		this.db.openDatabase(this.getNetworkModel().getKeePassDBPassphrase());
-		
+		this.db = KeePassDatabase.getInstance(this.networkModel.getKeePassDBPath());
+		this.db.openDatabase(this.networkModel.getKeePassDBPassphrase());
+
 		return true;
 	}
 
 	@Override
 	public String getPassphrase() {
-		//this.db.;
+		// this.db.;
 		return null;
 	}
 
@@ -34,5 +39,4 @@ public final class OpenKeePassPassphrase extends APassphrase {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
 }

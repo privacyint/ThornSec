@@ -1,40 +1,47 @@
+/*
+ * This code is part of the ThornSec project.
+ *
+ * To learn more, please head to its GitHub repo: @privacyint
+ *
+ * Pull requests encouraged.
+ */
 package profile.service.web;
 
-import java.util.Vector;
+import java.util.HashSet;
+import java.util.Set;
 
+import core.exception.data.InvalidPortException;
+import core.exception.data.machine.InvalidMachineException;
+import core.exception.data.machine.InvalidServerException;
+import core.exception.runtime.InvalidMachineModelException;
+import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
-
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
+import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
+import profile.stack.LEMP;
+import profile.stack.Nginx;
+import profile.stack.PHP;
 
 public class OpenSocial extends AStructuredProfile {
-	
-	private Nginx webserver;
-	private PHP php;
-	private MariaDB db;
-	
+
+	private final LEMP lempStack;
+
 	public OpenSocial(String label, NetworkModel networkModel) {
-		super("opensocial", networkModel);
-		
-		this.webserver = new Nginx(getLabel(), networkModel);
-		this.php = new PHP(getLabel(), networkModel);
-		this.db = new MariaDB(getLabel(), networkModel);
-		
-		this.db.setUsername("opensocial");
-		this.db.setUserPrivileges("SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES");
-		this.db.setUserPassword("${OPENSOCIAL_PASSWORD}");
-		this.db.setDb("opensocial");
+		super(label, networkModel);
+
+		this.lempStack = new LEMP(getLabel(), networkModel);
 	}
 
-	protected Set<IUnit> getInstalled() {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
-		units.addAll(webserver.getInstalled());
-		units.addAll(php.getInstalled());
-		units.addAll(db.getInstalled());
-		
+	@Override
+	protected Set<IUnit> getInstalled() throws InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
+
+		units.addAll(this.lempStack.getInstalled());
+
 		units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
 		units.add(new InstalledUnit("composer", "proceed", "composer"));
 		units.add(new InstalledUnit("php_xml", "php_fpm_installed", "php-xml"));
@@ -45,77 +52,66 @@ public class OpenSocial extends AStructuredProfile {
 		units.add(new InstalledUnit("curl", "proceed", "curl"));
 		units.add(new InstalledUnit("unzip", "proceed", "unzip"));
 		units.add(new InstalledUnit("php_mod_curl", "php_fpm_installed", "php-curl"));
-		units.add(new InstalledUnit("sendmail", "proceed", "sendmail"));
-		
-		networkModel.getServerModel(getLabel()).addProcessString("sendmail: MTA: accepting connections$");
-		((ServerModel)me).getUserModel().addUsername("smmta");
-		((ServerModel)me).getUserModel().addUsername("smmpa");
-		((ServerModel)me).getUserModel().addUsername("smmsp");
-		
-		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("drush", "composer_installed", "nginx", "nginx", "0750"));
-		
+
+		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("drush",
+				"composer_installed", "nginx", "nginx", "0750"));
+
 		units.add(new SimpleUnit("drush_installed", "composer_installed",
 				"sudo -u nginx bash -c 'composer create-project drush/drush /media/data/drush -n'",
 				"sudo [ -f /media/data/drush/drush ] && echo pass || echo fail", "pass", "pass",
 				"Couldn't install drush. The installation of OpenSocial will fail."));
-		
-		return units;
-	}
-	
-	protected Set<IUnit> getPersistentConfig() {
-		Set<IUnit> units =  new HashSet<IUnit>();
-		
-		units.addAll(webserver.getPersistentConfig());
-		units.addAll(db.getPersistentConfig());
-		units.addAll(php.getPersistentConfig());
-		
+
 		return units;
 	}
 
-	protected Set<IUnit> getLiveConfig() {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
-		String nginxConf = "";
-		nginxConf += "server {\n";
-		nginxConf += "    listen *:80 default;\n";
-		nginxConf += "    server_name _;\n";
-		nginxConf += "    root /media/data/www/html;\n";
-		nginxConf += "    index index.php;\n";
-		nginxConf += "    sendfile off;\n";
-		nginxConf += "    default_type text/plain;\n";
-		nginxConf += "    server_tokens off;\n";
-		nginxConf += "\n";
-		nginxConf += "    client_max_body_size 0;\n";
-		nginxConf += "\n";
-		nginxConf += "    location / {\n";
-		nginxConf += "        try_files \\$uri @rewrite;\n";
-		nginxConf += "    }\n";
-		nginxConf += "    location @rewrite {\n";
-		nginxConf += "        rewrite ^ /index.php;\n";
-		nginxConf += "    }\n";
-		nginxConf += "    error_page   500 502 503 504  /50x.html;\n";
-		nginxConf += "    location = /50x.html {\n";
-		nginxConf += "        root   /usr/share/nginx/html;\n";
-		nginxConf += "    }\n";
-		nginxConf += "    location ~ \\.php\\$ {\n";
-		nginxConf += "        fastcgi_split_path_info ^(.+\\.php)(/.+)\\$;\n";
-		nginxConf += "        fastcgi_pass unix:" + php.getSockPath() + ";\n";
-		nginxConf += "        fastcgi_param SCRIPT_FILENAME  \\$document_root\\$fastcgi_script_name;\n";
-		nginxConf += "        fastcgi_index index.php;\n";
-		nginxConf += "        include fastcgi_params;\n";
-		nginxConf += "    }\n";
-		nginxConf += "    location ~ /\\.ht {\n";
-		nginxConf += "        deny all;\n";
-		nginxConf += "    }\n";
-		nginxConf += "    include /media/data/nginx_custom_conf_d/default.conf;\n";
-		nginxConf += "}";
-		
-		webserver.addLiveConfig("default", nginxConf);
-		
-		units.addAll(webserver.getLiveConfig());
-		units.addAll(php.getLiveConfig());
-		units.addAll(db.getLiveConfig());
-		
+	@Override
+	protected Set<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
+
+		this.lempStack.getDB().setUsername("opensocial");
+		this.lempStack.getDB().setUserPrivileges(
+				"SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES");
+		this.lempStack.getDB().setUserPassword("${OPENSOCIAL_PASSWORD}");
+		this.lempStack.getDB().setDb("opensocial");
+
+		final FileUnit nginxConf = new FileUnit("opensocial_nginx_conf", "nginx_installed",
+				Nginx.DEFAULT_CONFIG_FILE.toString());
+		nginxConf.appendLine("server {");
+		nginxConf.appendLine("    listen *:80 default;");
+		nginxConf.appendLine("    server_name _;");
+		nginxConf.appendLine("    root /media/data/www/html;");
+		nginxConf.appendLine("    index index.php;");
+		nginxConf.appendLine("    sendfile off;");
+		nginxConf.appendLine("    default_type text/plain;");
+		nginxConf.appendLine("    server_tokens off;");
+		nginxConf.appendCarriageReturn();
+		nginxConf.appendLine("    client_max_body_size 0;");
+		nginxConf.appendCarriageReturn();
+		nginxConf.appendLine("    location / {");
+		nginxConf.appendLine("        try_files \\$uri @rewrite;");
+		nginxConf.appendLine("    }");
+		nginxConf.appendLine("    location @rewrite {");
+		nginxConf.appendLine("        rewrite ^ /index.php;");
+		nginxConf.appendLine("    }");
+		nginxConf.appendLine("    error_page   500 502 503 504  /50x.html;");
+		nginxConf.appendLine("    location = /50x.html {");
+		nginxConf.appendLine("        root   /usr/share/nginx/html;");
+		nginxConf.appendLine("    }");
+		nginxConf.appendLine("    location ~ \\.php\\$ {");
+		nginxConf.appendLine("        fastcgi_split_path_info ^(.+\\.php)(/.+)\\$;");
+		nginxConf.appendLine("        fastcgi_pass unix:" + PHP.SOCK_PATH + ";");
+		nginxConf.appendLine("        fastcgi_param SCRIPT_FILENAME  \\$document_root\\$fastcgi_script_name;");
+		nginxConf.appendLine("        fastcgi_index index.php;");
+		nginxConf.appendLine("        include fastcgi_params;");
+		nginxConf.appendLine("    }");
+		nginxConf.appendLine("    location ~ /\\.ht {");
+		nginxConf.appendLine("        deny all;");
+		nginxConf.appendLine("    }");
+		nginxConf.appendLine("    include /media/data/nginx_custom_conf_d/default.conf;");
+		nginxConf.appendLine("}");
+
+		this.lempStack.getWebserver().addLiveConfig(nginxConf);
+
 		units.add(new SimpleUnit("opensocial_mysql_password", "proceed",
 				"OPENSOCIAL_PASSWORD=`sudo grep \"password\" /media/data/www/html/sites/default/settings.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',\"`; [[ -z $OPENSOCIAL_PASSWORD ]] && OPENSOCIAL_PASSWORD=`openssl rand -hex 32`",
 				"echo $OPENSOCIAL_PASSWORD", "", "fail",
@@ -125,77 +121,88 @@ public class OpenSocial extends AStructuredProfile {
 				"OPENSOCIAL_SALT=`sudo grep \"hash_salt'] =\" /media/data/www/html/sites/default/settings.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',;\"`; [[ -z $OPENSOCIAL_SALT ]] && OPENSOCIAL_SALT=`openssl rand -hex 75`",
 				"echo $OPENSOCIAL_SALT", "", "fail",
 				"Couldn't set a hash salt for OpenSocial's one-time login links. Your installation may not function correctly."));
-		
-		//Set up our database
-		units.addAll(db.checkUserExists());
-		units.addAll(db.checkDbExists());
-				
+
 		units.add(new SimpleUnit("opensocial_installed", "drush_installed",
 				"sudo composer create-project goalgorilla/social_template:dev-master /media/data/www --no-interaction"
-				+ " && sudo /media/data/drush/drush -y -r /media/data/www/html site-install social --db-url=mysql://opensocial:${OPENSOCIAL_PASSWORD}@localhost:3306/opensocial --account-pass=admin",
+						+ " && sudo /media/data/drush/drush -y -r /media/data/www/html site-install social --db-url=mysql://opensocial:${OPENSOCIAL_PASSWORD}@localhost:3306/opensocial --account-pass=admin",
 				"sudo /media/data/drush/drush status -r /media/data/www/html 2>&1 | grep 'Install profile'", "", "fail",
 				"OpenSocial could not be installed."));
 
-		String[] cnames = networkModel.getData().getCnames(getLabel());
-		String   domain = networkModel.getData().getDomain(getLabel()).replaceAll("\\.", "\\\\.");  
-		
-		String opensocialConf = "";
-		opensocialConf += "<?php\n";
-		opensocialConf += "\n";
-		opensocialConf += "\\$databases = array();\n";
-		opensocialConf += "\\$config_directories = array();\n";
-		opensocialConf += "\n";
-		opensocialConf += "\\$settings['hash_salt'] = '${OPENSOCIAL_SALT}';";
-		opensocialConf += "\\$settings['update_free_access'] = FALSE;\n";
-		opensocialConf += "\n";
-		opensocialConf += "\\$settings['container_yamls'][] = \\$app_root . '/' . \\$site_path . '/services.yml';\n";;
-		opensocialConf += "\n";
-		opensocialConf += "\\$settings['trusted_host_patterns'] = array(\n";
-		opensocialConf += "    '^" + me.getHostname() + "\\\\." + domain + "$',\n";
-		
-		for (int i = 0; i < cnames.length; ++i) {
-			opensocialConf += "    '^" + cnames[i].replaceAll("\\.", "\\\\.") + "." + domain + "$',\n";
-		}
-		
-		opensocialConf += ");\n";
-		opensocialConf += "\n";
-		opensocialConf += "\\$settings['container_yamls'][] = \\$app_root . '/' . \\$site_path . '/services.yml';\n";
-		opensocialConf += "\n";
-		opensocialConf += "\\$settings['file_scan_ignore_directories'] = [\n"; 
-		opensocialConf += "    'node_modules',\n"; 
-		opensocialConf += "    'bower_components',\n";
-		opensocialConf += "];\n";
-		opensocialConf += "\\$databases['default']['default'] = array (\n"; 
-		opensocialConf += "    'database' => 'opensocial',\n";
-		opensocialConf += "    'username' => 'opensocial',\n";
-		opensocialConf += "    'password' => '${OPENSOCIAL_PASSWORD}',\n";
-		opensocialConf += "    'prefix' => '',\n"; 
-		opensocialConf += "    'host' => 'localhost',\n"; 
-		opensocialConf += "    'port' => '3306',\n"; 
-		opensocialConf += "    'namespace' => 'Drupal\\\\Core\\\\Database\\\\Driver\\\\mysql',\n"; 
-		opensocialConf += "    'driver' => 'mysql',\n";
-		opensocialConf += ");\n"; 
-		opensocialConf += "\n";
-		opensocialConf += "\\$settings['install_profile'] = 'social';";
+		units.addAll(this.lempStack.getPersistentConfig());
 
-		units.add(((ServerModel)me).getConfigsModel().addConfigFile("opensocial", "opensocial_installed", opensocialConf, "/media/data/www/html/sites/default/settings.php"));
-		
 		return units;
 	}
-	
-	public Set<IUnit> getPersistentFirewall() {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
-		units.addAll(webserver.getPersistentFirewall());
 
-		networkModel.getServerModel(getLabel()).addEgress("packagist.org");
-		networkModel.getServerModel(getLabel()).addEgress("github.com");
-		networkModel.getServerModel(getLabel()).addEgress("packages.drupal.org");
-		networkModel.getServerModel(getLabel()).addEgress("asset-packagist.org");
-		networkModel.getServerModel(getLabel()).addEgress("api.github.com");
-		networkModel.getServerModel(getLabel()).addEgress("codeload.github.com");
-		networkModel.getServerModel(getLabel()).addEgress("git.drupal.org");
-		
+	@Override
+	protected Set<IUnit> getLiveConfig() throws InvalidMachineException, InvalidMachineModelException {
+		final Set<IUnit> units = new HashSet<>();
+
+		units.addAll(this.lempStack.getLiveConfig());
+
+		// Set up our database
+		final Set<HostName> cnames = this.networkModel.getData().getCnames(getLabel());
+		final String domain = this.networkModel.getData().getDomain().replaceAll("\\.", "\\\\.");
+
+		final FileUnit opensocialConf = new FileUnit("opensocial", "opensocial_installed",
+				"/media/data/www/html/sites/default/settings.php");
+		opensocialConf.appendLine("<?php");
+		opensocialConf.appendCarriageReturn();
+		opensocialConf.appendLine("\\$databases = array();");
+		opensocialConf.appendLine("\\$config_directories = array();");
+		opensocialConf.appendCarriageReturn();
+		opensocialConf.appendLine("\\$settings['hash_salt'] = '${OPENSOCIAL_SALT}';");
+		opensocialConf.appendLine("\\$settings['update_free_access'] = FALSE;");
+		opensocialConf.appendCarriageReturn();
+		opensocialConf
+				.appendLine("\\$settings['container_yamls'][] = \\$app_root . '/' . \\$site_path . '/services.yml';");
+		opensocialConf.appendCarriageReturn();
+		opensocialConf.appendLine("\\$settings['trusted_host_patterns'] = array(");
+		// TODO: fix this config file
+		opensocialConf.appendLine("    '^" + this.networkModel.getMachineModel(getLabel()) + "\\\\." + domain + "$',");
+
+		for (final HostName cname : cnames) {
+			opensocialConf.appendLine("    '^" + cname + "$',");
+		}
+
+		opensocialConf.appendLine(");");
+		opensocialConf.appendCarriageReturn();
+		opensocialConf
+				.appendLine("\\$settings['container_yamls'][] = \\$app_root . '/' . \\$site_path . '/services.yml';");
+		opensocialConf.appendCarriageReturn();
+		opensocialConf.appendLine("\\$settings['file_scan_ignore_directories'] = [");
+		opensocialConf.appendLine("    'node_modules',");
+		opensocialConf.appendLine("    'bower_components',");
+		opensocialConf.appendLine("];");
+		opensocialConf.appendLine("\\$databases['default']['default'] = array (");
+		opensocialConf.appendLine("    'database' => 'opensocial',");
+		opensocialConf.appendLine("    'username' => 'opensocial',");
+		opensocialConf.appendLine("    'password' => '${OPENSOCIAL_PASSWORD}',");
+		opensocialConf.appendLine("    'prefix' => '',");
+		opensocialConf.appendLine("    'host' => 'localhost',");
+		opensocialConf.appendLine("    'port' => '3306',");
+		opensocialConf.appendLine("    'namespace' => 'Drupal\\\\Core\\\\Database\\\\Driver\\\\mysql',");
+		opensocialConf.appendLine("    'driver' => 'mysql',");
+		opensocialConf.appendLine(");");
+		opensocialConf.appendCarriageReturn();
+		opensocialConf.appendLine("\\$settings['install_profile'] = 'social';");
+
+		return units;
+	}
+
+	@Override
+	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+		final Set<IUnit> units = new HashSet<>();
+
+		this.networkModel.getServerModel(getLabel()).addEgress("packagist.org");
+		this.networkModel.getServerModel(getLabel()).addEgress("github.com");
+		this.networkModel.getServerModel(getLabel()).addEgress("packages.drupal.org");
+		this.networkModel.getServerModel(getLabel()).addEgress("asset-packagist.org");
+		this.networkModel.getServerModel(getLabel()).addEgress("api.github.com");
+		this.networkModel.getServerModel(getLabel()).addEgress("codeload.github.com");
+		this.networkModel.getServerModel(getLabel()).addEgress("git.drupal.org");
+
+		units.addAll(this.lempStack.getPersistentFirewall());
+
 		return units;
 	}
 }

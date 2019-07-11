@@ -1,41 +1,45 @@
+/*
+ * This code is part of the ThornSec project.
+ *
+ * To learn more, please head to its GitHub repo: @privacyint
+ *
+ * Pull requests encouraged.
+ */
 package profile.service.web;
 
-import java.util.Vector;
+import java.util.HashSet;
+import java.util.Set;
 
+import core.exception.data.InvalidPortException;
+import core.exception.data.machine.InvalidServerException;
+import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
-
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileChecksumUnit;
 import core.unit.fs.FileDownloadUnit;
+import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import profile.stack.LEMP;
+import profile.stack.Nginx;
+import profile.stack.PHP;
 
 public class Piwik extends AStructuredProfile {
 
-	private Nginx webserver;
-	private PHP php;
-	private MariaDB db;
-	
+	private final LEMP lempStack;
+
 	public Piwik(String label, NetworkModel networkModel) {
-		super("piwik", networkModel);
-		
-		this.webserver = new Nginx(getLabel(), networkModel);
-		this.php = new PHP(getLabel(), networkModel);
-		this.db = new MariaDB(getLabel(), networkModel);
-		
-		this.db.setUsername("piwik");
-		this.db.setUserPrivileges("SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES");
-		this.db.setUserPassword("${PIWIK_PASSWORD}");
-		this.db.setDb("piwik");
+		super(label, networkModel);
+
+		this.lempStack = new LEMP(label, networkModel);
 	}
 
-	protected Set<IUnit> getInstalled() {
-		Set<IUnit> units = new HashSet<IUnit>();
-				
-		units.addAll(webserver.getInstalled());
-		units.addAll(php.getInstalled());
-		units.addAll(db.getInstalled());
+	@Override
+	protected Set<IUnit> getInstalled() throws InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
+
+		units.addAll(this.lempStack.getInstalled());
 
 		units.add(new InstalledUnit("unzip", "proceed", "unzip"));
 		units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
@@ -46,86 +50,99 @@ public class Piwik extends AStructuredProfile {
 
 		units.add(new FileDownloadUnit("piwik", "proceed", "https://builds.matomo.org/piwik.zip", "/root/piwik.zip",
 				"Couldn't download Piwik.  This could mean you ave no network connection, or that the specified download is no longer available."));
-		units.add(new FileChecksumUnit("piwik", "piwik_downloaded", "/root/piwik.zip", "449a91225b0f942f454bbccd5fba1ff9ea9d0459b37f69004d43060c24e3626b6303373c66711b316314ec72ed96fda3c76b4a4f6a930c1569a2a72ed6ff6a1f",
+		units.add(new FileChecksumUnit("piwik", "piwik_downloaded", "/root/piwik.zip",
+				"449a91225b0f942f454bbccd5fba1ff9ea9d0459b37f69004d43060c24e3626b6303373c66711b316314ec72ed96fda3c76b4a4f6a930c1569a2a72ed6ff6a1f",
 				"Piwik's checksum doesn't match.  This could indicate a failed download, MITM attack, or a newer version than our code supports.  Piwik's installation will fail."));
 
-		units.add(new SimpleUnit("piwik_installed", "piwik_checksum",
-				"sudo unzip /root/piwik.zip -d /media/data/www",
+		units.add(new SimpleUnit("piwik_installed", "piwik_checksum", "sudo unzip /root/piwik.zip -d /media/data/www",
 				"[ -d /media/data/www/piwik ] && echo pass || echo fail", "pass", "pass",
 				"Piwik couldn't be extracted to the required directory."));
-		
-		return units;
-	}
-	
-	protected Set<IUnit> getPersistentConfig() {
-		Set<IUnit> units =  new HashSet<IUnit>();
-		
-		units.addAll(webserver.getPersistentConfig());
-		units.addAll(php.getPersistentConfig());
-		units.addAll(db.getPersistentConfig());
-		
+
 		return units;
 	}
 
-	protected Set<IUnit> getLiveConfig() {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
+	@Override
+	protected Set<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
+
+		this.lempStack.getDB().setUsername("piwik");
+		this.lempStack.getDB().setUserPrivileges(
+				"SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES");
+		this.lempStack.getDB().setUserPassword("${PIWIK_PASSWORD}");
+		this.lempStack.getDB().setDb("piwik");
+
 		units.add(new SimpleUnit("piwik_mysql_password", "piwik_installed",
 				"PIWIK_PASSWORD=`sudo grep \"password\" /media/data/www/piwik/config/config.ini.php | head -1 | awk '{ print $3 }' | tr -d \"\\\",\"`; [[ -z $PIWIK_PASSWORD ]] && PIWIK_PASSWORD=`openssl rand -hex 32`;"
-				+ "echo \"Your database password is ${PIWIK_PASSWORD}\"",
+						+ "echo \"Your database password is ${PIWIK_PASSWORD}\"",
 				"echo $PIWIK_PASSWORD", "", "fail",
 				"Couldn't set the Piwik database user's password.  Piwik will be left in a broken state."));
-		
-		//Set up our database
-		units.addAll(db.checkUserExists());
-		units.addAll(db.checkDbExists());
-				
-		String nginxConf = "";
-		nginxConf += "server {\n";
-		nginxConf += "    listen *:80 default;\n";
-		nginxConf += "    server_name _;\n";
-		nginxConf += "    root /media/data/www/piwik;\n";
-		nginxConf += "    index index.php;\n";
-		nginxConf += "    sendfile off;\n";
-		nginxConf += "    default_type text/plain;\n";
-		nginxConf += "    server_tokens off;\n";
-		nginxConf += "    location / {\n";
-		nginxConf += "        try_files \\$uri @rewrite;\n";
-		nginxConf += "    }\n";
-		nginxConf += "    location @rewrite {\n";
-		nginxConf += "        rewrite ^ /index.php;\n";
-		nginxConf += "    }\n";
-		nginxConf += "    error_page   500 502 503 504  /50x.html;\n";
-		nginxConf += "    location = /50x.html {\n";
-		nginxConf += "        root   /usr/share/nginx/html;\n";
-		nginxConf += "    }\n";
-		nginxConf += "    location ~ \\.php\\$ {\n";
-		nginxConf += "        fastcgi_split_path_info ^(.+\\.php)(/.+)\\$;\n";
-		nginxConf += "        fastcgi_pass unix:" + php.getSockPath() + ";\n";
-		nginxConf += "        fastcgi_param SCRIPT_FILENAME  \\$document_root\\$fastcgi_script_name;\n";
-		nginxConf += "        fastcgi_index index.php;\n";
-		nginxConf += "        include fastcgi_params;\n";
-		nginxConf += "    }\n";
-		nginxConf += "    location ~ /\\.ht {\n";
-		nginxConf += "        deny all;\n";
-		nginxConf += "    }\n";
-		nginxConf += "    include /media/data/nginx_custom_conf_d/default.conf;\n";
-		nginxConf += "}";
-		
-		webserver.addLiveConfig("default", nginxConf);
-		
-		units.addAll(webserver.getLiveConfig());
-		units.addAll(php.getLiveConfig());
-		units.addAll(db.getLiveConfig());
-		
+
+		// Set up our database
+		final FileUnit nginxConf = new FileUnit("piwik_nginx_conf", "piwik_installed",
+				Nginx.DEFAULT_CONFIG_FILE.toString());
+
+		nginxConf.appendLine("server {");
+		nginxConf.appendLine("    listen *:80 default;");
+		nginxConf.appendLine("    server_name _;");
+		nginxConf.appendLine("    root /media/data/www/piwik;");
+		nginxConf.appendLine("    index index.php;");
+		nginxConf.appendLine("    sendfile off;");
+		nginxConf.appendLine("    default_type text/plain;");
+		nginxConf.appendLine("    server_tokens off;");
+		nginxConf.appendLine("    location / {");
+		nginxConf.appendLine("        try_files \\$uri @rewrite;");
+		nginxConf.appendLine("    }");
+		nginxConf.appendLine("    location @rewrite {");
+		nginxConf.appendLine("        rewrite ^ /index.php;");
+		nginxConf.appendLine("    }");
+		nginxConf.appendLine("    error_page   500 502 503 504  /50x.html;");
+		nginxConf.appendLine("    location = /50x.html {");
+		nginxConf.appendLine("        root   /usr/share/nginx/html;");
+		nginxConf.appendLine("    }");
+		nginxConf.appendLine("    location ~ \\.php\\$ {");
+		nginxConf.appendLine("        fastcgi_split_path_info ^(.+\\.php)(/.+)\\$;");
+		nginxConf.appendLine("        fastcgi_pass unix:" + PHP.SOCK_PATH + ";");
+		nginxConf.appendLine("        fastcgi_param SCRIPT_FILENAME  \\$document_root\\$fastcgi_script_name;");
+		nginxConf.appendLine("        fastcgi_index index.php;");
+		nginxConf.appendLine("        include fastcgi_params;");
+		nginxConf.appendLine("    }");
+		nginxConf.appendLine("    location ~ /\\.ht {");
+		nginxConf.appendLine("        deny all;");
+		nginxConf.appendLine("    }");
+		nginxConf.appendLine("}");
+
+		this.lempStack.getWebserver().addLiveConfig(nginxConf);
+
+		units.addAll(this.lempStack.getPersistentConfig());
+
 		return units;
 	}
-	
-	public Set<IUnit> getPersistentFirewall() {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
-		units.addAll(webserver.getPersistentFirewall());
-		networkModel.getServerModel(getLabel()).addEgress("builds.matomo.org", new Integer[]{443});
+
+	@Override
+	public Set<IUnit> getLiveConfig() throws InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
+
+		units.addAll(this.lempStack.getLiveConfig());
+
+		return units;
+	}
+
+	@Override
+	public Set<IUnit> getLiveFirewall() throws InvalidServerModelException, InvalidPortException {
+		final Set<IUnit> units = new HashSet<>();
+
+		units.addAll(this.lempStack.getLiveFirewall());
+
+		return units;
+	}
+
+	@Override
+	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+		final Set<IUnit> units = new HashSet<>();
+
+		this.networkModel.getServerModel(getLabel()).addEgress("builds.matomo.org:443");
+
+		units.addAll(this.lempStack.getPersistentFirewall());
 
 		return units;
 	}
