@@ -1,3 +1,10 @@
+/*
+ * This code is part of the ThornSec project.
+ * 
+ * To learn more, please head to its GitHub repo: @privacyint
+ * 
+ * Pull requests encouraged.
+ */
 package core.profile;
 
 import java.util.HashSet;
@@ -5,28 +12,28 @@ import java.util.Set;
 
 import core.iface.IProfile;
 import core.iface.IUnit;
-
 import core.model.network.NetworkModel;
 
 public abstract class AProfile implements IProfile {
 
-	protected String name;
+	private final String label;
 	protected NetworkModel networkModel;
 
-	protected AProfile(String name, NetworkModel networkModel) {
-		this.name         = name;
+	protected AProfile(String label, NetworkModel networkModel) {
+		this.label = label;
 		this.networkModel = networkModel;
 	}
 
+	@Override
 	public final String getLabel() {
-		return name;
+		return this.label;
 	}
-	
+
 	public final NetworkModel getNetworkModel() {
-		return networkModel;
+		return this.networkModel;
 	}
 
 	public Set<IUnit> getNetworking() {
-		return new HashSet<IUnit>();
+		return new HashSet<>();
 	}
 }
