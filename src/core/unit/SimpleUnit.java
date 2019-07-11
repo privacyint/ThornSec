@@ -1,3 +1,10 @@
+/*
+ * This code is part of the ThornSec project.
+ * 
+ * To learn more, please head to its GitHub repo: @privacyint
+ * 
+ * Pull requests encouraged.
+ */
 package core.unit;
 
 import java.util.regex.Pattern;
@@ -48,9 +55,9 @@ public class SimpleUnit extends ComplexUnit {
 		auditString += "test=\"" + getTest() + "\";\n";
 		
 		if (getResult().equals("fail"))
-			auditString += "if [ \"$out\" = \"$test\" ] ; then\n";
+			auditString += "if [ \"${out}\" = \"${test}\" ] ; then\n";
 		else
-			auditString += "if [ \"$out\" != \"$test\" ] ; then\n";
+			auditString += "if [ \"${out}\" != \"${test}\" ] ; then\n";
 		auditString += "\t" + getLabel() + "=0;\n";
 		auditString += "else\n";
 		auditString += "\t" + getLabel() + "=1;\n";

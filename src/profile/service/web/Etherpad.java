@@ -9,16 +9,13 @@ package profile.service.web;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
 
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
-import core.unit.fs.FileChecksumUnit;
-import core.unit.fs.FileDownloadUnit;
-import core.unit.fs.FilePermsUnit;
+
 import core.unit.fs.FileUnit;
 import core.unit.fs.GitCloneUnit;
 import core.unit.pkg.InstalledUnit;
@@ -27,6 +24,14 @@ import profile.stack.MariaDB;
 import profile.stack.Nginx;
 import profile.stack.NodeJS;
 import core.exception.data.InvalidPortException;
+import core.exception.runtime.InvalidServerModelException;
+
+import profile.stack.MariaDB;
+import profile.stack.Nginx;
+import profile.stack.NodeJS;
+
+import core.exception.data.InvalidPortException;
+import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidServerModelException;
 
 /**
@@ -86,13 +91,10 @@ public class Etherpad extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Set<IUnit> getPersistentConfig() {
+	protected Set<IUnit> getPersistentConfig()
+	throws InvalidServerModelException, InvalidServerException {
 		Set<IUnit> units =  new HashSet<IUnit>();
 
-		units.addAll(webserver.getPersistentConfig());
-		units.addAll(db.getPersistentConfig());
-		units.addAll(node.getPersistentConfig());	
-		
 		units.add(new SimpleUnit("etherpad_mysql_password", "etherpad_installed",
 				"ETHERPAD_PASSWORD=`sudo grep \"password\" /media/data/www/settings.json | head -1 | awk '{ print $2 }' | tr -d \"',\"`; [[ -z $ETHERPAD_PASSWORD ]] && ETHERPAD_PASSWORD=`openssl rand -hex 32`",
 				"echo $ETHERPAD_PASSWORD", "", "fail",
@@ -165,48 +167,43 @@ public class Etherpad extends AStructuredProfile {
 		settings.appendLine("}");
 		
 		//https://github.com/ether/etherpad-lite/wiki/How-to-deploy-Etherpad-Lite-as-a-service
-		String serviceConf = "";
-		serviceConf += "[Unit]");
-		serviceConf += "Description=etherpad-lite (real-time collaborative document editing)");
-		serviceConf += "After=syslog.target network.target");
-		serviceConf += "");
-		serviceConf += "[Service]");
-		serviceConf += "Type=simple");
-		serviceConf += "User=nginx");
-		serviceConf += "Group=nginx");
-		serviceConf += "ExecStart=/media/data/www/bin/run.sh");
-		serviceConf += "");
-		serviceConf += "[Install]");
-		serviceConf += "WantedBy=multi-user.target";
-
-		units.add(((ServerModel)me).getConfigsModel().addConfigFile("etherpad_service", "etherpad_installed", serviceConf, "/etc/systemd/system/etherpad-lite.service"));
+		FileUnit serviceConf = new FileUnit("etherpad_service", "etherpad_installed", "/etc/systemd/system/etherpad-lite.service");
+		units.add(serviceConf);
+		
+		serviceConf.appendLine("[Unit]");
+		serviceConf.appendLine("Description=etherpad-lite (real-time collaborative document editing)");
+		serviceConf.appendLine("After=syslog.target network.target");
+		serviceConf.appendCarriageReturn();
+		serviceConf.appendLine("[Service]");
+		serviceConf.appendLine("Type=simple");
+		serviceConf.appendLine("User=nginx");
+		serviceConf.appendLine("Group=nginx");
+		serviceConf.appendLine("ExecStart=/media/data/www/bin/run.sh");
+		serviceConf.appendCarriageReturn();
+		serviceConf.appendLine("[Install]");
+		serviceConf.appendLine("WantedBy=multi-user.target");
 
 		units.add(new SimpleUnit("etherpad_service_enabled", "etherpad_service_config",
 				"sudo systemctl enable etherpad-lite",
 				"sudo systemctl is-enabled etherpad-lite", "enabled", "pass",
 				"Couldn't set Etherpad to auto-start on boot.  You will need to manually start the service (\"sudo service etherpad-lite start\") on reboot."));
 				
-		units.add(new RunningUnit("etherpad", "etherpad-lite", "etherpad-lite"));
+		FileUnit nginxConf = new FileUnit("etherpad_nginx", "etherpad_installed", Nginx.DEFAULT_CONFIG_FILE.toString());
+		nginxConf.appendLine("upstream etherpad-lite {");
+	    nginxConf.appendLine("	server 127.0.0.1:8080;");
+	    nginxConf.appendLine("}");
+	    nginxConf.appendLine("");
+	    nginxConf.appendLine("server {");
+	    nginxConf.appendLine("	listen 80;");
+	    nginxConf.appendLine("");
+	    nginxConf.appendLine("	location / {");
+	    nginxConf.appendLine("		proxy_buffering off;");
+	    nginxConf.appendLine("		proxy_pass http://etherpad-lite/;");
+	    nginxConf.appendLine("		proxy_pass_header Server;");
+	    nginxConf.appendLine("	}");
+		nginxConf.appendLine("}");
 		
-		networkModel.getServerModel(getLabel()).addProcessString("node /media/data/www/node_modules/ep_etherpad-lite/node/server.js$");
-		
-		String nginxConf = "";
-		nginxConf += "upstream etherpad-lite {");
-	    nginxConf += "	server 127.0.0.1:8080;");
-	    nginxConf += "}");
-	    nginxConf += "");
-	    nginxConf += "server {");
-	    nginxConf += "	listen 80;");
-	    nginxConf += "");
-	    nginxConf += "	location / {");
-	    nginxConf += "		proxy_buffering off;");
-	    nginxConf += "		proxy_pass http://etherpad-lite/;");
-	    nginxConf += "		proxy_pass_header Server;");
-	    nginxConf += "	}");
-		nginxConf += "    include /media/data/nginx_custom_conf_d/default.conf;");
-		nginxConf += "}";
-		
-		webserver.addLiveConfig("default", nginxConf);	
+		webserver.addLiveConfig(nginxConf);	
 		
 		return units;
 	}
@@ -218,7 +215,11 @@ public class Etherpad extends AStructuredProfile {
 		units.addAll(webserver.getLiveConfig());
 		units.addAll(node.getLiveConfig());
 		units.addAll(db.getLiveConfig());
-						
+		
+		units.add(new RunningUnit("etherpad", "etherpad-lite", "etherpad-lite"));
+		
+		networkModel.getServerModel(getLabel()).addProcessString("node /media/data/www/node_modules/ep_etherpad-lite/node/server.js$");
+
 		return units;
 	}
 	
@@ -239,5 +240,4 @@ public class Etherpad extends AStructuredProfile {
 
 		return units;
 	}
-
 }

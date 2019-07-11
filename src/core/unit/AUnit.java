@@ -1,44 +1,55 @@
+/*
+ * This code is part of the ThornSec project.
+ * 
+ * To learn more, please head to its GitHub repo: @privacyint
+ * 
+ * Pull requests encouraged.
+ */
 package core.unit;
 
-import java.util.Vector;
-
-import core.iface.IProfile;
 import core.iface.IUnit;
-import core.model.NetworkModel;
+import core.model.network.NetworkModel;
 
+/**
+ * This is a basic unit test.
+ */
 public abstract class AUnit implements IUnit {
 
-	protected String server;
-	protected NetworkModel model;
+	protected NetworkModel networkModel;
+
 	protected String label;
 	protected String precondition;
 	protected String config;
 	protected String audit;
 	protected String message;
 
+	public AUnit(String label, String precondition, String config, String audit, String message) {
+		//Do some normalisation of the unit test labels. You'll thank me later, I assure you. 
+		this.label        = label.toLowerCase().replaceAll("[^a-z0-9]", "_");
+		this.precondition = precondition.toLowerCase().replaceAll("[^a-z0-9]", "_");
+		this.config       = config;
+		this.audit        = audit;
+		this.message      = message;
+	}
+
 	public AUnit(String label, String precondition, String config, String audit) {
-		this.label = label;
-		this.precondition = precondition;
-		this.config = config;
-		this.audit = audit;
+		this(label, precondition, config, audit, "Default failure message. Oops!");
 	}
 	
-	public AUnit(String label, String precondition, String config, String audit, String message) {
-		this.label = label;
-		this.precondition = precondition;
-		this.config = config;
-		this.audit = audit;
-		this.message = message;
+	public final String getLabel() {
+		return this.label;
 	}
 
-	public String getLabel() {
-		return label;
-	}
+	protected abstract String getAudit();
 
-	public Vector<IProfile> getUnits(String server, NetworkModel networkModel) {
-		return null;
-	}
+	protected abstract String getPrecondition();
 
+	protected abstract String getConfig();
+
+	protected abstract String getDryRun();
+	
+	protected abstract String getMessage();
+	
 	public String genAudit(boolean quiet) {
 		String auditString = getLabel() + "=0;\n";
 		auditString += this.getAudit();
@@ -91,14 +102,4 @@ public abstract class AUnit implements IUnit {
 		dryrunString += "fi ;\n";
 		return dryrunString;
 	}
-
-	protected abstract String getAudit();
-
-	protected abstract String getPrecondition();
-
-	protected abstract String getConfig();
-
-	protected abstract String getDryRun();
-	
-	protected abstract String getMessage();
 }

@@ -26,17 +26,17 @@ import profile.stack.Nginx;
 import profile.stack.PHP;
 
 /**
- * This profile will install and configure Drupal 7.
+ * This profile will install and configure Drupal 7, and is kept only for legacy reasons.
  * 
- * Please use {@link:Drupal8.java} instead
+ * Please use {@link:Drupal8.java} instead, if you possibly can.
  */
-@Deprecated
 public class Drupal7 extends AStructuredProfile {
 	
 	private LEMP lempStack;
 	
+	@Deprecated
 	public Drupal7(String label, NetworkModel networkModel) {
-		super("drupal", networkModel);
+		super(label, networkModel);
 		
 		this.lempStack = new LEMP(label, networkModel);
 				
@@ -71,6 +71,12 @@ public class Drupal7 extends AStructuredProfile {
 				"sudo -u nginx bash -c 'composer create-project drush/drush /media/data/drush -n'",
 				"sudo [ -f /media/data/drush/drush ] && echo pass || echo fail", "pass", "pass",
 				"Couldn't install drush. The installation of Drupal will fail."));
+
+		units.add(new SimpleUnit("drupal_installed", "drush_installed",
+				"sudo /media/data/drush/drush -y dl drupal-7 --destination=/media/data --drupal-project-rename=www"
+				+ " && sudo /media/data/drush/drush -y -r /media/data/www site-install --db-url=mysql://drupal:${DRUPAL_PASSWORD}@localhost:3306/drupal --account-pass=admin",
+				"sudo /media/data/drush/drush status -r /media/data/www 2>&1 | grep 'Drupal root'", "", "fail",
+				"Couldn't install Drupal."));
 		
 		return units;
 	}
@@ -79,16 +85,6 @@ public class Drupal7 extends AStructuredProfile {
 	protected Set<IUnit> getPersistentConfig()
 	throws InvalidServerException, InvalidServerModelException {
 		Set<IUnit> units =  new HashSet<IUnit>();
-		
-		units.addAll(lempStack.getPersistentConfig());
-		
-		return units;
-	}
-
-	@Override
-	protected Set<IUnit> getLiveConfig()
-	throws InvalidServerModelException {
-		Set<IUnit> units = new HashSet<IUnit>();
 		
 		FileUnit nginxConf = new FileUnit("nginxConf", "nginx_installed", Nginx.CONF_D_DIRECTORY + "default.conf");
 		nginxConf.appendLine("server {");
@@ -136,8 +132,12 @@ public class Drupal7 extends AStructuredProfile {
 		nginxConf.appendLine("}");
 		
 		this.lempStack.getWebserver().addLiveConfig(nginxConf);
-		
-		units.addAll(lempStack.getLiveConfig());
+
+		units.add(new FileEditUnit("drupal_base_url", "drupal_installed",
+				"^\\# \\$base_url = 'http:",
+				"\\$base_url = 'https:",
+				"/media/data/www/sites/default/settings.php",
+				"Couldn't set Drupal's URI to https. This could cause issues with hyperlinks in the installation."));
 		
 		units.add(new SimpleUnit("drupal_mysql_password", "proceed",
 				"DRUPAL_PASSWORD=`sudo grep \"password\" /media/data/www/sites/default/settings.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',\"`; [[ -z $DRUPAL_PASSWORD ]] && DRUPAL_PASSWORD=`openssl rand -hex 32`",
@@ -146,18 +146,18 @@ public class Drupal7 extends AStructuredProfile {
 		
 		units.addAll(lempStack.getDB().checkUserExists());
 		units.addAll(lempStack.getDB().checkDbExists());
+
+		units.addAll(lempStack.getPersistentConfig());
 		
-		units.add(new SimpleUnit("drupal_installed", "drush_installed",
-				"sudo /media/data/drush/drush -y dl drupal-7 --destination=/media/data --drupal-project-rename=www"
-				+ " && sudo /media/data/drush/drush -y -r /media/data/www site-install --db-url=mysql://drupal:${DRUPAL_PASSWORD}@localhost:3306/drupal --account-pass=admin",
-				"sudo /media/data/drush/drush status -r /media/data/www 2>&1 | grep 'Drupal root'", "", "fail",
-				"Couldn't install Drupal."));
-		
-		units.add(new FileEditUnit("drupal_base_url", "drupal_installed",
-				"^\\# \\$base_url = 'http:",
-				"\\$base_url = 'https:",
-				"/media/data/www/sites/default/settings.php",
-				"Couldn't set Drupal's URI to https. This could cause issues with hyperlinks in the installation."));
+		return units;
+	}
+
+	@Override
+	protected Set<IUnit> getLiveConfig()
+	throws InvalidServerModelException {
+		Set<IUnit> units = new HashSet<IUnit>();
+				
+		units.addAll(lempStack.getLiveConfig());		
 		
 		return units;
 	}

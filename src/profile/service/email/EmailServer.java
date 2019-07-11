@@ -37,7 +37,7 @@ public class EmailServer extends AStructuredProfile {
 	private MariaDB db;
 	
 	public EmailServer(String label, NetworkModel networkModel) {
-		super("email", networkModel);
+		super(label, networkModel);
 		
 		webserver = new Nginx(getLabel(), networkModel);
  		php       = new PHP(getLabel(), networkModel);

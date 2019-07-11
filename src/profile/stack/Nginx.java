@@ -24,8 +24,9 @@ import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidServerModelException;
 
 public class Nginx extends AStructuredProfile {
-	public static final File CONF_D_DIRECTORY = new File("/etc/nginx/conf.d/");
+	public static final File DEFAULT_CONFIG_FILE = new File("/etc/nginx/conf.d/default.conf");
 	
+	public static final File CONF_D_DIRECTORY    = new File("/etc/nginx/conf.d/");
 	private HashSet<FileUnit> liveConfigs;
 	
 	public Nginx(String label, NetworkModel networkModel) {

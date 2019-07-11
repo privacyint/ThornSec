@@ -1,25 +1,23 @@
 package core.model;
 
+import core.model.network.NetworkModel;
+
+import core.exception.runtime.ARuntimeException;
+
 public abstract class AModel {
 
 	protected String label;
-	protected MachineModel me;
 	protected NetworkModel networkModel;
 
-	AModel(String label, MachineModel me, NetworkModel networkModel) {
+	protected AModel(String label, NetworkModel networkModel) {
 		this.label        = label;
-		this.me           = me;
 		this.networkModel = networkModel;
 	}
 	
-	public AModel(String label, NetworkModel networkModel) {
-		this(label, null, networkModel);
-	}
-
 	public final String getLabel() {
-		return label;
+		return this.label;
 	}
 
-	public void init() { /* stub */	}
+	public void init() throws ARuntimeException { /* stub */ }
 	
 }

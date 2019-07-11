@@ -1,10 +1,10 @@
 package core.exec;
 
-class OutputExec {
+public class OutputExec {
 
 	private String cmd;
 
-	OutputExec(String cmd) {
+	public OutputExec(String cmd) {
 		this.cmd = cmd;
 	}
 

@@ -55,6 +55,7 @@ public abstract class AMachineData extends AData {
 	private InternetAddress emailAddress;
 	
 	//Firewall
+	private String  firewallProfile;
 	private Boolean throttled;
 	
 	private Hashtable<Encapsulation, Set<HostName>> listens;
@@ -76,7 +77,8 @@ public abstract class AMachineData extends AData {
 		
 		this.emailAddress = null;
 		
-		this.throttled = null;
+		this.firewallProfile = null;
+		this.throttled       = null;
 
 		this.listens = null;
 
@@ -103,6 +105,7 @@ public abstract class AMachineData extends AData {
 		//Let's set some fields
 		this.externalIPAddress = new IPAddressString(getStringProperty("externalip", null)).getAddress();
 		this.fqdn              = new HostName(getStringProperty("fqdn", null));
+		this.firewallProfile   = getStringProperty("firewall", null);
 		this.throttled         = getBooleanProperty("throttle");
 		
 		//But only set these fields !null if we actually have anything to put in them
@@ -218,6 +221,10 @@ public abstract class AMachineData extends AData {
 
 	public final IPAddress getExternalIp() {
 		return this.externalIPAddress;
+	}
+
+	public final String getFirewallProfile() {
+		return this.firewallProfile;
 	}
 	
 }

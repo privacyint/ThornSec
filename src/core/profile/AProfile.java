@@ -1,35 +1,32 @@
 package core.profile;
 
-import java.util.Vector;
+import java.util.HashSet;
+import java.util.Set;
 
 import core.iface.IProfile;
 import core.iface.IUnit;
-import core.model.MachineModel;
-import core.model.NetworkModel;
+
+import core.model.network.NetworkModel;
 
 public abstract class AProfile implements IProfile {
 
 	protected String name;
 	protected NetworkModel networkModel;
-	protected MachineModel me;
 
-	protected AProfile(String name, MachineModel me, NetworkModel networkModel) {
+	protected AProfile(String name, NetworkModel networkModel) {
 		this.name         = name;
 		this.networkModel = networkModel;
-		this.me           = me;
 	}
 
-	public String getLabel() {
+	public final String getLabel() {
 		return name;
 	}
 	
-	public NetworkModel getNetworkModel() {
+	public final NetworkModel getNetworkModel() {
 		return networkModel;
 	}
 
-	public MachineModel getMachineModel() {
-		return me;
+	public Set<IUnit> getNetworking() {
+		return new HashSet<IUnit>();
 	}
-	
-	public abstract Vector<IUnit> getNetworking();
 }

@@ -7,7 +7,7 @@ import java.nio.file.Paths;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import core.model.ThornsecModel;
+import core.model.network.ThornsecModel;
 import core.view.FullFrame;
 
 public class Main {

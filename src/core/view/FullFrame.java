@@ -22,19 +22,21 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeSelectionModel;
 
-import core.data.InterfaceData;
+import core.data.machine.configuration.NetworkInterfaceData;
+import core.exception.runtime.InvalidDeviceModelException;
+import core.exception.runtime.InvalidServerModelException;
+import core.model.machine.ADeviceModel;
+import core.model.machine.ServerModel;
 
-import core.model.DeviceModel;
-import core.model.NetworkModel;
-import core.model.ServerModel;
-import core.model.ThornsecModel;
+import core.model.network.NetworkModel;
+import core.model.network.ThornsecModel;
 
 public class FullFrame {
 
 	public FullFrame(ThornsecModel model) {
 		JTabbedPane jtp = new JTabbedPane();
 		for (String network : model.getNetworkLabels()) {
-			jtp.add(network, getNetworkPane(model.getNetworkModel(network)));
+			jtp.add(network, getNetworkPane(model.getNetwork(network)));
 		}
 
 		JFrame frame = new JFrame("Thornsec");
@@ -101,21 +103,21 @@ public class FullFrame {
 		DefaultMutableTreeNode root  = new DefaultMutableTreeNode(model.getLabel());
 
 		DefaultMutableTreeNode usersNode = new DefaultMutableTreeNode("Users");
-		for (DeviceModel user : model.getUserDevices()) {
-			usersNode.add(new DefaultMutableTreeNode(user.getLabel()));
-		}
+//		for (ADeviceModel user : model.getUserDevices()) {
+//			usersNode.add(new DefaultMutableTreeNode(user.getLabel()));
+//		}
 		root.add(usersNode);
 
 		DefaultMutableTreeNode intOnlyNode = new DefaultMutableTreeNode("Internal-Only Devices");
-		for (DeviceModel intO : model.getInternalOnlyDevices()) {
-			intOnlyNode.add(new DefaultMutableTreeNode(intO.getLabel()));
-		}
+//		for (ADeviceModel intO : model.getInternalOnlyDevices()) {
+//			intOnlyNode.add(new DefaultMutableTreeNode(intO.getLabel()));
+//		}
 		root.add(intOnlyNode);
 
 		DefaultMutableTreeNode extOnlyNode = new DefaultMutableTreeNode("External-Only Devices");
-		for (DeviceModel extO : model.getExternalOnlyDevices()) {
-			extOnlyNode.add(new DefaultMutableTreeNode(extO.getLabel()));
-		}
+//		for (ADeviceModel extO : model.getExternalOnlyDevices()) {
+//			extOnlyNode.add(new DefaultMutableTreeNode(extO.getLabel()));
+//		}
 		root.add(extOnlyNode);
 
 		final JTree deviceTree = new JTree(root);
@@ -128,7 +130,12 @@ public class FullFrame {
 
 				String device = e.getPath().getLastPathComponent().toString();
 
-				if (model.getDeviceModel(device) == null) { return; } //Stop it crashing on labels!
+				try {
+					if (model.getDeviceModel(device) == null) { return; }
+				} catch (InvalidDeviceModelException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} //Stop it crashing on labels!
 				
 				detailsPanel.removeAll();
 
@@ -154,16 +161,16 @@ public class FullFrame {
 				g.gridx = 2;
 				g.anchor = GridBagConstraints.LINE_END;
 				JLabel ips = new JLabel();
-				if (model.getDeviceModel(device).getInterfaces().size() > 1) {
-					ips.setText("<html><body><ul>");
-					for (InterfaceData ip : model.getDeviceModel(device).getInterfaces()) {
-						ips.setText(ips.getText() + "<li>" + ip.getAddress().getHostAddress() + "/30</li>");
-					}
-					ips.setText(ips.getText() + "</ul></body></html>");
-				}
-				else {
-					ips.setText(model.getDeviceModel(device).getInterfaces().firstElement().getAddress().getHostAddress() + "/30");
-				}
+//				if (model.getDeviceModel(device).getInterfaces().size() > 1) {
+//					ips.setText("<html><body><ul>");
+//					for (InterfaceData ip : model.getDeviceModel(device).getInterfaces()) {
+//						ips.setText(ips.getText() + "<li>" + ip.getAddress().getHostAddress() + "/30</li>");
+//					}
+//					ips.setText(ips.getText() + "</ul></body></html>");
+//				}
+//				else {
+//					ips.setText(model.getDeviceModel(device).getInterfaces().firstElement().getAddress().getHostAddress() + "/30");
+//				}
 				detailsPanel.add(ips, g);
 
 				//MACs
@@ -175,16 +182,16 @@ public class FullFrame {
 				g.gridx = 2;
 				g.anchor = GridBagConstraints.LINE_END;
 				JLabel macs = new JLabel();
-				if (model.getDeviceModel(device).getMacs().size() > 1) {
-					macs.setText("<html><body><ul>");
-					for (String mac : model.getDeviceModel(device).getMacs()) {
-						macs.setText(macs.getText() + "<li>" + mac + "</li>");
-					}
-					macs.setText(macs.getText() + "</body></html>");
-				}
-				else {
-					macs.setText(model.getDeviceModel(device).getMacs().firstElement());
-				}
+//				if (model.getDeviceModel(device).getMacs().size() > 1) {
+//					macs.setText("<html><body><ul>");
+//					for (String mac : model.getDeviceModel(device).getMacs()) {
+//						macs.setText(macs.getText() + "<li>" + mac + "</li>");
+//					}
+//					macs.setText(macs.getText() + "</body></html>");
+//				}
+//				else {
+//					macs.setText(model.getDeviceModel(device).getMacs().firstElement());
+//				}
 				detailsPanel.add(macs, g);
 
 				detailsPanel.repaint();
@@ -218,25 +225,28 @@ public class FullFrame {
 		JPanel                 serverPanel = getNewPanel();
 		DefaultMutableTreeNode serverRoot  = new DefaultMutableTreeNode(model.getLabel());
 
-		for (ServerModel router : model.getRouterServers()) {
-			if (!router.isMetal()) {
-				serverRoot.add(new DefaultMutableTreeNode(router.getLabel()));
-			}
-		}
-
-		for (ServerModel metal : model.getMetalServers()) {
-			DefaultMutableTreeNode metalNode = new DefaultMutableTreeNode(metal.getLabel());
-			for (ServerModel service : metal.getServices()) {
-				metalNode.add(new DefaultMutableTreeNode(service.getLabel()));
-			}
-			serverRoot.add(metalNode);
-		}
-
-		for (ServerModel dedi : model.getDediServers()) {
-			DefaultMutableTreeNode dediNode = new DefaultMutableTreeNode(dedi.getLabel());
-			serverRoot.add(dediNode);
-		}
+//		for (ServerModel router : model.getRouterServers()) {
+//			if (!router.isMetal()) {
+//				serverRoot.add(new DefaultMutableTreeNode(router.getLabel()));
+//			}
+//		}
+//
+//		for (ServerModel metal : model.getMetalServers()) {
+//			DefaultMutableTreeNode metalNode = new DefaultMutableTreeNode(metal.getLabel());
+//			for (ServerModel service : metal.getServices()) {
+//				metalNode.add(new DefaultMutableTreeNode(service.getLabel()));
+//			}
+//			serverRoot.add(metalNode);
+//		}
+//
+//		for (ServerModel dedi : model.getDediServers()) {
+//			DefaultMutableTreeNode dediNode = new DefaultMutableTreeNode(dedi.getLabel());
+//			serverRoot.add(dediNode);
+//		}
 		
+		for (String machine : model.getAllServerModels().keySet()) {
+			serverRoot.add(new DefaultMutableTreeNode(machine));
+		}
 		final JTree serverTree = new JTree(serverRoot);
 		serverTree.setCellRenderer(new CustomServerIconRenderer(model));
 		serverTree.setRootVisible(false);
@@ -246,7 +256,12 @@ public class FullFrame {
 				GridBagConstraints g = new GridBagConstraints();
 
 				String serverLabel = e.getPath().getLastPathComponent().toString();
-				ServerModel server = model.getServerModel(serverLabel);
+				try {
+					ServerModel server = model.getServerModel(serverLabel);
+				} catch (InvalidServerModelException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 
 				ServerListener listener = new ServerListener(serverLabel, model, out, System.in);
 
@@ -276,18 +291,18 @@ public class FullFrame {
 				
 				JLabel addresses = new JLabel();
 				
-				if (server.getAddresses().size() > 1) {
-					addresses.setText("<html><body><ul>");
-					for (InetAddress address : model.getServerModel(serverLabel).getAddresses()) {
-						if (address == null) { continue; }
-						if (addresses.getText().contains(address.getHostAddress())) { continue; }
-						addresses.setText(addresses.getText() + "<li>" + address.getHostAddress() + "</li>");
-					}
-					addresses.setText(addresses.getText() + "</ul></body></html>");
-				}
-				else {
-					addresses.setText(server.getAddresses().firstElement().getHostAddress());
-				}
+//				if (server.getAddresses().size() > 1) {
+//					addresses.setText("<html><body><ul>");
+//					for (InetAddress address : model.getServerModel(serverLabel).getAddresses()) {
+//						if (address == null) { continue; }
+//						if (addresses.getText().contains(address.getHostAddress())) { continue; }
+//						addresses.setText(addresses.getText() + "<li>" + address.getHostAddress() + "</li>");
+//					}
+//					addresses.setText(addresses.getText() + "</ul></body></html>");
+//				}
+//				else {
+//					addresses.setText(server.getAddresses().firstElement().getHostAddress());
+//				}
 				detailsPanel.add(addresses, g);
 				
 				//SSH
@@ -301,29 +316,29 @@ public class FullFrame {
 				detailsPanel.add(new JLabel(model.getData().getAdminPort(serverLabel) + ""), g);
 
 				//Profiles
-				if (server.getProfiles().length > 0) {
-					g.gridy += 1;
-	
-					g.gridx = 1;
-					g.anchor = GridBagConstraints.LINE_START;
-					detailsPanel.add(new JLabel("Profiles:"), g);
-					g.gridx = 2;
-					g.anchor = GridBagConstraints.LINE_END;
-					JLabel profiles = new JLabel();
-					
-					if (server.getProfiles().length > 1) {
-						profiles.setText("<html><body><ul>");
-						for (String profile : model.getServerModel(serverLabel).getProfiles()) {
-							profiles.setText(profiles.getText() + "<li>" + profile + "</li> ");
-						}
-						profiles.setText(profiles.getText() + "</ul></body></html>");
-					}
-					else {
-						profiles.setText(server.getProfiles()[0]);
-					}
-					
-					detailsPanel.add(profiles, g);
-				}
+//				if (server.getProfiles().length > 0) {
+//					g.gridy += 1;
+//	
+//					g.gridx = 1;
+//					g.anchor = GridBagConstraints.LINE_START;
+//					detailsPanel.add(new JLabel("Profiles:"), g);
+//					g.gridx = 2;
+//					g.anchor = GridBagConstraints.LINE_END;
+//					JLabel profiles = new JLabel();
+//					
+//					if (server.getProfiles().length > 1) {
+//						profiles.setText("<html><body><ul>");
+//						for (String profile : model.getServerModel(serverLabel).getProfiles()) {
+//							profiles.setText(profiles.getText() + "<li>" + profile + "</li> ");
+//						}
+//						profiles.setText(profiles.getText() + "</ul></body></html>");
+//					}
+//					else {
+//						profiles.setText(server.getProfiles()[0]);
+//					}
+//					
+//					detailsPanel.add(profiles, g);
+//				}
 				
 				//FQDN
 				g.gridy += 1;
@@ -333,71 +348,71 @@ public class FullFrame {
 				detailsPanel.add(new JLabel("FQDN:"), g);
 				g.gridx = 2;
 				g.anchor = GridBagConstraints.LINE_END;
-				detailsPanel.add(new JLabel(model.getData().getHostname(serverLabel) + "." + model.getData().getDomain(serverLabel)), g);
+//				detailsPanel.add(new JLabel(model.getData().getHostname(serverLabel) + "." + model.getData().getDomain(serverLabel)), g);
 
-				//CNAMEs
-				if (model.getData().getCnames(serverLabel).length > 0) {
-					g.gridy += 1;
-	
-					g.gridx = 1;
-					g.anchor = GridBagConstraints.LINE_START;
-					detailsPanel.add(new JLabel("CNAMEs:"), g);
-					g.gridx = 2;
-					g.anchor = GridBagConstraints.LINE_END;
-					JLabel cnames = new JLabel();
-					if (model.getData().getCnames(serverLabel).length > 1) {
-						cnames.setText("<html><body><ul>");
-						for (String cname : model.getData().getCnames(serverLabel)) {
-							cnames.setText(cnames.getText() + "<li>" + cname + "</li>");
-						}
-						cnames.setText(cnames.getText() + "</li></body></html>");
-					}
-					else {
-						cnames.setText(model.getData().getCnames(serverLabel)[0]);
-					}
+//				//CNAMEs
+//				if (model.getData().getCnames(serverLabel).length > 0) {
+//					g.gridy += 1;
+//	
+//					g.gridx = 1;
+//					g.anchor = GridBagConstraints.LINE_START;
+//					detailsPanel.add(new JLabel("CNAMEs:"), g);
+//					g.gridx = 2;
+//					g.anchor = GridBagConstraints.LINE_END;
+//					JLabel cnames = new JLabel();
+//					if (model.getData().getCnames(serverLabel).length > 1) {
+//						cnames.setText("<html><body><ul>");
+//						for (String cname : model.getData().getCnames(serverLabel)) {
+//							cnames.setText(cnames.getText() + "<li>" + cname + "</li>");
+//						}
+//						cnames.setText(cnames.getText() + "</li></body></html>");
+//					}
+//					else {
+//						cnames.setText(model.getData().getCnames(serverLabel)[0]);
+//					}
+//				
+//					detailsPanel.add(cnames, g);
+//				}
 				
-					detailsPanel.add(cnames, g);
-				}
-				
-				//MAC
-				if (!server.getMacs().isEmpty()) {
-					g.gridy += 1;
-	
-					g.gridx = 1;
-					g.anchor = GridBagConstraints.LINE_START;
-					detailsPanel.add(new JLabel("MAC Addresses:"), g);
-					g.gridx = 2;
-					g.anchor = GridBagConstraints.LINE_END;
-					JLabel macs = new JLabel();
-
-					if (server.getMacs().size() == 1) {
-						macs.setText(server.getMacs().firstElement());
-					}
-					else {
-						macs.setText("<html><body><ul>");
-						for (String mac : server.getMacs()) {
-							if (macs.getText().contains(mac)) { continue; }
-							macs.setText(macs.getText() + "<li>" + mac + "</li>");
-						}
-						macs.setText(macs.getText() + "</ul></body></html>");
-					}
-
-					detailsPanel.add(macs, g);
-				}
+//				//MAC
+//				if (!server.getMacs().isEmpty()) {
+//					g.gridy += 1;
+//	
+//					g.gridx = 1;
+//					g.anchor = GridBagConstraints.LINE_START;
+//					detailsPanel.add(new JLabel("MAC Addresses:"), g);
+//					g.gridx = 2;
+//					g.anchor = GridBagConstraints.LINE_END;
+//					JLabel macs = new JLabel();
+//
+//					if (server.getMacs().size() == 1) {
+//						macs.setText(server.getMacs().firstElement());
+//					}
+//					else {
+//						macs.setText("<html><body><ul>");
+//						for (String mac : server.getMacs()) {
+//							if (macs.getText().contains(mac)) { continue; }
+//							macs.setText(macs.getText() + "<li>" + mac + "</li>");
+//						}
+//						macs.setText(macs.getText() + "</ul></body></html>");
+//					}
+//
+//					detailsPanel.add(macs, g);
+//				}
 
 				//Buttons
 				g.gridwidth = 2;
 				g.gridx = 1;
 				g.fill = GridBagConstraints.HORIZONTAL;
 
-				if (!server.isService() ) {
+//				if (!server.isService() ) {
 					g.gridy += 1;
 					JButton buildiso = new JButton("Build ISO");
 					buildiso.addActionListener(listener);
 					detailsPanel.add(buildiso, g);
-				}
-				
-				if (!server.isDedi()) {
+//				}
+//				
+//				if (!server.isDedi()) {
 					g.gridy += 1;
 					JButton audit = new JButton("Audit");
 					audit.addActionListener(listener);
@@ -412,7 +427,7 @@ public class FullFrame {
 					JButton config = new JButton("Config");
 					config.addActionListener(listener);
 					detailsPanel.add(config, g);
-				}
+//				}
 				
 				detailsPanel.repaint();
 				detailsPanel.validate();
@@ -469,20 +484,20 @@ class CustomServerIconRenderer extends DefaultTreeCellRenderer {
 
 		String node = nodeObj.toString();
 		
-		if (row > 0) {
-			if (model.getServerModel(node).isRouter()) {
-				setIcon(routerIcon);
-			}
-			else if (model.getServerModel(node).isMetal() || model.getServerModel(node).isDedi()) {
-				setIcon(metalIcon);
-			}
-			else if (model.getServerModel(node).isService()) {
-				setIcon(serviceIcon);
-			}
-		}
-		else {
+//		if (row > 0) {
+//			if (model.getServerModel(node).isRouter()) {
+//				setIcon(routerIcon);
+//			}
+//			else if (model.getServerModel(node).isMetal() || model.getServerModel(node).isDedi()) {
+//				setIcon(metalIcon);
+//			}
+//			else if (model.getServerModel(node).isService()) {
+//				setIcon(serviceIcon);
+//			}
+//		}
+//		else {
 			setIcon(null);
-		}
+//		}
 
 		return this;
 	}
@@ -519,24 +534,24 @@ class DeviceIconRenderer extends DefaultTreeCellRenderer {
 
 		String node = nodeObj.toString();
 		
-		if (row > 0 && !node.equals("Users") && !node.equals("Internal-Only Devices") && !node.equals("External-Only Devices")) {
-			switch (model.getDeviceModel(node).getType()) {
-				case "Internal":
-					setIcon(intOnlyIcon);
-					break;
-				case "External":
-					setIcon(extOnlyIcon);
-					break;
-				case "User":
-					setIcon(userIcon);
-					break;
-				default:
-					setIcon(null);
-			}
-		}
-		else {
+//		if (row > 0 && !node.equals("Users") && !node.equals("Internal-Only Devices") && !node.equals("External-Only Devices")) {
+//			switch (model.getDeviceModel(node).getType()) {
+//				case "Internal":
+//					setIcon(intOnlyIcon);
+//					break;
+//				case "External":
+//					setIcon(extOnlyIcon);
+//					break;
+//				case "User":
+//					setIcon(userIcon);
+//					break;
+//				default:
+//					setIcon(null);
+//			}
+//		}
+//		else {
 			setIcon(null);
-		}
+//		}
 		
 		return this;
 	}

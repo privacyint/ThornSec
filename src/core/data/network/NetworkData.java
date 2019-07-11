@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -93,9 +92,10 @@ public class NetworkData extends AData {
 	private String myUser;
 	private String pgp;
 	private IPAddress ip;
+	private String domain;
 
 	private Boolean adBlocking;
-	private Boolean autoGenPasswds;
+	private Boolean autoGenPassphrases;
 	
 	private Boolean vpnOnly;
 	private Boolean dtls;
@@ -112,13 +112,14 @@ public class NetworkData extends AData {
 	public NetworkData(String label) {
 		super(label);
 		
-		this.myUser     = null;
-		this.pgp        = null;
+		this.myUser = null;
+		this.pgp    = null;
+		this.domain = null;
 		
 		this.ip = null;
 		
 		this.adBlocking     = null;
-		this.autoGenPasswds = null;
+		this.autoGenPassphrases = null;
 		this.vpnOnly        = null;
 		this.dtls           = null;
 		this.autoGuest      = null;
@@ -148,12 +149,13 @@ public class NetworkData extends AData {
 
 			this.ip = new IPAddressString(data.getString("ip", null)).getAddress();
 
-			this.myUser         = data.getString("myuser", null);
-			this.pgp            = data.getString("gpg", null);
+			this.myUser = data.getString("myuser", null);
+			this.pgp    = data.getString("gpg", null);
+			this.domain = data.getString("domain", "lan");
 			
 			this.dtls           = Boolean.parseBoolean(data.getString("dtls", DEFAULT_DTLS));
 			this.adBlocking     = Boolean.parseBoolean(data.getString("adblocking", DEFAULT_ADBLOCKING));
-			this.autoGenPasswds = Boolean.parseBoolean(data.getString("autogenpasswds", DEFAULT_AUTOGENPASSWDS));
+			this.autoGenPassphrases = Boolean.parseBoolean(data.getString("autogenpasswds", DEFAULT_AUTOGENPASSWDS));
 			this.vpnOnly        = Boolean.parseBoolean(data.getString("vpnonly", DEFAULT_VPNONLY));
 			this.autoGuest      = Boolean.parseBoolean(data.getString("autoguest", DEFAULT_AUTOGUEST));
 
@@ -250,11 +252,11 @@ public class NetworkData extends AData {
 		return this.myUser;
 	}
 
-	public final Set<IPAddress> getDNS() {
+	public final Set<IPAddress> getUpstreamDNSServers() {
 		return this.upstreamDNS;
 	}
 
-	public final Boolean getDTLS() {
+	public final Boolean getUpstreamDNSIsTLS() {
 		return this.dtls;
 	}
 	
@@ -270,10 +272,10 @@ public class NetworkData extends AData {
 	}
 	
 	/**
-	 * Should we autogenerate passwords for users who haven't set a default?
+	 * Should we autogenerate passphrases for users who haven't set a default?
 	 */
-	public final Boolean getAutoGenPasswds() {
-		return this.autoGenPasswds;
+	public final Boolean getAutoGenPassphrasess() {
+		return this.autoGenPassphrases;
 	}
 	
 	/**
@@ -305,6 +307,11 @@ public class NetworkData extends AData {
 
 	public final boolean getVpnOnly() {
 		return this.vpnOnly;
+	}
+	
+
+	public final String getDomain() {
+		return this.domain;
 	}
 	
 	/**
@@ -590,14 +597,14 @@ public class NetworkData extends AData {
 		return baseDir;
 	}
 
-	public URI getDebianMirror(String server)
+	public HostName getDebianMirror(String server)
 	throws URISyntaxException {
-		URI mirror = this.servers.get(server).getDebianMirror();
+		HostName mirror = this.servers.get(server).getDebianMirror();
 		
 		if (mirror == null) {
 			mirror = this.defaultServiceData.getDebianMirror();
 			if (mirror == null) {
-				mirror = new URI(NetworkData.DEFAULT_DEBIANMIRROR);
+				mirror = new HostName(NetworkData.DEFAULT_DEBIANMIRROR);
 			}
 		}
 		
@@ -615,6 +622,17 @@ public class NetworkData extends AData {
 		}
 		
 		return directory;
+	}
+	
+	/**
+	 * Warning: can return null...
+	 * @param machine
+	 * @return
+	 * @throws InvalidMachineException
+	 */
+	public final String getFirewallProfile(String machine)
+	throws InvalidMachineException {
+		return getAMachineData(machine).getFirewallProfile();
 	}
 	
 	public final Set<String> getDeviceNames() {
@@ -694,9 +712,9 @@ public class NetworkData extends AData {
 		return type;
 	}
 	
-	public final String getUserDefaultPassword(String user)
+	public final String getUserDefaultPassphrase(String user)
 	throws InvalidUserException, InvalidMachineException {
-		return getUserDeviceData(user).getDefaultPassword();
+		return getUserDeviceData(user).getDefaultPassphrase();
 	}
 	
 	public final InternetAddress getEmailAddress(String machine)
@@ -704,17 +722,17 @@ public class NetworkData extends AData {
 		return getAMachineData(machine).getEmailAddress();
 	}
 	
-	final public Set<HostName> getEgress(String machine)
+	public final Set<HostName> getEgresses(String machine)
 	throws InvalidMachineException {
 		return getAMachineData(machine).getEgresses();
 	}
 	
-	public Set<HostName> getForwards(String machine)
+	public final Set<HostName> getForwards(String machine)
 	throws InvalidMachineException {
 		return getAMachineData(machine).getForwards();
 	}
 
-	public Set<HostName> getRequiredIngress(String machine)
+	public final Set<HostName> getIngresses(String machine)
 	throws InvalidMachineException {
 		return getAMachineData(machine).getIngresses();
 	}

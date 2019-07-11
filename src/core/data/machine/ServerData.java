@@ -8,13 +8,15 @@
 package core.data.machine;
 
 import java.io.IOException;
-import java.net.URI;
+
 import java.net.URISyntaxException;
+
 import java.util.Set;
 
 import javax.json.JsonObject;
 import javax.json.stream.JsonParsingException;
 
+import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
 
@@ -46,8 +48,8 @@ public class ServerData extends AMachineData {
 	private SSHConnection sshConnection;
 	private WANConnection wanConnection;
 
-	private String debianDirectory;
-	private URI    debianMirror;
+	private HostName debianMirror;
+	private String   debianDirectory;
 
 	private String keePassDB;
 	
@@ -95,7 +97,7 @@ public class ServerData extends AMachineData {
 		this.sshConnection   = SSHConnection.valueOf(getStringProperty("connection"));
 		this.wanConnection   = WANConnection.valueOf(getStringProperty("extconnection"));
 
-		this.debianMirror    = new URI(getStringProperty("debianmirror"));
+		this.debianMirror    = new HostName(getStringProperty("debianmirror"));
 		this.debianDirectory = getStringProperty("debiandirectory");
 
 		this.keePassDB = getStringProperty("keepassdb");
@@ -125,7 +127,7 @@ public class ServerData extends AMachineData {
 		return wanConnection;
 	}
 
-	public final URI getDebianMirror() {
+	public final HostName getDebianMirror() {
 		return debianMirror;
 	}
 

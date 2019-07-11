@@ -61,6 +61,7 @@ public class NetworkInterfaceData extends AData {
 	private IPAddress   address;
 	private IPAddress   gateway;
 	private IPAddress   subnet;
+	private IPAddress   netmask;
 	private IPAddress   broadcast;
 
 	/**
@@ -163,4 +164,7 @@ public class NetworkInterfaceData extends AData {
 		return this.postDown;
 	}
 
+	final public IPAddress getNetmask() {
+		return this.netmask;
+	}
 }

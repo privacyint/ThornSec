@@ -55,7 +55,7 @@ public class UserDeviceData extends ADeviceData {
 		return this.sshKey;
 	}
 
-	public final String getDefaultPassword() {
+	public final String getDefaultPassphrase() {
 		return this.defaultPassword;
 	}
 }

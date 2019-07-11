@@ -12,3 +12,5 @@ src/core/exec/\.directory
 src/core/iface/\.directory
 
 src/core/model/\.directory
+
+out/
