@@ -1,31 +1,50 @@
-package profile;
+/*
+ * This code is part of the ThornSec project.
+ * 
+ * To learn more, please head to its GitHub repo: @privacyint
+ * 
+ * Pull requests encouraged.
+ */
+package profile.service.web;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Vector;
 
 import core.iface.IUnit;
-import core.model.NetworkModel;
-import core.model.ServerModel;
+import core.model.network.NetworkModel;
+
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileChecksumUnit;
 import core.unit.fs.FileDownloadUnit;
 import core.unit.fs.FilePermsUnit;
+import core.unit.fs.FileUnit;
 import core.unit.fs.GitCloneUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
+import profile.stack.MariaDB;
+import profile.stack.Nginx;
+import profile.stack.NodeJS;
+import core.exception.data.InvalidPortException;
+import core.exception.runtime.InvalidServerModelException;
 
+/**
+ * This profile creates and configures an Etherpad-Lite (https://github.com/ether/etherpad-lite)
+ * instance
+ */
 public class Etherpad extends AStructuredProfile {
 	
 	private Nginx webserver;
-	private PHP php;
+	private NodeJS node;
 	private MariaDB db;
 	
-	public Etherpad(ServerModel me, NetworkModel networkModel) {
-		super("etherpad", me, networkModel);
+	public Etherpad(String label, NetworkModel networkModel) {
+		super(label, networkModel);
 		
-		this.webserver = new Nginx(me, networkModel);
-		this.php = new PHP(me, networkModel);
-		this.db = new MariaDB(me, networkModel);
+		this.webserver = new Nginx(getLabel(), networkModel);
+		this.node      = new NodeJS(getLabel(), networkModel);
+		this.db        = new MariaDB(getLabel(), networkModel);
 		
 		this.db.setUsername("etherpad");
 		this.db.setUserPrivileges("ALL");
@@ -33,70 +52,49 @@ public class Etherpad extends AStructuredProfile {
 		this.db.setDb("etherpad");
 	}
 
-	protected Vector<IUnit> getInstalled() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	@Override
+	protected Set<IUnit> getInstalled()
+	throws InvalidServerModelException {
+		Set<IUnit> units = new HashSet<IUnit>();
 
 		units.addAll(webserver.getInstalled());
-		units.addAll(php.getInstalled());
+		units.addAll(node.getInstalled());
 		units.addAll(db.getInstalled());
 		
-		units.addElement(new InstalledUnit("gzip", "proceed", "gzip"));
-		units.addElement(new InstalledUnit("git", "gzip_installed", "git"));
-		units.addElement(new InstalledUnit("curl", "git_installed", "curl"));
-		units.addElement(new InstalledUnit("python", "curl_installed", "python"));
-		units.addElement(new InstalledUnit("libssl", "python_installed", "libssl-dev"));
-		units.addElement(new InstalledUnit("pkg_config", "libssl_installed", "pkg-config"));
-		units.addElement(new InstalledUnit("build_essential", "pkg_config_installed", "build-essential"));
-		
-		return units;
-	}
-	
-	protected Vector<IUnit> getPersistentConfig() {
-		Vector<IUnit> units =  new Vector<IUnit>();
+		units.add(new InstalledUnit("gzip", "proceed", "gzip"));
+		units.add(new InstalledUnit("git", "gzip_installed", "git"));
+		units.add(new InstalledUnit("curl", "git_installed", "curl"));
+		units.add(new InstalledUnit("python", "curl_installed", "python"));
+		units.add(new InstalledUnit("libssl", "python_installed", "libssl-dev"));
+		units.add(new InstalledUnit("pkg_config", "libssl_installed", "pkg-config"));
 
-		units.addAll(webserver.getPersistentConfig());
-		units.addAll(db.getPersistentConfig());
-		units.addAll(php.getPersistentConfig());	
-		
-		units.addElement(new FileDownloadUnit("nodejs", "build_essential_installed",
-				"https://deb.nodesource.com/setup_9.x",
-				"/root/nodejs.sh",
-				"nodejs couldn't be downloaded.  Etherpad's installation will fail."));
-		
-		units.addElement(new FileChecksumUnit("nodejs", "nodejs_downloaded",
-				"/root/nodejs.sh",
-				"98321bbfa4f4b4108fedc7153666e0a0e5423787f6b9b3285d1b2e71336e114e1ac861e46d2b0ca40790295b98d0bb479bd4e68321b6e03b43eab42b7d09dc35",
-				"nodejs's checksum doesn't match.  This could indicate a failed download, MITM attack, or a newer version than our code supports.  Etherpad's installation will fail."));
-		
-		units.addElement(new FilePermsUnit("nodejs_is_executable", "nodejs_checksum",
-				"/root/nodejs.sh",
-				"755",
-				"nodejs couldn't be set to be executable.  Etherpad's installation will fail."));
-		
-		units.addElement(new SimpleUnit("nodejs_setup_environment", "nodejs_is_executable_chmoded",
-				"sudo -E /root/nodejs.sh",
-				"sudo test -f /etc/apt/sources.list.d/nodesource.list && echo 'pass' || echo 'fail'", "pass", "pass",
-				"nodejs's setup environment couldn't be configured.  Etherpad's installation will fail."));
-
-		units.addElement(new InstalledUnit("nodejs", "nodejs_setup_environment", "nodejs"));
-		
-		units.addElement(new GitCloneUnit("etherpad", "nginx_installed",
+		units.add(new GitCloneUnit("etherpad", "nginx_installed",
 				"https://github.com/ether/etherpad-lite.git",
 				"/root/etherpad-lite",
 				"Etherpad couldn't be downloaded.  Its installation will, therefore, fail."));
 		
-		units.addElement(new SimpleUnit("etherpad_install_dependencies", "etherpad_cloned",
+		units.add(new SimpleUnit("etherpad_install_dependencies", "etherpad_cloned",
 				"sudo /root/etherpad-lite/bin/installDeps.sh",
-				"sudo test -f /root/etherpad-lite/settings.json && echo 'pass' || echo 'fail'", "pass", "pass",
+				"sudo test -f /root/etherpad-lite/settings.json && echo pass || echo fail", "pass", "pass",
 				"Couldn't install Etherpad's dependencies.  Etherpad's installation will fail."));
 		
-		units.addElement(new SimpleUnit("etherpad_installed", "etherpad_install_dependencies",
+		units.add(new SimpleUnit("etherpad_installed", "etherpad_install_dependencies",
 				"sudo cp -a /root/etherpad-lite/. /media/data/www/",
 				"sudo test -f /media/data/www/settings.json && echo 'pass' || echo 'fail'", "pass", "pass",
 				"Couldn't move Etherpad to the correct directory.  Etherpad won't be web accessible."));
+
+		return units;
+	}
+	
+	protected Set<IUnit> getPersistentConfig() {
+		Set<IUnit> units =  new HashSet<IUnit>();
+
+		units.addAll(webserver.getPersistentConfig());
+		units.addAll(db.getPersistentConfig());
+		units.addAll(node.getPersistentConfig());	
 		
-		units.addElement(new SimpleUnit("etherpad_mysql_password", "etherpad_installed",
-				"ETHERPAD_PASSWORD=`sudo grep \"password\" /media/data/www/settings.json | head -1 | awk '{ print $2 }' | tr -d \"\\\",\"`; [[ -z $ETHERPAD_PASSWORD ]] && ETHERPAD_PASSWORD=`openssl rand -hex 32`",
+		units.add(new SimpleUnit("etherpad_mysql_password", "etherpad_installed",
+				"ETHERPAD_PASSWORD=`sudo grep \"password\" /media/data/www/settings.json | head -1 | awk '{ print $2 }' | tr -d \"',\"`; [[ -z $ETHERPAD_PASSWORD ]] && ETHERPAD_PASSWORD=`openssl rand -hex 32`",
 				"echo $ETHERPAD_PASSWORD", "", "fail",
 				"Couldn't set the Etherpad database user's password.  Etherpad will be left in a broken state."));
 		
@@ -104,109 +102,108 @@ public class Etherpad extends AStructuredProfile {
 		units.addAll(db.checkUserExists());
 		units.addAll(db.checkDbExists());
 		
-		String settings = "";
-		settings += "{";
-		settings += "\n";
-		settings += "	\\\"title\\\": \\\"Etherpad\\\",\n";
-		settings += "	\\\"favicon\\\": \\\"favicon.ico\\\",\n";
-		settings += "	\\\"ip\\\": \\\"127.0.0.1\\\",\n";
-		settings += "	\\\"port\\\": \\\"8080\\\",\n";
-		settings += "	\\\"showSettingsInAdminPage\\\": \\\"true\\\",\n";
-		settings += "\n";
-		settings += "	\\\"dbType\\\": \\\"mysql\\\",\n";
-		settings += "	\\\"dbSettings\\\": {\n";
-		settings += "		\\\"user\\\": \\\"etherpad\\\",\n";
-		settings += "		\\\"host\\\": \\\"localhost\\\",\n";
-		settings += "		\\\"password\\\": \\\"${ETHERPAD_PASSWORD}\\\",\n";
-		settings += "		\\\"database\\\": \\\"etherpad\\\",\n";
-		settings += "		\\\"charset\\\": \\\"utf8mb4\\\"\n";
-		settings += "	},\n";
-		settings += "\n";
-		settings += "	\\\"defaultPadText\\\": \\\"Welcome to Etherpad!\\n\\nThis pad text is synchronized as you type, so that everyone viewing this page sees the same text. This allows you to collaborate seamlessly on documents!\\n\\nGet involved with Etherpad at http:\\/\\/etherpad.org\\n\\\",\n";
-		settings += "	\\\"suppressErrorsInPadText\\\": false,\n";
-		settings += "	\\\"requireSession\\\" : false,\n";
-		settings += "	\\\"editOnly\\\": false,\n";
-		settings += "	\\\"sessionNoPassword\\\": false,\n";
-		settings += "	\\\"minify\\\": true,\n";
-		settings += "	\\\"maxAge\\\": 0,\n";
-		settings += "	\\\"abiword\\\": null,\n";
-		settings += "	\\\"soffice\\\": null,\n";
-		settings += "	\\\"tidyHtml\\\": null,\n";
-		settings += "	\\\"allowUnknownFileEnds\\\": true,\n";
-		settings += "	\\\"requireAuthentication\\\": false,\n";
-		settings += "	\\\"requireAuthorization\\\": false,\n";
-		settings += "	\\\"trustProxy\\\": true,\n";
-		settings += "	\\\"disableIPlogging\\\": false,\n";
-		settings += "\n";
-		settings += "	\\\"users\\\": {\n";
-		settings += "	},\n";
-		settings += "\n";
-		settings += "	\\\"socketTransportProtocols\\\" : [\\\"xhr-polling\\\", \\\"jsonp-polling\\\", \\\"htmlfile\\\"],\n";
-		settings += "	\\\"loadTest\\\": false,\n";
-		settings += "	\\\"indentationOnNewLine\\\": true,\n";
-		settings += "\n";
-		settings += "	\\\"toolbar\\\": {\n";
-		settings += "		\\\"left\\\": [\n";
-		settings += "			[\\\"bold\\\", \\\"italic\\\", \\\"underline\\\", \\\"strikethrough\\\"],\n";
-		settings += "			[\\\"orderedlist\\\", \\\"unorderedlist\\\", \\\"indent\\\", \\\"outdent\\\"],\n";
-		settings += "			[\\\"undo\\\", \\\"redo\\\"],\n";
-		settings += "			[\\\"clearauthorship\\\"]\n";
-		settings += "		],\n";
-		settings += "		\\\"right\\\": [\n";
-		settings += "			[\\\"importexport\\\", \\\"timeslider\\\", \\\"savedrevision\\\"],\n";
-		settings += "			[\\\"settings\\\", \\\"embed\\\"],\n";
-		settings += "			[\\\"showusers\\\"]\n";
-		settings += "		],\n";
-		settings += "		\\\"timeslider\\\": [\n";
-		settings += "			[\\\"timeslider_export\\\", \\\"timeslider_returnToPad\\\"]\n";
-		settings += "		]\n";
-		settings += "	},\n";
-		settings += "\n";
-		settings += "	\\\"loglevel\\\": \\\"INFO\\\",\n";
-		settings += "}";
+		FileUnit settings = new FileUnit("settings_conf", "etherpad_installed", "/media/data/www/settings.json");
 		
-		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("etherpad", "etherpad_installed", settings, "/media/data/www/settings.json"));
+		settings.appendLine("{");
+		settings.appendCarriageReturn();
+		settings.appendLine("   'title': 'Etherpad',");
+		settings.appendLine("	'favicon': 'favicon.ico',");
+		settings.appendLine("	'ip': '127.0.0.1',");
+		settings.appendLine("	'port': '8080',");
+		settings.appendLine("	'showSettingsInAdminPage': 'true',");
+		settings.appendCarriageReturn();
+		settings.appendLine("	'dbType': 'mysql',");
+		settings.appendLine("	'dbSettings': {");
+		settings.appendLine("		'user': 'etherpad',");
+		settings.appendLine("		'host': 'localhost',");
+		settings.appendLine("		'password': '${ETHERPAD_PASSWORD}',");
+		settings.appendLine("		'database': 'etherpad',");
+		settings.appendLine("		'charset': 'utf8mb4'");
+		settings.appendLine("	},");
+		settings.appendCarriageReturn();
+		settings.appendLine("	'defaultPadText': 'Welcome to Etherpad!\\n\\nThis pad text is synchronized as you type, so that everyone viewing this page sees the same text. This allows you to collaborate seamlessly on documents!\\n\\nGet involved with Etherpad at http:\\/\\/etherpad.org\\n',");
+		settings.appendLine("	'suppressErrorsInPadText': false,");
+		settings.appendLine("	'requireSession' : false,");
+		settings.appendLine("	'editOnly': false,");
+		settings.appendLine("	'sessionNoPassword': false,");
+		settings.appendLine("	'minify': true,");
+		settings.appendLine("	'maxAge': 0,");
+		settings.appendLine("	'abiword': null,");
+		settings.appendLine("	'soffice': null,");
+		settings.appendLine("	'tidyHtml': null,");
+		settings.appendLine("	'allowUnknownFileEnds': true,");
+		settings.appendLine("	'requireAuthentication': false,");
+		settings.appendLine("	'requireAuthorization': false,");
+		settings.appendLine("	'trustProxy': true,");
+		settings.appendLine("	'disableIPlogging': false,");
+		settings.appendCarriageReturn();
+		settings.appendLine("	'users': {");
+		settings.appendLine("	},");
+		settings.appendCarriageReturn();
+		settings.appendLine("	'socketTransportProtocols' : ['xhr-polling', 'jsonp-polling', 'htmlfile'],");
+		settings.appendLine("	'loadTest': false,");
+		settings.appendLine("	'indentationOnNewLine': true,");
+		settings.appendCarriageReturn();
+		settings.appendLine("	'toolbar': {");
+		settings.appendLine("		'left': [");
+		settings.appendLine("			['bold', 'italic', 'underline', 'strikethrough'],");
+		settings.appendLine("			['orderedlist', 'unorderedlist', 'indent', 'outdent'],");
+		settings.appendLine("			['undo', 'redo'],");
+		settings.appendLine("			['clearauthorship']");
+		settings.appendLine("		],");
+		settings.appendLine("		'right': [");
+		settings.appendLine("			['importexport', 'timeslider', 'savedrevision'],");
+		settings.appendLine("			['settings', 'embed'],");
+		settings.appendLine("			['showusers']");
+		settings.appendLine("		],");
+		settings.appendLine("		'timeslider': [");
+		settings.appendLine("			['timeslider_export', 'timeslider_returnToPad']");
+		settings.appendLine("		]");
+		settings.appendLine("	},");
+		settings.appendCarriageReturn();
+		settings.appendLine("	'loglevel': 'INFO',");
+		settings.appendLine("}");
 		
 		//https://github.com/ether/etherpad-lite/wiki/How-to-deploy-Etherpad-Lite-as-a-service
 		String serviceConf = "";
-		serviceConf += "[Unit]\n";
-		serviceConf += "Description=etherpad-lite (real-time collaborative document editing)\n";
-		serviceConf += "After=syslog.target network.target\n";
-		serviceConf += "\n";
-		serviceConf += "[Service]\n";
-		serviceConf += "Type=simple\n";
-		serviceConf += "User=nginx\n";
-		serviceConf += "Group=nginx\n";
-		serviceConf += "ExecStart=/media/data/www/bin/run.sh\n";
-		serviceConf += "\n";
-		serviceConf += "[Install]\n";
+		serviceConf += "[Unit]");
+		serviceConf += "Description=etherpad-lite (real-time collaborative document editing)");
+		serviceConf += "After=syslog.target network.target");
+		serviceConf += "");
+		serviceConf += "[Service]");
+		serviceConf += "Type=simple");
+		serviceConf += "User=nginx");
+		serviceConf += "Group=nginx");
+		serviceConf += "ExecStart=/media/data/www/bin/run.sh");
+		serviceConf += "");
+		serviceConf += "[Install]");
 		serviceConf += "WantedBy=multi-user.target";
 
-		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("etherpad_service", "etherpad_installed", serviceConf, "/etc/systemd/system/etherpad-lite.service"));
+		units.add(((ServerModel)me).getConfigsModel().addConfigFile("etherpad_service", "etherpad_installed", serviceConf, "/etc/systemd/system/etherpad-lite.service"));
 
-		units.addElement(new SimpleUnit("etherpad_service_enabled", "etherpad_service_config",
+		units.add(new SimpleUnit("etherpad_service_enabled", "etherpad_service_config",
 				"sudo systemctl enable etherpad-lite",
 				"sudo systemctl is-enabled etherpad-lite", "enabled", "pass",
 				"Couldn't set Etherpad to auto-start on boot.  You will need to manually start the service (\"sudo service etherpad-lite start\") on reboot."));
 				
-		units.addElement(new RunningUnit("etherpad", "etherpad-lite", "etherpad-lite"));
+		units.add(new RunningUnit("etherpad", "etherpad-lite", "etherpad-lite"));
 		
-		((ServerModel)me).getProcessModel().addProcess("node /media/data/www/node_modules/ep_etherpad-lite/node/server.js$");
+		networkModel.getServerModel(getLabel()).addProcessString("node /media/data/www/node_modules/ep_etherpad-lite/node/server.js$");
 		
 		String nginxConf = "";
-		nginxConf += "upstream etherpad-lite {\n";
-	    nginxConf += "	server 127.0.0.1:8080;\n";
-	    nginxConf += "}\n";
-	    nginxConf += "\n";
-	    nginxConf += "server {\n";
-	    nginxConf += "	listen 80;\n";
-	    nginxConf += "\n";
-	    nginxConf += "	location / {\n";
-	    nginxConf += "		proxy_buffering off;\n";
-	    nginxConf += "		proxy_pass http://etherpad-lite/;\n";
-	    nginxConf += "		proxy_pass_header Server;\n";
-	    nginxConf += "	}\n";
-		nginxConf += "    include /media/data/nginx_custom_conf_d/default.conf;\n";
+		nginxConf += "upstream etherpad-lite {");
+	    nginxConf += "	server 127.0.0.1:8080;");
+	    nginxConf += "}");
+	    nginxConf += "");
+	    nginxConf += "server {");
+	    nginxConf += "	listen 80;");
+	    nginxConf += "");
+	    nginxConf += "	location / {");
+	    nginxConf += "		proxy_buffering off;");
+	    nginxConf += "		proxy_pass http://etherpad-lite/;");
+	    nginxConf += "		proxy_pass_header Server;");
+	    nginxConf += "	}");
+		nginxConf += "    include /media/data/nginx_custom_conf_d/default.conf;");
 		nginxConf += "}";
 		
 		webserver.addLiveConfig("default", nginxConf);	
@@ -214,28 +211,31 @@ public class Etherpad extends AStructuredProfile {
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getLiveConfig()
+	throws InvalidServerModelException {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		units.addAll(webserver.getLiveConfig());
-		units.addAll(php.getLiveConfig());
+		units.addAll(node.getLiveConfig());
 		units.addAll(db.getLiveConfig());
 						
 		return units;
 	}
 	
-	public Vector<IUnit> getNetworking() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	@Override
+	public Set<IUnit> getPersistentFirewall()
+	throws InvalidServerModelException, InvalidPortException {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		units.addAll(webserver.getNetworking());
-		//Let's open this box up to most of the internet.  Thanks, node & etherpad!
-		me.addRequiredEgressDestination("github.com");
-		me.addRequiredEgressDestination("etherpad.org");
-		me.addRequiredEgressDestination("beta.etherpad.org");
-		me.addRequiredEgressDestination("code.jquery.com");
-		me.addRequiredEgressDestination("deb.nodesource.com");
-		me.addRequiredEgressDestination("npmjs.org");
-		me.addRequiredEgressDestination("registry.npmjs.org");
+		units.addAll(webserver.getPersistentFirewall());
+		units.addAll(node.getPersistentFirewall());
+		units.addAll(db.getPersistentFirewall());
+		
+		//Let's open this box up to most of the internet.
+		networkModel.getServerModel(getLabel()).addEgress("github.com");
+		networkModel.getServerModel(getLabel()).addEgress("etherpad.org");
+		networkModel.getServerModel(getLabel()).addEgress("beta.etherpad.org");
+		networkModel.getServerModel(getLabel()).addEgress("code.jquery.com");
 
 		return units;
 	}

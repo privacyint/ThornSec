@@ -10,19 +10,19 @@ public class Wifi extends AStructuredProfile {
 		super(label, networkModel);
 	}
 /*
-	protected Vector<IUnit> getInstalled(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getInstalled(String server, NetworkModel model) {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		units.addElement(new InstalledUnit("hostapd", "proceed", "hostapd"));
+		units.add(new InstalledUnit("hostapd", "proceed", "hostapd"));
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig(String server, NetworkModel model) {
-		Vector<IUnit> units =  new Vector<IUnit>();
+	protected Set<IUnit> getPersistentConfig(String server, NetworkModel model) {
+		Set<IUnit> units =  new HashSet<IUnit>();
 		
 		String hostapdconf = "DAEMON_CONF=\"/etc/hostapd/hostapd.conf\"";
-		units.addElement(new FileUnit("wifi_set_config_location", "hostapd_installed", hostapdconf, "/etc/default/hostapd"));
+		units.add(new FileUnit("wifi_set_config_location", "hostapd_installed", hostapdconf, "/etc/default/hostapd"));
 
 		JsonArray interfaces = (JsonArray) model.getData().getPropertyObjectArray(server, "wifi");
 		for (int i = 0; i < interfaces.size(); ++i) {
@@ -32,7 +32,7 @@ public class Wifi extends AStructuredProfile {
 			
 			//We're declaring a real iface
 			if (!iface.equals(null)) {
-				units.addElement(model.getServerModel(server).getInterfaceModel().addIface("wifi_router_iface_" + i,
+				units.add(model.getServerModel(server).getInterfaceModel().addIface("wifi_router_iface_" + i,
 						"manual",
 						iface,
 						null,
@@ -50,7 +50,7 @@ public class Wifi extends AStructuredProfile {
 		}
 		
 		//Hostapd only really acts as a switch, so let's add it to a bridge to keep config overheads down
-		units.addElement(model.getServerModel(server).getInterfaceModel().addIface("wifi_bridge",
+		units.add(model.getServerModel(server).getInterfaceModel().addIface("wifi_bridge",
 				"manual",
 				iface,
 				null,
@@ -69,8 +69,8 @@ public class Wifi extends AStructuredProfile {
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getLiveConfig(String server, NetworkModel model) {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		String hostapdconf = "";
 		
@@ -113,13 +113,13 @@ public class Wifi extends AStructuredProfile {
 			}
 		}
 
-		units.addElement(new FileUnit("wifi_set_config", "hostapd_installed", hostapdconf, "/etc/hostapd/hostapd.conf"));
+		units.add(new FileUnit("wifi_set_config", "hostapd_installed", hostapdconf, "/etc/hostapd/hostapd.conf"));
 
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentFirewall(String server, NetworkModel model) {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 
 		return units;

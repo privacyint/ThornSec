@@ -1,10 +1,10 @@
-package profile;
+package profile.service.web;
 
 import java.util.Vector;
 
 import core.iface.IUnit;
-import core.model.NetworkModel;
-import core.model.ServerModel;
+import core.model.network.NetworkModel;
+
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileEditUnit;
@@ -16,12 +16,12 @@ public class Horde extends AStructuredProfile {
 	private PHP php;
 	private MariaDB db;
 	
-	public Horde(ServerModel me, NetworkModel networkModel) {
-		super("horde", me, networkModel);
+	public Horde(String label, NetworkModel networkModel) {
+		super("horde", networkModel);
 		
-		this.webserver = new Nginx(me, networkModel);
-		this.php = new PHP(me, networkModel);
-		this.db = new MariaDB(me, networkModel);
+		this.webserver = new Nginx(getLabel(), networkModel);
+		this.php = new PHP(getLabel(), networkModel);
+		this.db = new MariaDB(getLabel(), networkModel);
 		
 		this.db.setUsername("horde");
 		this.db.setUserPrivileges("ALL");
@@ -29,30 +29,30 @@ public class Horde extends AStructuredProfile {
 		this.db.setDb("horde");
 	}
 
-	protected Vector<IUnit> getInstalled() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getInstalled() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		units.addAll(webserver.getInstalled());
 		units.addAll(php.getInstalled());
 		units.addAll(db.getInstalled());
 		
-		units.addElement(new InstalledUnit("php_pear", "proceed", "php-pear"));
+		units.add(new InstalledUnit("php_pear", "proceed", "php-pear"));
 		
-		units.addElement(new SimpleUnit("horde_channel_discover", "php_pear_installed",
+		units.add(new SimpleUnit("horde_channel_discover", "php_pear_installed",
 				"sudo pear channel-discover per.horde.org",
 				"sudo pear channel-info pear.horde.org", "Unknown channel \"pear.horde.org\"", "fail"));
 		
-		units.addElement(new FileEditUnit("pear_base_dir", "horde_channel_discover", "/usr/share/php/htdocs", "/media/data/www", "/etc/pear/pear.conf"));
+		units.add(new FileEditUnit("pear_base_dir", "horde_channel_discover", "/usr/share/php/htdocs", "/media/data/www", "/etc/pear/pear.conf"));
 		
-		units.addElement(new SimpleUnit("horde_installed", "pear_base_dir_edited",
+		units.add(new SimpleUnit("horde_installed", "pear_base_dir_edited",
 				"sudo pear install horde/horde_role",
 				"sudo pear list-all | grep horde", "", "fail"));
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig() {
-		Vector<IUnit> units =  new Vector<IUnit>();
+	protected Set<IUnit> getPersistentConfig() {
+		Set<IUnit> units =  new HashSet<IUnit>();
 		
 		String nginxConf = "";
 		nginxConf += "server {\n";
@@ -106,14 +106,14 @@ public class Horde extends AStructuredProfile {
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getLiveConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		units.addAll(webserver.getLiveConfig());
 		units.addAll(php.getLiveConfig());
 		units.addAll(db.getLiveConfig());
 		
-		units.addElement(new SimpleUnit("horde_mysql_password", "proceed",
+		units.add(new SimpleUnit("horde_mysql_password", "proceed",
 				"HORDE_PASSWORD=`grep \"password\" /media/data/www/sites/default/settings.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',\"`; [[ -z $HORDE_PASSWORD ]] && HORDE_PASSWORD=`openssl rand -hex 32`",
 				"echo $HORDE_PASSWORD", "", "fail"));
 		
@@ -124,10 +124,10 @@ public class Horde extends AStructuredProfile {
 		return units;
 	}
 	
-	public Vector<IUnit> getNetworking() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	public Set<IUnit> getPersistentFirewall() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		units.addAll(webserver.getNetworking());
+		units.addAll(webserver.getPersistentFirewall());
 
 		return units;
 	}

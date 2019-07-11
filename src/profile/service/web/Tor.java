@@ -1,10 +1,10 @@
-package profile;
+package profile.service.web;
 
 import java.util.Vector;
 
 import core.iface.IUnit;
-import core.model.NetworkModel;
-import core.model.ServerModel;
+import core.model.network.NetworkModel;
+
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
@@ -16,17 +16,17 @@ public class Tor extends AStructuredProfile {
 	
 	private Webproxy proxy;
 	
-	public Tor(ServerModel me, NetworkModel networkModel) {
-		super("tor", me, networkModel);
+	public Tor(String label, NetworkModel networkModel) {
+		super("tor", networkModel);
 		
-		this.proxy = new Webproxy(me, networkModel);
+		this.proxy = new Webproxy(getLabel(), networkModel);
 	}
 
-	protected Vector<IUnit> getInstalled() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getInstalled() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		units.addElement(new InstalledUnit("tor_keyring", "tor_pgp", "deb.torproject.org-keyring"));
-		units.addElement(new InstalledUnit("tor", "tor_keyring_installed", "tor"));
+		units.add(new InstalledUnit("tor_keyring", "tor_pgp", "deb.torproject.org-keyring"));
+		units.add(new InstalledUnit("tor", "tor_keyring_installed", "tor"));
 		
 		((ServerModel)me).getUserModel().addUsername("debian-tor");
 		
@@ -35,20 +35,20 @@ public class Tor extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getPersistentConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("tor", "tor_installed", "debian-tor", "debian-tor", "0700"));
-		units.addAll(((ServerModel)me).getBindFsModel().addLogBindPoint("tor", "tor_installed", "debian-tor", "0750"));
+		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("tor", "tor_installed", "debian-tor", "debian-tor", "0700"));
+		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addLogBindPoint("tor", "tor_installed", "debian-tor", "0750"));
 
-		units.addElement(new DirUnit("torhs_files_dir", "tor_installed", "/var/lib/tor/hidden_service"));
+		units.add(new DirUnit("torhs_files_dir", "tor_installed", "/var/lib/tor/hidden_service"));
 		
-		units.addElement(new SimpleUnit("torhs_hostname", "tor_data_mounted",
+		units.add(new SimpleUnit("torhs_hostname", "tor_data_mounted",
 				//Copy over the new hostname file if one doesn't already exist, or replace the new hostname if we already have one
 				"sudo [ ! -f /media/data/tor/hostname ] && cp /var/lib/tor/hidden_service/hostname /media/data/tor/hostname || cp /media/data/tor/hostname /var/lib/tor/hidden_service/hostname",
 				"sudo cmp --silent /media/data/tor/hostname /var/lib/tor/hidden_service/hostname && echo pass || echo fail", "pass", "pass"));
 
-		units.addElement(new SimpleUnit("torhs_private_key", "tor_data_mounted",
+		units.add(new SimpleUnit("torhs_private_key", "tor_data_mounted",
 				//Copy over the new private key file if one doesn't already exist, or replace the new private key if we already have one
 				"sudo [ ! -f /media/data/tor/private_key ] && cp /var/lib/tor/hidden_service/private_key /media/data/tor/private_key || cp /media/data/tor/private_key /var/lib/tor/hidden_service/private_key",
 				"sudo cmp --silent /media/data/tor/private_key /var/lib/tor/hidden_service/private_key && echo pass || echo fail", "pass", "pass"));
@@ -71,7 +71,7 @@ public class Tor extends AStructuredProfile {
 		service += "[Install]\n";
 		service += "WantedBy=multi-user.target";
 
-		units.addElement(new FileUnit("nginx_service", "nginx_installed", service, "/etc/systemd/system/multi-user.target.wants/nginx.service"));
+		units.add(new FileUnit("nginx_service", "nginx_installed", service, "/etc/systemd/system/multi-user.target.wants/nginx.service"));
 */	
 		//Configs here loosely based on the eotk (c) Alec Muffet
 		//https://github.com/alecmuffett/eotk
@@ -97,7 +97,7 @@ public class Tor extends AStructuredProfile {
 
 		units.add(new FileUnit("tor_config", "tor_installed", torConfig, "/etc/tor/torrc"));
 
-		units.addElement(new SimpleUnit("tor_service_enabled", "tor_config",
+		units.add(new SimpleUnit("tor_service_enabled", "tor_config",
 				"sudo systemctl enable tor",
 				"sudo systemctl is-enabled tor", "enabled", "pass",
 				"Couldn't set tor to auto-start on boot.  You will need to manually start the service (\"sudo service tor start\") on reboot."));
@@ -107,10 +107,10 @@ public class Tor extends AStructuredProfile {
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getLiveConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
 
-		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("tls", "proceed", "root", "root", "600"));
+		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("tls", "proceed", "root", "root", "600"));
 		
 		String proxyConfig = "";
 		proxyConfig += "include /etc/nginx/includes/ssl_params;\n";
@@ -161,7 +161,7 @@ public class Tor extends AStructuredProfile {
 		proxyConfig += "\n";
 		proxyConfig += "    location / {\n";
 		//needs to be ip address
-		proxyConfig += "        proxy_pass \\\"\\$scheme://" + networkModel.getServerModel((networkModel.getData().getPropertyArray(me.getLabel(), "proxy")[0])).getIP() + "\\\";\n";
+		proxyConfig += "        proxy_pass \\\"\\$scheme://" + networkModel.getServerModel((networkModel.getData().getPropertyArray(getLabel(), "proxy")[0])).getIP() + "\\\";\n";
 		proxyConfig += "        proxy_http_version 1.1;\n";
 		proxyConfig += "        proxy_set_header Accept-Encoding \\\"identity\\\";\n";
 		proxyConfig += "        proxy_set_header Connection \\\"upgrade\\\";\n";
@@ -174,22 +174,22 @@ public class Tor extends AStructuredProfile {
 		
 		proxy.setLiveConfig(proxyConfig);
 		
-		units.addElement(new RunningUnit("tor", "tor", "/usr/bin/tor"));
-		((ServerModel)me).getProcessModel().addProcess("/usr/bin/tor --defaults-torrc /usr/share/tor/tor-service-defaults-torrc -f /etc/tor/torrc --RunAsDaemon 0$");
+		units.add(new RunningUnit("tor", "tor", "/usr/bin/tor"));
+		networkModel.getServerModel(getLabel()).addProcessString("/usr/bin/tor --defaults-torrc /usr/share/tor/tor-service-defaults-torrc -f /etc/tor/torrc --RunAsDaemon 0$");
 		units.addAll(proxy.getLiveConfig());
 		
 		return units;
 	}
 	
-	public Vector<IUnit> getNetworking() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	public Set<IUnit> getPersistentFirewall() {
+		Set<IUnit> units = new HashSet<IUnit>();
 
-		units.addAll(proxy.getNetworking());
+		units.addAll(proxy.getPersistentFirewall());
 
 		((ServerModel)me).getAptSourcesModel().addAptSource("tor", "proceed", "deb http://deb.torproject.org/torproject.org stretch main", "keys.gnupg.net", "A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
 
 		//Allow the server to call out everywhere
-		me.addRequiredEgressDestination("255.255.255.255");
+		networkModel.getServerModel(getLabel()).addEgress("255.255.255.255");
 		
 		return units;
 	}

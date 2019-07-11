@@ -138,7 +138,7 @@ public class Service extends AStructuredProfile {
 		return units;
 	}
 
-/*	public Set<IUnit> getNetworking() {
+/*	public Set<IUnit> getPersistentFirewall() {
 		Set<IUnit> units = new HashSet<IUnit>();
 
 		String metal = networkModel.getData().getMetal(getLabel());
@@ -171,7 +171,7 @@ public class Service extends AStructuredProfile {
 			}
 			
 			im.addIface(new InterfaceData(
-							me.getLabel(),
+							getLabel(),
 							lanIface.getKey(),
 							mac,
 							"static",
@@ -187,7 +187,7 @@ public class Service extends AStructuredProfile {
 			++i;
 		}
 
-		me.addRequiredEgressDestination("download.virtualbox.org");
+		networkModel.getServerModel(getLabel()).addEgressDestination("download.virtualbox.org");
 
 		return units;
 	}*/

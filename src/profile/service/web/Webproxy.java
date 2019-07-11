@@ -1,12 +1,12 @@
-package profile;
+package profile.service.web;
 
 import java.util.Objects;
 import java.util.Vector;
 
 import core.iface.IUnit;
 import core.model.MachineModel;
-import core.model.NetworkModel;
-import core.model.ServerModel;
+import core.model.network.NetworkModel;
+
 import core.profile.AStructuredProfile;
 import core.unit.fs.CustomFileUnit;
 import core.unit.fs.DirUnit;
@@ -17,32 +17,32 @@ public class Webproxy extends AStructuredProfile {
 	private Nginx webserver;
 	private String liveConfig;
 	
-	public Webproxy(ServerModel me, NetworkModel networkModel) {
-		super("webproxy", me, networkModel);
+	public Webproxy(String label, NetworkModel networkModel) {
+		super("webproxy", networkModel);
 
-		this.webserver = new Nginx(me, networkModel);
+		this.webserver = new Nginx(getLabel(), networkModel);
 		this.liveConfig = "";
 	}
 
-	protected Vector<IUnit> getInstalled() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getInstalled() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		units.addAll(webserver.getInstalled());
-		units.addElement(new InstalledUnit("openssl", "openssl"));
+		units.add(new InstalledUnit("openssl", "openssl"));
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig() {
-		Vector<IUnit> units =  new Vector<IUnit>();
+	protected Set<IUnit> getPersistentConfig() {
+		Set<IUnit> units =  new HashSet<IUnit>();
 
 		units.addAll(webserver.getPersistentConfig());
 
 		//Should we pass through real IPs?
-		Boolean passThroughIps = Boolean.parseBoolean(networkModel.getData().getProperty(me.getLabel(), "passrealips", false));
+		Boolean passThroughIps = Boolean.parseBoolean(networkModel.getData().getProperty(getLabel(), "passrealips", false));
 		
 		//First, build our ssl config
-		units.addElement(new DirUnit("nginx_ssl_include_dir", "proceed", "/etc/nginx/includes"));
+		units.add(new DirUnit("nginx_ssl_include_dir", "proceed", "/etc/nginx/includes"));
 		
 		String sslConf = "";
 		sslConf += "    ssl_session_timeout 1d;\n";
@@ -61,7 +61,7 @@ public class Webproxy extends AStructuredProfile {
 		sslConf += "    resolver " + networkModel.getData().getUpstreamDNSServers()[0].getHostAddress() + " valid=300s;\n";
 		sslConf += "    resolver_timeout 5s;";
 		
-		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("nginx_ssl", "proceed", sslConf, "/etc/nginx/includes/ssl_params"));
+		units.add(((ServerModel)me).getConfigsModel().addConfigFile("nginx_ssl", "proceed", sslConf, "/etc/nginx/includes/ssl_params"));
 		
 		String headersConf = "";
 		headersConf += "    add_header X-Frame-Options                   'SAMEORIGIN' always;\n";
@@ -84,7 +84,7 @@ public class Webproxy extends AStructuredProfile {
 			headersConf += "    proxy_set_header X-Real-IP          \\$remote_addr;";
 		}
 		
-		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("nginx_headers", "proceed", headersConf, "/etc/nginx/includes/header_params"));
+		units.add(((ServerModel)me).getConfigsModel().addConfigFile("nginx_headers", "proceed", headersConf, "/etc/nginx/includes/header_params"));
 		
 		String sslConfig = "";
 		sslConfig += "server {\n";
@@ -92,18 +92,18 @@ public class Webproxy extends AStructuredProfile {
 		sslConfig += "    return 301 https://\\$host\\$request_uri;\n";
 		sslConfig += "}";
 
-		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("nginx_custom_blocks", "nginx_installed", "nginx", "nginx", "0750"));
+		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("nginx_custom_blocks", "nginx_installed", "nginx", "nginx", "0750"));
 
 		webserver.addLiveConfig("default", sslConfig);
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getLiveConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		if (this.liveConfig.equals("")) {
-			String[] backends = networkModel.getData().getPropertyArray(me.getLabel(), "proxy");
+			String[] backends = networkModel.getData().getPropertyArray(getLabel(), "proxy");
 			Boolean isDefault = true;
 			
 			for (String backend : backends) {
@@ -111,7 +111,7 @@ public class Webproxy extends AStructuredProfile {
 				MachineModel backendObj = networkModel.getMachineModel(backend);
 				
 				if (Objects.equals(backendObj, null)) {
-					System.out.println("Server/device " + backend + " doesn't exist.  " + me.getLabel() + " cannot proxy to it...");
+					System.out.println("Server/device " + backend + " doesn't exist.  " + getLabel() + " cannot proxy to it...");
 					continue; //Skip to the next
 				}
 				
@@ -121,8 +121,8 @@ public class Webproxy extends AStructuredProfile {
 
 				String nginxConf = "";
 				
-				units.addElement(new DirUnit(backend + "_log_dir", "proceed", logDir, "Could not create the directory for " + backend + "'s logs. Nginx will refuse to start."));
-				units.addAll(((ServerModel)me).getBindFsModel().addBindPoint(backend + "_tls_certs", "proceed", "/media/metaldata/tls/" + backend, "/media/data/tls/" + backend, "root", "root", "600", "/media/metaldata", false));
+				units.add(new DirUnit(backend + "_log_dir", "proceed", logDir, "Could not create the directory for " + backend + "'s logs. Nginx will refuse to start."));
+				units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addBindPoint(backend + "_tls_certs", "proceed", "/media/metaldata/tls/" + backend, "/media/data/tls/" + backend, "root", "root", "600", "/media/metaldata", false));
 				
 				//Generated from https://mozilla.github.io/server-side-tls/ssl-config-generator/ (Nginx/Modern) & https://cipherli.st/
 				nginxConf = "server {\n";
@@ -174,7 +174,7 @@ public class Webproxy extends AStructuredProfile {
 				
 				webserver.addLiveConfig(backend, nginxConf);
 				
-				units.addElement(new CustomFileUnit("nginx_custom_block_" + backend, "nginx_custom_blocks_data_bindpoint_created", "/media/data/nginx_custom_blocks/" + backend + ".conf"));
+				units.add(new CustomFileUnit("nginx_custom_block_" + backend, "nginx_custom_blocks_data_bindpoint_created", "/media/data/nginx_custom_blocks/" + backend + ".conf"));
 			}
 		}
 		else {
@@ -186,14 +186,14 @@ public class Webproxy extends AStructuredProfile {
 		return units;
 	}
 	
-	public Vector<IUnit> getNetworking() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	public Set<IUnit> getPersistentFirewall() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		String[] backends = networkModel.getData().getPropertyArray(me.getLabel(), "proxy");
+		String[] backends = networkModel.getData().getPropertyArray(getLabel(), "proxy");
 
-		units.addAll(webserver.getNetworking());
+		units.addAll(webserver.getPersistentFirewall());
 		
-		me.addRequiredEgressDestination("check.torproject.org");
+		networkModel.getServerModel(getLabel()).addEgress("check.torproject.org");
 		me.addRequiredListen(443);
 		
 		for (String backend : backends) {

@@ -74,11 +74,4 @@ public class UserAccounts extends AProfile {
 	public void addUsername(String username) {
 		this.usernames.add(username);
 	}
-
-	@Override
-	public Set<IUnit> getNetworking() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 }

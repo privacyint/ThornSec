@@ -1,50 +1,65 @@
-package profile;
+/*
+ * This code is part of the ThornSec project.
+ * 
+ * To learn more, please head to its GitHub repo: @privacyint
+ * 
+ * Pull requests encouraged.
+ */
+package profile.service.machine;
 
-import java.util.Vector;
+import java.util.HashSet;
+import java.util.Set;
 
+import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.NetworkModel;
-import core.model.ServerModel;
+import core.model.network.NetworkModel;
+
 import core.profile.AStructuredProfile;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 
+/**
+ * This is a profile for https://letsencrypt.org/ - a free, automated CA
+ * 
+ * Implement this profile to get automatic SSL certificates on your LB!
+ */
 public class LetsEncrypt extends AStructuredProfile {
 	
-	public LetsEncrypt(ServerModel me, NetworkModel networkModel) {
-		super("letsencrypt", me, networkModel);
+	public LetsEncrypt(String label, NetworkModel networkModel) {
+		super("letsencrypt", networkModel);
 	}
 
-	protected Vector<IUnit> getInstalled() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getInstalled() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		units.addElement(new InstalledUnit("certbot", "proceed", "certbot"));
+		units.add(new InstalledUnit("certbot", "proceed", "certbot"));
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig() {
-		Vector<IUnit> units =  new Vector<IUnit>();
+	protected Set<IUnit> getPersistentConfig()
+	throws InvalidServerModelException {
+		Set<IUnit> units =  new HashSet<IUnit>();
 		
 		String config = "";
 		config += "rsa-key-size = 4096\n";
-		config += "email = " + networkModel.getData().getAdminEmail();
+		config += "email = " + networkModel.getServerModel(getLabel()).getEmailAddress();
 		
-		units.addElement(new FileUnit("certbot_default_config", "certbot_installed", config, "/etc/letsencrypt/cli.ini"));
+		units.add(new FileUnit("certbot_default_config", "certbot_installed", config, "/etc/letsencrypt/cli.ini"));
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getLiveConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
 
 		//First, are we a web proxy?
 
 		return units;
 	}
 	
-//	private Vector<IUnit> getCert(String name, String machineName, String path, String[] domains) {
-//		Vector<IUnit> units = new Vector<IUnit>();
+//	private Set<IUnit> getCert(String name, String machineName, String path, String[] domains) {
+//		Set<IUnit> units = new HashSet<IUnit>();
 		
 		//String invocation = "certbot"
 		//		+ " certonly" //Just issue cert
@@ -59,10 +74,11 @@ public class LetsEncrypt extends AStructuredProfile {
 //		return units;
 //	}
 	
-	public Vector<IUnit> getNetworking() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	public Set<IUnit> getPersistentFirewall()
+	throws InvalidServerModelException {
+		Set<IUnit> units = new HashSet<IUnit>();
 
-		me.addRequiredEgressDestination("acme-v01.api.letsencrypt.org");
+		networkModel.getServerModel(getLabel()).addEgress("acme-v01.api.letsencrypt.org");
 		
 		return units;
 	}

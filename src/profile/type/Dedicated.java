@@ -13,8 +13,8 @@ import javax.swing.JOptionPane;
 import core.data.InterfaceData;
 import core.iface.IUnit;
 import core.model.InterfaceModel;
-import core.model.NetworkModel;
-import core.model.ServerModel;
+import core.model.network.NetworkModel;
+
 import core.profile.AStructuredProfile;
 import core.unit.fs.DirUnit;
 
@@ -24,10 +24,10 @@ public class Dedicated extends AStructuredProfile {
 		super(label, networkModel);
 		
 		ServerModel me = networkModel.getServerModel(getLabel());
-		me.addRequiredEgressDestination("cdn.debian.net");
-		me.addRequiredEgressDestination("security-cdn.debian.org");
-		me.addRequiredEgressDestination("prod.debian.map.fastly.net");
-		me.addRequiredEgressDestination("download.virtualbox.org");
+		networkModel.getServerModel(getLabel()).addEgressDestination("cdn.debian.net");
+		networkModel.getServerModel(getLabel()).addEgressDestination("security-cdn.debian.org");
+		networkModel.getServerModel(getLabel()).addEgressDestination("prod.debian.map.fastly.net");
+		networkModel.getServerModel(getLabel()).addEgressDestination("download.virtualbox.org");
 		
 		me.setFirstOctet(10);
 		me.setSecondOctet(0);
@@ -44,12 +44,12 @@ public class Dedicated extends AStructuredProfile {
 		return units;
 	}
 
-	public Set<IUnit> getNetworking() {
+	public Set<IUnit> getPersistentFirewall() {
 		Set<IUnit> units = new HashSet<IUnit>();
 /*
 		Hashtable<String, InterfaceData> lanIfaces = networkModel.getData().getLanIfaces(getLabel());
 		if (lanIfaces.isEmpty()) {
-			JOptionPane.showMessageDialog(null, "You must declare at least one lan interface for \"" + me.getLabel() + ".\n\nFormat is:\n\"lan\":[{\"interfacename\":\"macaddress\"}]");
+			JOptionPane.showMessageDialog(null, "You must declare at least one lan interface for \"" + getLabel() + ".\n\nFormat is:\n\"lan\":[{\"interfacename\":\"macaddress\"}]");
 			System.exit(1);
 		}
 		else {
@@ -66,7 +66,7 @@ public class Dedicated extends AStructuredProfile {
 				InetAddress broadcast = networkModel.stringToIP(me.getFirstOctet() + "." + me.getSecondOctet() + "." + me.getThirdOctet() + "." + ((i * 4) + 3));
 				InetAddress netmask   = networkModel.getData().getNetmask();
 				
-				im.addIface(new InterfaceData(me.getLabel(),
+				im.addIface(new InterfaceData(getLabel(),
 											lanIface.getKey(),
 											lanIface.getValue(),
 											"static",

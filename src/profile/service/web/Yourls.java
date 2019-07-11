@@ -1,13 +1,20 @@
-package profile;
+package profile.service.web;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Vector;
 
+import core.exception.data.machine.InvalidServerException;
+import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.NetworkModel;
-import core.model.ServerModel;
+import core.model.network.NetworkModel;
+
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.GitCloneUnit;
+import profile.stack.MariaDB;
+import profile.stack.Nginx;
+import profile.stack.PHP;
 
 public class Yourls extends AStructuredProfile {
 	
@@ -15,12 +22,12 @@ public class Yourls extends AStructuredProfile {
 	private PHP php;
 	private MariaDB db;
 	
-	public Yourls(ServerModel me, NetworkModel networkModel) {
-		super("yourls", me, networkModel);
+	public Yourls(String label, NetworkModel networkModel) {
+		super("yourls", networkModel);
 		
-		this.webserver = new Nginx(me, networkModel);
-		this.php       = new PHP(me, networkModel);
-		this.db        = new MariaDB(me, networkModel);
+		this.webserver = new Nginx(getLabel(), networkModel);
+		this.php       = new PHP(getLabel(), networkModel);
+		this.db        = new MariaDB(getLabel(), networkModel);
 		
 		this.db.setUsername("yourls");
 		this.db.setUserPrivileges("ALL");
@@ -28,8 +35,10 @@ public class Yourls extends AStructuredProfile {
 		this.db.setDb("yourls");
 	}
 
-	protected Vector<IUnit> getInstalled() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	@Override
+	protected Set<IUnit> getInstalled()
+	throws InvalidServerModelException {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		units.addAll(webserver.getInstalled());
 		units.addAll(php.getInstalled());
@@ -38,20 +47,23 @@ public class Yourls extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig() {
-		Vector<IUnit> units =  new Vector<IUnit>();
+	@Override
+	protected Set<IUnit> getPersistentConfig()
+	throws InvalidServerException, InvalidServerModelException {
+		Set<IUnit> units =  new HashSet<IUnit>();
 		
 		units.addAll(webserver.getPersistentConfig());
 		units.addAll(db.getPersistentConfig());
 		units.addAll(php.getPersistentConfig());
 		
-		units.addElement(new GitCloneUnit("yourls", "proceed", "https://github.com/YOURLS/YOURLS.git", "/media/data/www", "Could not download Yourls. This is fatal."));
+		units.add(new GitCloneUnit("yourls", "proceed", "https://github.com/YOURLS/YOURLS.git", "/media/data/www", "Could not download Yourls. This is fatal."));
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	@Override
+	protected Set<IUnit> getLiveConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		String nginxConf = "";
 		nginxConf += "server {\n";
@@ -75,7 +87,7 @@ public class Yourls extends AStructuredProfile {
 		nginxConf += "    }\n";
 		nginxConf += "    location ~ \\.php\\$ {\n";
 		nginxConf += "        fastcgi_split_path_info ^(.+\\.php)(/.+)\\$;\n";
-		nginxConf += "        fastcgi_pass unix:" + php.getSockPath() + ";\n";
+		nginxConf += "        fastcgi_pass unix:" + php.SOCK_PATH + ";\n";
 		nginxConf += "        fastcgi_param SCRIPT_FILENAME  \\$document_root\\$fastcgi_script_name;\n";
 		nginxConf += "        fastcgi_index index.php;\n";
 		nginxConf += "        include fastcgi_params;\n";
@@ -92,12 +104,12 @@ public class Yourls extends AStructuredProfile {
 		units.addAll(php.getLiveConfig());
 		units.addAll(db.getLiveConfig());
 		
-		units.addElement(new SimpleUnit("yourls_mysql_password", "proceed",
+		units.add(new SimpleUnit("yourls_mysql_password", "proceed",
 				"YOURLS_PASSWORD=`grep 'YOURLS_DB_PASS' /media/data/www/user/config.php 2>/dev/null | awk '{ print $2 }' | tr -d \"',);\");` [[ -z $YOURLS_PASSWORD ]] && YOURLS_PASSWORD=`openssl rand -hex 32`",
 				"echo $YOURLS_PASSWORD", "", "fail",
 				"Couldn't set a password for Yourl's database user. The installation will fail."));
 
-		units.addElement(new SimpleUnit("yourl_cookie_salt", "proceed",
+		units.add(new SimpleUnit("yourl_cookie_salt", "proceed",
 				"YOURLS_COOKIEKEY=`sudo grep 'YOURLS_COOKIEKEY' /media/data/www/user/config.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',;\"`; [[ -z $YOURLS_COOKIEKEY ]] && YOURLS_COOKIEKEY=`openssl rand -hex 75`",
 				"echo $YOURLS_COOKIEKEY", "", "fail",
 				"Couldn't set a cookie hash salt for Yourls. Your installation may not function correctly."));
@@ -113,7 +125,7 @@ public class Yourls extends AStructuredProfile {
 		yourlsConfig += "	define('YOURLS_DB_NAME', 'yourls');\n";
 		yourlsConfig += "	define('YOURLS_DB_HOST', 'localhost');\n";
 		yourlsConfig += "	define('YOURLS_DB_PREFIX', 'yourls_');\n";
-		yourlsConfig += "	define('YOURLS_SITE', '" + networkModel.getData().getDomain(me.getLabel()) + "');\n";
+		yourlsConfig += "	define('YOURLS_SITE', '" + networkModel.getData().getDomain(getLabel()) + "');\n";
 		yourlsConfig += "	define('YOURLS_HOURS_OFFSET', 0);\n";
 		yourlsConfig += "	define('YOURLS_LANG', '');\n";
 		yourlsConfig += "	define('YOURLS_UNIQUE_URLS', false);\n";
@@ -129,17 +141,17 @@ public class Yourls extends AStructuredProfile {
 		yourlsConfig += "		'porn', 'fag', 'trannie', 'tranny', 'faggot', 'sex', 'nigger', 'fuck', 'cunt', 'dick', 'shit', 'spic', 'twat', 'pussy',\n";
 		yourlsConfig += "	);";
 
-		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("opensocial", "opensocial_installed", yourlsConfig, "/media/data/www/user/config.php"));
+		units.add(((ServerModel)me).getConfigsModel().addConfigFile("opensocial", "opensocial_installed", yourlsConfig, "/media/data/www/user/config.php"));
 		
 		return units;
 	}
 	
-	public Vector<IUnit> getNetworking() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	public Set<IUnit> getPersistentFirewall() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		units.addAll(webserver.getNetworking());
+		units.addAll(webserver.getPersistentFirewall());
 
-		me.addRequiredEgressDestination("github.com");
+		networkModel.getServerModel(getLabel()).addEgress("github.com");
 		
 		return units;
 	}

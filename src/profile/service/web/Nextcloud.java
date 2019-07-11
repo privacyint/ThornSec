@@ -1,10 +1,10 @@
-package profile;
+package profile.service.web;
 
 import java.util.Vector;
 
 import core.iface.IUnit;
-import core.model.NetworkModel;
-import core.model.ServerModel;
+import core.model.network.NetworkModel;
+
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.CrontabUnit;
@@ -18,12 +18,12 @@ public class Nextcloud extends AStructuredProfile {
 	private PHP php;
 	private MariaDB db;
 	
-	public Nextcloud(ServerModel me, NetworkModel networkModel) {
-		super("nextcloud", me, networkModel);
+	public Nextcloud(String label, NetworkModel networkModel) {
+		super("nextcloud", networkModel);
 		
-		this.webserver = new Nginx(me, networkModel);
-		this.php = new PHP(me, networkModel);
-		this.db = new MariaDB(me, networkModel);
+		this.webserver = new Nginx(getLabel(), networkModel);
+		this.php = new PHP(getLabel(), networkModel);
+		this.db = new MariaDB(getLabel(), networkModel);
 		
 		this.db.setUsername("nextcloud");
 		this.db.setUserPrivileges("ALL");
@@ -31,38 +31,38 @@ public class Nextcloud extends AStructuredProfile {
 		this.db.setDb("nextcloud");
 	}
 
-	protected Vector<IUnit> getInstalled() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getInstalled() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		units.addAll(webserver.getInstalled());
 		units.addAll(php.getInstalled());
 		units.addAll(db.getInstalled());
 		
-		units.addAll(((ServerModel)me).getBindFsModel().addDataBindPoint("nextcloud", "proceed", "nginx", "nginx", "0770"));
+		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("nextcloud", "proceed", "nginx", "nginx", "0770"));
 
-		units.addElement(new InstalledUnit("unzip", "proceed", "unzip"));
-		units.addElement(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
-		units.addElement(new InstalledUnit("php_gd", "php_fpm_installed", "php-gd"));
-		units.addElement(new InstalledUnit("curl", "curl"));
-		units.addElement(new InstalledUnit("php_mod_curl", "php_fpm_installed", "php-curl"));		
-		units.addElement(new InstalledUnit("php_mysql", "mariadb_installed", "php-mysql"));
-		//units.addElement(new InstalledUnit("php_pdo", "mariadb_installed", "php-pdo"));
-		units.addElement(new InstalledUnit("php_xml", "php_fpm_installed", "php-xml"));
-		units.addElement(new InstalledUnit("php_zip", "php_fpm_installed", "php-zip"));
-		units.addElement(new InstalledUnit("php_mbsgtring", "php_fpm_installed", "php-mbstring"));
-		//units.addElement(new InstalledUnit("redis", "redis-server"));
-		//units.addElement(new InstalledUnit("php_redis", "php_fpm_installed", "php-redis"));
-		units.addElement(new InstalledUnit("php_intl", "php_fpm_installed", "php-intl"));
+		units.add(new InstalledUnit("unzip", "proceed", "unzip"));
+		units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
+		units.add(new InstalledUnit("php_gd", "php_fpm_installed", "php-gd"));
+		units.add(new InstalledUnit("curl", "curl"));
+		units.add(new InstalledUnit("php_mod_curl", "php_fpm_installed", "php-curl"));		
+		units.add(new InstalledUnit("php_mysql", "mariadb_installed", "php-mysql"));
+		//units.add(new InstalledUnit("php_pdo", "mariadb_installed", "php-pdo"));
+		units.add(new InstalledUnit("php_xml", "php_fpm_installed", "php-xml"));
+		units.add(new InstalledUnit("php_zip", "php_fpm_installed", "php-zip"));
+		units.add(new InstalledUnit("php_mbsgtring", "php_fpm_installed", "php-mbstring"));
+		//units.add(new InstalledUnit("redis", "redis-server"));
+		//units.add(new InstalledUnit("php_redis", "php_fpm_installed", "php-redis"));
+		units.add(new InstalledUnit("php_intl", "php_fpm_installed", "php-intl"));
 		
 		((ServerModel)me).getUserModel().addUsername("redis");
 
-		units.addElement(new FileDownloadUnit("nextcloud", "nextcloud_data_mounted", "https://download.nextcloud.com/server/releases/latest.zip", "/root/nextcloud.zip",
+		units.add(new FileDownloadUnit("nextcloud", "nextcloud_data_mounted", "https://download.nextcloud.com/server/releases/latest.zip", "/root/nextcloud.zip",
 				"Couldn't download NextCloud.  This could mean you have no network connection, or that the specified download is no longer available."));
-		units.addElement(new FileChecksumUnit("nextcloud", "nextcloud_downloaded", "/root/nextcloud.zip",
+		units.add(new FileChecksumUnit("nextcloud", "nextcloud_downloaded", "/root/nextcloud.zip",
 				"$(curl -s https://download.nextcloud.com/server/releases/latest.zip.sha512 | awk '{print $1}')",
 				"NextCloud's checksum doesn't match.  This could indicate a failed download, or a MITM attack.  NextCloud's installation will fail."));
 
-		units.addElement(new SimpleUnit("nextcloud_mysql_password", "nextcloud_checksum",
+		units.add(new SimpleUnit("nextcloud_mysql_password", "nextcloud_checksum",
 				"NEXTCLOUD_PASSWORD=`sudo grep \"dbpassword\" /media/data/www/nextcloud/config/config.php | head -1 | awk '{ print $3 }' | tr -d \"',\"`; [[ -z $NEXTCLOUD_PASSWORD ]] && NEXTCLOUD_PASSWORD=`openssl rand -hex 32`;",
 				"sudo [ -f /media/data/www/nextcloud/config/config.php ] && sudo grep \"dbpassword\" /media/data/www/nextcloud/config/config.php | head -1 | awk '{ print $3 }' | tr -d \"',\"", "", "fail",
 				"Couldn't set the NextCloud database user's password of ${NEXTCLOUD_PASSWORD}.  NextCloud will be left in a broken state.") );
@@ -71,18 +71,18 @@ public class Nextcloud extends AStructuredProfile {
 		units.addAll(db.checkUserExists());
 		units.addAll(db.checkDbExists());
 		
-		units.addElement(new SimpleUnit("nextcloud_unzipped", "nextcloud_checksum",
+		units.add(new SimpleUnit("nextcloud_unzipped", "nextcloud_checksum",
 				"sudo unzip /root/nextcloud.zip -d /media/data/www/",
 				"sudo [ -d /media/data/www/nextcloud/occ ] && echo pass", "pass", "pass",
 				"NextCloud couldn't be extracted to the required directory."));
 
 		//Only bother to do this if we haven't already set up Owncloud...
-		//units.addElement(new SimpleUnit("owncloud_admin_password", "owncloud_unzipped",
+		//units.add(new SimpleUnit("owncloud_admin_password", "owncloud_unzipped",
 		//		"OWNCLOUD_ADMIN_PASSWORD=`openssl rand -hex 32`;"
 		//		+ "echo 'Admin password:' ${OWNCLOUD_ADMIN_PASSWORD}",
 		//		"sudo [ -f /media/data/www/owncloud/config/config.php ] && echo pass || echo $OWNCLOUD_ADMIN_PASSWORD", "", "fail"));
 		
-		//units.addElement(new SimpleUnit("owncloud_installed", "owncloud_unzipped",
+		//units.add(new SimpleUnit("owncloud_installed", "owncloud_unzipped",
 		//		"sudo -u nginx php /media/data/www/owncloud/occ maintenance:install"
 		//				+ " --database \"mysql\""
 		//				+ " --database-name \"owncloud\""
@@ -94,10 +94,10 @@ public class Nextcloud extends AStructuredProfile {
 		//		"sudo [ -f /media/data/www/owncloud/version.php ] && echo pass", "pass", "pass",
 		//		"OwnCloud could not be installed."));
 		
-//		units.addElement(new FileEditUnit("owncloud_memcache", "owncloud_checksum", ");", "'memcache.local' => '\\OC\\Memcache\\APCu');", "/media/data/www/owncloud/config/config.php",
+//		units.add(new FileEditUnit("owncloud_memcache", "owncloud_checksum", ");", "'memcache.local' => '\\OC\\Memcache\\APCu');", "/media/data/www/owncloud/config/config.php",
 	//			"Couldn't set a memcache for OwnCloud.  This will affect performance, and will give you an error in the Admin Console."));
 		
-		//units.addElement(new SimpleUnit("owncloud_up_to_date", "owncloud_installed",
+		//units.add(new SimpleUnit("owncloud_up_to_date", "owncloud_installed",
 			//	"sudo -u nginx php /media/data/www/owncloud/updater/application.php upgrade:start <<< '1';"
 				//+ "sudo -u nginx php /media/data/www/owncloud/occ upgrade --no-app-disable;",
 			//	"sudo -u nginx php /media/data/www/owncloud/updater/application.php upgrade:detect -n | grep 'No updates found online'", "", "fail"));
@@ -105,19 +105,19 @@ public class Nextcloud extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig() {
-		Vector<IUnit> units =  new Vector<IUnit>();
+	protected Set<IUnit> getPersistentConfig() {
+		Set<IUnit> units =  new HashSet<IUnit>();
 		
 		units.addAll(webserver.getPersistentConfig());
 		units.addAll(db.getPersistentConfig());
 		units.addAll(php.getPersistentConfig());
-		units.addElement(new CrontabUnit("nextcloud", "nextcloud_unzipped", true, "nginx", "php -f /media/data/www/nextcloud/cron.php", "*", "*", "*", "*", "*/5", "Failed to get Nextcloud's cron job setup."));
+		units.add(new CrontabUnit("nextcloud", "nextcloud_unzipped", true, "nginx", "php -f /media/data/www/nextcloud/cron.php", "*", "*", "*", "*", "*/5", "Failed to get Nextcloud's cron job setup."));
 
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getLiveConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		String nginxConf = "";
 		nginxConf += "upstream php-handler {\n";
@@ -200,24 +200,24 @@ public class Nextcloud extends AStructuredProfile {
 		units.addAll(php.getLiveConfig());
 		units.addAll(db.getLiveConfig());
 		
-		units.addElement(new SimpleUnit("nextcloud_up_to_date", "nextcloud_unizipped",
+		units.add(new SimpleUnit("nextcloud_up_to_date", "nextcloud_unizipped",
 				"sudo -u nginx php /media/data/www/nextcloud/updater/updater.phar --no-interaction",
 				"sudo -u nginx php /media/data/www/nextcloud/updater/updater.phar | grep \"No update available\"", "No update available.", "pass"));
 		
 		return units;
 	}
 	
-	public Vector<IUnit> getNetworking() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	public Set<IUnit> getPersistentFirewall() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
-		me.addRequiredEgressDestination("nextcloud.com");
-		me.addRequiredEgressDestination("apps.nextcloud.com");
-		me.addRequiredEgressDestination("download.nextcloud.com");
-		me.addRequiredEgressDestination("updates.nextcloud.com");
+		networkModel.getServerModel(getLabel()).addEgress("nextcloud.com");
+		networkModel.getServerModel(getLabel()).addEgress("apps.nextcloud.com");
+		networkModel.getServerModel(getLabel()).addEgress("download.nextcloud.com");
+		networkModel.getServerModel(getLabel()).addEgress("updates.nextcloud.com");
 		//It requires opening to the wider web anyway :(
-		me.addRequiredEgressDestination("github.com");
+		networkModel.getServerModel(getLabel()).addEgress("github.com");
 
-		units.addAll(webserver.getNetworking());
+		units.addAll(webserver.getPersistentFirewall());
 
 		return units;
 	}

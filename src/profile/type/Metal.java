@@ -29,7 +29,7 @@ public class Metal extends AStructuredProfile {
 		super(label, networkModel);
 		
 		this.hypervisor = new Virtualisation(label, networkModel);
-		//this.backups    = new HypervisorScripts(me, networkModel);
+		//this.backups    = new HypervisorScripts(getLabel(), networkModel);
 		this.services   = new Vector<ServerModel>();
 	}
 	
@@ -37,35 +37,35 @@ public class Metal extends AStructuredProfile {
 		return services;
 	}
 
-	protected Vector<IUnit> getInstalled() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getInstalled() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		units.addAll(hypervisor.getInstalled());
 		//units.addAll(backups.getInstalled());
 		
-		units.addElement(new DirUnit("media_dir", "proceed", networkModel.getData().getHypervisorThornsecBase(me.getLabel())));
+		units.add(new DirUnit("media_dir", "proceed", networkModel.getData().getHypervisorThornsecBase(getLabel())));
 
-		units.addElement(new InstalledUnit("whois", "proceed", "whois"));
-		units.addElement(new InstalledUnit("tmux", "proceed", "tmux"));
-		units.addElement(new InstalledUnit("socat", "proceed", "socat"));
+		units.add(new InstalledUnit("whois", "proceed", "whois"));
+		units.add(new InstalledUnit("tmux", "proceed", "tmux"));
+		units.add(new InstalledUnit("socat", "proceed", "socat"));
 		
 		return units;
 	}
 	
-	protected Vector<IUnit> getPersistentConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getPersistentConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
 
 		String fuse = "";
 		fuse += "#user_allow_other";
-		units.addElement(((ServerModel)me).getConfigsModel().addConfigFile("fuse", "proceed", fuse, "/etc/fuse.conf"));
+		units.add(((ServerModel)me).getConfigsModel().addConfigFile("fuse", "proceed", fuse, "/etc/fuse.conf"));
 
 		//units.addAll(backups.getPersistentConfig());
 	
 		return units;
 	}
 	
-	public Vector<IUnit> getNetworking() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	public Set<IUnit> getPersistentFirewall() {
+		Set<IUnit> units = new HashSet<IUnit>();
 		
 		NetworkInterfaceModel im = me.getLANInterfaces();
 
@@ -76,8 +76,8 @@ public class Metal extends AStructuredProfile {
 		int i = 0;
 		
 		//Add this machine's interfaces
-		for (Map.Entry<String, String> lanIface : networkModel.getData().getLanIfaces(me.getLabel()).entrySet() ) {
-			if (me.isRouter() || networkModel.getData().getWanIfaces(me.getLabel()).containsKey(lanIface.getKey())) { //Try not to duplicate ifaces if we're a Router/Metal
+		for (Map.Entry<String, String> lanIface : networkModel.getData().getLanIfaces(getLabel()).entrySet() ) {
+			if (me.isRouter() || networkModel.getData().getWanIfaces(getLabel()).containsKey(lanIface.getKey())) { //Try not to duplicate ifaces if we're a Router/Metal
 				continue;
 			}
 			
@@ -87,7 +87,7 @@ public class Metal extends AStructuredProfile {
 			InetAddress broadcast = networkModel.stringToIP(me.getFirstOctet() + "." + me.getSecondOctet() + "." + me.getThirdOctet() + "." + ((i * 4) + 3));
 			InetAddress netmask   = networkModel.getData().getNetmask();
 			
-			im.addIface(new InterfaceData(me.getLabel(),
+			im.addIface(new InterfaceData(getLabel(),
 					lanIface.getKey(),
 					lanIface.getValue(),
 					"static",
@@ -101,14 +101,14 @@ public class Metal extends AStructuredProfile {
 			);
 		}
 
-		me.addRequiredEgressDestination("gensho.ftp.acc.umu.se");
-		me.addRequiredEgressDestination("github.com");
+		networkModel.getServerModel(getLabel()).addEgressDestination("gensho.ftp.acc.umu.se");
+		networkModel.getServerModel(getLabel()).addEgressDestination("github.com");
 		
 		return units;
 	}
 
-	protected Vector<IUnit> getLiveConfig() {
-		Vector<IUnit> units = new Vector<IUnit>();
+	protected Set<IUnit> getLiveConfig() {
+		Set<IUnit> units = new HashSet<IUnit>();
 
 		Vector<String> urls = new Vector<String>();
 		for (ServerModel service : me.getServices()) {
@@ -134,13 +134,13 @@ public class Metal extends AStructuredProfile {
 				System.exit(1);
 			}
 			
-			units.addElement(new FileDownloadUnit("debian_netinst_iso_" + cleanedFilename, "metal_genisoimage_installed",
+			units.add(new FileDownloadUnit("debian_netinst_iso_" + cleanedFilename, "metal_genisoimage_installed",
 									url,
-									networkModel.getData().getHypervisorThornsecBase(me.getLabel()) + "/" + filename,
+									networkModel.getData().getHypervisorThornsecBase(getLabel()) + "/" + filename,
 									"The Debian net install ISO couldn't be downloaded.  Please check the URI in your config."));
-			units.addElement(new FileChecksumUnit("debian_netinst_iso", "debian_netinst_iso_" + cleanedFilename + "_downloaded",
-									networkModel.getData().getHypervisorThornsecBase(me.getLabel()) + "/" + filename,
-									networkModel.getData().getDebianIsoSha512(me.getLabel()),
+			units.add(new FileChecksumUnit("debian_netinst_iso", "debian_netinst_iso_" + cleanedFilename + "_downloaded",
+									networkModel.getData().getHypervisorThornsecBase(getLabel()) + "/" + filename,
+									networkModel.getData().getDebianIsoSha512(getLabel()),
 									"The sha512 sum of the Debian net install in your config doesn't match what has been downloaded.  This could mean your connection is man-in-the-middle'd, or it could just be that the file has been updated on the server. "
 									+ "Please check http://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA512SUMS (64 bit) or http://cdimage.debian.org/debian-cd/current/i386/iso-cd/SHA512SUMS (32 bit) for the correct checksum."));
 		}
@@ -164,7 +164,7 @@ public class Metal extends AStructuredProfile {
 				expirePasswords = true;
 			}
 			
-			units.addElement(new SimpleUnit(serviceLabel + "_password", "proceed",
+			units.add(new SimpleUnit(serviceLabel + "_password", "proceed",
 					serviceLabel.toUpperCase() + "_PASSWORD=`printf \"" + password + "\" | mkpasswd -s -m md5`",
 					"echo $" + serviceLabel.toUpperCase() + "_PASSWORD", "", "fail",
 					"Couldn't set the passphrase for " + serviceLabel + ".  You won't be able to configure this service."));
@@ -183,17 +183,17 @@ public class Metal extends AStructuredProfile {
 			units.addAll(hypervisor.buildIso(service.getLabel(), hypervisor.preseed(service.getLabel(), expirePasswords)));
 			units.addAll(hypervisor.buildServiceVm(service.getLabel(), bridge));
 			
-			String bootDiskDir = networkModel.getData().getHypervisorThornsecBase(me.getLabel()) + "/disks/boot/" + serviceLabel + "/";
-			String dataDiskDir = networkModel.getData().getHypervisorThornsecBase(me.getLabel()) + "/disks/data/" + serviceLabel + "/";
+			String bootDiskDir = networkModel.getData().getHypervisorThornsecBase(getLabel()) + "/disks/boot/" + serviceLabel + "/";
+			String dataDiskDir = networkModel.getData().getHypervisorThornsecBase(getLabel()) + "/disks/data/" + serviceLabel + "/";
 			
-			units.addElement(new SimpleUnit(serviceLabel + "_boot_disk_formatted", "proceed",
+			units.add(new SimpleUnit(serviceLabel + "_boot_disk_formatted", "proceed",
 					"",
 					"sudo bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;"
 					+ "virt-filesystems -a " + bootDiskDir + serviceLabel + "_boot.v*'", "", "fail",
 					"Boot disk is unformatted (therefore has no OS on it), please configure the service and try mounting again."));
 			
 			//For now, do this as root.  We probably want to move to another user, idk
-			units.addElement(new SimpleUnit(serviceLabel + "_boot_disk_loopback_mounted", serviceLabel + "_boot_disk_formatted",
+			units.add(new SimpleUnit(serviceLabel + "_boot_disk_loopback_mounted", serviceLabel + "_boot_disk_formatted",
 					"sudo bash -c '"
 						+ " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;"
 						+ " guestmount -a " + bootDiskDir + serviceLabel + "_boot.v*"
@@ -205,13 +205,13 @@ public class Metal extends AStructuredProfile {
 					"sudo mount | grep " + bootDiskDir, "", "fail",
 					"I was unable to loopback mount the boot disk for " + serviceLabel + " in " + getLabel() + "."));
 			
-			units.addElement(new SimpleUnit(serviceLabel + "_data_disk_formatted", "proceed",
+			units.add(new SimpleUnit(serviceLabel + "_data_disk_formatted", "proceed",
 					"",
 					"sudo bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;"
 					+ "virt-filesystems -a " + dataDiskDir + serviceLabel + "_data.v*'", "", "fail",
 					"Data disk is unformatted (therefore hasn't been configured), please configure the service and try mounting again."));
 
-			units.addElement(new SimpleUnit(serviceLabel + "_data_disk_loopback_mounted", serviceLabel + "_data_disk_formatted",
+			units.add(new SimpleUnit(serviceLabel + "_data_disk_loopback_mounted", serviceLabel + "_data_disk_formatted",
 					"sudo bash -c '"
 						+ " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;"
 						+ " guestmount -a " + dataDiskDir + serviceLabel + "_data.v*"
