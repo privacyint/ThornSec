@@ -18,7 +18,6 @@ import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
 
 import core.exception.data.ADataException;
-import core.exception.data.InvalidPropertyArrayException;
 
 /**
  * Abstract class for something representing "Data" on our network
@@ -115,15 +114,14 @@ public abstract class AData {
 	 * Gets an arbitrary array of properties from the object's data.
 	 *
 	 * @param property the property array to read
-	 * @return the property values array, or empty array if unset
-	 * @throws InvalidPropertyArrayException
+	 * @return the property values array, or {@code null} if unset
 	 */
-	public final Set<String> getPropertyArray(String property) throws InvalidPropertyArrayException {
+	public final Set<String> getPropertyArray(String property) {
 		final JsonArray jsonProperties = getPropertyObjectArray(property);
 		final Set<String> properties = new HashSet<>();
 
 		if (jsonProperties == null) {
-			throw new InvalidPropertyArrayException();
+			return null;
 		}
 
 		for (final JsonValue jsonProperty : jsonProperties) {
