@@ -69,8 +69,8 @@ public class NetworkInterfaceData extends AData {
 	 * You should only use this constructor if you intend to call the read() method
 	 * otherwise you're wasting electrons!
 	 */
-	public NetworkInterfaceData() {
-		this(null, null, null, null, null, null, null, null, null, null, null, null);
+	public NetworkInterfaceData(HostName host) {
+		this(host, null, null, null, null, null, null, null, null, null, null, null);
 	}
 
 	public NetworkInterfaceData(HostName host, String iface, String preUp, String postDown, MACAddress mac, Inet inet, Set<String> bridgePorts, IPAddress address, IPAddress gateway, IPAddress subnet, IPAddress broadcast, String comment) {

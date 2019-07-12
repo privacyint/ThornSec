@@ -108,8 +108,7 @@ public abstract class AMachineData extends AData {
 			this.lanInterfaces = new HashSet<>();
 
 			for (int i = 0; i < lanIfaces.size(); ++i) {
-				final NetworkInterfaceData iface = new NetworkInterfaceData();
-				iface.setHost(this.getFQDN());
+				final NetworkInterfaceData iface = new NetworkInterfaceData(this.getFQDN());
 				iface.read(lanIfaces.getJsonObject(i));
 				this.lanInterfaces.add(iface);
 			}
@@ -118,8 +117,7 @@ public abstract class AMachineData extends AData {
 			this.wanInterfaces = new HashSet<>();
 
 			for (int i = 0; i < wanIfaces.size(); ++i) {
-				final NetworkInterfaceData iface = new NetworkInterfaceData();
-				iface.setHost(this.getFQDN());
+				final NetworkInterfaceData iface = new NetworkInterfaceData(this.getFQDN());
 				iface.read(wanIfaces.getJsonObject(i));
 				this.wanInterfaces.add(iface);
 			}
