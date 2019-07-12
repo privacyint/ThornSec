@@ -17,7 +17,7 @@ import core.exception.AThornSecException;
  */
 public interface IProfile {
 
-	public String getLabel();
+	String getLabel();
 
 	public Set<IUnit> getUnits()
 	throws AThornSecException;
