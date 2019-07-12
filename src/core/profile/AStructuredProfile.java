@@ -1,5 +1,7 @@
 package core.profile;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Vector;
 
 import core.iface.IUnit;
@@ -8,12 +10,12 @@ import core.model.NetworkModel;
 
 public abstract class AStructuredProfile extends AProfile {
 
-	protected AStructuredProfile(String name, MachineModel me, NetworkModel networkModel) {
-		super(name, me, networkModel);
+	protected AStructuredProfile(String label, NetworkModel networkModel) {
+		super(label, networkModel);
 	}
 
-	public Vector<IUnit> getUnits() {
-		Vector<IUnit> children = new Vector<IUnit>();
+	public Set<IUnit> getUnits() {
+		Set<IUnit> children = new HashSet<IUnit>();
 		children.addAll(this.getInstalled());
 		children.addAll(this.getPersistentConfig());
 		children.addAll(this.getLiveConfig());

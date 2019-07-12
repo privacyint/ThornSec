@@ -1,11 +1,11 @@
 package core.iface;
 
-import java.util.Vector;
+import java.util.Set;
 
 public interface IProfile {
 
-	public String getLabel();
+	String getLabel();
 
-	public Vector<IUnit> getUnits();
+	Set<IUnit> getUnits();
 
 }

@@ -110,7 +110,7 @@ public class Router extends AStructuredProfile {
 			iface.setInet(Inet.STATIC);
 			iface.setSubnet(new IPAddressString("10.250.0.0"));
 			iface.setNetmask(new IPAddressString("255.255.252.0"));
-			iface.setGateway(;new IPAddressString("10.250.0.1"));
+			iface.setGateway(new IPAddressString("10.250.0.1"));
 			iface.setComment("Auto Guest pool, bridged to our lan");
 		}
 		
