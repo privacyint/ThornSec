@@ -331,14 +331,9 @@ public class Entry implements KeePassFileElement {
             return false;
         }
         if (uuid == null) {
-            if (other.uuid != null) {
-                return false;
-            }
+            return other.uuid == null;
         }
-        else if (!uuid.equals(other.uuid)) {
-            return false;
-        }
-        return true;
+        else return uuid.equals(other.uuid);
     }
 
     @Override

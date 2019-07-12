@@ -37,8 +37,8 @@ import inet.ipaddr.IPAddressString;
 public abstract class AMachineData extends AData {
 	// Networking
 	public enum Encapsulation {
-		UDP, TCP;
-	}
+		UDP, TCP
+    }
 
 	private Set<NetworkInterfaceData> lanInterfaces;
 	private Set<NetworkInterfaceData> wanInterfaces;

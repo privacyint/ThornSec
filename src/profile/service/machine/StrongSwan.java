@@ -26,10 +26,8 @@ public class StrongSwan extends AStructuredProfile {
 	
 	protected Set<IUnit> getPersistentConfig() {
 		Set<IUnit> units = new HashSet<IUnit>();
-        
-		;;
-		
-		return units;
+
+        return units;
 	}
 
 	public Set<IUnit> getPersistentFirewall() {

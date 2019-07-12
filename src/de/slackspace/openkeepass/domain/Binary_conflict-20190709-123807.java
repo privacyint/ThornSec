@@ -149,13 +149,8 @@ public class Binary {
             return false;
         }
         if (isCompressed == null) {
-            if (other.isCompressed != null) {
-                return false;
-            }
+            return other.isCompressed == null;
         }
-        else if (!isCompressed.equals(other.isCompressed)) {
-            return false;
-        }
-        return true;
+        else return isCompressed.equals(other.isCompressed);
     }
 }

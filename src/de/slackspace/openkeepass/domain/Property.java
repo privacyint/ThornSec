@@ -70,11 +70,8 @@ public class Property implements KeePassFileElement {
         } else if (!key.equals(other.key))
             return false;
         if (propertyValue == null) {
-            if (other.propertyValue != null)
-                return false;
-        } else if (!propertyValue.equals(other.propertyValue))
-            return false;
-        return true;
+            return other.propertyValue == null;
+        } else return propertyValue.equals(other.propertyValue);
     }
 
 }

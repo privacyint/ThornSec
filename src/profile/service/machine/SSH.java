@@ -47,7 +47,7 @@ public class SSH extends AStructuredProfile {
 	}
 
 	protected Set<IUnit> getPersistentConfig()
-	throws InvalidServerModelException, InvalidUserException, InvalidMachineException {
+	throws InvalidServerModelException, InvalidMachineException {
 		Set<IUnit> units = new HashSet<IUnit>();
 		
 		//TODO: Update to new config file format, many of these are derecated now
@@ -180,7 +180,7 @@ public class SSH extends AStructuredProfile {
 	}
 
 	protected Set<IUnit> getLiveConfig()
-	throws InvalidUserException, InvalidServerException, InvalidMachineException {
+	throws InvalidMachineException {
 		Set<IUnit> units = new HashSet<IUnit>();
 
 		for (String admin : networkModel.getData().getAdmins(getLabel())) {

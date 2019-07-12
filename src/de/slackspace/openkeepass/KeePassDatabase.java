@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 import de.slackspace.openkeepass.api.KeePassDatabaseReader;
 import de.slackspace.openkeepass.api.KeePassDatabaseWriter;
@@ -158,14 +159,10 @@ public class KeePassDatabase {
             throw new IllegalArgumentException(MSG_EMPTY_MASTER_KEY);
         }
 
-        try {
-            byte[] passwordBytes = password.getBytes(UTF_8);
-            byte[] hashedPassword = Sha256.hash(passwordBytes);
+        byte[] passwordBytes = password.getBytes(StandardCharsets.UTF_8);
+        byte[] hashedPassword = Sha256.hash(passwordBytes);
 
-            return new KeePassDatabaseReader(keepassHeader).decryptAndParseDatabase(hashedPassword, keepassFile);
-        } catch (UnsupportedEncodingException e) {
-            throw new UnsupportedOperationException(MSG_UTF8_NOT_SUPPORTED, e);
-        }
+        return new KeePassDatabaseReader(keepassHeader).decryptAndParseDatabase(hashedPassword, keepassFile);
     }
 
     /**
@@ -230,15 +227,11 @@ public class KeePassDatabase {
             throw new IllegalArgumentException("You must provide a non-empty KeePass keyfile stream.");
         }
 
-        try {
-            byte[] passwordBytes = password.getBytes(UTF_8);
-            byte[] hashedPassword = Sha256.hash(passwordBytes);
-            byte[] protectedBuffer = new KeyFileReader().readKeyFile(keyFileStream);
+        byte[] passwordBytes = password.getBytes(StandardCharsets.UTF_8);
+        byte[] hashedPassword = Sha256.hash(passwordBytes);
+        byte[] protectedBuffer = new KeyFileReader().readKeyFile(keyFileStream);
 
-            return new KeePassDatabaseReader(keepassHeader).decryptAndParseDatabase(ByteUtils.concat(hashedPassword, protectedBuffer), keepassFile);
-        } catch (UnsupportedEncodingException e) {
-            throw new UnsupportedOperationException(MSG_UTF8_NOT_SUPPORTED, e);
-        }
+        return new KeePassDatabaseReader(keepassHeader).decryptAndParseDatabase(ByteUtils.concat(hashedPassword, protectedBuffer), keepassFile);
     }
 
     /**

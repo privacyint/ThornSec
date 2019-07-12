@@ -81,11 +81,7 @@ public class VariantDictionary {
     }
 
     private boolean isVersionSupported(int version) {
-        if ((version & VDM_CRITICAL) > (VDM_VERSION & VDM_CRITICAL)) {
-            return false;
-        }
-
-        return true;
+        return (version & VDM_CRITICAL) <= (VDM_VERSION & VDM_CRITICAL);
     }
 
     public byte[] getByteArray(String key) {

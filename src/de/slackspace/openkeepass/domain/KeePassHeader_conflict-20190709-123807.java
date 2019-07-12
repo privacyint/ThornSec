@@ -161,12 +161,7 @@ public class KeePassHeader {
     }
 
     private boolean isVersionSupported(int version) {
-        if((version & FILE_VERSION_CRITICAL_MASK) > 
-                (DATABASE_V4_FILE_VERSION_INT & FILE_VERSION_CRITICAL_MASK)) {
-            return false;
-        }
-        
-        return true;
+        return (version & FILE_VERSION_CRITICAL_MASK) <= (DATABASE_V4_FILE_VERSION_INT & FILE_VERSION_CRITICAL_MASK);
     }
 
     /**

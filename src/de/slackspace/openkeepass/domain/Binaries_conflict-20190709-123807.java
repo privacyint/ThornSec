@@ -66,11 +66,8 @@ public class Binaries {
             return false;
         Binaries other = (Binaries) obj;
         if (binaryList == null) {
-            if (other.binaryList != null)
-                return false;
-        } else if (!binaryList.equals(other.binaryList))
-            return false;
-        return true;
+            return other.binaryList == null;
+        } else return binaryList.equals(other.binaryList);
     }
 
 }

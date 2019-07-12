@@ -1,6 +1,7 @@
 package de.slackspace.openkeepass.crypto;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -15,7 +16,7 @@ public class DecrypterTest {
     @Test
     public void shouldEncryptAndDecryptDatabase() throws IOException {
         String password = "abcdefg";
-        byte[] passwordBytes = password.getBytes("UTF-8");
+        byte[] passwordBytes = password.getBytes(StandardCharsets.UTF_8);
         byte[] hashedPassword = Sha256.hash(passwordBytes);
 
         KeePassHeader keepassHeader = new KeePassHeader();

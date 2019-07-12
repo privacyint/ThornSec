@@ -19,12 +19,8 @@ public class EntryFilterTest {
 
         List<Entry> results = ListFilter.filter(entries, new Filter<Entry>() {
             public boolean matches(Entry item) {
-                if (item.getTitle().equalsIgnoreCase("test")) {
-                    return true;
-                }
-
-                return false;
-            };
+                return item.getTitle().equalsIgnoreCase("test");
+            }
         });
 
         Assert.assertEquals(1, results.size());

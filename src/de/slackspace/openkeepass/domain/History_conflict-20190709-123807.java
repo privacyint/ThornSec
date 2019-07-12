@@ -34,11 +34,8 @@ public class History {
             return false;
         History other = (History) obj;
         if (entries == null) {
-            if (other.entries != null)
-                return false;
-        } else if (!entries.equals(other.entries))
-            return false;
-        return true;
+            return other.entries == null;
+        } else return entries.equals(other.entries);
     }
 
 }

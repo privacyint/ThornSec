@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPOutputStream;
 
 import de.slackspace.openkeepass.crypto.CryptoInformation;
@@ -58,7 +59,7 @@ public class KeePassDatabaseWriter {
     }
 
     private byte[] hashPassword(String password) throws UnsupportedEncodingException {
-        byte[] passwordBytes = password.getBytes(UTF_8);
+        byte[] passwordBytes = password.getBytes(StandardCharsets.UTF_8);
         return Sha256.hash(passwordBytes);
     }
 
@@ -107,10 +108,6 @@ public class KeePassDatabaseWriter {
             return false;
         }
 
-        if (keePassFile.getRoot() == null || keePassFile.getRoot().getGroups().isEmpty()) {
-            return false;
-        }
-
-        return true;
+        return keePassFile.getRoot() != null && !keePassFile.getRoot().getGroups().isEmpty();
     }
 }

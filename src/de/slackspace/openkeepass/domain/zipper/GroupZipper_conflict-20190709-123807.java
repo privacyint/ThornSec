@@ -57,11 +57,7 @@ public class GroupZipper {
      * @return true, if it is possible to navigate down
      */
     public boolean canDown() {
-        if (node.getGroups() == null || node.getGroups().isEmpty()) {
-            return false;
-        }
-
-        return true;
+        return node.getGroups() != null && !node.getGroups().isEmpty();
     }
 
     /**
@@ -92,11 +88,7 @@ public class GroupZipper {
      * @return true, if it is possible to navigate up
      */
     public boolean canUp() {
-        if (parent == null) {
-            return false;
-        }
-
-        return true;
+        return parent != null;
     }
 
     /**
@@ -131,11 +123,7 @@ public class GroupZipper {
             return false;
         }
 
-        if (index + 1 >= parent.getNode().getGroups().size()) {
-            return false;
-        }
-
-        return true;
+        return index + 1 < parent.getNode().getGroups().size();
     }
 
     /**
@@ -163,11 +151,7 @@ public class GroupZipper {
      * @return true, if it is possible to navigate left
      */
     public boolean canLeft() {
-        if (index - 1 < 0) {
-            return false;
-        }
-
-        return true;
+        return index - 1 >= 0;
     }
 
     /**

@@ -129,9 +129,7 @@ public class Times {
                 return false;
         } else if (!locationChanged.equals(other.locationChanged))
             return false;
-        if (usageCount != other.usageCount)
-            return false;
-        return true;
+        return usageCount == other.usageCount;
     }
 
     @Override

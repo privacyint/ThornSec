@@ -173,7 +173,7 @@ public class ServerModel extends AMachineModel {
 		return units;
 	}
 
-	private Set<IUnit> serverConfig() throws InvalidUserException, InvalidServerException, InvalidMachineException {
+	private Set<IUnit> serverConfig() throws InvalidMachineException {
 		final Set<IUnit> units = new HashSet<>();
 
 		// Shouldn't /really/ be doing this out here, but these should be the only RAW

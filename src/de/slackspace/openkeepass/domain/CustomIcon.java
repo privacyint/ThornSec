@@ -66,11 +66,8 @@ public class CustomIcon {
         if (!Arrays.equals(data, other.data))
             return false;
         if (uuid == null) {
-            if (other.uuid != null)
-                return false;
-        } else if (!uuid.equals(other.uuid))
-            return false;
-        return true;
+            return other.uuid == null;
+        } else return uuid.equals(other.uuid);
     }
 
 }

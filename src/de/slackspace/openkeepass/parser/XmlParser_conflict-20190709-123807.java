@@ -7,7 +7,7 @@ import de.slackspace.openkeepass.processor.ProtectionStrategy;
 
 public interface XmlParser {
 
-    public <T> T fromXml(InputStream inputStream, ProtectionStrategy decryptionStrategy, Class<T> clazz);
+    <T> T fromXml(InputStream inputStream, ProtectionStrategy decryptionStrategy, Class<T> clazz);
 
-    public ByteArrayOutputStream toXml(Object objectToSerialize);
+    ByteArrayOutputStream toXml(Object objectToSerialize);
 }

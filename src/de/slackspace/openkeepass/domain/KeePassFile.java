@@ -125,16 +125,11 @@ public class KeePassFile implements KeePassFileElement {
             @Override
             public boolean matches(Entry item) {
                 if (matchExactly) {
-                    if (item.getTitle() != null && item.getTitle().equalsIgnoreCase(title)) {
-                        return true;
-                    }
+                    return item.getTitle() != null && item.getTitle().equalsIgnoreCase(title);
                 } else {
-                    if (item.getTitle() != null && item.getTitle().toLowerCase().contains(title.toLowerCase())) {
-                        return true;
-                    }
+                    return item.getTitle() != null && item.getTitle().toLowerCase().contains(title.toLowerCase());
                 }
 
-                return false;
             }
 
         });
@@ -167,16 +162,11 @@ public class KeePassFile implements KeePassFileElement {
             @Override
             public boolean matches(Group item) {
                 if (matchExactly) {
-                    if (item.getName() != null && item.getName().equalsIgnoreCase(name)) {
-                        return true;
-                    }
+                    return item.getName() != null && item.getName().equalsIgnoreCase(name);
                 } else {
-                    if (item.getName() != null && item.getName().toLowerCase().contains(name.toLowerCase())) {
-                        return true;
-                    }
+                    return item.getName() != null && item.getName().toLowerCase().contains(name.toLowerCase());
                 }
 
-                return false;
             }
 
         });
@@ -276,11 +266,7 @@ public class KeePassFile implements KeePassFileElement {
             @Override
             public boolean matches(Entry item) {
 
-                if (item.getUuid() != null && item.getUuid().compareTo(UUID) == 0) {
-                    return true;
-                } else {
-                    return false;
-                }
+                return item.getUuid() != null && item.getUuid().compareTo(UUID) == 0;
             }
         });
 
@@ -306,11 +292,7 @@ public class KeePassFile implements KeePassFileElement {
             @Override
             public boolean matches(Group item) {
 
-                if (item.getUuid() != null && item.getUuid().compareTo(UUID) == 0) {
-                    return true;
-                } else {
-                    return false;
-                }
+                return item.getUuid() != null && item.getUuid().compareTo(UUID) == 0;
             }
         });
 

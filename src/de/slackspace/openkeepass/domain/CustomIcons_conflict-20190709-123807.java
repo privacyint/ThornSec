@@ -68,11 +68,8 @@ public class CustomIcons {
             return false;
         CustomIcons other = (CustomIcons) obj;
         if (customIconList == null) {
-            if (other.customIconList != null)
-                return false;
-        } else if (!customIconList.equals(other.customIconList))
-            return false;
-        return true;
+            return other.customIconList == null;
+        } else return customIconList.equals(other.customIconList);
     }
 
 }

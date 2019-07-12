@@ -41,7 +41,7 @@ public class NetworkInterfaceData extends AData {
 		
 		private String inet;
 		
-		private Inet(String inet) {
+		Inet(String inet) {
 			this.inet = inet;
 		}
 		

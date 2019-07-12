@@ -474,8 +474,7 @@ class CustomServerIconRenderer extends DefaultTreeCellRenderer {
 			this.serviceIcon = new ImageIcon(CustomServerIconRenderer.class.getResource("images/service.jpeg"));
 		}
 		catch (Exception e) {
-			;;
-		}
+        }
 		this.model = model;
 	}
 	public Component getTreeCellRendererComponent(JTree tree, Object value,boolean sel,boolean expanded,boolean leaf,int row,boolean hasFocus) {
@@ -521,8 +520,7 @@ class DeviceIconRenderer extends DefaultTreeCellRenderer {
 			this.extOnlyIcon = new ImageIcon(DeviceIconRenderer.class.getResource("images/extonly.jpeg"));
 		}
 		catch (Exception e) {
-			;;
-		}
+        }
 		finally {
 			this.model = model;
 		}

@@ -25,7 +25,7 @@ public class WebXRay extends AStructuredProfile {
 	throws InvalidServerException, I686Exception {
 		Set<IUnit> units = new HashSet<IUnit>();
 
-		Boolean is64bit = networkModel.getData().getDebianIsoUrl(getLabel()).contains("amd64") ? true : false;
+		Boolean is64bit = networkModel.getData().getDebianIsoUrl(getLabel()).contains("amd64");
 		String url = "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb";
 		
 		if (!is64bit) {

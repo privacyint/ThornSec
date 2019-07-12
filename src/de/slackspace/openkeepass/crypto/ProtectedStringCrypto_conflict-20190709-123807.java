@@ -9,7 +9,7 @@ public interface ProtectedStringCrypto {
      *            the encrypted string
      * @return the input string unencrypted
      */
-    public String decrypt(String protectedString);
+    String decrypt(String protectedString);
 
     /**
      * Encrypts a given string and returns it.
@@ -18,5 +18,5 @@ public interface ProtectedStringCrypto {
      *            the unencrypted string
      * @return the input string encrypted
      */
-    public String encrypt(String plainString);
+    String encrypt(String plainString);
 }

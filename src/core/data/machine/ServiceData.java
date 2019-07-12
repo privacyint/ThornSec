@@ -59,7 +59,7 @@ public class ServiceData extends ServerData {
 	throws ADataException, JsonParsingException, IOException, URISyntaxException {
 		super.read(data);
 		
-		JsonArray disks = (JsonArray) getPropertyObjectArray("disks");
+		JsonArray disks = getPropertyObjectArray("disks");
 		if (disks != null) {
 			this.disks = new HashSet<DiskData>();
 

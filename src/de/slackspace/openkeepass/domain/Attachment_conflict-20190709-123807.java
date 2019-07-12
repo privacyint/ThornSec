@@ -73,11 +73,8 @@ public class Attachment implements KeePassFileElement {
         } else if (!key.equals(other.key))
             return false;
         if (attachmentValue == null) {
-            if (other.attachmentValue != null)
-                return false;
-        } else if (!attachmentValue.equals(other.attachmentValue))
-            return false;
-        return true;
+            return other.attachmentValue == null;
+        } else return attachmentValue.equals(other.attachmentValue);
     }
 
 }

@@ -9,14 +9,14 @@ abstract public class ADeviceModel extends AMachineModel {
 	private Boolean managed;
 
 	public ADeviceModel(String label, NetworkModel networkModel)
-	throws InvalidMachineException, InvalidDeviceException {
+	throws InvalidMachineException {
 		super(label, networkModel);
 
 		this.managed = networkModel.getData().getDeviceIsManaged(getLabel());
 	}
 	
 	final public Boolean getIsManaged()
-	throws InvalidMachineException, InvalidDeviceException {
+	throws InvalidMachineException {
 		return this.managed;
 	}
 	

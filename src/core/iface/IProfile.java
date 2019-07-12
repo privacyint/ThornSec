@@ -19,7 +19,7 @@ public interface IProfile {
 
 	String getLabel();
 
-	public Set<IUnit> getUnits()
+	Set<IUnit> getUnits()
 	throws AThornSecException;
 
 }

@@ -7,7 +7,7 @@ import core.model.network.NetworkModel;
 abstract public class InternalOnlyDeviceModel extends ADeviceModel {
 	
 	public InternalOnlyDeviceModel(String label, NetworkModel networkModel)
-	throws InvalidMachineException, InvalidDeviceException {
+	throws InvalidMachineException {
 		super(label, networkModel);
 	}
 }

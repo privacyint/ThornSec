@@ -2,12 +2,12 @@ package core.iface;
 
 public interface IUnit  {
 	
-	public String getLabel();
+	String getLabel();
 
-	public String genAudit(boolean quiet);
+	String genAudit(boolean quiet);
 
-	public String genConfig();
+	String genConfig();
 
-	public String genDryRun();
+	String genDryRun();
 
 }

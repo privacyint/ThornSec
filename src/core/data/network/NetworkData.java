@@ -612,7 +612,7 @@ public class NetworkData extends AData {
 		return this.servers.keySet();
 	}
 
-	private final ADeviceData getDevice(String device) throws InvalidMachineException, InvalidDeviceException {
+	private final ADeviceData getDevice(String device) throws InvalidMachineException {
 		final Object dev = getAMachineData(device);
 
 		if (dev instanceof ADeviceData) {
@@ -622,7 +622,7 @@ public class NetworkData extends AData {
 		}
 	}
 
-	private final UserDeviceData getUserDeviceData(String user) throws InvalidUserException, InvalidMachineException {
+	private final UserDeviceData getUserDeviceData(String user) throws InvalidMachineException {
 		final Object device = getAMachineData(user);
 
 		if (device instanceof UserDeviceData) {
@@ -642,11 +642,11 @@ public class NetworkData extends AData {
 		}
 	}
 
-	public final String getUserSSHKey(String user) throws InvalidUserException, InvalidMachineException {
+	public final String getUserSSHKey(String user) throws InvalidMachineException {
 		return getUserDeviceData(user).getSSHKey();
 	}
 
-	public final String getUserFullName(String user) throws InvalidUserException, InvalidMachineException {
+	public final String getUserFullName(String user) throws InvalidMachineException {
 		return getUserDeviceData(user).getFullName();
 	}
 
@@ -654,7 +654,7 @@ public class NetworkData extends AData {
 		return getAMachineData(machine).getIsThrottled();
 	}
 
-	public final Boolean getDeviceIsManaged(String device) throws InvalidMachineException, InvalidDeviceException {
+	public final Boolean getDeviceIsManaged(String device) throws InvalidMachineException {
 		return getDevice(device).getIsManaged();
 	}
 
@@ -670,7 +670,7 @@ public class NetworkData extends AData {
 		return type;
 	}
 
-	public final String getUserDefaultPassphrase(String user) throws InvalidUserException, InvalidMachineException {
+	public final String getUserDefaultPassphrase(String user) throws InvalidMachineException {
 		return getUserDeviceData(user).getDefaultPassphrase();
 	}
 

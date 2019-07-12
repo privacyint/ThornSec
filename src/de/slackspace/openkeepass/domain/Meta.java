@@ -206,11 +206,8 @@ public class Meta {
         } else if (!recycleBinUuid.equals(other.recycleBinUuid))
             return false;
         if (binaries == null) {
-            if (other.binaries != null)
-                return false;
-        } else if (!binaries.equals(other.binaries))
-            return false;
-        return true;
+            return other.binaries == null;
+        } else return binaries.equals(other.binaries);
     }
 
     @Override
