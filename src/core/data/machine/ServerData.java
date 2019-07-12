@@ -31,8 +31,8 @@ import core.exception.data.ADataException;
  */
 public class ServerData extends AMachineData {
 
-	public enum SSHConnection { DIRECT, TUNNELLED}
-	public enum WANConnection { PPP, DHCP, STATIC}
+	public enum SSHConnection { DIRECT, TUNNELLED }
+	public enum WANConnection { PPP, DHCP, STATIC }
 	
 	private Set<String> types;
 	private Set<String> profiles;
