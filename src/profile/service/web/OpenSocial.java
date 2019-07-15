@@ -140,7 +140,7 @@ public class OpenSocial extends AStructuredProfile {
 		units.addAll(this.lempStack.getLiveConfig());
 
 		// Set up our database
-		final Set<HostName> cnames = this.networkModel.getData().getCnames(getLabel());
+		final Set<HostName> cnames = this.networkModel.getData().getCNAMEs(getLabel());
 		final String domain = this.networkModel.getData().getDomain().replaceAll("\\.", "\\\\.");
 
 		final FileUnit opensocialConf = new FileUnit("opensocial", "opensocial_installed",

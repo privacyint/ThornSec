@@ -183,7 +183,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 						zoneFile.appendLine("    local-data-ptr: \\\"" + iface.getGateway() + " router."
 								+ hostMachine.getFQDN() + "\\\"");
 
-						for (final HostName cname : hostMachine.getCNames()) {
+						for (final HostName cname : hostMachine.getCNAMEs()) {
 							zoneFile.appendLine(
 									"    local-data: \\\"" + cname.getHost() + " A " + iface.getAddress() + "\\\"");
 							zoneFile.appendLine(

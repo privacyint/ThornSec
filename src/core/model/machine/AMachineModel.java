@@ -9,8 +9,11 @@ package core.model.machine;
 
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
+import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
 import core.StringUtils;
@@ -31,8 +34,8 @@ public abstract class AMachineModel extends AModel {
 	private final Hashtable<String, NetworkInterfaceModel> lanIfaces;
 	private final Hashtable<String, NetworkInterfaceModel> wanIfaces;
 
-	private final HostName fqdn;
-	private final Set<HostName> cnames;
+	private final HostName domain;
+	private final Set<String> cnames;
 
 	private InternetAddress emailAddress;
 
@@ -44,21 +47,21 @@ public abstract class AMachineModel extends AModel {
 
 	private Boolean throttled;
 
-	private final Hashtable<Encapsulation, Set<HostName>> listens;
+	private final Map<Encapsulation, Set<Integer>> listens;
 
-	private Set<HostName> forwards;
+	private Set<String> forwards;
 	private Set<HostName> ingresses;
-	private final Set<HostName> egresses;
+	private Set<HostName> egresses;
 
 	private final Hashtable<String, Set<Integer>> dnat;
 
-	AMachineModel(String label, NetworkModel networkModel) throws InvalidMachineException {
+	AMachineModel(String label, NetworkModel networkModel) throws InvalidMachineException, AddressException {
 		super(label, networkModel);
 
 		this.emailAddress = networkModel.getData().getEmailAddress(label);
 
-		this.fqdn = networkModel.getData().getFQDN(this.getLabel());
-		this.cnames = networkModel.getData().getCnames(this.getLabel());
+		this.domain = networkModel.getData().getDomain(getLabel());
+		this.cnames = networkModel.getData().getCNAMEs(getLabel());
 
 		this.lanIfaces = new Hashtable<>();
 		this.wanIfaces = new Hashtable<>();
@@ -67,12 +70,12 @@ public abstract class AMachineModel extends AModel {
 		this.secondOctet = null;
 		this.thirdOctet = null;
 
-		this.throttled = networkModel.getData().getMachineIsThrottled(this.getLabel());
+		this.throttled = networkModel.getData().isThrottled(getLabel());
 
-		this.listens = networkModel.getData().getListens(this.getLabel());
-		this.ingresses = networkModel.getData().getIngresses(this.getLabel());
-		this.egresses = networkModel.getData().getEgresses(this.getLabel());
-		this.forwards = networkModel.getData().getForwards(this.getLabel());
+		this.listens = networkModel.getData().getListens(getLabel());
+		this.ingresses = networkModel.getData().getIngresses(getLabel());
+		this.egresses = networkModel.getData().getEgresses(getLabel());
+		this.forwards = networkModel.getData().getForwards(getLabel());
 		this.dnat = null;
 	}
 
@@ -81,18 +84,17 @@ public abstract class AMachineModel extends AModel {
 			throw new InvalidNICException();
 		}
 
-		for (final NetworkInterfaceData ifaceData : this.networkModel.getData().getLanIfaces(this.getLabel())) {
-			this.addLANInterface(ifaceData.getIface(), ifaceDataToModel(ifaceData));
+		for (final NetworkInterfaceData ifaceData : this.networkModel.getData().getLanIfaces(getLabel())) {
+			addLANInterface(ifaceData.getIface(), ifaceDataToModel(ifaceData));
 		}
-		for (final NetworkInterfaceData ifaceData : this.networkModel.getData().getWanIfaces(this.getLabel())) {
-			this.addWANInterface(ifaceData.getIface(), ifaceDataToModel(ifaceData));
+		for (final NetworkInterfaceData ifaceData : this.networkModel.getData().getWanIfaces(getLabel())) {
+			addWANInterface(ifaceData.getIface(), ifaceDataToModel(ifaceData));
 		}
 	}
 
 	final private NetworkInterfaceModel ifaceDataToModel(NetworkInterfaceData ifaceData) {
-		final NetworkInterfaceModel ifaceModel = new NetworkInterfaceModel(ifaceData.getIface(), this.networkModel);
+		final NetworkInterfaceModel ifaceModel = new NetworkInterfaceModel(getLabel(), this.networkModel);
 
-		ifaceModel.setHost(ifaceData.getHost());
 		ifaceModel.setAddress(ifaceData.getAddress());
 		ifaceModel.setBridgePorts(ifaceData.getBridgePorts());
 		ifaceModel.setBroadcast(ifaceData.getBroadcast());
@@ -191,7 +193,7 @@ public abstract class AMachineModel extends AModel {
 	}
 
 	public final void addListen(Encapsulation enc, Integer... ports) throws InvalidPortException {
-		Set<HostName> listening = this.listens.get(enc);
+		Set<Integer> listening = this.listens.get(enc);
 
 		if (listening == null) {
 			listening = new HashSet<>();
@@ -202,24 +204,31 @@ public abstract class AMachineModel extends AModel {
 				throw new InvalidPortException();
 			}
 
-			listening.add(new HostName("*:" + port));
+			listening.add(port);
 		}
 
 		this.listens.put(enc, listening);
 	}
 
-	public final Hashtable<Encapsulation, Set<HostName>> getListens() {
+	public final Map<Encapsulation, Set<Integer>> getListens() {
 		return this.listens;
 	}
 
-	public final void addEgress(String egress) {
-		addEgress(new HostName(egress));
+	public final void addEgress(String... egresses) {
+		for (final String egress : egresses) {
+			addEgress(new HostName(egress));
+		}
 	}
 
-	public final void addEgress(HostName egress) {
-		// @TODO
-		// HostName extant = this.egresses.
-		// this.egresses.put(destination, new HashSet<Integer>( Arrays.asList(ports) ));
+	public final void addEgress(HostName... egresses) {
+		if (this.egresses == null) {
+			this.egresses = new LinkedHashSet<>();
+		}
+
+		for (final HostName egress : egresses) {
+			this.egresses.add(egress);
+		}
+
 	}
 
 	public final Set<HostName> getEgresses() {
@@ -230,15 +239,17 @@ public abstract class AMachineModel extends AModel {
 		return this.dnat;
 	}
 
-	public final void addForward(HostName destination) {
+	public final void addForward(String... destinations) {
 		if (this.forwards == null) {
 			this.forwards = new HashSet<>();
 		}
 
-		this.forwards.add(destination);
+		for (final String destination : destinations) {
+			this.forwards.add(destination);
+		}
 	}
 
-	public final Set<HostName> getForwards() {
+	public final Set<String> getForwards() {
 		return this.forwards;
 	}
 
@@ -250,21 +261,21 @@ public abstract class AMachineModel extends AModel {
 		this.emailAddress = emailAddress;
 	}
 
-	public final HostName getFQDN() {
-		return this.fqdn;
-	}
-
-	public final Set<HostName> getCNames() {
+	public final Set<String> getCNAMEs() {
 		return this.cnames;
 	}
 
-	public final void addCName(HostName... cnames) {
-		for (final HostName cname : cnames) {
+	public final void putCNAME(String... cnames) {
+		for (final String cname : cnames) {
 			this.cnames.add(cname);
 		}
 	}
 
-	public final Boolean getIsThrottled() {
+	public HostName getDomain() {
+		return this.domain;
+	}
+
+	public final Boolean isThrottled() {
 		return this.throttled;
 	}
 

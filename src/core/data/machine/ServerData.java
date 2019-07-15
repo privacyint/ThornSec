@@ -41,9 +41,9 @@ public class ServerData extends AMachineData {
 
 	private Set<HostName> sshSources;
 	private Set<String> profiles;
-	private LinkedHashSet<String> types;
+	private LinkedHashSet<MachineType> types;
 
-	private final Set<String> adminUsernames;
+	private Set<String> adminUsernames;
 	private final Set<IPAddress> remoteAdminIPAddresses;
 
 	private Integer adminSSHConnectPort;
@@ -166,34 +166,44 @@ public class ServerData extends AMachineData {
 		this.adminSSHConnectPort = port;
 	}
 
-	private void putProfile(String profile) {
+	private void putProfile(String... profiles) {
 		if (this.profiles == null) {
 			this.profiles = new LinkedHashSet<>();
 		}
 
-		this.profiles.add(profile);
+		for (final String profile : profiles) {
+			this.profiles.add(profile);
+		}
 	}
 
-	private void putType(String type) {
+	private void putType(String... types) {
 		if (this.types == null) {
 			this.types = new LinkedHashSet<>();
 		}
 
-		this.types.add(type);
+		for (final String type : types) {
+			this.types.add(MachineType.valueOf(type));
+		}
 	}
 
-	private void putSSHSource(HostName source) {
+	private void putSSHSource(HostName... sources) {
 		if (this.sshSources == null) {
 			this.sshSources = new LinkedHashSet<>();
 		}
 
-		this.sshSources.add(source);
-
+		for (final HostName source : sources) {
+			this.sshSources.add(source);
+		}
 	}
 
-	private void putAdmin(String string) {
-		// TODO Auto-generated method stub
+	private void putAdmin(String... admins) {
+		if (this.adminUsernames == null) {
+			this.adminUsernames = new LinkedHashSet<>();
+		}
 
+		for (final String admin : admins) {
+			this.adminUsernames.add(admin);
+		}
 	}
 
 	public final Set<String> getAdminUsernames() {
@@ -248,7 +258,7 @@ public class ServerData extends AMachineData {
 		return this.update;
 	}
 
-	public final Set<String> getTypes() {
+	public final Set<MachineType> getTypes() {
 		return this.types;
 	}
 

@@ -1,8 +1,8 @@
 /*
  * This code is part of the ThornSec project.
- * 
+ *
  * To learn more, please head to its GitHub repo: @privacyint
- * 
+ *
  * Pull requests encouraged.
  */
 package core.model.machine;
@@ -12,10 +12,11 @@ import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.mail.internet.AddressException;
+
+import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidMachineException;
-import core.exception.data.machine.InvalidServerException;
-import core.exception.data.machine.InvalidUserException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
@@ -45,9 +46,10 @@ public class ServerModel extends AMachineModel {
 	private final ConfigFiles configFiles;
 	private final UserAccounts users;
 
-	ServerModel(String label, NetworkModel networkModel) throws InstantiationException, IllegalAccessException,
-			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException,
-			ClassNotFoundException, InvalidMachineException, InvalidServerModelException, URISyntaxException {
+	ServerModel(String label, NetworkModel networkModel)
+			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
+			NoSuchMethodException, SecurityException, ClassNotFoundException, InvalidMachineException,
+			InvalidServerModelException, URISyntaxException, AddressException {
 		super(label, networkModel);
 
 		final String firewallProfile = networkModel.getData().getFirewallProfile(getLabel());
@@ -60,29 +62,29 @@ public class ServerModel extends AMachineModel {
 		}
 
 		this.types = new HashSet<>();
-		for (final String type : networkModel.getData().getTypes(getLabel())) {
-			switch (type.toLowerCase()) {
-			case "router":
-				if (this.firewall == null) {
-					this.firewall = new ShorewallFirewall(getLabel(), networkModel);
-				}
-				this.types.add(new Router(getLabel(), networkModel));
-				break;
-			case "metal":
+		for (final MachineType type : networkModel.getData().getTypes(getLabel())) {
+			switch (type) {
+				case ROUTER:
+					if (this.firewall == null) {
+						this.firewall = new ShorewallFirewall(getLabel(), networkModel);
+					}
+					this.types.add(new Router(getLabel(), networkModel));
+					break;
+				case HYPERVISOR:
 //					this.types.add(new Metal(getLabel(), networkModel));
 //					if (this.firewall == null) { this.firewall = new CsfFirewall(getLabel(), networkModel); }
-				break;
-			case "service":
+					break;
+				case SERVICE:
 //					this.types.add(new Service(getLabel(), networkModel));
-				break;
-			case "dedi":
+					break;
+				case DEDICATED:
 //					this.types.add(new Dedicated(getLabel(), networkModel));
-				break;
+					break;
 			}
 		}
 
 		this.profiles = new HashSet<>();
-		for (final String profile : networkModel.getData().getServerProfiles(getLabel())) {
+		for (final String profile : networkModel.getData().getProfiles(getLabel())) {
 			if (profile.equals("")) {
 				continue;
 			}
@@ -98,7 +100,7 @@ public class ServerModel extends AMachineModel {
 		this.users = new UserAccounts(getLabel(), networkModel);
 		this.configFiles = new ConfigFiles(getLabel(), networkModel);
 
-		if (networkModel.getData().getExternalIp(getLabel()) != null) {
+		if (!networkModel.getData().getExternalIPs(getLabel()).isEmpty()) {
 			addIngress("*");
 		}
 
@@ -202,7 +204,7 @@ public class ServerModel extends AMachineModel {
 		String excludeKnownSSHKeys = "";
 
 		for (final String admin : this.networkModel.getData().getAdmins(getLabel())) {
-			excludeKnownSSHKeys += " | grep -v \"" + this.networkModel.getData().getUserSSHKey(admin) + "\"";
+			excludeKnownSSHKeys += " | grep -v \"" + this.networkModel.getData().getSSHKey(admin) + "\"";
 		}
 
 		units.add(new SimpleUnit("no_additional_ssh_keys", "proceed", "",
@@ -329,7 +331,7 @@ public class ServerModel extends AMachineModel {
 	}
 
 	public final void addProcessString(String psString) {
-		this.getProcessModel().addProcess(psString);
+		getProcessModel().addProcess(psString);
 	}
 
 	public final void addSystemUsername(String username) {

@@ -14,36 +14,32 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Date;
 import java.util.Hashtable;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import core.data.machine.AMachineData.MachineType;
 import core.data.network.NetworkData;
 import core.exception.runtime.InvalidDeviceModelException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.exec.ManageExec;
 import core.exec.network.OpenKeePassPassphrase;
-import core.iface.IUnit;
 import core.model.machine.ADeviceModel;
 import core.model.machine.AMachineModel;
 import core.model.machine.ExternalOnlyDeviceModel;
 import core.model.machine.InternalOnlyDeviceModel;
 import core.model.machine.ServerModel;
 import core.model.machine.ServiceModel;
-import core.model.network.NetworkModel.MachineType;
 
 public class NetworkModel {
 	private final String label;
 	private NetworkData data;
-	private final Hashtable<MachineType, Hashtable<String, AMachineModel>> machines;
-	private final Hashtable<String, Set<IUnit>> units;
+	private final Map<MachineType, Map<String, AMachineModel>> machines;
 
 	NetworkModel(String label) {
 		this.label = label;
 
-		this.machines = new Hashtable<>();
-
-		this.units = new Hashtable<>();
+		this.machines = null;
 	}
 
 	final public String getLabel() {
@@ -121,12 +117,12 @@ public class NetworkModel {
 
 	}
 
-	public final Hashtable<MachineType, Hashtable<String, AMachineModel>> getAllMachineModels() {
+	public final Map<MachineType, Map<String, AMachineModel>> getAllMachineModels() {
 		return this.machines;
 	}
 
-	public final Hashtable<String, ServerModel> getAllServerModels() {
-		final Hashtable<String, ServerModel> servers = new Hashtable<>();
+	public final Map<String, ServerModel> getAllServerModels() {
+		final Map<String, ServerModel> servers = new Hashtable<>();
 
 		for (final AMachineModel machine : getAllMachineModels().get(MachineType.SERVER).values()) {
 			servers.put(machine.getLabel(), (ServerModel) machine);
@@ -166,9 +162,9 @@ public class NetworkModel {
 	}
 
 	public final AMachineModel getMachineModel(String machine) throws InvalidMachineModelException {
-		final Hashtable<MachineType, Hashtable<String, AMachineModel>> allMachines = this.getAllMachineModels();
+		final Map<MachineType, Map<String, AMachineModel>> allMachines = getAllMachineModels();
 
-		for (final Hashtable<String, AMachineModel> machines : allMachines.values()) {
+		for (final Map<String, AMachineModel> machines : allMachines.values()) {
 			if (machines.containsKey(machine)) {
 				return machines.get(machine);
 			}
@@ -178,8 +174,8 @@ public class NetworkModel {
 	}
 
 	public final ServerModel getServerModel(String server) throws InvalidServerModelException {
-		if (this.getAllServerModels().containsKey(server)) {
-			return this.getAllServerModels().get(server);
+		if (getAllServerModels().containsKey(server)) {
+			return getAllServerModels().get(server);
 		}
 
 		throw new InvalidServerModelException();
@@ -189,12 +185,12 @@ public class NetworkModel {
 
 		ADeviceModel model = null;
 
-		if (this.getAllUserDeviceModels().containsKey(device)) {
-			model = this.getAllUserDeviceModels().get(device);
-		} else if (this.getAllInternalOnlyDeviceModels().containsKey(device)) {
-			model = this.getAllInternalOnlyDeviceModels().get(device);
-		} else if (this.getAllExternalOnlyDeviceModels().containsKey(device)) {
-			model = this.getAllExternalOnlyDeviceModels().get(device);
+		if (getAllUserDeviceModels().containsKey(device)) {
+			model = getAllUserDeviceModels().get(device);
+		} else if (getAllInternalOnlyDeviceModels().containsKey(device)) {
+			model = getAllInternalOnlyDeviceModels().get(device);
+		} else if (getAllExternalOnlyDeviceModels().containsKey(device)) {
+			model = getAllExternalOnlyDeviceModels().get(device);
 		} else {
 			throw new InvalidDeviceModelException();
 		}
@@ -211,7 +207,7 @@ public class NetworkModel {
 	}
 
 	public final void auditAll(OutputStream out, InputStream in, boolean quiet) throws InvalidServerModelException {
-		for (final String server : this.getAllServerModels().keySet()) {
+		for (final String server : getAllServerModels().keySet()) {
 			final ManageExec exec = getManageExec(server, "audit", out, quiet);
 			if (exec != null) {
 				exec.manage();
@@ -436,17 +432,17 @@ public class NetworkModel {
 		return null;
 	}
 
-	public List<ServerModel> getDediServers() {
+	public Set<ServerModel> getDediServers() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public List<ServerModel> getMetalServers() {
+	public Set<ServerModel> getMetalServers() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public List<ServiceModel> getServices(String hypervisorLabel) {
+	public Set<ServiceModel> getServices(String hypervisorLabel) {
 		// TODO Auto-generated method stub
 		return null;
 	}

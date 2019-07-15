@@ -12,6 +12,8 @@ import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.mail.internet.AddressException;
+
 import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.runtime.InvalidServerModelException;
@@ -22,7 +24,7 @@ public class ServiceModel extends ServerModel {
 
 	ServiceModel(String label, NetworkModel networkModel) throws InvalidServerModelException, InvalidMachineException,
 			InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
-			NoSuchMethodException, SecurityException, ClassNotFoundException, URISyntaxException {
+			NoSuchMethodException, SecurityException, ClassNotFoundException, URISyntaxException, AddressException {
 		super(label, networkModel);
 	}
 

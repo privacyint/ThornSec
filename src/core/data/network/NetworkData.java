@@ -30,9 +30,13 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
 
 import core.data.AData;
+import core.data.machine.ADeviceData;
 import core.data.machine.AMachineData;
+import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
 import core.data.machine.ExternalDeviceData;
 import core.data.machine.HypervisorData;
@@ -65,6 +69,8 @@ public class NetworkData extends AData {
 	private static final Boolean DEFAULT_VPNONLY = false;
 	private static final Boolean DEFAULT_AUTOGUEST = false;
 	private static final Boolean DEFAULT_UPDATE = true;
+	private static final Boolean DEFAULT_DEVICE_IS_MANAGED = true;
+	private static final Boolean DEFAULT_MACHINE_IS_THROTTLED = true;
 
 	private static final String DEFAULT_THORNSECBASE = "/srv/ThornSec";
 	private static final String DEFAULT_DEBIAN_ISO_DIR = "https://gensho.ftp.acc.umu.se/debian-cd/current/amd64/iso-cd/";
@@ -155,7 +161,9 @@ public class NetworkData extends AData {
 					final ServerData server = new ServerData(jsonServer);
 					server.read(jsonServers.getJsonObject(jsonServer));
 
-					putMachine(MachineType.SERVER, server);
+					for (final MachineType type : server.getTypes()) {
+						putMachine(type, server);
+					}
 				}
 			}
 
@@ -357,12 +365,15 @@ public class NetworkData extends AData {
 		return this.vpnOnly;
 	}
 
+	/**
+	 * @return the domain which applies to this network
+	 */
 	public final String getDomain() {
 		return this.domain;
 	}
 
-	final public Set<String> getTypes(String server) throws InvalidServerException {
-		Set<String> types = ((ServerData) getMachine(MachineType.SERVER, server)).getTypes();
+	final public Set<MachineType> getTypes(String server) throws InvalidServerException {
+		Set<MachineType> types = ((ServerData) getMachine(MachineType.SERVER, server)).getTypes();
 
 		if (types.isEmpty()) {
 			types = this.defaultServiceData.getTypes();
@@ -371,7 +382,7 @@ public class NetworkData extends AData {
 		return types;
 	}
 
-	public Set<String> getCnames(String machine) throws InvalidMachineException {
+	public Set<String> getCNAMEs(String machine) throws InvalidMachineException {
 		return getMachine(machine).getCNAMEs();
 	}
 
@@ -574,5 +585,118 @@ public class NetworkData extends AData {
 		}
 
 		return directory;
+	}
+
+	public Boolean isManaged(String label) {
+		Boolean managed = ((ADeviceData) getMachine(MachineType.DEVICE, label)).isManaged();
+
+		if (managed == null) {
+			managed = NetworkData.DEFAULT_DEVICE_IS_MANAGED;
+		}
+
+		return managed;
+	}
+
+	public InternetAddress getEmailAddress(String label) throws AddressException {
+		final AMachineData machine = getMachine(label);
+		InternetAddress address = machine.getEmailAddress();
+
+		if (address == null) {
+			address = new InternetAddress(label + "@" + getDomain(label).getHost());
+		}
+
+		return address;
+	}
+
+	public HostName getDomain(String label) {
+		HostName domain = getMachine(label).getDomain();
+
+		if (domain == null) {
+			domain = this.defaultServiceData.getDomain();
+		}
+
+		return domain;
+	}
+
+	public Boolean isThrottled(String label) {
+		Boolean throttled = getMachine(label).isThrottled();
+
+		if (throttled == null) {
+			throttled = this.defaultServiceData.isThrottled();
+			if (throttled == null) {
+				throttled = NetworkData.DEFAULT_MACHINE_IS_THROTTLED;
+			}
+		}
+
+		return throttled;
+	}
+
+	public Map<Encapsulation, Set<Integer>> getListens(String label) {
+		Map<Encapsulation, Set<Integer>> listens = getMachine(label).getListens();
+
+		if (listens == null) {
+			listens = this.defaultServiceData.getListens();
+			if (listens == null) {
+				return new Hashtable<>();
+			}
+		}
+		return listens;
+	}
+
+	public Set<HostName> getIngresses(String label) {
+		Set<HostName> ingresses = getMachine(label).getIngresses();
+
+		if (ingresses == null) {
+			ingresses = this.defaultServiceData.getIngresses();
+			if (ingresses == null) {
+				return new HashSet<>();
+			}
+		}
+		return ingresses;
+	}
+
+	public Set<HostName> getEgresses(String label) {
+		Set<HostName> egresses = getMachine(label).getEgresses();
+
+		if (egresses == null) {
+			egresses = this.defaultServiceData.getEgresses();
+			if (egresses == null) {
+				return new HashSet<>();
+			}
+		}
+		return egresses;
+	}
+
+	public Set<String> getForwards(String label) {
+		Set<String> forwards = getMachine(label).getForwards();
+
+		if (forwards == null) {
+			forwards = this.defaultServiceData.getForwards();
+			if (forwards == null) {
+				return new HashSet<>();
+			}
+		}
+		return forwards;
+	}
+
+	public String getFirewallProfile(String label) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Set<String> getProfiles(String label) {
+		Set<String> profiles = ((ServerData) getMachine(MachineType.SERVER, label)).getProfiles();
+
+		if (profiles == null) {
+			profiles = this.defaultServiceData.getProfiles();
+			if (profiles == null) {
+				return new HashSet<>();
+			}
+		}
+		return profiles;
+	}
+
+	public String getSSHKey(String admin) {
+		return ((UserDeviceData) getMachine(MachineType.USER, admin)).getSSHKey();
 	}
 }
