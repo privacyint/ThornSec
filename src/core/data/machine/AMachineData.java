@@ -368,5 +368,4 @@ public abstract class AMachineData extends AData {
 	public HostName getDomain() {
 		return this.domain;
 	}
-
 }

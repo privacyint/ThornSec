@@ -18,3 +18,5 @@ out/
 \.idea/
 
 ThornSec\.iml
+
+\.settings/

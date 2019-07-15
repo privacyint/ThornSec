@@ -27,7 +27,7 @@ public class Main {
 		    chooser.setFileFilter(filter);
 		    int returnVal = chooser.showOpenDialog(null);
 		    
-		    if(returnVal == JFileChooser.APPROVE_OPTION) {
+		    if (returnVal == JFileChooser.APPROVE_OPTION) {
 		       jsonPath = chooser.getSelectedFile().getPath();
 		    }
 		}
