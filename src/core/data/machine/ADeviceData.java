@@ -37,7 +37,7 @@ public abstract class ADeviceData extends AMachineData {
 		this.managed = getBooleanProperty("managed");
 	}
 
-	public final Boolean getIsManaged() {
+	public final Boolean isManaged() {
 		return this.managed;
 	}
 }

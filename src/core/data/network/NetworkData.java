@@ -246,7 +246,7 @@ public class NetworkData extends AData {
 		return this.upstreamDNS;
 	}
 
-	public final Boolean getUpstreamDNSIsTLS() {
+	public final Boolean upstreamDNSIsTLS() {
 		return this.dtls;
 	}
 
@@ -257,14 +257,14 @@ public class NetworkData extends AData {
 	/**
 	 * Should we build an auto guest network?
 	 */
-	public final Boolean getAutoGuest() {
+	public final Boolean buildAutoGuest() {
 		return this.autoGuest;
 	}
 
 	/**
 	 * Should we autogenerate passphrases for users who haven't set a default?
 	 */
-	public final Boolean getAutoGenPassphrasess() {
+	public final Boolean autoGenPassphrasess() {
 		return this.autoGenPassphrases;
 	}
 
@@ -292,11 +292,11 @@ public class NetworkData extends AData {
 	/**
 	 * Should we do ad blocking at the router?
 	 */
-	public final Boolean getAdBlocking() {
+	public final Boolean adBlocking() {
 		return this.adBlocking;
 	}
 
-	public final boolean getVpnOnly() {
+	public final boolean vpnOnly() {
 		return this.vpnOnly;
 	}
 
