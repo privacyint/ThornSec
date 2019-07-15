@@ -1,8 +1,8 @@
 /*
  * This code is part of the ThornSec project.
- * 
+ *
  * To learn more, please head to its GitHub repo: @privacyint
- * 
+ *
  * Pull requests encouraged.
  */
 package core.data.machine;
@@ -16,9 +16,9 @@ import javax.json.stream.JsonParsingException;
 import core.exception.data.ADataException;
 
 /**
- * Abstract class for something representing "Device Data" on our network.
- * This is the parent class for all devices on our network. These are things like
- * users, or printers, or similar. 
+ * Abstract class for something representing "Device Data" on our network. This
+ * is the parent class for all devices on our network. These are things like
+ * users, or printers, or similar.
  */
 public abstract class ADeviceData extends AMachineData {
 	private Boolean managed;
@@ -28,13 +28,14 @@ public abstract class ADeviceData extends AMachineData {
 
 		this.managed = null;
 	}
-	
+
 	@Override
-	protected void read(JsonObject data)
-	throws ADataException, JsonParsingException, IOException, URISyntaxException {
+	protected void read(JsonObject data) throws ADataException, JsonParsingException, IOException, URISyntaxException {
 		super.read(data);
 
-		this.managed = getBooleanProperty("managed");
+		if (data.containsKey("managed")) {
+			this.managed = data.getBoolean("managed");
+		}
 	}
 
 	public final Boolean isManaged() {

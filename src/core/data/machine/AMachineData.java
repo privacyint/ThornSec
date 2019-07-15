@@ -11,21 +11,29 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
 import core.data.AData;
+import core.data.machine.configuration.DiskData;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.exception.data.ADataException;
+import core.exception.data.InvalidDestinationException;
+import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidEmailAddressException;
+import inet.ipaddr.AddressStringException;
 import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
+import inet.ipaddr.IncompatibleAddressException;
 
 /**
  * Abstract class for something representing a "Machine" on our network.
@@ -33,11 +41,14 @@ import inet.ipaddr.IPAddressString;
  * A machine, at its most basic, is something with network interfaces. This
  * means it can also talk TCP and UDP, can be throttled, and has a name
  * somewhere in DNS-world.
+ *
+ * Any of the properties of a "Machine" may be null, this is not where we're
+ * doing error checking! :)
  */
 public abstract class AMachineData extends AData {
 	// These are the only types of machine I'll recognise until I'm told
 	// otherwise...
-	public static enum MachineType {
+	public enum MachineType {
 		ROUTER("Router"), SERVER("Server"), HYPERVISOR("HyperVisor"), DEDICATED("Dedicated"), SERVICE("Service"),
 		DEVICE("Device"), USER("User"), INTERNAL_ONLY("Internal-Only Device"), EXTERNAL_ONLY("External-Only Device");
 
@@ -47,23 +58,25 @@ public abstract class AMachineData extends AData {
 			this.machineType = machineType;
 		}
 
+		@Override
 		public String toString() {
 			return this.machineType;
 		}
 	}
 
 	// Networking
-	public enum Encapsulation { UDP, TCP }
+	public enum Encapsulation {
+		UDP, TCP
+	}
+
+	public static Boolean DEFAULT_IS_THROTTLED = true;
 
 	private Set<NetworkInterfaceData> lanInterfaces;
 	private Set<NetworkInterfaceData> wanInterfaces;
 
-	private IPAddress externalIPAddress;
+	private Set<IPAddress> externalIPAddresses;
 
-	// DNS
-	private HostName fqdn;
-	private Set<HostName> cnames;
-
+	private Set<String> cnames;
 	// Alerting
 	private InternetAddress emailAddress;
 
@@ -71,11 +84,15 @@ public abstract class AMachineData extends AData {
 	private String firewallProfile;
 	private Boolean throttled;
 
-	private Hashtable<Encapsulation, Set<HostName>> listens;
+	private Map<Encapsulation, Set<Integer>> listens;
 
-	private Set<HostName> forwards;
+	private Set<String> forwards;
 	private Set<HostName> ingresses;
 	private Set<HostName> egresses;
+
+	private HostName domain;
+
+	private LinkedHashSet<DiskData> disks;
 
 	protected AMachineData(String label) {
 		super(label);
@@ -83,9 +100,8 @@ public abstract class AMachineData extends AData {
 		this.lanInterfaces = null;
 		this.wanInterfaces = null;
 
-		this.externalIPAddress = null;
+		this.externalIPAddresses = null;
 
-		this.fqdn = null;
 		this.cnames = null;
 
 		this.emailAddress = null;
@@ -102,90 +118,207 @@ public abstract class AMachineData extends AData {
 
 	@Override
 	protected void read(JsonObject data) throws ADataException, JsonParsingException, IOException, URISyntaxException {
-		this.setData(data);
+		setData(data);
 
-		// These are all arrays, we need to do some further processing first!
-		final JsonArray lanIfaces = super.getPropertyObjectArray("lan");
-		final JsonArray wanIfaces = super.getPropertyObjectArray("wan");
-		final Set<String> cnames = getPropertyArray("cnames");
-		final Set<String> listensTCP = getPropertyArray("listentcp");
-		final Set<String> listensUDP = getPropertyArray("listenudp");
-		final Set<String> forwards = getPropertyArray("forward");
-		final Set<String> ingresses = getPropertyArray("ingress");
-		final Set<String> egresses = getPropertyArray("egress");
+		// Disks
+		if (data.containsKey("disks")) {
+			final JsonArray disks = data.getJsonArray("disks");
+			for (int i = 0; i < disks.size(); ++i) {
+				final DiskData disk = new DiskData(getLabel());
 
-		// Let's set some fields
-		this.externalIPAddress = new IPAddressString(getStringProperty("externalip", null)).getAddress();
-		this.fqdn = new HostName(getStringProperty("fqdn", null));
-		this.firewallProfile = getStringProperty("firewall", null);
-		this.throttled = getBooleanProperty("throttle");
+				disk.read(disks.getJsonObject(i));
+				putDisk(disk);
+			}
+		}
 
-		// But only set these fields !null if we actually have anything to put in them
-		if (lanIfaces != null) {
-			this.lanInterfaces = new HashSet<>();
-
+		// Network Interfaces
+		if (data.containsKey("lan")) {
+			final JsonArray lanIfaces = data.getJsonArray("lan");
 			for (int i = 0; i < lanIfaces.size(); ++i) {
-				final NetworkInterfaceData iface = new NetworkInterfaceData(this.getFQDN());
+				final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
+
 				iface.read(lanIfaces.getJsonObject(i));
-				this.lanInterfaces.add(iface);
+				putLanInterface(iface);
 			}
 		}
-		if (wanIfaces != null) {
-			this.wanInterfaces = new HashSet<>();
-
+		if (data.containsKey("wan")) {
+			final JsonArray wanIfaces = data.getJsonArray("wan");
 			for (int i = 0; i < wanIfaces.size(); ++i) {
-				final NetworkInterfaceData iface = new NetworkInterfaceData(this.getFQDN());
+				final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
+
 				iface.read(wanIfaces.getJsonObject(i));
-				this.wanInterfaces.add(iface);
+				putWanInterface(iface);
 			}
 		}
-		if (cnames != null) {
-			this.cnames = new HashSet<>();
 
-			for (final String cname : cnames) {
-				this.cnames.add(new HostName(cname));
+		// External IP addresses
+		if (data.containsKey("externalips")) {
+			final JsonArray ips = data.getJsonArray("externalips");
+			for (final JsonValue ip : ips) {
+				IPAddress address;
+				try {
+					address = new IPAddressString(ip.toString()).toAddress();
+				} catch (final AddressStringException e) {
+					throw new InvalidDestinationException();
+				} catch (final IncompatibleAddressException e) {
+					throw new InvalidDestinationException();
+				}
+				putExternalIPAddress(address);
 			}
 		}
-		if ((listensTCP != null) || (listensUDP != null)) {
+
+		// DNS-related stuff
+		if (data.containsKey("domain")) {
+			setDomain(new HostName(data.getString("domain")));
+		}
+		if (data.containsKey("cnames")) {
+			final JsonArray cnames = data.getJsonArray("cnames");
+			for (final JsonValue cname : cnames) {
+				putCNAME(cname.toString());
+			}
+		}
+
+		// Firewall...
+		this.firewallProfile = data.getString("firewall", null);
+		if (data.containsKey("throttled")) {
+			this.throttled = data.getBoolean("throttle");
+		}
+		if (data.containsKey("listen")) {
+			final JsonObject listens = data.getJsonObject("listen");
+
+			if (listens.containsKey("tcp")) {
+				final String[] ports = listens.get("tcp").toString().split("[^a-z0-9]");
+
+				for (final String port : ports) {
+					putPort(Encapsulation.TCP, Integer.parseInt(port));
+				}
+			}
+			if (listens.containsKey("udp")) {
+				final String[] ports = listens.get("udp").toString().split("[^a-z0-9]");
+
+				for (final String port : ports) {
+					putPort(Encapsulation.UDP, Integer.parseInt(port));
+				}
+			}
+		}
+		if (data.containsKey("allowforwardto")) {
+			final JsonArray forwards = data.getJsonArray("allowforwardto");
+
+			for (final JsonValue forward : forwards) {
+				addFoward(forward.toString());
+			}
+		}
+		if (data.containsKey("allowingressfrom")) {
+			final JsonArray sources = data.getJsonArray("allowingressfrom");
+
+			for (final JsonValue source : sources) {
+				addIngress(new HostName(source.toString()));
+			}
+		}
+		if (data.containsKey("allowegressto")) {
+			final JsonArray destinations = data.getJsonArray("allowingressfrom");
+
+			for (final JsonValue destination : destinations) {
+				addEgress(new HostName(destination.toString()));
+			}
+		}
+		if (data.containsKey("email")) {
+			try {
+				this.emailAddress = new InternetAddress(data.getString("email"));
+
+			} catch (final AddressException e) {
+				throw new InvalidEmailAddressException();
+			}
+		}
+	}
+
+	private void addEgress(HostName destination) {
+		if (this.egresses == null) {
+			this.egresses = new HashSet<>();
+		}
+
+		this.egresses.add(destination);
+	}
+
+	private void addIngress(HostName source) {
+		if (this.ingresses == null) {
+			this.ingresses = new HashSet<>();
+		}
+
+		this.ingresses.add(source);
+	}
+
+	private void addFoward(String label) {
+		if (this.forwards == null) {
+			this.forwards = new HashSet<>();
+		}
+
+		this.forwards.add(label);
+	}
+
+	private void putPort(Encapsulation encapsulation, Integer... ports) throws InvalidPortException {
+		if (this.listens == null) {
 			this.listens = new Hashtable<>();
+		}
 
-			if (listensTCP != null) {
-				this.listens.put(Encapsulation.TCP, setStringToSetHostName(listensTCP));
+		Set<Integer> currentPorts = this.listens.get(encapsulation);
+
+		if (currentPorts == null) {
+			currentPorts = new HashSet<>();
+		}
+
+		for (final Integer port : ports) {
+			if (((port < 0)) || ((port > 65535))) {
+				throw new InvalidPortException();
 			}
-			if (listensUDP != null) {
-				this.listens.put(Encapsulation.UDP, setStringToSetHostName(listensUDP));
-			}
-		}
-		if (forwards != null) {
-			this.forwards = setStringToSetHostName(forwards);
-
-		}
-		if (ingresses != null) {
-			this.ingresses = setStringToSetHostName(ingresses);
-		}
-		if (egresses != null) {
-			this.egresses = setStringToSetHostName(egresses);
+			currentPorts.add(port);
 		}
 
-		try {
-			this.emailAddress = new InternetAddress(getStringProperty("email", null));
-		} catch (final AddressException e) {
-			throw new InvalidEmailAddressException();
-		}
+		this.listens.put(encapsulation, currentPorts);
 	}
 
-	final private Set<HostName> setStringToSetHostName(Set<String> hostnamesStrings) {
-		final Set<HostName> hostnames = new HashSet<>();
-
-		for (final String hostnameString : hostnamesStrings) {
-			hostnames.add(new HostName(hostnameString));
-		}
-
-		return hostnames;
+	private void setDomain(HostName domain) {
+		this.domain = domain;
 	}
 
-	public final HostName getFQDN() {
-		return this.fqdn;
+	private void putCNAME(String cname) {
+		if (this.cnames == null) {
+			this.cnames = new HashSet<>();
+		}
+
+		this.cnames.add(cname);
+	}
+
+	private void putExternalIPAddress(IPAddress address) {
+		if (this.externalIPAddresses == null) {
+			this.externalIPAddresses = new LinkedHashSet<>();
+		}
+
+		this.externalIPAddresses.add(address);
+	}
+
+	private void putDisk(DiskData disk) {
+		if (this.disks == null) {
+			this.disks = new LinkedHashSet<>();
+		}
+
+		this.disks.add(disk);
+	}
+
+	private void putWanInterface(NetworkInterfaceData iface) {
+		if (this.wanInterfaces == null) {
+			this.wanInterfaces = new LinkedHashSet<>();
+		}
+
+		this.wanInterfaces.add(iface);
+	}
+
+	private void putLanInterface(NetworkInterfaceData ifaceData) {
+		if (this.lanInterfaces == null) {
+			this.lanInterfaces = new LinkedHashSet<>();
+		}
+
+		this.lanInterfaces.add(ifaceData);
 	}
 
 	public final Set<NetworkInterfaceData> getLanInterfaces() {
@@ -196,15 +329,11 @@ public abstract class AMachineData extends AData {
 		return this.wanInterfaces;
 	}
 
-	public final IPAddress getExternalIP() {
-		return this.externalIPAddress;
-	}
-
-	public final Hashtable<Encapsulation, Set<HostName>> getListens() {
+	public final Map<Encapsulation, Set<Integer>> getListens() {
 		return this.listens;
 	}
 
-	public final Set<HostName> getForwards() {
+	public final Set<String> getForwards() {
 		return this.forwards;
 	}
 
@@ -216,11 +345,11 @@ public abstract class AMachineData extends AData {
 		return this.egresses;
 	}
 
-	public final Boolean getIsThrottled() {
+	public final Boolean isThrottled() {
 		return this.throttled;
 	}
 
-	public final Set<HostName> getCnames() {
+	public final Set<String> getCNAMEs() {
 		return this.cnames;
 	}
 
@@ -228,12 +357,16 @@ public abstract class AMachineData extends AData {
 		return this.emailAddress;
 	}
 
-	public final IPAddress getExternalIp() {
-		return this.externalIPAddress;
+	public final Set<IPAddress> getExternalIPs() {
+		return this.externalIPAddresses;
 	}
 
 	public final String getFirewallProfile() {
 		return this.firewallProfile;
+	}
+
+	public HostName getDomain() {
+		return this.domain;
 	}
 
 }

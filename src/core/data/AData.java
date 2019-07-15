@@ -9,18 +9,18 @@ package core.data;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.HashSet;
-import java.util.Set;
 
-import javax.json.JsonArray;
 import javax.json.JsonObject;
-import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
 
 import core.exception.data.ADataException;
 
 /**
- * Abstract class for something representing "Data" on our network
+ * Abstract class for something representing "Data" on our network.
+ * 
+ * This is something which has been read() from a JSON.
+ * 
+ * Beware, {@code null} is valid data! 
  */
 public abstract class AData {
 
@@ -34,7 +34,6 @@ public abstract class AData {
 	 */
 	protected AData(String label) {
 		this.label = label;
-
 	}
 
 	/**
@@ -74,70 +73,5 @@ public abstract class AData {
 	 */
 	protected final void setData(JsonObject data) {
 		this.data = data;
-	}
-
-	/**
-	 * Gets an arbitrary property from the object's data.
-	 *
-	 * You should avoid using this method directly where possible, but we keep it
-	 * public in case a profile wishes to use it.
-	 *
-	 * @param property   the property to read
-	 * @param defaultVal the default value
-	 * @return the property's value
-	 */
-	public final String getStringProperty(String property, String defaultVal) {
-		return getData().getString(property, defaultVal);
-	}
-
-	public final String getStringProperty(String property) {
-		return getStringProperty(property, null);
-	}
-
-	public final Boolean getBooleanProperty(String property) {
-		if (getStringProperty(property, null) != null) {
-			return getData().getBoolean(property);
-		}
-
-		return null;
-	}
-
-	public final Integer getIntegerProperty(String property) {
-		if (getStringProperty(property, null) != null) {
-			return getData().getInt(property);
-		}
-
-		return null;
-	}
-
-	/**
-	 * Gets an arbitrary array of properties from the object's data.
-	 *
-	 * @param property the property array to read
-	 * @return the property values array, or {@code null} if unset
-	 */
-	public final Set<String> getPropertyArray(String property) {
-		final JsonArray jsonProperties = getPropertyObjectArray(property);
-		final Set<String> properties = new HashSet<>();
-
-		if (jsonProperties == null) {
-			return null;
-		}
-
-		for (final JsonValue jsonProperty : jsonProperties) {
-			properties.add(jsonProperty.toString());
-		}
-
-		return properties;
-	}
-
-	/**
-	 * Gets the property's object array.
-	 *
-	 * @param property the property
-	 * @return the property object array
-	 */
-	public final JsonArray getPropertyObjectArray(String property) {
-		return getData().getJsonArray(property);
 	}
 }
