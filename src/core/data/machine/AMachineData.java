@@ -35,6 +35,23 @@ import inet.ipaddr.IPAddressString;
  * somewhere in DNS-world.
  */
 public abstract class AMachineData extends AData {
+	// These are the only types of machine I'll recognise until I'm told
+	// otherwise...
+	public static enum MachineType {
+		ROUTER("Router"), SERVER("Server"), HYPERVISOR("HyperVisor"), DEDICATED("Dedicated"), SERVICE("Service"),
+		DEVICE("Device"), USER("User"), INTERNAL_ONLY("Internal-Only Device"), EXTERNAL_ONLY("External-Only Device");
+
+		private String machineType;
+
+		MachineType(String machineType) {
+			this.machineType = machineType;
+		}
+
+		public String toString() {
+			return this.machineType;
+		}
+	}
+
 	// Networking
 	public enum Encapsulation { UDP, TCP }
 

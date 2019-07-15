@@ -30,12 +30,9 @@ import core.model.machine.ExternalOnlyDeviceModel;
 import core.model.machine.InternalOnlyDeviceModel;
 import core.model.machine.ServerModel;
 import core.model.machine.ServiceModel;
+import core.model.network.NetworkModel.MachineType;
 
 public class NetworkModel {
-	public enum MachineType {
-		ROUTER, SERVER, HYPERVISOR, DEDICATED, SERVICE, DEVICE, USER, INTERNAL_ONLY, EXTERNAL_ONLY
-	}
-
 	private final String label;
 	private NetworkData data;
 	private final Hashtable<MachineType, Hashtable<String, AMachineModel>> machines;
