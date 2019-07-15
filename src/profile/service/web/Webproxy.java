@@ -8,9 +8,14 @@
 package profile.service.web;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
+import javax.json.JsonValue;
+
+import core.data.machine.AMachineData;
 import core.data.machine.AMachineData.Encapsulation;
+import core.data.machine.AMachineData.MachineType;
 import core.exception.data.InvalidPortException;
 import core.exception.data.InvalidPropertyArrayException;
 import core.exception.data.InvalidPropertyException;
@@ -37,6 +42,7 @@ public class Webproxy extends AStructuredProfile {
 
 	private final Nginx webserver;
 	private FileUnit liveConfig;
+	private Set<String> backends;
 
 	public Webproxy(String label, NetworkModel networkModel) {
 		super("webproxy", networkModel);
@@ -65,7 +71,7 @@ public class Webproxy extends AStructuredProfile {
 
 		// Should we pass through real IPs?
 		final Boolean passThroughIps = Boolean
-				.parseBoolean(this.networkModel.getData().getProperty(getLabel(), "passrealips", false));
+				.parseBoolean(this.networkModel.getData().getProperty(getLabel(), "passrealips")); // Defaults false
 
 		// First, build our ssl config
 		units.add(new DirUnit("nginx_ssl_include_dir", "proceed", "/etc/nginx/includes"));
@@ -130,15 +136,25 @@ public class Webproxy extends AStructuredProfile {
 			throws InvalidMachineModelException, InvalidPropertyArrayException, InvalidMachineException {
 		final Set<IUnit> units = new HashSet<>();
 
+		final AMachineData data = this.networkModel.getData().getMachine(MachineType.SERVER, getLabel());
+		final Set<String> backends = new LinkedHashSet<>();
+
+		if (data.getData().containsKey("proxyto")) {
+			for (final JsonValue backend : data.getData().getJsonArray("proxyto")) {
+				backends.add(backend.toString());
+			}
+		} else {
+			throw new InvalidMachineException();
+		}
+
 		if (this.liveConfig.equals("")) {
-			final Set<String> backends = this.networkModel.getData().getPropertyArray(getLabel(), "proxy");
 			Boolean isDefault = true;
 
 			for (final String backend : backends) {
 				final AMachineModel backendObj = this.networkModel.getMachineModel(backend);
 
-				final Set<HostName> cnames = this.networkModel.getData().getCNAMEs(backend);
-				final HostName domain = this.networkModel.getServerModel(backend).getFQDN();
+				final Set<String> cnames = this.networkModel.getData().getCNAMEs(backend);
+				final HostName domain = this.networkModel.getServerModel(backend).getDomain();
 				final String logDir = "/var/log/nginx/" + backend + "." + domain + "/";
 
 				units.add(new DirUnit(backend + "_log_dir", "proceed", logDir,
@@ -162,7 +178,7 @@ public class Webproxy extends AStructuredProfile {
 
 				nginxConf.appendLine("    server_name " + backend + "." + domain);
 
-				for (final HostName cname : cnames) {
+				for (final String cname : cnames) {
 					nginxConf.appendLine((cname.equals("")) ? " " : " " + cname + ".");
 					nginxConf.appendLine(domain.toNormalizedString());
 				}
@@ -182,10 +198,11 @@ public class Webproxy extends AStructuredProfile {
 				nginxConf.appendLine("    ssl_trusted_certificate /media/data/tls/" + backend + "/stapling.pem;");
 				nginxConf.appendCarriageReturn();
 				nginxConf.appendLine("    location / {");
-				for (final String source : this.networkModel.getData().getPropertyArray(backend, "allow")) {
-					nginxConf.appendLine("        allow " + source + ";");
-					nginxConf.appendLine("        deny all;");
-				}
+				// for (final JsonValue source :
+				// this.networkModel.getData().getData().getJsonArray(backend, "allow")) {
+				// nginxConf.appendLine(" allow " + source + ";");
+				// nginxConf.appendLine(" deny all;");
+				// }
 				nginxConf.appendLine("        proxy_pass              http://" + backendObj.getIP() + ";");
 				nginxConf.appendLine("        proxy_request_buffering off;");
 				nginxConf.appendLine("        proxy_buffering         off;");
@@ -220,19 +237,31 @@ public class Webproxy extends AStructuredProfile {
 			InvalidPropertyArrayException, InvalidMachineException {
 		final Set<IUnit> units = new HashSet<>();
 
-		final Set<String> backends = this.networkModel.getData().getPropertyArray(getLabel(), "proxy");
-
 		units.addAll(this.webserver.getPersistentFirewall());
 
 		this.networkModel.getServerModel(getLabel()).addEgress("check.torproject.org");
 		this.networkModel.getServerModel(getLabel()).addListen(Encapsulation.TCP, 443);
 
-		for (final String backend : backends) {
-			this.networkModel.getMachineModel(getLabel()).addForward(new HostName(backend + ":80"));
+		for (final String backend : getBackends()) {
+			this.networkModel.getMachineModel(getLabel()).addForward(backend);
 			this.networkModel.getMachineModel(getLabel()).addDnat(backend);
 		}
 
 		return units;
+	}
+
+	public void putBackend(String... backends) {
+		if (this.backends == null) {
+			this.backends = new LinkedHashSet<>();
+		}
+
+		for (final String backend : backends) {
+			this.backends.add(backend);
+		}
+	}
+
+	private Set<String> getBackends() {
+		return this.backends;
 	}
 
 	public void setLiveConfig(FileUnit config) {

@@ -23,8 +23,10 @@ public class Dedicated extends AStructuredProfile {
 
 		networkModel.getServerModel(label).setFirstOctet(10);
 		networkModel.getServerModel(label).setSecondOctet(0);
-		networkModel.getServerModel(label)
-				.setThirdOctet(networkModel.getDediServers().indexOf(networkModel.getServerModel(label)) + 1);
+//TODO: fixme
+		// networkModel.getServerModel(label)
+		// .setThirdOctet(networkModel.getDediServers().indexOf(networkModel.getServerModel(label))
+		// + 1);
 	}
 
 	@Override

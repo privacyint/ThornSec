@@ -51,9 +51,9 @@ public class MISP extends AStructuredProfile {
 		units.addAll(this.lempStack.getInstalled());
 
 		// Hush your face, postfix config!
+		// @TODO
 		units.add(new SimpleUnit("postfix_mailname", "proceed",
-				"sudo debconf-set-selections <<< 'postfix postfix/mailname string "
-						+ this.networkModel.getServerModel(getLabel()).getFQDN() + "'",
+				"sudo debconf-set-selections <<< 'postfix postfix/mailname string " + getLabel() + "'",
 				"sudo debconf-show postfix | grep 'postfix/mailname:' || dpkg -l | grep '^.i' | grep 'postfix'", "",
 				"fail"));
 		units.add(new SimpleUnit("postfix_mailer_type", "postfix_mailname",

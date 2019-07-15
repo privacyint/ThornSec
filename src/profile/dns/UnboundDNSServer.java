@@ -98,7 +98,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		unboundConf.appendLine("    msg-cache-size: " + (cpus / 8) + "m");
 		unboundConf.appendLine("    so-rcvbuf: 1m");
 		// Only switch on blocking if the user actually wants it...
-		if (this.networkModel.getData().getAdBlocking()) {
+		if (this.networkModel.getData().adBlocking()) {
 			unboundConf.appendLine("    include: \\\"/etc/unbound/unbound.conf.d/adblock.zone\\\"");
 		}
 		// rDNS
@@ -114,11 +114,11 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		// Upstream DNS servers
 		unboundConf.appendLine("    forward-zone:");
 		unboundConf.appendLine("        name: \\\".\\\"");
-		if (this.networkModel.getData().getUpstreamDNSIsTLS()) {
+		if (this.networkModel.getData().upstreamDNSIsTLS()) {
 			unboundConf.appendLine("        forward-ssl-upstream: yes");
 		}
 		for (final IPAddress upstream : this.networkModel.getData().getUpstreamDNSServers()) {
-			if (this.networkModel.getData().getUpstreamDNSIsTLS()) {
+			if (this.networkModel.getData().upstreamDNSIsTLS()) {
 				unboundConf.appendLine("        forward-addr: " + upstream.toIPv4() + "@853");
 			} else {
 				unboundConf.appendLine("        forward-addr: " + upstream.toIPv4());
@@ -136,7 +136,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		this.networkModel.getServerModel(getLabel()).addSystemUsername("unbound");
 		this.networkModel.getServerModel(getLabel()).addProcessString("/usr/sbin/unbound -d$");
 
-		if (this.networkModel.getData().getAdBlocking()) {
+		if (this.networkModel.getData().adBlocking()) {
 			units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
 		}
 
@@ -148,7 +148,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		final Set<IUnit> units = new HashSet<>();
 
 		// Start by updating the ad block list (if req'd)
-		if (this.networkModel.getData().getAdBlocking()) {
+		if (this.networkModel.getData().adBlocking()) {
 			units.add(new SimpleUnit("adblock_up_to_date", "proceed",
 					"sudo wget -O /etc/unbound/rawhosts https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
 							+ " && cat /etc/unbound/rawhosts | grep '^0\\.0\\.0\\.0'"
@@ -178,16 +178,15 @@ public class UnboundDNSServer extends ADNSServerProfile {
 					for (final String ifaceName : hostMachine.getLANInterfaces().keySet()) {
 						final NetworkInterfaceModel iface = hostMachine.getLANInterface(ifaceName);
 
-						zoneFile.appendLine(
-								"    local-data-ptr: \\\"" + iface.getAddress() + " " + hostMachine.getFQDN() + "\\\"");
+						// @TODO
+						zoneFile.appendLine("    local-data-ptr: \\\"" + iface.getAddress() + " "
+								+ hostMachine.getLabel() + "\\\"");
 						zoneFile.appendLine("    local-data-ptr: \\\"" + iface.getGateway() + " router."
-								+ hostMachine.getFQDN() + "\\\"");
+								+ hostMachine.getLabel() + "\\\"");
 
-						for (final HostName cname : hostMachine.getCNAMEs()) {
-							zoneFile.appendLine(
-									"    local-data: \\\"" + cname.getHost() + " A " + iface.getAddress() + "\\\"");
-							zoneFile.appendLine(
-									"    local-data: \\\"" + cname.toString() + " A " + iface.getAddress() + "\\\"");
+						for (final String cname : hostMachine.getCNAMEs()) {
+							zoneFile.appendLine("    local-data: \\\"" + cname + " A " + iface.getAddress() + "\\\"");
+							zoneFile.appendLine("    local-data: \\\"" + cname + " A " + iface.getAddress() + "\\\"");
 						}
 					}
 
@@ -207,7 +206,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		final FileUnit resolvConf = new FileUnit("dns_resolv_conf", "dns_running", "/etc/resolv.conf",
 				"Unable to change your DNS to point at the local one.  This will probably cause VM building to fail, amongst other problems");
 		units.add(resolvConf);
-		resolvConf.appendLine("search " + this.networkModel.getData().getFQDN(getLabel()));
+		resolvConf.appendLine("search " + this.networkModel.getData().getDomain(getLabel()));
 		resolvConf.appendLine("nameserver 10.0.0.1");
 
 		return units;

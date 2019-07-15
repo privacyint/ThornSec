@@ -87,7 +87,7 @@ public class Router extends AStructuredProfile {
 
 		this.networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFilePath("/etc/sysctl.conf");
 
-		if (this.networkModel.getData().getAutoGuest()) {
+		if (this.networkModel.getData().buildAutoGuest()) {
 			final NetworkInterfaceModel iface = new NetworkInterfaceModel("autoguest", this.networkModel);
 			this.networkModel.getServerModel(getLabel()).addLANInterface("autoguest", iface);
 

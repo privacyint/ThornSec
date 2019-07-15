@@ -24,11 +24,10 @@ import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
-import inet.ipaddr.IPAddress;
 import profile.stack.Nginx;
 
 /**
- * This profile will put an onion address in front of a website
+ * This profile will put an onion address in front of website(s)
  */
 public class Tor extends AStructuredProfile {
 
@@ -58,15 +57,6 @@ public class Tor extends AStructuredProfile {
 	protected Set<IUnit> getPersistentConfig() throws InvalidPropertyArrayException, InvalidMachineException,
 			InvalidServerModelException, InvalidPropertyException {
 		final Set<IUnit> units = new HashSet<>();
-
-		final Set<String> backends = this.networkModel.getData().getPropertyArray(getLabel(), "proxy");
-
-		if (backends.isEmpty()) {
-			throw new InvalidMachineException();
-		}
-
-		final IPAddress backendIP = this.networkModel.getServerModel(backends.iterator().next()).getLANInterfaces()
-				.get(0).getAddress();
 
 		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("tor",
 				"tor_installed", "debian-tor", "debian-tor", "0700"));
@@ -185,7 +175,9 @@ public class Tor extends AStructuredProfile {
 		proxyConfig.appendLine("    ssl_ecdh_curve secp384r1:prime256v1;");
 		proxyConfig.appendCarriageReturn();
 		proxyConfig.appendLine("    location / {");
-		proxyConfig.appendLine("        proxy_pass \\\"\\$scheme://" + backendIP.toFullString() + "\\\"");
+		// TODO: fixme
+		// proxyConfig.appendLine(" proxy_pass \\\"\\$scheme://" +
+		// backendIP.toFullString() + "\\\"");
 		proxyConfig.appendLine("        proxy_http_version 1.1;");
 		proxyConfig.appendLine("        proxy_set_header Accept-Encoding \\\"identity\\\";");
 		proxyConfig.appendLine("        proxy_set_header Connection \\\"upgrade\\\";");

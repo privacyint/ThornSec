@@ -235,7 +235,7 @@ public class Virtualisation extends AStructuredProfile {
 						+ "\" --register;" + "sudo -u " + user + " VBoxManage modifyvm " + service + " --description "
 						+ "\"" + service + "." + this.networkModel.getData().getDomain() + "\n"
 						+ "ThornSec guest machine\n" + "Built with profile(s): "
-						+ String.join(", ", this.networkModel.getData().getServerProfiles(service)) + "\n"
+						+ String.join(", ", this.networkModel.getData().getProfiles(service)) + "\n"
 						+ "Built at $(date)" + "\"",
 				"sudo -u " + user + " VBoxManage list vms | grep " + service, "", "fail", "Couldn't create " + service
 						+ " on its metal.  This is fatal, " + service + " will not be installed."));
@@ -323,25 +323,6 @@ public class Virtualisation extends AStructuredProfile {
 		units.add(modifyVm(service, user, "boot2", "dvd",
 				"Couldn't set the boot order for " + service + ".  This may mean the service will not be installed.",
 				service + "_sas_controller"));
-
-		final int i = 1;
-		// Networking setup
-		// TODO
-//		for (final InterfaceData lanIface : this.networkModel.getMachineModel(service).getInterfaces()) { // networkModel.getData().getLanIfaces(service).entrySet()
-//																											// ) {
-//			units.add(modifyVm(service, user, "nic" + i, "bridged", "Couldn't give " + service
-//					+ " a connection to the network.  This means the service will not be able to talk to the router or network, and will not be installed."));
-//			units.add(modifyVm(service, user, "bridgeadapter" + i, bridge, "Couldn't give " + service
-//					+ " a connection to the network.  This means the service will not be able to talk to the router or network, and will not be installed.",
-//					service + "_nic1_bridged"));
-//			units.add(modifyVm(service, user, "nictype" + i, "82545EM",
-//					"Couldn't set " + service + "'s network adapter to use the 82545EM model.",
-//					service + "_bridgeadapter1_" + bridge));
-//			units.add(modifyVm(service, user, "macaddress" + i, lanIface.getMac().replace(":", "").toUpperCase(),
-//					"Couldn't set " + service
-//							+ "'s MAC address.  This means the service will not be able to get an IP address, and will not be installed."));
-//			++i;
-//		}
 
 		// Audio setup (switch it off)
 		units.add(modifyVm(service, user, "audio", "none"));

@@ -47,8 +47,9 @@ public class Metal extends AStructuredProfile {
 		this.services = new HashSet<>();
 
 		this.networkModel.getServerModel(label).setFirstOctet(10);
-		this.networkModel.getServerModel(label)
-				.setSecondOctet(this.networkModel.getMetalServers().indexOf(networkModel.getServerModel(label)) + 1);
+//TODO: fixme
+		// this.networkModel.getServerModel(label)
+//				.setSecondOctet(this.networkModel.getMetalServers().indexOf(networkModel.getServerModel(label)) + 1);
 		this.networkModel.getServerModel(label).setThirdOctet(0);
 	}
 
@@ -169,8 +170,6 @@ public class Metal extends AStructuredProfile {
 		for (final ServerModel service : this.networkModel.getServices(getLabel())) {
 			String password = "";
 			final String serviceLabel = service.getLabel();
-			Boolean expirePasswords = false;
-
 			final APassphrase pass = new OpenKeePassPassphrase(serviceLabel, this.networkModel);
 
 			if (pass.init()) {
@@ -184,7 +183,6 @@ public class Metal extends AStructuredProfile {
 			}
 
 			if (pass.isADefaultPassphrase()) {
-				expirePasswords = true;
 			}
 
 			units.add(new SimpleUnit(serviceLabel + "_password", "proceed",

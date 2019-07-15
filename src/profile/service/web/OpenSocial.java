@@ -21,7 +21,6 @@ import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
-import inet.ipaddr.HostName;
 import profile.stack.LEMP;
 import profile.stack.Nginx;
 import profile.stack.PHP;
@@ -140,7 +139,7 @@ public class OpenSocial extends AStructuredProfile {
 		units.addAll(this.lempStack.getLiveConfig());
 
 		// Set up our database
-		final Set<HostName> cnames = this.networkModel.getData().getCNAMEs(getLabel());
+		final Set<String> cnames = this.networkModel.getData().getCNAMEs(getLabel());
 		final String domain = this.networkModel.getData().getDomain().replaceAll("\\.", "\\\\.");
 
 		final FileUnit opensocialConf = new FileUnit("opensocial", "opensocial_installed",
@@ -160,7 +159,7 @@ public class OpenSocial extends AStructuredProfile {
 		// TODO: fix this config file
 		opensocialConf.appendLine("    '^" + this.networkModel.getMachineModel(getLabel()) + "\\\\." + domain + "$',");
 
-		for (final HostName cname : cnames) {
+		for (final String cname : cnames) {
 			opensocialConf.appendLine("    '^" + cname + "$',");
 		}
 

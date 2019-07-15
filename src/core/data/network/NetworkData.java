@@ -243,7 +243,7 @@ public class NetworkData extends AData {
 	 * @param label
 	 * @return
 	 */
-	private AMachineData getMachine(MachineType type, String label) {
+	public AMachineData getMachine(MachineType type, String label) {
 		return getMachines().get(type).get(label);
 	}
 
@@ -698,5 +698,9 @@ public class NetworkData extends AData {
 
 	public String getSSHKey(String admin) {
 		return ((UserDeviceData) getMachine(MachineType.USER, admin)).getSSHKey();
+	}
+
+	public String getProperty(String label, String property) {
+		return getMachine(label).getData().getString(property, null);
 	}
 }
