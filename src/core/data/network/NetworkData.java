@@ -402,7 +402,7 @@ public class NetworkData extends AData {
 	final public Set<String> getAdmins(String server) throws InvalidServerException {
 		Set<String> admins = ((ServerData) getMachine(MachineType.SERVER, server)).getAdmins();
 
-		if (admins.isEmpty()) {
+		if (admins == null) {
 			admins = this.defaultServiceData.getAdmins();
 		}
 
