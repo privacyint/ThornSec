@@ -7,13 +7,22 @@
  */
 package core.model.machine;
 
+import java.util.Set;
+
 import javax.mail.internet.AddressException;
 
+import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidMachineException;
+import core.iface.IUnit;
 import core.model.network.NetworkModel;
 
+/**
+ * This model represents a device on our network.
+ *
+ * A device is something which is managed by ThornSec, but is not directly
+ * configured. For instance, users.
+ */
 abstract public class ADeviceModel extends AMachineModel {
-
 	private Boolean managed;
 
 	public ADeviceModel(String label, NetworkModel networkModel) throws InvalidMachineException, AddressException {
@@ -22,11 +31,16 @@ abstract public class ADeviceModel extends AMachineModel {
 		this.managed = networkModel.getData().isManaged(getLabel());
 	}
 
-	final public Boolean getIsManaged() throws InvalidMachineException {
+	final public Boolean isManaged() throws InvalidMachineException {
 		return this.managed;
 	}
 
 	final protected void setIsManaged(Boolean managed) {
 		this.managed = managed;
+	}
+
+	@Override
+	protected Set<IUnit> getUnits() throws AThornSecException {
+		return null;
 	}
 }

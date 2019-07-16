@@ -20,8 +20,12 @@ import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
 
+/**
+ * This model represents a Service on our network.
+ *
+ * A service is a machine which is run on a HyperVisor
+ */
 public class ServiceModel extends ServerModel {
-
 	ServiceModel(String label, NetworkModel networkModel) throws InvalidServerModelException, InvalidMachineException,
 			InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
 			NoSuchMethodException, SecurityException, ClassNotFoundException, URISyntaxException, AddressException {

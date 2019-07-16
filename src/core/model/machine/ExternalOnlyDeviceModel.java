@@ -12,8 +12,13 @@ import javax.mail.internet.AddressException;
 import core.exception.data.machine.InvalidMachineException;
 import core.model.network.NetworkModel;
 
-abstract public class ExternalOnlyDeviceModel extends ADeviceModel {
-
+/**
+ * This model represents an "External-Only" device on our network.
+ *
+ * An external-only device is one which can access the wider internet, but is
+ * not allowed to access internal services.
+ */
+public class ExternalOnlyDeviceModel extends ADeviceModel {
 	public ExternalOnlyDeviceModel(String label, NetworkModel networkModel)
 			throws InvalidMachineException, AddressException {
 		super(label, networkModel);

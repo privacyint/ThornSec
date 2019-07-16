@@ -12,8 +12,13 @@ import javax.mail.internet.AddressException;
 import core.exception.data.machine.InvalidMachineException;
 import core.model.network.NetworkModel;
 
-abstract public class UserDeviceModel extends ADeviceModel {
-
+/**
+ * This model represents a User device on our network.
+ *
+ * User devices can see "everything" both internal and external - be careful
+ * with these devices!
+ */
+public class UserDeviceModel extends ADeviceModel {
 	public UserDeviceModel(String label, NetworkModel networkModel) throws InvalidMachineException, AddressException {
 		super(label, networkModel);
 	}
