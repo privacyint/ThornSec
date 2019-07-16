@@ -14,11 +14,15 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import javax.mail.internet.AddressException;
+
 import core.data.machine.AMachineData.MachineType;
 import core.data.network.NetworkData;
+import core.exception.data.machine.InvalidMachineException;
 import core.exception.runtime.InvalidDeviceModelException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
@@ -30,11 +34,12 @@ import core.model.machine.ExternalOnlyDeviceModel;
 import core.model.machine.InternalOnlyDeviceModel;
 import core.model.machine.ServerModel;
 import core.model.machine.ServiceModel;
+import core.model.machine.UserDeviceModel;
 
 public class NetworkModel {
 	private final String label;
 	private NetworkData data;
-	private final Map<MachineType, Map<String, AMachineModel>> machines;
+	private Map<MachineType, Map<String, AMachineModel>> machines;
 
 	NetworkModel(String label) {
 		this.label = label;
@@ -46,52 +51,25 @@ public class NetworkModel {
 		return this.label;
 	}
 
-	void init() {
-		// for (AMachineData machine : data.)
-//
-//
-//
-//		//Create (and classify) all devices
-////		for (String device : data.getAllDeviceLabels()) {
-//			ADeviceModel deviceModel = null;
-//			deviceModel.setData(this.data);
-//
-//			switch (deviceModel) {
-//				case "User":
-//					userDevices.add(deviceModel);
-//					break;
-//				case "Internal":
-//					intOnlyDevices.add(deviceModel);
-//					break;
-//				case "External":
-//					extOnlyDevices.add(deviceModel);
-//					break;
-//				default:
-//					//In theory, we should never get here. Theory is a fine thing.
-//					System.out.println("Encountered an unsupported device type for " + device);
-//			}
-//		}
-//
-//
-//		//Now everything is classified and init()ed, get their networking requirements
-//		//We want to do this in a certain order - backwards through the network
-//		for(DeviceModel device : devices.values()) {
-//			device.getNetworking();
-//		}
-//
-//		//Allow external-only && users to call out to the web
-//		for (DeviceModel device : userDevices) {
-//			device.addRequiredEgress("255.255.255.255", 0);
-//		}
-//
-//		for (DeviceModel device : extOnlyDevices) {
-//			device.addRequiredEgress("255.255.255.255", 0);
-//		}
-//
-//		for(ServerModel service : services) {
-//			service.getNetworking();
-//		}
-//
+	void init() throws InvalidMachineException, AddressException {
+		// Start by instantiating all of our devices
+		for (final String deviceLabel : this.data.getMachines(MachineType.EXTERNAL_ONLY).keySet()) {
+			final AMachineModel device = new ExternalOnlyDeviceModel(deviceLabel, this);
+			putMachine(MachineType.EXTERNAL_ONLY, deviceLabel, device);
+			putMachine(MachineType.DEVICE, deviceLabel, device);
+		}
+		for (final String deviceLabel : this.data.getMachines(MachineType.INTERNAL_ONLY).keySet()) {
+			final AMachineModel device = new InternalOnlyDeviceModel(deviceLabel, this);
+			putMachine(MachineType.INTERNAL_ONLY, deviceLabel, device);
+			putMachine(MachineType.DEVICE, deviceLabel, device);
+		}
+		for (final String deviceLabel : this.data.getMachines(MachineType.USER).keySet()) {
+			final AMachineModel device = new UserDeviceModel(deviceLabel, this);
+			putMachine(MachineType.EXTERNAL_ONLY, deviceLabel, device);
+			putMachine(MachineType.DEVICE, deviceLabel, device);
+		}
+
+		//
 //		for(ServerModel metal : metals) {
 //			if (metal.isRouter()) { //If it's an external server...
 //				continue; //Skip it, otherwise we'll be duplicating its ifaces!
@@ -115,6 +93,19 @@ public class NetworkModel {
 //			units.put(machine.getLabel(), machine.getUnits());
 //		}
 
+	}
+
+	private void putMachine(MachineType type, String label, AMachineModel machine) {
+		if (this.machines == null) {
+			this.machines = new LinkedHashMap<>();
+		}
+
+		Map<String, AMachineModel> machines = this.machines.get(type);
+		if (machines == null) {
+			machines = new LinkedHashMap<>();
+		}
+
+		machines.put(label, machine);
 	}
 
 	public final Map<MachineType, Map<String, AMachineModel>> getAllMachineModels() {
