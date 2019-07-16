@@ -63,13 +63,17 @@ public abstract class AMachineModel extends AModel {
 		this.cnames = networkModel.getData().getCNAMEs(getLabel());
 
 		this.lanInterfaces = null;
-		for (final NetworkInterfaceData ifaceData : networkModel.getData().getLanIfaces(getLabel())) {
-			addLANInterface(ifaceDataToModel(ifaceData));
+		if (networkModel.getData().getLanIfaces(getLabel()) != null) {
+			for (final NetworkInterfaceData ifaceData : networkModel.getData().getLanIfaces(getLabel())) {
+				addLANInterface(ifaceDataToModel(ifaceData));
+			}
 		}
 
 		this.wanInterfaces = null;
-		for (final NetworkInterfaceData ifaceData : networkModel.getData().getWanIfaces(getLabel())) {
-			addWANInterface(ifaceDataToModel(ifaceData));
+		if (networkModel.getData().getWanIfaces(getLabel()) != null) {
+			for (final NetworkInterfaceData ifaceData : networkModel.getData().getWanIfaces(getLabel())) {
+				addWANInterface(ifaceDataToModel(ifaceData));
+			}
 		}
 
 		this.firstOctet = 10;

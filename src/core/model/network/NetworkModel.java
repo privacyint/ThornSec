@@ -140,8 +140,10 @@ public class NetworkModel {
 	public final Map<String, ServerModel> getAllServers() {
 		final Map<String, ServerModel> servers = new Hashtable<>();
 
-		for (final AMachineModel machine : getAllMachines().get(MachineType.SERVER).values()) {
-			servers.put(machine.getLabel(), (ServerModel) machine);
+		if (getAllMachines().get(MachineType.SERVER) != null) {
+			for (final AMachineModel machine : getAllMachines().get(MachineType.SERVER).values()) {
+				servers.put(machine.getLabel(), (ServerModel) machine);
+			}
 		}
 
 		return servers;
@@ -149,6 +151,8 @@ public class NetworkModel {
 
 	public final Hashtable<String, ADeviceModel> getAllUserDevices() {
 		final Hashtable<String, ADeviceModel> devicen = new Hashtable<>();
+
+		assert getAllMachines().get(MachineType.USER) != null;
 
 		for (final AMachineModel device : getAllMachines().get(MachineType.USER).values()) {
 			devicen.put(device.getLabel(), (ADeviceModel) device);
@@ -160,8 +164,10 @@ public class NetworkModel {
 	public final Hashtable<String, InternalOnlyDeviceModel> getAllInternalOnlyDevices() {
 		final Hashtable<String, InternalOnlyDeviceModel> devicen = new Hashtable<>();
 
-		for (final AMachineModel device : getAllMachines().get(MachineType.INTERNAL_ONLY).values()) {
-			devicen.put(device.getLabel(), (InternalOnlyDeviceModel) device);
+		if (getAllMachines().get(MachineType.INTERNAL_ONLY) != null) {
+			for (final AMachineModel device : getAllMachines().get(MachineType.INTERNAL_ONLY).values()) {
+				devicen.put(device.getLabel(), (InternalOnlyDeviceModel) device);
+			}
 		}
 
 		return devicen;
@@ -170,8 +176,10 @@ public class NetworkModel {
 	public final Hashtable<String, ExternalOnlyDeviceModel> getAllExternalOnlyDevices() {
 		final Hashtable<String, ExternalOnlyDeviceModel> devicen = new Hashtable<>();
 
-		for (final AMachineModel device : getAllMachines().get(MachineType.INTERNAL_ONLY).values()) {
-			devicen.put(device.getLabel(), (ExternalOnlyDeviceModel) device);
+		if (getAllMachines().get(MachineType.EXTERNAL_ONLY) != null) {
+			for (final AMachineModel device : getAllMachines().get(MachineType.EXTERNAL_ONLY).values()) {
+				devicen.put(device.getLabel(), (ExternalOnlyDeviceModel) device);
+			}
 		}
 
 		return devicen;
