@@ -162,6 +162,8 @@ public class NetworkData extends AData {
 					final ServerData server = new ServerData(jsonServer);
 					server.read(jsonServers.getJsonObject(jsonServer));
 
+					putMachine(MachineType.SERVER, server);
+
 					if (server.getTypes() != null) {
 						for (final MachineType type : server.getTypes()) {
 							putMachine(type, server);
