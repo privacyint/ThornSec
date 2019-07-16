@@ -33,6 +33,7 @@ import profile.machine.configuration.BindFS;
 import profile.machine.configuration.ConfigFiles;
 import profile.machine.configuration.Processes;
 import profile.machine.configuration.UserAccounts;
+import profile.service.machine.SSH;
 import profile.type.Dedicated;
 import profile.type.Metal;
 import profile.type.Router;
@@ -154,11 +155,11 @@ public class ServerModel extends AMachineModel {
 				"dpkg-query --status rdnssd 2>&1 | grep \"Status:\";", "Status: install ok installed", "fail",
 				"Couldn't uninstall rdnssd.  This is a package which attempts to be \"clever\" in DNS configuration and just breaks everything instead."));
 
-		// SSH ssh = new SSH(this, networkModel);
-		// units.addAll(ssh.getUnits());
+		final SSH ssh = new SSH(getLabel(), this.networkModel);
+		units.addAll(ssh.getUnits());
 
-		this.runningProcesses.addProcess("sshd: " + this.networkModel.getData().getUser() + " \\[priv\\]$");
-		this.runningProcesses.addProcess("sshd: " + this.networkModel.getData().getUser() + "@pts/0$");
+		addProcessString("sshd: " + this.networkModel.getData().getUser() + " \\[priv\\]$");
+		addProcessString("sshd: " + this.networkModel.getData().getUser() + "@pts/0$");
 
 		// Useful packages
 		units.add(new InstalledUnit("sysstat", "proceed", "sysstat"));
