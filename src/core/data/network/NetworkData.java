@@ -710,4 +710,20 @@ public class NetworkData extends AData {
 	public String getProperty(String label, String property) {
 		return getMachine(label).getData().getString(property, null);
 	}
+
+	public Map<String, AMachineData> getExternalOnlyDevices() {
+		return this.getMachines(MachineType.EXTERNAL_ONLY);
+	}
+
+	public Map<String, AMachineData> getInternalOnlyDevices() {
+		return this.getMachines(MachineType.INTERNAL_ONLY);
+	}
+
+	public Map<String, AMachineData> getUserDevices() {
+		return this.getMachines(MachineType.USER);
+	}
+
+	public Map<String, AMachineData> getServers() {
+		return this.getMachines(MachineType.SERVER);
+	}
 }
