@@ -60,35 +60,36 @@ public class NetworkModel {
 		// Start by instantiating all of our devices
 		final Map<String, AMachineData> externals = this.data.getExternalOnlyDevices();
 		if (externals != null) {
-			for (final String deviceLabel : externals.keySet()) {
-				final AMachineModel device = new ExternalOnlyDeviceModel(deviceLabel, this);
-				putMachine(MachineType.EXTERNAL_ONLY, deviceLabel, device);
-				putMachine(MachineType.DEVICE, deviceLabel, device);
+			for (final String label : externals.keySet()) {
+				final AMachineModel device = new ExternalOnlyDeviceModel(label, this);
+				putMachine(MachineType.EXTERNAL_ONLY, label, device);
+				putMachine(MachineType.DEVICE, label, device);
 			}
 		}
 
 		final Map<String, AMachineData> internals = this.data.getInternalOnlyDevices();
 		if (internals != null) {
-			for (final String deviceLabel : internals.keySet()) {
-				final AMachineModel device = new InternalOnlyDeviceModel(deviceLabel, this);
-				putMachine(MachineType.INTERNAL_ONLY, deviceLabel, device);
-				putMachine(MachineType.DEVICE, deviceLabel, device);
+			for (final String label : internals.keySet()) {
+				final AMachineModel device = new InternalOnlyDeviceModel(label, this);
+				putMachine(MachineType.INTERNAL_ONLY, label, device);
+				putMachine(MachineType.DEVICE, label, device);
 			}
 		}
 
 		final Map<String, AMachineData> users = this.data.getUserDevices();
 		if (users != null) {
-			for (final String deviceLabel : users.keySet()) {
-				final AMachineModel device = new UserDeviceModel(deviceLabel, this);
-				putMachine(MachineType.EXTERNAL_ONLY, deviceLabel, device);
-				putMachine(MachineType.DEVICE, deviceLabel, device);
+			for (final String label : users.keySet()) {
+				final AMachineModel device = new UserDeviceModel(label, this);
+				putMachine(MachineType.EXTERNAL_ONLY, label, device);
+				putMachine(MachineType.DEVICE, label, device);
 			}
 		}
 
 		final Map<String, AMachineData> servers = this.data.getServers();
 		if (servers != null) {
-			for (final String serverLabel : servers.keySet()) {
-				new ServerModel(serverLabel, this);
+			for (final String label : servers.keySet()) {
+				final ServerModel server = new ServerModel(label, this);
+				putMachine(MachineType.SERVER, label, server);
 
 //				putMachine(MachineType.EXTERNAL_ONLY, deviceLabel, device);
 //				putMachine(MachineType.DEVICE, deviceLabel, device);
@@ -137,13 +138,11 @@ public class NetworkModel {
 		return this.machines;
 	}
 
-	public final Map<String, ServerModel> getAllServers() {
-		final Map<String, ServerModel> servers = new Hashtable<>();
+	public final Map<String, AMachineModel> getAllServers() {
+		Map<String, AMachineModel> servers = getAllMachines().get(MachineType.SERVER);
 
-		if (getAllMachines().get(MachineType.SERVER) != null) {
-			for (final AMachineModel machine : getAllMachines().get(MachineType.SERVER).values()) {
-				servers.put(machine.getLabel(), (ServerModel) machine);
-			}
+		if (servers == null) {
+			servers = new LinkedHashMap<>();
 		}
 
 		return servers;
@@ -199,7 +198,7 @@ public class NetworkModel {
 
 	public final ServerModel getServerModel(String server) throws InvalidServerModelException {
 		if (getAllServers().containsKey(server)) {
-			return getAllServers().get(server);
+			return (ServerModel) getAllServers().get(server);
 		}
 
 		throw new InvalidServerModelException();
