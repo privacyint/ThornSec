@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.net.InetAddress;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -16,30 +15,24 @@ import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeSelectionModel;
 
-import core.data.machine.configuration.NetworkInterfaceData;
 import core.exception.runtime.InvalidDeviceModelException;
 import core.exception.runtime.InvalidServerModelException;
-import core.model.machine.ADeviceModel;
-import core.model.machine.ServerModel;
-
 import core.model.network.NetworkModel;
 import core.model.network.ThornsecModel;
 
 public class FullFrame {
 
 	public FullFrame(ThornsecModel model) {
-		JTabbedPane jtp = new JTabbedPane();
-		for (String network : model.getNetworkLabels()) {
+		final JTabbedPane jtp = new JTabbedPane();
+		for (final String network : model.getNetworkLabels()) {
 			jtp.add(network, getNetworkPane(model.getNetwork(network)));
 		}
 
-		JFrame frame = new JFrame("Thornsec");
+		final JFrame frame = new JFrame("Thornsec");
 		frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setContentPane(jtp);
@@ -48,35 +41,36 @@ public class FullFrame {
 	}
 
 	private JPanel getNewPanel() {
-		GridBagLayout layout = new GridBagLayout();
+		final GridBagLayout layout = new GridBagLayout();
 
-		JPanel ripInPepperoniTheIncredibleMrHong = new JPanel(layout);
+		final JPanel ripInPepperoniTheIncredibleMrHong = new JPanel(layout);
 		ripInPepperoniTheIncredibleMrHong.setBackground(Color.WHITE);
 
 		return ripInPepperoniTheIncredibleMrHong;
 	}
 
 	private Component getNetworkPane(NetworkModel model) {
-		JTabbedPane jtp = new JTabbedPane();
+		final JTabbedPane jtp = new JTabbedPane();
 
-		JTextArea area = new JTextArea();
+		final JTextArea area = new JTextArea();
 		area.setEditable(false);
-		TextAreaOutputStream out = new TextAreaOutputStream(area);
-		
-		//jtp.add("Network Info", getInfoPanel(model));
+		final TextAreaOutputStream out = new TextAreaOutputStream(area);
+
+		// jtp.add("Network Info", getInfoPanel(model));
 		jtp.add("Servers", getServerPanel(model, out));
 		jtp.add("Devices", getDevicePanel(model));
 		jtp.add("Output", getOutputPanel(area));
-		
+
 		return jtp;
 	}
-	
+
 	private JPanel getOutputPanel(JTextArea area) {
-		JPanel panel = getNewPanel();
+		final JPanel panel = getNewPanel();
 
-		JScrollPane areapane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+		final JScrollPane areapane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 
-		GridBagConstraints g = new GridBagConstraints();
+		final GridBagConstraints g = new GridBagConstraints();
 
 		areapane.setViewportView(area);
 
@@ -86,35 +80,37 @@ public class FullFrame {
 		g.weighty = 1;
 		g.fill = GridBagConstraints.BOTH;
 		panel.add(areapane, g);
-		
+
 		return panel;
 	}
 
 	private JSplitPane getDevicePanel(final NetworkModel model) {
 		// Right-hand pane
-		JScrollPane  detailsPane  = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		final JScrollPane detailsPane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		final JPanel detailsPanel = getNewPanel();
 
 		detailsPane.setViewportView(detailsPanel);
 
-		JPanel devicePanel = getNewPanel();
-		JScrollPane   devicePane  = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		final JPanel devicePanel = getNewPanel();
+		final JScrollPane devicePane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
-		DefaultMutableTreeNode root  = new DefaultMutableTreeNode(model.getLabel());
+		final DefaultMutableTreeNode root = new DefaultMutableTreeNode(model.getLabel());
 
-		DefaultMutableTreeNode usersNode = new DefaultMutableTreeNode("Users");
+		final DefaultMutableTreeNode usersNode = new DefaultMutableTreeNode("Users");
 //		for (ADeviceModel user : model.getUserDevices()) {
 //			usersNode.add(new DefaultMutableTreeNode(user.getLabel()));
 //		}
 		root.add(usersNode);
 
-		DefaultMutableTreeNode intOnlyNode = new DefaultMutableTreeNode("Internal-Only Devices");
+		final DefaultMutableTreeNode intOnlyNode = new DefaultMutableTreeNode("Internal-Only Devices");
 //		for (ADeviceModel intO : model.getInternalOnlyDevices()) {
 //			intOnlyNode.add(new DefaultMutableTreeNode(intO.getLabel()));
 //		}
 		root.add(intOnlyNode);
 
-		DefaultMutableTreeNode extOnlyNode = new DefaultMutableTreeNode("External-Only Devices");
+		final DefaultMutableTreeNode extOnlyNode = new DefaultMutableTreeNode("External-Only Devices");
 //		for (ADeviceModel extO : model.getExternalOnlyDevices()) {
 //			extOnlyNode.add(new DefaultMutableTreeNode(extO.getLabel()));
 //		}
@@ -124,43 +120,44 @@ public class FullFrame {
 		deviceTree.setCellRenderer(new DeviceIconRenderer(model));
 		deviceTree.setRootVisible(false);
 		deviceTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-		deviceTree.addTreeSelectionListener(new TreeSelectionListener() {
-			public void valueChanged(TreeSelectionEvent e) {
-				GridBagConstraints g = new GridBagConstraints();
+		deviceTree.addTreeSelectionListener(e -> {
+			final GridBagConstraints g = new GridBagConstraints();
 
-				String device = e.getPath().getLastPathComponent().toString();
+			final String device = e.getPath().getLastPathComponent().toString();
 
-				try {
-					if (model.getDeviceModel(device) == null) { return; }
-				} catch (InvalidDeviceModelException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				} //Stop it crashing on labels!
-				
-				detailsPanel.removeAll();
+			try {
+				if (model.getDeviceModel(device) == null) {
+					return;
+				}
+			} catch (final InvalidDeviceModelException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} // Stop it crashing on labels!
 
-				g.fill = GridBagConstraints.VERTICAL;
+			detailsPanel.removeAll();
 
-				//Title
-				g.gridx = 0;
-				g.gridy = 0;
-				g.gridwidth = 4;
-				g.ipady = 40;
-				detailsPanel.add(new JLabel(device), g);
+			g.fill = GridBagConstraints.VERTICAL;
 
-				//Reset values
-				g.gridwidth = 1;
-				g.ipady = 10;
+			// Title
+			g.gridx = 0;
+			g.gridy = 0;
+			g.gridwidth = 4;
+			g.ipady = 40;
+			detailsPanel.add(new JLabel(device), g);
 
-				//IP Address
-				g.gridy += 1;
+			// Reset values
+			g.gridwidth = 1;
+			g.ipady = 10;
 
-				g.gridx = 1;
-				g.anchor = GridBagConstraints.LINE_START;
-				detailsPanel.add(new JLabel("Subnets:"), g);
-				g.gridx = 2;
-				g.anchor = GridBagConstraints.LINE_END;
-				JLabel ips = new JLabel();
+			// IP Address
+			g.gridy += 1;
+
+			g.gridx = 1;
+			g.anchor = GridBagConstraints.LINE_START;
+			detailsPanel.add(new JLabel("Subnets:"), g);
+			g.gridx = 2;
+			g.anchor = GridBagConstraints.LINE_END;
+			final JLabel ips = new JLabel();
 //				if (model.getDeviceModel(device).getInterfaces().size() > 1) {
 //					ips.setText("<html><body><ul>");
 //					for (InterfaceData ip : model.getDeviceModel(device).getInterfaces()) {
@@ -171,17 +168,17 @@ public class FullFrame {
 //				else {
 //					ips.setText(model.getDeviceModel(device).getInterfaces().firstElement().getAddress().getHostAddress() + "/30");
 //				}
-				detailsPanel.add(ips, g);
+			detailsPanel.add(ips, g);
 
-				//MACs
-				g.gridy += 1;
+			// MACs
+			g.gridy += 1;
 
-				g.gridx = 1;
-				g.anchor = GridBagConstraints.LINE_START;
-				detailsPanel.add(new JLabel("MACs:"), g);
-				g.gridx = 2;
-				g.anchor = GridBagConstraints.LINE_END;
-				JLabel macs = new JLabel();
+			g.gridx = 1;
+			g.anchor = GridBagConstraints.LINE_START;
+			detailsPanel.add(new JLabel("MACs:"), g);
+			g.gridx = 2;
+			g.anchor = GridBagConstraints.LINE_END;
+			final JLabel macs = new JLabel();
 //				if (model.getDeviceModel(device).getMacs().size() > 1) {
 //					macs.setText("<html><body><ul>");
 //					for (String mac : model.getDeviceModel(device).getMacs()) {
@@ -192,11 +189,10 @@ public class FullFrame {
 //				else {
 //					macs.setText(model.getDeviceModel(device).getMacs().firstElement());
 //				}
-				detailsPanel.add(macs, g);
+			detailsPanel.add(macs, g);
 
-				detailsPanel.repaint();
-				detailsPanel.validate();
-			}
+			detailsPanel.repaint();
+			detailsPanel.validate();
 		});
 
 		for (int i = 0; i < deviceTree.getRowCount(); i++) {
@@ -206,7 +202,7 @@ public class FullFrame {
 		devicePanel.add(deviceTree);
 		devicePane.setViewportView(devicePanel);
 
-		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+		final JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		splitPane.setLeftComponent(devicePane);
 		splitPane.setRightComponent(detailsPane);
 
@@ -215,16 +211,20 @@ public class FullFrame {
 
 	private JSplitPane getServerPanel(final NetworkModel model, final TextAreaOutputStream out) {
 		// Right-hand pane
-		JScrollPane  detailsPane  = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		final JScrollPane detailsPane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		final JPanel detailsPanel = getNewPanel();
 
 		detailsPane.setViewportView(detailsPanel);
 
 		// Left-hand pane
-		JScrollPane            serverPane  = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		JPanel                 serverPanel = getNewPanel();
-		DefaultMutableTreeNode serverRoot  = new DefaultMutableTreeNode(model.getLabel());
+		final JScrollPane serverPane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		final JPanel serverPanel = getNewPanel();
+		final DefaultMutableTreeNode serverRoot = new DefaultMutableTreeNode(model.getLabel());
 
+		for (final String server : model.getAllServers().keySet()) {
+			serverRoot.add(new DefaultMutableTreeNode(server));
 //		for (ServerModel router : model.getRouterServers()) {
 //			if (!router.isMetal()) {
 //				serverRoot.add(new DefaultMutableTreeNode(router.getLabel()));
@@ -243,54 +243,54 @@ public class FullFrame {
 //			DefaultMutableTreeNode dediNode = new DefaultMutableTreeNode(dedi.getLabel());
 //			serverRoot.add(dediNode);
 //		}
-		
-		for (String machine : model.getAllServers().keySet()) {
+		}
+
+		for (final String machine : model.getAllServers().keySet()) {
 			serverRoot.add(new DefaultMutableTreeNode(machine));
 		}
 		final JTree serverTree = new JTree(serverRoot);
 		serverTree.setCellRenderer(new CustomServerIconRenderer(model));
 		serverTree.setRootVisible(false);
 		serverTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-		serverTree.addTreeSelectionListener(new TreeSelectionListener() {
-			public void valueChanged(TreeSelectionEvent e) {
-				GridBagConstraints g = new GridBagConstraints();
+		serverTree.addTreeSelectionListener(e -> {
+			final GridBagConstraints g = new GridBagConstraints();
 
-				String serverLabel = e.getPath().getLastPathComponent().toString();
-				try {
-					ServerModel server = model.getServerModel(serverLabel);
-				} catch (InvalidServerModelException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
+			final String serverLabel = e.getPath().getLastPathComponent().toString();
+			try {
+				model.getServerModel(serverLabel);
+			} catch (final InvalidServerModelException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 
-				ServerListener listener = new ServerListener(serverLabel, model, out, System.in);
+			final ServerListener listener = new ServerListener(serverLabel, model, out, System.in);
 
-				detailsPanel.removeAll();
+			detailsPanel.removeAll();
 
-				g.fill = GridBagConstraints.VERTICAL;
+			g.fill = GridBagConstraints.VERTICAL;
 
-				//Title
-				g.gridx = 0;
-				g.gridy = 0;
-				g.gridwidth = 4;
-				g.ipady = 40;
-				detailsPanel.add(new JLabel(serverLabel), g);
+			// Title
+			g.gridx = 0;
+			g.gridy = 0;
+			g.gridwidth = 4;
+			g.ipady = 40;
+			detailsPanel.add(new JLabel(serverLabel), g);
 
-				//Reset values
-				g.gridwidth = 1;
-				g.ipady = 10;
+			// Reset values
+			g.gridwidth = 1;
+			g.ipady = 10;
 
-				//IP Address
-				g.gridy += 1;
+			// IP Address
+			g.gridy += 1;
 
-				g.gridx = 1;
-				g.anchor = GridBagConstraints.LINE_START;
-				detailsPanel.add(new JLabel("IPs:"), g);
-				g.gridx = 2;
-				g.anchor = GridBagConstraints.LINE_END;
-				
-				JLabel addresses = new JLabel();
-				
+			g.gridx = 1;
+			g.anchor = GridBagConstraints.LINE_START;
+			detailsPanel.add(new JLabel("IPs:"), g);
+			g.gridx = 2;
+			g.anchor = GridBagConstraints.LINE_END;
+
+			final JLabel addresses = new JLabel();
+
 //				if (server.getAddresses().size() > 1) {
 //					addresses.setText("<html><body><ul>");
 //					for (InetAddress address : model.getServerModel(serverLabel).getAddresses()) {
@@ -303,29 +303,29 @@ public class FullFrame {
 //				else {
 //					addresses.setText(server.getAddresses().firstElement().getHostAddress());
 //				}
-				detailsPanel.add(addresses, g);
-				
-				//SSH
-				g.gridy += 1;
+			detailsPanel.add(addresses, g);
 
-				g.gridx = 1;
-				g.anchor = GridBagConstraints.LINE_START;
-				detailsPanel.add(new JLabel("External SSH Port:"), g);
-				g.gridx = 2;
-				g.anchor = GridBagConstraints.LINE_END;
-				detailsPanel.add(new JLabel(model.getData().getAdminPort(serverLabel) + ""), g);
+			// SSH
+			g.gridy += 1;
 
-				//Profiles
+			g.gridx = 1;
+			g.anchor = GridBagConstraints.LINE_START;
+			detailsPanel.add(new JLabel("External SSH Port:"), g);
+			g.gridx = 2;
+			g.anchor = GridBagConstraints.LINE_END;
+			detailsPanel.add(new JLabel(model.getData().getAdminPort(serverLabel) + ""), g);
+
+			// Profiles
 //				if (server.getProfiles().length > 0) {
 //					g.gridy += 1;
-//	
+//
 //					g.gridx = 1;
 //					g.anchor = GridBagConstraints.LINE_START;
 //					detailsPanel.add(new JLabel("Profiles:"), g);
 //					g.gridx = 2;
 //					g.anchor = GridBagConstraints.LINE_END;
 //					JLabel profiles = new JLabel();
-//					
+//
 //					if (server.getProfiles().length > 1) {
 //						profiles.setText("<html><body><ul>");
 //						for (String profile : model.getServerModel(serverLabel).getProfiles()) {
@@ -336,24 +336,24 @@ public class FullFrame {
 //					else {
 //						profiles.setText(server.getProfiles()[0]);
 //					}
-//					
+//
 //					detailsPanel.add(profiles, g);
 //				}
-				
-				//FQDN
-				g.gridy += 1;
 
-				g.gridx = 1;
-				g.anchor = GridBagConstraints.LINE_START;
-				detailsPanel.add(new JLabel("FQDN:"), g);
-				g.gridx = 2;
-				g.anchor = GridBagConstraints.LINE_END;
+			// FQDN
+			g.gridy += 1;
+
+			g.gridx = 1;
+			g.anchor = GridBagConstraints.LINE_START;
+			detailsPanel.add(new JLabel("FQDN:"), g);
+			g.gridx = 2;
+			g.anchor = GridBagConstraints.LINE_END;
 //				detailsPanel.add(new JLabel(model.getData().getHostname(serverLabel) + "." + model.getData().getDomain(serverLabel)), g);
 
 //				//CNAMEs
 //				if (model.getData().getCnames(serverLabel).length > 0) {
 //					g.gridy += 1;
-//	
+//
 //					g.gridx = 1;
 //					g.anchor = GridBagConstraints.LINE_START;
 //					detailsPanel.add(new JLabel("CNAMEs:"), g);
@@ -370,14 +370,14 @@ public class FullFrame {
 //					else {
 //						cnames.setText(model.getData().getCnames(serverLabel)[0]);
 //					}
-//				
+//
 //					detailsPanel.add(cnames, g);
 //				}
-				
+
 //				//MAC
 //				if (!server.getMacs().isEmpty()) {
 //					g.gridy += 1;
-//	
+//
 //					g.gridx = 1;
 //					g.anchor = GridBagConstraints.LINE_START;
 //					detailsPanel.add(new JLabel("MAC Addresses:"), g);
@@ -400,38 +400,37 @@ public class FullFrame {
 //					detailsPanel.add(macs, g);
 //				}
 
-				//Buttons
-				g.gridwidth = 2;
-				g.gridx = 1;
-				g.fill = GridBagConstraints.HORIZONTAL;
+			// Buttons
+			g.gridwidth = 2;
+			g.gridx = 1;
+			g.fill = GridBagConstraints.HORIZONTAL;
 
 //				if (!server.isService() ) {
-					g.gridy += 1;
-					JButton buildiso = new JButton("Build ISO");
-					buildiso.addActionListener(listener);
-					detailsPanel.add(buildiso, g);
+			g.gridy += 1;
+			final JButton buildiso = new JButton("Build ISO");
+			buildiso.addActionListener(listener);
+			detailsPanel.add(buildiso, g);
 //				}
-//				
+//
 //				if (!server.isDedi()) {
-					g.gridy += 1;
-					JButton audit = new JButton("Audit");
-					audit.addActionListener(listener);
-					detailsPanel.add(audit, g);
-	
-					g.gridy += 1;
-					JButton dryrun = new JButton("Dry Run");
-					dryrun.addActionListener(listener);
-					detailsPanel.add(dryrun, g);
-	
-					g.gridy += 1;
-					JButton config = new JButton("Config");
-					config.addActionListener(listener);
-					detailsPanel.add(config, g);
+			g.gridy += 1;
+			final JButton audit = new JButton("Audit");
+			audit.addActionListener(listener);
+			detailsPanel.add(audit, g);
+
+			g.gridy += 1;
+			final JButton dryrun = new JButton("Dry Run");
+			dryrun.addActionListener(listener);
+			detailsPanel.add(dryrun, g);
+
+			g.gridy += 1;
+			final JButton config = new JButton("Config");
+			config.addActionListener(listener);
+			detailsPanel.add(config, g);
 //				}
-				
-				detailsPanel.repaint();
-				detailsPanel.validate();
-			}
+
+			detailsPanel.repaint();
+			detailsPanel.validate();
 		});
 
 		for (int i = 0; i < serverTree.getRowCount(); i++) {
@@ -440,15 +439,15 @@ public class FullFrame {
 
 		serverPanel.add(serverTree);
 
-		//GridBagConstraints g = new GridBagConstraints();
-		//g.fill = GridBagConstraints.VERTICAL;
-		//JButton buildiso = new JButton("Audit All");
-		//buildiso.addActionListener(new ServerListener(null, model, out, System.in));
-		//serverPanel.add(buildiso, g);
+		// GridBagConstraints g = new GridBagConstraints();
+		// g.fill = GridBagConstraints.VERTICAL;
+		// JButton buildiso = new JButton("Audit All");
+		// buildiso.addActionListener(new ServerListener(null, model, out, System.in));
+		// serverPanel.add(buildiso, g);
 
 		serverPane.setViewportView(serverPanel);
 
-		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+		final JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		splitPane.setLeftComponent(serverPane);
 		splitPane.setRightComponent(detailsPane);
 
@@ -461,28 +460,28 @@ class CustomServerIconRenderer extends DefaultTreeCellRenderer {
 	private ImageIcon routerIcon;
 	private ImageIcon metalIcon;
 	private ImageIcon serviceIcon;
-	private NetworkModel model;
 
 	public CustomServerIconRenderer(NetworkModel model) {
-		this.routerIcon  = null;
-		this.metalIcon   = null;
+		this.routerIcon = null;
+		this.metalIcon = null;
 		this.serviceIcon = null;
 
 		try {
-			this.routerIcon  = new ImageIcon(CustomServerIconRenderer.class.getResource("images/router.png"));
-			this.metalIcon   = new ImageIcon(CustomServerIconRenderer.class.getResource("images/metal.jpeg"));
+			this.routerIcon = new ImageIcon(CustomServerIconRenderer.class.getResource("images/router.png"));
+			this.metalIcon = new ImageIcon(CustomServerIconRenderer.class.getResource("images/metal.jpeg"));
 			this.serviceIcon = new ImageIcon(CustomServerIconRenderer.class.getResource("images/service.jpeg"));
+		} catch (final Exception e) {
 		}
-		catch (Exception e) {
-        }
-		this.model = model;
 	}
-	public Component getTreeCellRendererComponent(JTree tree, Object value,boolean sel,boolean expanded,boolean leaf,int row,boolean hasFocus) {
-		super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
-		Object nodeObj = ((DefaultMutableTreeNode)value).getUserObject();
 
-		String node = nodeObj.toString();
-		
+	@Override
+	public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf,
+			int row, boolean hasFocus) {
+		super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+		final Object nodeObj = ((DefaultMutableTreeNode) value).getUserObject();
+
+		nodeObj.toString();
+
 //		if (row > 0) {
 //			if (model.getServerModel(node).isRouter()) {
 //				setIcon(routerIcon);
@@ -495,7 +494,7 @@ class CustomServerIconRenderer extends DefaultTreeCellRenderer {
 //			}
 //		}
 //		else {
-			setIcon(null);
+		setIcon(null);
 //		}
 
 		return this;
@@ -507,31 +506,29 @@ class DeviceIconRenderer extends DefaultTreeCellRenderer {
 	private ImageIcon userIcon;
 	private ImageIcon intOnlyIcon;
 	private ImageIcon extOnlyIcon;
-	private NetworkModel model;
 
 	public DeviceIconRenderer(NetworkModel model) {
-		this.userIcon    = null;
+		this.userIcon = null;
 		this.intOnlyIcon = null;
 		this.extOnlyIcon = null;
-		
+
 		try {
-			this.userIcon    = new ImageIcon(DeviceIconRenderer.class.getResource("images/user.png"));
+			this.userIcon = new ImageIcon(DeviceIconRenderer.class.getResource("images/user.png"));
 			this.intOnlyIcon = new ImageIcon(DeviceIconRenderer.class.getResource("images/intonly.png"));
 			this.extOnlyIcon = new ImageIcon(DeviceIconRenderer.class.getResource("images/extonly.jpeg"));
-		}
-		catch (Exception e) {
-        }
-		finally {
-			this.model = model;
+		} catch (final Exception e) {
+		} finally {
 		}
 	}
-	
-	public Component getTreeCellRendererComponent(JTree tree, Object value,boolean sel,boolean expanded,boolean leaf,int row,boolean hasFocus) {
-		super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
-		Object nodeObj = ((DefaultMutableTreeNode)value).getUserObject();
 
-		String node = nodeObj.toString();
-		
+	@Override
+	public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf,
+			int row, boolean hasFocus) {
+		super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+		final Object nodeObj = ((DefaultMutableTreeNode) value).getUserObject();
+
+		nodeObj.toString();
+
 //		if (row > 0 && !node.equals("Users") && !node.equals("Internal-Only Devices") && !node.equals("External-Only Devices")) {
 //			switch (model.getDeviceModel(node).getType()) {
 //				case "Internal":
@@ -548,9 +545,9 @@ class DeviceIconRenderer extends DefaultTreeCellRenderer {
 //			}
 //		}
 //		else {
-			setIcon(null);
+		setIcon(null);
 //		}
-		
+
 		return this;
 	}
 }
