@@ -30,7 +30,6 @@ import profile.firewall.machine.CSFFirewall;
 import profile.firewall.router.ShorewallFirewall;
 import profile.machine.configuration.AptSources;
 import profile.machine.configuration.BindFS;
-import profile.machine.configuration.ConfigFiles;
 import profile.machine.configuration.Processes;
 import profile.machine.configuration.UserAccounts;
 import profile.service.machine.SSH;
@@ -48,7 +47,7 @@ public class ServerModel extends AMachineModel {
 	private final AptSources aptSources;
 	private final Processes runningProcesses;
 	private final BindFS bindMounts;
-	private final ConfigFiles configFiles;
+	// private final ConfigFiles configFiles;
 	private final UserAccounts users;
 
 	public ServerModel(String label, NetworkModel networkModel)
@@ -115,7 +114,7 @@ public class ServerModel extends AMachineModel {
 		this.bindMounts = new BindFS(getLabel(), networkModel);
 		this.aptSources = new AptSources(getLabel(), networkModel);
 		this.users = new UserAccounts(getLabel(), networkModel);
-		this.configFiles = new ConfigFiles(getLabel(), networkModel);
+//		this.configFiles = new ConfigFiles(getLabel(), networkModel);
 	}
 
 	public Set<IUnit> getPersistentFirewall() throws InvalidMachineException {
@@ -180,7 +179,7 @@ public class ServerModel extends AMachineModel {
 		units.addAll(this.firewall.getUnits());
 		units.addAll(this.bindMounts.getUnits());
 		units.addAll(this.aptSources.getUnits());
-		units.addAll(this.configFiles.getUnits());
+		// units.addAll(this.configFiles.getUnits());
 		units.addAll(this.runningProcesses.getUnits());
 		units.addAll(this.users.getUnits());
 
@@ -345,9 +344,9 @@ public class ServerModel extends AMachineModel {
 		return this.users;
 	}
 
-	public ConfigFiles getConfigsModel() {
-		return this.configFiles;
-	}
+	// public ConfigFiles getConfigsModel() {
+	// return this.configFiles;
+	// }
 
 	public final void addProcessString(String psString) {
 		getProcessModel().addProcess(psString);
@@ -356,8 +355,4 @@ public class ServerModel extends AMachineModel {
 	public final void addSystemUsername(String username) {
 		this.users.addUsername(username);
 	}
-
-	// public void addConfigFile(String path) {
-	// this.configFiles.addConfigFilePath(path);
-	// }
 }

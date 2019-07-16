@@ -85,7 +85,7 @@ public class Router extends AStructuredProfile {
 		sysctl.appendLine("net.ipv6.conf.default.disable_ipv6=1");
 		sysctl.appendLine("net.ipv6.conf.lo.disable_ipv6=1");
 
-		this.networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFilePath("/etc/sysctl.conf");
+		// this.networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFilePath("/etc/sysctl.conf");
 
 		if (this.networkModel.getData().buildAutoGuest()) {
 			final NetworkInterfaceModel iface = new NetworkInterfaceModel("autoguest", this.networkModel);

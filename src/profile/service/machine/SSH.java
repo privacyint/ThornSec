@@ -93,7 +93,7 @@ public class SSH extends AStructuredProfile {
 		sshdConf.appendLine("Banner /etc/ssh/sshd_banner");
 		sshdConf.appendLine("MaxSessions 1");
 
-		this.networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFilePath("/etc/ssh/sshd_config");
+		// this.networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFilePath("/etc/ssh/sshd_config");
 
 		// This banner is taken from
 		// https://www.dedicatedukhosting.com/hosting/adding-ssh-welcome-and-warning-messages/
@@ -112,7 +112,7 @@ public class SSH extends AStructuredProfile {
 		banner.appendLine("of the United Kingdom and United States respectively.");
 		banner.appendLine("************************NOTICE***********************");
 
-		this.networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFilePath("/etc/ssh/banner");
+		// this.networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFilePath("/etc/ssh/banner");
 
 		units.add(new DirUnit("motd", "proceed", "/etc/update-motd.d/"));
 
@@ -144,7 +144,7 @@ public class SSH extends AStructuredProfile {
 		motd.appendLine("echo \\\"HERE BE DRAGONS.\\\"");
 		motd.appendCarriageReturn();
 
-		this.networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFilePath("/etc/update-motd.d/00-motd");
+		// this.networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFilePath("/etc/update-motd.d/00-motd");
 		units.add(new FilePermsUnit("sshd_motd_perms", "sshd_motd_config", "/etc/update-motd.d/00-motd", "755"));
 
 		units.add(new SimpleUnit("sshd_rsa", "sshd_config",
