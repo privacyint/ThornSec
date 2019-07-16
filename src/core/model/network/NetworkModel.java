@@ -20,6 +20,7 @@ import java.util.Set;
 
 import javax.mail.internet.AddressException;
 
+import core.data.machine.AMachineData;
 import core.data.machine.AMachineData.MachineType;
 import core.data.network.NetworkData;
 import core.exception.data.machine.InvalidMachineException;
@@ -53,20 +54,32 @@ public class NetworkModel {
 
 	void init() throws InvalidMachineException, AddressException {
 		// Start by instantiating all of our devices
-		for (final String deviceLabel : this.data.getMachines(MachineType.EXTERNAL_ONLY).keySet()) {
-			final AMachineModel device = new ExternalOnlyDeviceModel(deviceLabel, this);
-			putMachine(MachineType.EXTERNAL_ONLY, deviceLabel, device);
-			putMachine(MachineType.DEVICE, deviceLabel, device);
+		final Map<String, AMachineData> externals = this.data.getMachines(MachineType.EXTERNAL_ONLY);
+		if (externals != null) {
+			for (final String deviceLabel : externals.keySet()) {
+				final AMachineModel device = new ExternalOnlyDeviceModel(deviceLabel, this);
+				putMachine(MachineType.EXTERNAL_ONLY, deviceLabel, device);
+				putMachine(MachineType.DEVICE, deviceLabel, device);
+			}
 		}
-		for (final String deviceLabel : this.data.getMachines(MachineType.INTERNAL_ONLY).keySet()) {
-			final AMachineModel device = new InternalOnlyDeviceModel(deviceLabel, this);
-			putMachine(MachineType.INTERNAL_ONLY, deviceLabel, device);
-			putMachine(MachineType.DEVICE, deviceLabel, device);
+
+		final Map<String, AMachineData> internals = this.data.getMachines(MachineType.INTERNAL_ONLY);
+		if (internals != null) {
+			for (final String deviceLabel : internals.keySet()) {
+				final AMachineModel device = new InternalOnlyDeviceModel(deviceLabel, this);
+				putMachine(MachineType.INTERNAL_ONLY, deviceLabel, device);
+				putMachine(MachineType.DEVICE, deviceLabel, device);
+			}
 		}
-		for (final String deviceLabel : this.data.getMachines(MachineType.USER).keySet()) {
-			final AMachineModel device = new UserDeviceModel(deviceLabel, this);
-			putMachine(MachineType.EXTERNAL_ONLY, deviceLabel, device);
-			putMachine(MachineType.DEVICE, deviceLabel, device);
+
+		final Map<String, AMachineData> users = this.data.getMachines(MachineType.EXTERNAL_ONLY);
+		if (users != null) {
+
+			for (final String deviceLabel : users.keySet()) {
+				final AMachineModel device = new UserDeviceModel(deviceLabel, this);
+				putMachine(MachineType.EXTERNAL_ONLY, deviceLabel, device);
+				putMachine(MachineType.DEVICE, deviceLabel, device);
+			}
 		}
 
 		//

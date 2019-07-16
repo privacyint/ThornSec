@@ -142,7 +142,8 @@ public class NetworkData extends AData {
 			}
 
 			if (data.containsKey("configip")) {
-				this.configIP = new IPAddressString(data.getString("configip")).getAddress();
+				this.configIP = new IPAddressString(data.getString("configip").replaceAll("[^\\.0-9]", ""))
+						.getAddress();
 			}
 
 			this.myUser = data.getString("myuser", null);
@@ -161,8 +162,10 @@ public class NetworkData extends AData {
 					final ServerData server = new ServerData(jsonServer);
 					server.read(jsonServers.getJsonObject(jsonServer));
 
-					for (final MachineType type : server.getTypes()) {
-						putMachine(type, server);
+					if (server.getTypes() != null) {
+						for (final MachineType type : server.getTypes()) {
+							putMachine(type, server);
+						}
 					}
 				}
 			}
@@ -256,10 +259,14 @@ public class NetworkData extends AData {
 	 * @return
 	 */
 	private AMachineData getMachine(String label) {
-		final AMachineData machine = null;
+		AMachineData machine = null;
 
 		for (final MachineType type : getMachines().keySet()) {
-			getMachine(type, label);
+			machine = getMachine(type, label);
+
+			if (machine != null) { // Found it!
+				break;
+			}
 		}
 
 		return machine;
@@ -283,7 +290,7 @@ public class NetworkData extends AData {
 			final JsonArray jsonIPAddresses = getData().getJsonArray(key);
 
 			for (final JsonValue ip : jsonIPAddresses) {
-				addresses.add(new IPAddressString(ip.toString()).getAddress());
+				addresses.add(new IPAddressString(ip.toString().replaceAll("[^\\.0-9]", "")).getAddress());
 			}
 		}
 
