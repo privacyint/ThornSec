@@ -105,9 +105,11 @@ public class ServerModel extends AMachineModel {
 				continue;
 			}
 
-			final AProfile profileClass = (AProfile) Class.forName("profile." + profile)
-					.getDeclaredConstructor(ServerModel.class, NetworkModel.class).newInstance(this, networkModel);
-			this.profiles.add(profileClass);
+			// TODO
+			// final AProfile profileClass = (AProfile) Class.forName("profile." + profile)
+			// .getDeclaredConstructor(ServerModel.class,
+			// NetworkModel.class).newInstance(this, networkModel);
+			// this.profiles.add(profileClass);
 		}
 
 		this.runningProcesses = new Processes(getLabel(), networkModel);
