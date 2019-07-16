@@ -148,6 +148,16 @@ public class NetworkModel {
 		return servers;
 	}
 
+	public final Map<String, AMachineModel> getAllDevices() {
+		Map<String, AMachineModel> devicen = getAllMachines().get(MachineType.DEVICE);
+
+		if (devicen == null) {
+			devicen = new LinkedHashMap<>();
+		}
+
+		return devicen;
+	}
+
 	public final Hashtable<String, ADeviceModel> getAllUserDevices() {
 		final Hashtable<String, ADeviceModel> devicen = new Hashtable<>();
 
@@ -205,20 +215,11 @@ public class NetworkModel {
 	}
 
 	public final ADeviceModel getDeviceModel(String device) throws InvalidDeviceModelException {
-
-		ADeviceModel model = null;
-
-		if (getAllUserDevices().containsKey(device)) {
-			model = getAllUserDevices().get(device);
-		} else if (getAllInternalOnlyDevices().containsKey(device)) {
-			model = getAllInternalOnlyDevices().get(device);
-		} else if (getAllExternalOnlyDevices().containsKey(device)) {
-			model = getAllExternalOnlyDevices().get(device);
-		} else {
-			throw new InvalidDeviceModelException();
+		if (getAllDevices().containsKey(this.label)) {
+			return (ADeviceModel) getAllDevices().get(this.label);
 		}
 
-		return model;
+		throw new InvalidDeviceModelException();
 	}
 
 	public final void auditNonBlock(String server, OutputStream out, InputStream in, boolean quiet)
