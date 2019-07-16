@@ -7,9 +7,12 @@
  */
 package core.model.machine;
 
+import java.util.Set;
+
 import javax.mail.internet.AddressException;
 
 import core.exception.data.machine.InvalidMachineException;
+import core.iface.IUnit;
 import core.model.network.NetworkModel;
 
 /**
@@ -26,5 +29,12 @@ public class ExternalOnlyDeviceModel extends ADeviceModel {
 		setFirstOctet(10);
 		setSecondOctet(50);
 		setThirdOctet(networkModel.getAllExternalOnlyDevices().get(label).hashCode());
+	}
+
+	@Override
+	public Set<IUnit> getPersistentFirewall() {
+		addEgress("*");
+
+		return null;
 	}
 }

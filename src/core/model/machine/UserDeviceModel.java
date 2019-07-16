@@ -7,9 +7,12 @@
  */
 package core.model.machine;
 
+import java.util.Collection;
+
 import javax.mail.internet.AddressException;
 
 import core.exception.data.machine.InvalidMachineException;
+import core.iface.IUnit;
 import core.model.network.NetworkModel;
 
 /**
@@ -21,5 +24,10 @@ import core.model.network.NetworkModel;
 public class UserDeviceModel extends ADeviceModel {
 	public UserDeviceModel(String label, NetworkModel networkModel) throws InvalidMachineException, AddressException {
 		super(label, networkModel);
+	}
+
+	@Override
+	protected Collection<? extends IUnit> getPersistentFirewall() {
+		return null;
 	}
 }

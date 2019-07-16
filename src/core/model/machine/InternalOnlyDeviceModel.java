@@ -7,9 +7,12 @@
  */
 package core.model.machine;
 
+import java.util.Collection;
+
 import javax.mail.internet.AddressException;
 
 import core.exception.data.machine.InvalidMachineException;
+import core.iface.IUnit;
 import core.model.network.NetworkModel;
 
 /**
@@ -26,5 +29,11 @@ public class InternalOnlyDeviceModel extends ADeviceModel {
 		setFirstOctet(10);
 		setSecondOctet(60);
 		setThirdOctet(networkModel.getAllInternalOnlyDevices().get(label).hashCode());
+	}
+
+	@Override
+	protected Collection<? extends IUnit> getPersistentFirewall() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

@@ -7,6 +7,7 @@
  */
 package core.model.machine;
 
+import java.util.Collection;
 import java.util.Set;
 
 import javax.mail.internet.AddressException;
@@ -43,4 +44,6 @@ abstract public class ADeviceModel extends AMachineModel {
 	protected Set<IUnit> getUnits() throws AThornSecException {
 		return null;
 	}
+
+	protected abstract Collection<? extends IUnit> getPersistentFirewall();
 }
