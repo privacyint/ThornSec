@@ -22,7 +22,6 @@ import core.data.machine.configuration.NetworkInterfaceData;
 import core.exception.AThornSecException;
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidMachineException;
-import core.exception.runtime.InvalidNICException;
 import core.iface.IUnit;
 import core.model.AModel;
 import core.model.machine.configuration.NetworkInterfaceModel;
@@ -31,8 +30,8 @@ import inet.ipaddr.HostName;
 
 public abstract class AMachineModel extends AModel {
 
-	private final Hashtable<String, NetworkInterfaceModel> lanIfaces;
-	private final Hashtable<String, NetworkInterfaceModel> wanIfaces;
+	private final Set<NetworkInterfaceModel> lanInterfaces;
+	private final Set<NetworkInterfaceModel> wanInterfaces;
 
 	private final HostName domain;
 	private final Set<String> cnames;
@@ -58,15 +57,22 @@ public abstract class AMachineModel extends AModel {
 	AMachineModel(String label, NetworkModel networkModel) throws InvalidMachineException, AddressException {
 		super(label, networkModel);
 
-		this.emailAddress = networkModel.getData().getEmailAddress(label);
+		this.emailAddress = networkModel.getData().getEmailAddress(getLabel());
 
 		this.domain = networkModel.getData().getDomain(getLabel());
 		this.cnames = networkModel.getData().getCNAMEs(getLabel());
 
-		this.lanIfaces = new Hashtable<>();
-		this.wanIfaces = new Hashtable<>();
+		this.lanInterfaces = null;
+		for (final NetworkInterfaceData ifaceData : networkModel.getData().getLanIfaces(getLabel())) {
+			addLANInterface(ifaceDataToModel(ifaceData));
+		}
 
-		this.firstOctet = null;
+		this.wanInterfaces = null;
+		for (final NetworkInterfaceData ifaceData : networkModel.getData().getWanIfaces(getLabel())) {
+			addWANInterface(ifaceDataToModel(ifaceData));
+		}
+
+		this.firstOctet = 10;
 		this.secondOctet = null;
 		this.thirdOctet = null;
 
@@ -77,19 +83,6 @@ public abstract class AMachineModel extends AModel {
 		this.egresses = networkModel.getData().getEgresses(getLabel());
 		this.forwards = networkModel.getData().getForwards(getLabel());
 		this.dnat = null;
-	}
-
-	protected void buildIfaces() throws InvalidNICException, InvalidMachineException {
-		if ((this.firstOctet == null) || (this.secondOctet == null) || (this.thirdOctet == null)) {
-			throw new InvalidNICException();
-		}
-
-		for (final NetworkInterfaceData ifaceData : this.networkModel.getData().getLanIfaces(getLabel())) {
-			addLANInterface(ifaceData.getIface(), ifaceDataToModel(ifaceData));
-		}
-		for (final NetworkInterfaceData ifaceData : this.networkModel.getData().getWanIfaces(getLabel())) {
-			addWANInterface(ifaceData.getIface(), ifaceDataToModel(ifaceData));
-		}
 	}
 
 	final private NetworkInterfaceModel ifaceDataToModel(NetworkInterfaceData ifaceData) {
@@ -140,24 +133,20 @@ public abstract class AMachineModel extends AModel {
 		this.cidr = cidr;
 	}
 
-	public final void addLANInterface(String iface, NetworkInterfaceModel ifaceModel) {
-		this.lanIfaces.put(iface, ifaceModel);
+	public final void addLANInterface(NetworkInterfaceModel ifaceModel) {
+		this.lanInterfaces.add(ifaceModel);
 	}
 
-	final protected void addWANInterface(String iface, NetworkInterfaceModel ifaceModel) {
-		this.wanIfaces.put(iface, ifaceModel);
+	final protected void addWANInterface(NetworkInterfaceModel ifaceModel) {
+		this.wanInterfaces.add(ifaceModel);
 	}
 
-	public final NetworkInterfaceModel getLANInterface(String iface) {
-		return this.lanIfaces.get(iface);
+	public final Set<NetworkInterfaceModel> getLANInterfaces() {
+		return this.lanInterfaces;
 	}
 
-	public final Hashtable<String, NetworkInterfaceModel> getLANInterfaces() {
-		return this.lanIfaces;
-	}
-
-	public final Hashtable<String, NetworkInterfaceModel> getWANInterfaces() {
-		return this.wanIfaces;
+	public final Set<NetworkInterfaceModel> getWANInterfaces() {
+		return this.wanInterfaces;
 	}
 
 	public final String getIngressChain() {
