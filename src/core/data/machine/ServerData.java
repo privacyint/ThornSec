@@ -122,10 +122,10 @@ public class ServerData extends AMachineData {
 			this.update = data.getBoolean("update");
 		}
 		if (data.containsKey("sshconnection")) {
-			this.sshConnection = SSHConnection.valueOf(data.getString("sshconnection"));
+			this.sshConnection = SSHConnection.valueOf(data.getString("sshconnection").toUpperCase());
 		}
 		if (data.containsKey("wanconnection")) {
-			this.wanConnection = WANConnection.valueOf(data.getString("wanconnection"));
+			this.wanConnection = WANConnection.valueOf(data.getString("wanconnection").toUpperCase());
 		}
 		if (data.containsKey("debianmirror")) {
 			setDebianMirror(new HostName(data.getString("debianmirror")));
@@ -181,7 +181,8 @@ public class ServerData extends AMachineData {
 			this.types = new LinkedHashSet<>();
 		}
 
-		for (final String type : types) {
+		for (String type : types) {
+			type = type.replaceAll("[^a-zA-Z]", "").toUpperCase();
 			this.types.add(MachineType.valueOf(type));
 		}
 	}
