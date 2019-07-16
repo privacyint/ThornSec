@@ -26,9 +26,10 @@ import core.model.network.NetworkModel;
  * A service is a machine which is run on a HyperVisor
  */
 public class ServiceModel extends ServerModel {
-	ServiceModel(String label, NetworkModel networkModel) throws InvalidServerModelException, InvalidMachineException,
-			InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
-			NoSuchMethodException, SecurityException, ClassNotFoundException, URISyntaxException, AddressException {
+	public ServiceModel(String label, NetworkModel networkModel)
+			throws InvalidServerModelException, InvalidMachineException, InstantiationException, IllegalAccessException,
+			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException,
+			ClassNotFoundException, URISyntaxException, AddressException {
 		super(label, networkModel);
 	}
 

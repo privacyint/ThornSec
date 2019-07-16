@@ -2,6 +2,7 @@ package core.model.network;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.util.LinkedHashMap;
 import java.util.Set;
@@ -15,6 +16,7 @@ import javax.mail.internet.AddressException;
 import core.data.network.NetworkData;
 import core.exception.data.ADataException;
 import core.exception.data.machine.InvalidMachineException;
+import core.exception.runtime.InvalidServerModelException;
 
 public class ThornsecModel {
 
@@ -42,7 +44,9 @@ public class ThornsecModel {
 		}
 	}
 
-	public void init() throws InvalidMachineException, AddressException {
+	public void init() throws InvalidMachineException, AddressException, InvalidServerModelException,
+			InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
+			NoSuchMethodException, SecurityException, ClassNotFoundException, URISyntaxException {
 		for (final String networkName : this.networks.keySet()) {
 			this.networks.get(networkName).init();
 		}

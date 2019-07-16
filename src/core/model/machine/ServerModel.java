@@ -50,7 +50,7 @@ public class ServerModel extends AMachineModel {
 	private final ConfigFiles configFiles;
 	private final UserAccounts users;
 
-	ServerModel(String label, NetworkModel networkModel)
+	public ServerModel(String label, NetworkModel networkModel)
 			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
 			NoSuchMethodException, SecurityException, ClassNotFoundException, InvalidMachineException,
 			InvalidServerModelException, URISyntaxException, AddressException {

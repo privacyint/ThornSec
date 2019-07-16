@@ -12,6 +12,8 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
@@ -52,9 +54,11 @@ public class NetworkModel {
 		return this.label;
 	}
 
-	void init() throws InvalidMachineException, AddressException {
+	void init() throws InvalidMachineException, AddressException, InvalidServerModelException, InstantiationException,
+			IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
+			SecurityException, ClassNotFoundException, URISyntaxException {
 		// Start by instantiating all of our devices
-		final Map<String, AMachineData> externals = this.data.getMachines(MachineType.EXTERNAL_ONLY);
+		final Map<String, AMachineData> externals = this.data.getExternalOnlyDevices();
 		if (externals != null) {
 			for (final String deviceLabel : externals.keySet()) {
 				final AMachineModel device = new ExternalOnlyDeviceModel(deviceLabel, this);
@@ -63,7 +67,7 @@ public class NetworkModel {
 			}
 		}
 
-		final Map<String, AMachineData> internals = this.data.getMachines(MachineType.INTERNAL_ONLY);
+		final Map<String, AMachineData> internals = this.data.getInternalOnlyDevices();
 		if (internals != null) {
 			for (final String deviceLabel : internals.keySet()) {
 				final AMachineModel device = new InternalOnlyDeviceModel(deviceLabel, this);
@@ -72,7 +76,7 @@ public class NetworkModel {
 			}
 		}
 
-		final Map<String, AMachineData> users = this.data.getMachines(MachineType.EXTERNAL_ONLY);
+		final Map<String, AMachineData> users = this.data.getUserDevices();
 		if (users != null) {
 			for (final String deviceLabel : users.keySet()) {
 				final AMachineModel device = new UserDeviceModel(deviceLabel, this);
@@ -81,6 +85,15 @@ public class NetworkModel {
 			}
 		}
 
+		final Map<String, AMachineData> servers = this.data.getServers();
+		if (servers != null) {
+			for (final String serverLabel : servers.keySet()) {
+				new ServerModel(serverLabel, this);
+
+//				putMachine(MachineType.EXTERNAL_ONLY, deviceLabel, device);
+//				putMachine(MachineType.DEVICE, deviceLabel, device);
+			}
+		}
 		//
 //		for(ServerModel metal : metals) {
 //			if (metal.isRouter()) { //If it's an external server...
