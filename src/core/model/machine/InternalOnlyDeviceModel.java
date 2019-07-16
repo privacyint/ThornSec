@@ -28,7 +28,8 @@ public class InternalOnlyDeviceModel extends ADeviceModel {
 
 		setFirstOctet(10);
 		setSecondOctet(60);
-		setThirdOctet(networkModel.getAllInternalOnlyDevices().get(label).hashCode());
+		// TODO Third octet
+		// setThirdOctet(networkModel.getAllInternalOnlyDevices().get(label).hashCode());
 	}
 
 	@Override
