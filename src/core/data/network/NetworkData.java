@@ -137,8 +137,8 @@ public class NetworkData extends AData {
 		} else {
 			this.defaultServiceData.read(data);
 
-			if (data.containsKey("dns")) {
-				this.upstreamDNS = getIPAddressArray("dns");
+			if (data.containsKey("upstreamdns")) {
+				this.upstreamDNS = getIPAddressArray("upstreamdns");
 			}
 
 			if (data.containsKey("configip")) {

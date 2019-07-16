@@ -69,7 +69,7 @@ public class ServiceData extends ServerData {
 			}
 		}
 
-		this.hypervisor = data.getString("metal", null);
+		this.hypervisor = data.getString("hypervisor", null);
 
 		this.debianISOURL = data.getString("debianisourl", null);
 		this.debianISOSHA512 = data.getString("debianisosha512", null);
@@ -83,7 +83,7 @@ public class ServiceData extends ServerData {
 		}
 
 		if (data.containsKey("backupfrequency")) {
-			this.backupFrequency = data.getInt("backups");
+			this.backupFrequency = data.getInt("backupfrequency");
 		}
 	}
 
