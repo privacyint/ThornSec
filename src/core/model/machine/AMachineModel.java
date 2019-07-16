@@ -30,8 +30,8 @@ import inet.ipaddr.HostName;
 
 public abstract class AMachineModel extends AModel {
 
-	private final Set<NetworkInterfaceModel> lanInterfaces;
-	private final Set<NetworkInterfaceModel> wanInterfaces;
+	private Set<NetworkInterfaceModel> lanInterfaces;
+	private Set<NetworkInterfaceModel> wanInterfaces;
 
 	private final HostName domain;
 	private final Set<String> cnames;
@@ -65,7 +65,8 @@ public abstract class AMachineModel extends AModel {
 		this.lanInterfaces = null;
 		if (networkModel.getData().getLanIfaces(getLabel()) != null) {
 			for (final NetworkInterfaceData ifaceData : networkModel.getData().getLanIfaces(getLabel())) {
-				addLANInterface(ifaceDataToModel(ifaceData));
+				final NetworkInterfaceModel iface = ifaceDataToModel(ifaceData);
+				addLANInterface(iface);
 			}
 		}
 
@@ -138,10 +139,18 @@ public abstract class AMachineModel extends AModel {
 	}
 
 	public final void addLANInterface(NetworkInterfaceModel ifaceModel) {
+		if (this.lanInterfaces == null) {
+			this.lanInterfaces = new LinkedHashSet<>();
+		}
+
 		this.lanInterfaces.add(ifaceModel);
 	}
 
 	final protected void addWANInterface(NetworkInterfaceModel ifaceModel) {
+		if (this.wanInterfaces == null) {
+			this.wanInterfaces = new LinkedHashSet<>();
+		}
+
 		this.wanInterfaces.add(ifaceModel);
 	}
 
