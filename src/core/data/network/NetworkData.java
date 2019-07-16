@@ -384,7 +384,7 @@ public class NetworkData extends AData {
 	final public Set<MachineType> getTypes(String server) throws InvalidServerException {
 		Set<MachineType> types = ((ServerData) getMachine(MachineType.SERVER, server)).getTypes();
 
-		if (types.isEmpty()) {
+		if (types == null) {
 			types = this.defaultServiceData.getTypes();
 		}
 
