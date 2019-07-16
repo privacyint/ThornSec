@@ -59,7 +59,7 @@ public class ServerModel extends AMachineModel {
 		// TODO
 		setFirstOctet(10);
 		setSecondOctet(10);
-		setThirdOctet(networkModel.getAllExternalOnlyDevices().hashCode());
+		// setThirdOctet(networkModel.getAllExternalOnlyDevices().hashCode());
 
 		final String firewallProfile = networkModel.getData().getFirewallProfile(getLabel());
 

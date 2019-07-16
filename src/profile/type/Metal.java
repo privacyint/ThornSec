@@ -45,12 +45,6 @@ public class Metal extends AStructuredProfile {
 
 		this.hypervisor = new Virtualisation(label, networkModel);
 		this.services = new HashSet<>();
-
-		this.networkModel.getServerModel(label).setFirstOctet(10);
-//TODO: fixme
-		// this.networkModel.getServerModel(label)
-//				.setSecondOctet(this.networkModel.getMetalServers().indexOf(networkModel.getServerModel(label)) + 1);
-		this.networkModel.getServerModel(label).setThirdOctet(0);
 	}
 
 	public HashSet<ServerModel> getServices() {
@@ -74,8 +68,14 @@ public class Metal extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getPersistentConfig() {
+	protected Set<IUnit> getPersistentConfig() throws InvalidServerModelException {
 		final Set<IUnit> units = new HashSet<>();
+
+		this.networkModel.getServerModel(getLabel()).setFirstOctet(10);
+//TODO: fixme
+		// this.networkModel.getServerModel(label)
+//				.setSecondOctet(this.networkModel.getMetalServers().indexOf(networkModel.getServerModel(label)) + 1);
+		this.networkModel.getServerModel(getLabel()).setThirdOctet(0);
 
 		final FileUnit fuseConf = new FileUnit("fuse", "proceed", "/etc/fuse.conf");
 		units.add(fuseConf);
