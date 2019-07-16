@@ -10,40 +10,40 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.stream.JsonParsingException;
+import javax.mail.internet.AddressException;
 
 import core.data.network.NetworkData;
-
 import core.exception.data.ADataException;
+import core.exception.data.machine.InvalidMachineException;
 
 public class ThornsecModel {
 
-	private LinkedHashMap<String, NetworkModel> networks;
+	private final LinkedHashMap<String, NetworkModel> networks;
 
 	public ThornsecModel() {
-		this.networks = new LinkedHashMap<String, NetworkModel>();
+		this.networks = new LinkedHashMap<>();
 	}
-	
-	public void read(String rawData)
-	throws JsonParsingException, ADataException, IOException, URISyntaxException {
+
+	public void read(String rawData) throws JsonParsingException, ADataException, IOException, URISyntaxException {
 		JsonReader jsonReader = null;
-		JsonObject networks   = null;
-		
+		JsonObject networks = null;
+
 		jsonReader = Json.createReader(new StringReader(rawData));
-		networks   = jsonReader.readObject();
-		
-		for (String networkName : networks.keySet()) {
-			NetworkModel networkModel = new NetworkModel(networkName);
-			NetworkData  networkData  = new NetworkData(networkName);
-			
+		networks = jsonReader.readObject();
+
+		for (final String networkName : networks.keySet()) {
+			final NetworkModel networkModel = new NetworkModel(networkName);
+			final NetworkData networkData = new NetworkData(networkName);
+
 			networkData.read(networks.getJsonObject(networkName));
 			networkModel.setData(networkData);
-			
+
 			this.networks.put(networkName, networkModel);
 		}
 	}
 
-	public void init() {
-		for (String networkName : networks.keySet()) {
+	public void init() throws InvalidMachineException, AddressException {
+		for (final String networkName : this.networks.keySet()) {
 			this.networks.get(networkName).init();
 		}
 	}
