@@ -166,7 +166,6 @@ public class ServerModel extends AMachineModel {
 		units.add(new InstalledUnit("lsof", "proceed", "lsof"));
 		units.add(new InstalledUnit("net_tools", "proceed", "net-tools"));
 		units.add(new InstalledUnit("htop", "proceed", "htop"));
-		units.add(new InstalledUnit("mutt", "proceed", "mutt"));
 
 		for (final AStructuredProfile type : this.types) {
 			units.addAll(type.getUnits());
