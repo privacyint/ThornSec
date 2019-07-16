@@ -244,7 +244,7 @@ public class FullFrame {
 //			serverRoot.add(dediNode);
 //		}
 		
-		for (String machine : model.getAllServerModels().keySet()) {
+		for (String machine : model.getAllServers().keySet()) {
 			serverRoot.add(new DefaultMutableTreeNode(machine));
 		}
 		final JTree serverTree = new JTree(serverRoot);

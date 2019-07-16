@@ -22,5 +22,9 @@ public class ExternalOnlyDeviceModel extends ADeviceModel {
 	public ExternalOnlyDeviceModel(String label, NetworkModel networkModel)
 			throws InvalidMachineException, AddressException {
 		super(label, networkModel);
+
+		setFirstOctet(10);
+		setSecondOctet(50);
+		setThirdOctet(networkModel.getAllExternalOnlyDevices().get(label).hashCode());
 	}
 }

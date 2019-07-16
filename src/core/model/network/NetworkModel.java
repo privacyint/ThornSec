@@ -74,7 +74,6 @@ public class NetworkModel {
 
 		final Map<String, AMachineData> users = this.data.getMachines(MachineType.EXTERNAL_ONLY);
 		if (users != null) {
-
 			for (final String deviceLabel : users.keySet()) {
 				final AMachineModel device = new UserDeviceModel(deviceLabel, this);
 				putMachine(MachineType.EXTERNAL_ONLY, deviceLabel, device);
@@ -121,44 +120,44 @@ public class NetworkModel {
 		machines.put(label, machine);
 	}
 
-	public final Map<MachineType, Map<String, AMachineModel>> getAllMachineModels() {
+	public final Map<MachineType, Map<String, AMachineModel>> getAllMachines() {
 		return this.machines;
 	}
 
-	public final Map<String, ServerModel> getAllServerModels() {
+	public final Map<String, ServerModel> getAllServers() {
 		final Map<String, ServerModel> servers = new Hashtable<>();
 
-		for (final AMachineModel machine : getAllMachineModels().get(MachineType.SERVER).values()) {
+		for (final AMachineModel machine : getAllMachines().get(MachineType.SERVER).values()) {
 			servers.put(machine.getLabel(), (ServerModel) machine);
 		}
 
 		return servers;
 	}
 
-	public final Hashtable<String, ADeviceModel> getAllUserDeviceModels() {
+	public final Hashtable<String, ADeviceModel> getAllUserDevices() {
 		final Hashtable<String, ADeviceModel> devicen = new Hashtable<>();
 
-		for (final AMachineModel device : getAllMachineModels().get(MachineType.USER).values()) {
+		for (final AMachineModel device : getAllMachines().get(MachineType.USER).values()) {
 			devicen.put(device.getLabel(), (ADeviceModel) device);
 		}
 
 		return devicen;
 	}
 
-	public final Hashtable<String, InternalOnlyDeviceModel> getAllInternalOnlyDeviceModels() {
+	public final Hashtable<String, InternalOnlyDeviceModel> getAllInternalOnlyDevices() {
 		final Hashtable<String, InternalOnlyDeviceModel> devicen = new Hashtable<>();
 
-		for (final AMachineModel device : getAllMachineModels().get(MachineType.INTERNAL_ONLY).values()) {
+		for (final AMachineModel device : getAllMachines().get(MachineType.INTERNAL_ONLY).values()) {
 			devicen.put(device.getLabel(), (InternalOnlyDeviceModel) device);
 		}
 
 		return devicen;
 	}
 
-	public final Hashtable<String, ExternalOnlyDeviceModel> getAllExternalOnlyDeviceModels() {
+	public final Hashtable<String, ExternalOnlyDeviceModel> getAllExternalOnlyDevices() {
 		final Hashtable<String, ExternalOnlyDeviceModel> devicen = new Hashtable<>();
 
-		for (final AMachineModel device : getAllMachineModels().get(MachineType.INTERNAL_ONLY).values()) {
+		for (final AMachineModel device : getAllMachines().get(MachineType.INTERNAL_ONLY).values()) {
 			devicen.put(device.getLabel(), (ExternalOnlyDeviceModel) device);
 		}
 
@@ -166,7 +165,7 @@ public class NetworkModel {
 	}
 
 	public final AMachineModel getMachineModel(String machine) throws InvalidMachineModelException {
-		final Map<MachineType, Map<String, AMachineModel>> allMachines = getAllMachineModels();
+		final Map<MachineType, Map<String, AMachineModel>> allMachines = getAllMachines();
 
 		for (final Map<String, AMachineModel> machines : allMachines.values()) {
 			if (machines.containsKey(machine)) {
@@ -178,8 +177,8 @@ public class NetworkModel {
 	}
 
 	public final ServerModel getServerModel(String server) throws InvalidServerModelException {
-		if (getAllServerModels().containsKey(server)) {
-			return getAllServerModels().get(server);
+		if (getAllServers().containsKey(server)) {
+			return getAllServers().get(server);
 		}
 
 		throw new InvalidServerModelException();
@@ -189,12 +188,12 @@ public class NetworkModel {
 
 		ADeviceModel model = null;
 
-		if (getAllUserDeviceModels().containsKey(device)) {
-			model = getAllUserDeviceModels().get(device);
-		} else if (getAllInternalOnlyDeviceModels().containsKey(device)) {
-			model = getAllInternalOnlyDeviceModels().get(device);
-		} else if (getAllExternalOnlyDeviceModels().containsKey(device)) {
-			model = getAllExternalOnlyDeviceModels().get(device);
+		if (getAllUserDevices().containsKey(device)) {
+			model = getAllUserDevices().get(device);
+		} else if (getAllInternalOnlyDevices().containsKey(device)) {
+			model = getAllInternalOnlyDevices().get(device);
+		} else if (getAllExternalOnlyDevices().containsKey(device)) {
+			model = getAllExternalOnlyDevices().get(device);
 		} else {
 			throw new InvalidDeviceModelException();
 		}
@@ -211,7 +210,7 @@ public class NetworkModel {
 	}
 
 	public final void auditAll(OutputStream out, InputStream in, boolean quiet) throws InvalidServerModelException {
-		for (final String server : getAllServerModels().keySet()) {
+		for (final String server : getAllServers().keySet()) {
 			final ManageExec exec = getManageExec(server, "audit", out, quiet);
 			if (exec != null) {
 				exec.manage();
@@ -449,5 +448,9 @@ public class NetworkModel {
 	public Set<ServiceModel> getServices(String hypervisorLabel) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public Map<String, AMachineModel> getMachines(MachineType type) {
+		return this.machines.get(type);
 	}
 }

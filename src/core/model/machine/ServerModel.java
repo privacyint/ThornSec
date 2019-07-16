@@ -26,13 +26,17 @@ import core.unit.SimpleUnit;
 import core.unit.fs.FileAppendUnit;
 import core.unit.pkg.InstalledUnit;
 import profile.firewall.AFirewallProfile;
+import profile.firewall.machine.CSFFirewall;
 import profile.firewall.router.ShorewallFirewall;
 import profile.machine.configuration.AptSources;
 import profile.machine.configuration.BindFS;
 import profile.machine.configuration.ConfigFiles;
 import profile.machine.configuration.Processes;
 import profile.machine.configuration.UserAccounts;
+import profile.type.Dedicated;
+import profile.type.Metal;
 import profile.type.Router;
+import profile.type.Service;
 
 public class ServerModel extends AMachineModel {
 	private final Set<AStructuredProfile> types;
@@ -52,6 +56,11 @@ public class ServerModel extends AMachineModel {
 			InvalidServerModelException, URISyntaxException, AddressException {
 		super(label, networkModel);
 
+		// TODO
+		setFirstOctet(10);
+		setSecondOctet(10);
+		setThirdOctet(networkModel.getAllExternalOnlyDevices().hashCode());
+
 		final String firewallProfile = networkModel.getData().getFirewallProfile(getLabel());
 
 		// It's going to be *exceedingly* rare that this is set, but it should be
@@ -64,22 +73,29 @@ public class ServerModel extends AMachineModel {
 		this.types = new HashSet<>();
 		for (final MachineType type : networkModel.getData().getTypes(getLabel())) {
 			switch (type) {
-				case ROUTER:
-					if (this.firewall == null) {
-						this.firewall = new ShorewallFirewall(getLabel(), networkModel);
-					}
-					this.types.add(new Router(getLabel(), networkModel));
-					break;
-				case HYPERVISOR:
-//					this.types.add(new Metal(getLabel(), networkModel));
-//					if (this.firewall == null) { this.firewall = new CsfFirewall(getLabel(), networkModel); }
-					break;
-				case SERVICE:
-//					this.types.add(new Service(getLabel(), networkModel));
-					break;
-				case DEDICATED:
-//					this.types.add(new Dedicated(getLabel(), networkModel));
-					break;
+			case ROUTER:
+				if (this.firewall == null) {
+					this.firewall = new ShorewallFirewall(getLabel(), networkModel);
+				}
+				this.types.add(new Router(getLabel(), networkModel));
+				break;
+			case HYPERVISOR:
+				if (this.firewall == null) {
+					this.firewall = new CSFFirewall(getLabel(), networkModel);
+				}
+				this.types.add(new Metal(getLabel(), networkModel));
+				break;
+			case SERVICE:
+				if (this.firewall == null) {
+					this.firewall = new CSFFirewall(getLabel(), networkModel);
+				}
+				this.types.add(new Service(getLabel(), networkModel));
+				break;
+			case DEDICATED:
+				this.types.add(new Dedicated(getLabel(), networkModel));
+				break;
+			default:
+				break;
 			}
 		}
 
@@ -99,8 +115,10 @@ public class ServerModel extends AMachineModel {
 		this.aptSources = new AptSources(getLabel(), networkModel);
 		this.users = new UserAccounts(getLabel(), networkModel);
 		this.configFiles = new ConfigFiles(getLabel(), networkModel);
+	}
 
-		if (!networkModel.getData().getExternalIPs(getLabel()).isEmpty()) {
+	public Set<IUnit> getPersistentFirewall() throws InvalidMachineException {
+		if (!this.networkModel.getData().getExternalIPs(getLabel()).isEmpty()) {
 			addIngress("*");
 		}
 
@@ -109,6 +127,7 @@ public class ServerModel extends AMachineModel {
 		addEgress("prod.debian.map.fastly.net:80,443");
 		addEgress("*:25");
 
+		return null;
 	}
 
 	@Override

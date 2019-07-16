@@ -22,5 +22,9 @@ public class InternalOnlyDeviceModel extends ADeviceModel {
 	public InternalOnlyDeviceModel(String label, NetworkModel networkModel)
 			throws InvalidMachineException, AddressException {
 		super(label, networkModel);
+
+		setFirstOctet(10);
+		setSecondOctet(60);
+		setThirdOctet(networkModel.getAllInternalOnlyDevices().get(label).hashCode());
 	}
 }
