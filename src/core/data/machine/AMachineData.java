@@ -70,7 +70,6 @@ public abstract class AMachineData extends AData {
 
 	public static Boolean DEFAULT_IS_THROTTLED = true;
 
-	@Attributes(required = false, description = "The machine's network interfaces")
 	private Set<NetworkInterfaceData> networkInterfaces;
 
 	private Set<IPAddress> externalIPAddresses;
