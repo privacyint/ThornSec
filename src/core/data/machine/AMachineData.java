@@ -23,7 +23,6 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
 import core.data.AData;
-import core.data.machine.configuration.DiskData;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.exception.data.ADataException;
 import core.exception.data.InvalidDestinationException;
@@ -91,8 +90,6 @@ public abstract class AMachineData extends AData {
 	private Set<HostName> egresses;
 
 	private HostName domain;
-
-	private LinkedHashSet<DiskData> disks;
 
 	protected AMachineData(String label) {
 		super(label);
@@ -176,17 +173,17 @@ public abstract class AMachineData extends AData {
 			final JsonObject listens = data.getJsonObject("listen");
 
 			if (listens.containsKey("tcp")) {
-				final String[] ports = listens.get("tcp").toString().split("[^a-z0-9]");
+				final JsonArray tcp = listens.getJsonArray("tcp");
 
-				for (final String port : ports) {
-					putPort(Encapsulation.TCP, Integer.parseInt(port));
+				for (int i = 0; i < tcp.size(); ++i) {
+					putPort(Encapsulation.TCP, tcp.getInt(i));
 				}
 			}
 			if (listens.containsKey("udp")) {
-				final String[] ports = listens.get("udp").toString().split("[^a-z0-9]");
+				final JsonArray udp = listens.getJsonArray("udp");
 
-				for (final String port : ports) {
-					putPort(Encapsulation.UDP, Integer.parseInt(port));
+				for (int i = 0; i < udp.size(); ++i) {
+					putPort(Encapsulation.UDP, udp.getInt(i));
 				}
 			}
 		}
