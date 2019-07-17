@@ -42,7 +42,6 @@ import core.data.machine.ExternalDeviceData;
 import core.data.machine.HypervisorData;
 import core.data.machine.InternalDeviceData;
 import core.data.machine.ServerData;
-import core.data.machine.ServerData.WANConnection;
 import core.data.machine.ServiceData;
 import core.data.machine.UserDeviceData;
 import core.data.machine.configuration.NetworkInterfaceData;
@@ -493,16 +492,6 @@ public class NetworkData extends AData {
 		}
 
 		return cpus;
-	}
-
-	public WANConnection getWanConnection(String server) {
-		WANConnection connection = ((ServerData) getMachine(MachineType.SERVER, server)).getWanConnection();
-
-		if (connection == null) {
-			connection = this.defaultServiceData.getWanConnection();
-		}
-
-		return connection;
 	}
 
 	public String getDebianIsoUrl(String service) throws InvalidServerException {

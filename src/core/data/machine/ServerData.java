@@ -35,10 +35,6 @@ public class ServerData extends AMachineData {
 		DIRECT, TUNNELLED
 	}
 
-	public enum WANConnection {
-		PPP, DHCP, STATIC
-	}
-
 	private Set<HostName> sshSources;
 	private Set<String> profiles;
 	private LinkedHashSet<MachineType> types;
@@ -52,7 +48,6 @@ public class ServerData extends AMachineData {
 	private Boolean update;
 
 	private SSHConnection sshConnection;
-	private WANConnection wanConnection;
 
 	private HostName debianMirror;
 	private String debianDirectory;
@@ -75,7 +70,6 @@ public class ServerData extends AMachineData {
 		this.update = null;
 
 		this.sshConnection = null;
-		this.wanConnection = null;
 
 		this.debianDirectory = null;
 		this.debianMirror = null;
@@ -111,7 +105,6 @@ public class ServerData extends AMachineData {
 				putProfile(profile.toString());
 			}
 		}
-
 		if (data.containsKey("adminport")) {
 			setAdminPort(data.getInt("adminport"));
 		}
@@ -123,9 +116,6 @@ public class ServerData extends AMachineData {
 		}
 		if (data.containsKey("sshconnection")) {
 			this.sshConnection = SSHConnection.valueOf(data.getString("sshconnection").toUpperCase());
-		}
-		if (data.containsKey("wanconnection")) {
-			this.wanConnection = WANConnection.valueOf(data.getString("wanconnection").toUpperCase());
 		}
 		if (data.containsKey("debianmirror")) {
 			setDebianMirror(new HostName(data.getString("debianmirror")));
@@ -225,10 +215,6 @@ public class ServerData extends AMachineData {
 
 	public final SSHConnection getSshConnection() {
 		return this.sshConnection;
-	}
-
-	public final WANConnection getWanConnection() {
-		return this.wanConnection;
 	}
 
 	public final HostName getDebianMirror() {
