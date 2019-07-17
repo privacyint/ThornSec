@@ -62,7 +62,6 @@ import inet.ipaddr.IPAddressString;
  * This is our "interface" between the data and the models ThornSec will build.
  */
 public class NetworkData extends AData {
-	private static final Boolean DEFAULT_DTLS = true;
 	private static final Boolean DEFAULT_ADBLOCKING = false;
 	private static final Boolean DEFAULT_AUTOGENPASSWDS = false;
 	private static final Boolean DEFAULT_VPNONLY = false;
@@ -93,10 +92,9 @@ public class NetworkData extends AData {
 	private Boolean autoGenPassphrases;
 
 	private Boolean vpnOnly;
-	private Boolean dtls;
 	private Boolean autoGuest;
 
-	private Set<IPAddress> upstreamDNS;
+	private Set<HostName> upstreamDNS;
 
 	private final ServiceData defaultServiceData;
 	private final HypervisorData defaultHypervisorData;
@@ -114,7 +112,6 @@ public class NetworkData extends AData {
 		this.adBlocking = null;
 		this.autoGenPassphrases = null;
 		this.vpnOnly = null;
-		this.dtls = null;
 		this.autoGuest = null;
 
 		this.upstreamDNS = null;
@@ -137,7 +134,7 @@ public class NetworkData extends AData {
 			this.defaultServiceData.read(data);
 
 			if (data.containsKey("upstreamdns")) {
-				this.upstreamDNS = getIPAddressArray("upstreamdns");
+				this.upstreamDNS = getHostNameArray("upstreamdns");
 			}
 
 			if (data.containsKey("configip")) {
@@ -148,7 +145,6 @@ public class NetworkData extends AData {
 			this.myUser = data.getString("myuser", null);
 			this.domain = data.getString("domain", DEFAULT_DOMAIN);
 
-			this.dtls = data.getBoolean("dtls", DEFAULT_DTLS);
 			this.adBlocking = data.getBoolean("adblocking", DEFAULT_ADBLOCKING);
 			this.autoGenPassphrases = data.getBoolean("autogenpasswds", DEFAULT_AUTOGENPASSWDS);
 			this.vpnOnly = data.getBoolean("vpnonly", DEFAULT_VPNONLY);
@@ -283,19 +279,19 @@ public class NetworkData extends AData {
 		return getMachines().get(type);
 	}
 
-	private Set<IPAddress> getIPAddressArray(String key) throws UnknownHostException {
-		Set<IPAddress> addresses = null;
+	private Set<HostName> getHostNameArray(String key) throws UnknownHostException {
+		Set<HostName> hosts = null;
 
 		if (getData().containsKey(key)) {
-			addresses = new HashSet<>();
-			final JsonArray jsonIPAddresses = getData().getJsonArray(key);
+			hosts = new HashSet<>();
+			final JsonArray jsonHosts = getData().getJsonArray(key);
 
-			for (final JsonValue ip : jsonIPAddresses) {
-				addresses.add(new IPAddressString(ip.toString().replaceAll("[^\\.0-9]", "")).getAddress());
+			for (final JsonValue host : jsonHosts) {
+				hosts.add(new HostName(host.toString()));
 			}
 		}
 
-		return addresses;
+		return hosts;
 	}
 
 	private void readInclude(String include)
@@ -319,12 +315,8 @@ public class NetworkData extends AData {
 		return this.myUser;
 	}
 
-	public final Set<IPAddress> getUpstreamDNSServers() {
+	public final Set<HostName> getUpstreamDNSServers() {
 		return this.upstreamDNS;
-	}
-
-	public final Boolean upstreamDNSIsTLS() {
-		return this.dtls;
 	}
 
 	/**

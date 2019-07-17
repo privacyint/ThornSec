@@ -26,7 +26,6 @@ import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 import inet.ipaddr.HostName;
-import inet.ipaddr.IPAddress;
 
 public class UnboundDNSServer extends ADNSServerProfile {
 
@@ -114,15 +113,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		// Upstream DNS servers
 		unboundConf.appendLine("    forward-zone:");
 		unboundConf.appendLine("        name: \\\".\\\"");
-		if (this.networkModel.getData().upstreamDNSIsTLS()) {
-			unboundConf.appendLine("        forward-ssl-upstream: yes");
-		}
-		for (final IPAddress upstream : this.networkModel.getData().getUpstreamDNSServers()) {
-			if (this.networkModel.getData().upstreamDNSIsTLS()) {
-				unboundConf.appendLine("        forward-addr: " + upstream.toIPv4() + "@853");
-			} else {
-				unboundConf.appendLine("        forward-addr: " + upstream.toIPv4());
-			}
+		for (final HostName upstream : this.networkModel.getData().getUpstreamDNSServers()) {
+			unboundConf.appendLine("        forward-addr: " + upstream.getHost() + "@" + upstream.getPort());
 		}
 
 		return units;

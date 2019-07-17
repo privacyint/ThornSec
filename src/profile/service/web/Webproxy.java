@@ -32,7 +32,6 @@ import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import inet.ipaddr.HostName;
-import inet.ipaddr.IPAddress;
 import profile.stack.Nginx;
 
 /**
@@ -90,8 +89,8 @@ public class Webproxy extends AStructuredProfile {
 		sslConf.appendCarriageReturn();
 		sslConf.appendLine("    ssl_stapling on;");
 		sslConf.appendLine("    ssl_stapling_verify on;");
-		for (final IPAddress resolver : this.networkModel.getData().getUpstreamDNSServers()) {
-			sslConf.appendLine("    resolver " + resolver.toFullString() + " valid=300s;");
+		for (final HostName resolver : this.networkModel.getData().getUpstreamDNSServers()) {
+			sslConf.appendLine("    resolver " + resolver.asInetAddress() + " valid=300s;");
 		}
 		sslConf.appendLine("    resolver_timeout 5s;");
 
