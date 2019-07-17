@@ -120,17 +120,6 @@ public abstract class AMachineData extends AData {
 	protected void read(JsonObject data) throws ADataException, JsonParsingException, IOException, URISyntaxException {
 		setData(data);
 
-		// Disks
-		if (data.containsKey("disks")) {
-			final JsonArray disks = data.getJsonArray("disks");
-			for (int i = 0; i < disks.size(); ++i) {
-				final DiskData disk = new DiskData(getLabel());
-
-				disk.read(disks.getJsonObject(i));
-				putDisk(disk);
-			}
-		}
-
 		// Network Interfaces
 		if (data.containsKey("lan")) {
 			final JsonArray lanIfaces = data.getJsonArray("lan");
@@ -295,14 +284,6 @@ public abstract class AMachineData extends AData {
 		}
 
 		this.externalIPAddresses.add(address);
-	}
-
-	private void putDisk(DiskData disk) {
-		if (this.disks == null) {
-			this.disks = new LinkedHashSet<>();
-		}
-
-		this.disks.add(disk);
 	}
 
 	private void putWanInterface(NetworkInterfaceData iface) {
