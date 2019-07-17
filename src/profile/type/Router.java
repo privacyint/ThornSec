@@ -89,7 +89,7 @@ public class Router extends AStructuredProfile {
 
 		if (this.networkModel.getData().buildAutoGuest()) {
 			final NetworkInterfaceModel iface = new NetworkInterfaceModel("autoguest", this.networkModel);
-			this.networkModel.getServerModel(getLabel()).addLANInterface(iface);
+			this.networkModel.getServerModel(getLabel()).addNetworkInterface(iface);
 
 			iface.setIface("lan0:9001");
 			iface.setInet(Inet.STATIC);

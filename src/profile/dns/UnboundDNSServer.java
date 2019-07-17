@@ -167,7 +167,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 				try {
 					hostMachine = this.networkModel.getMachineModel(hostName);
 
-					for (final NetworkInterfaceModel iface : hostMachine.getLANInterfaces()) {
+					for (final NetworkInterfaceModel iface : hostMachine.getNetworkInterfaces()) {
 						// @TODO
 						zoneFile.appendLine("    local-data-ptr: \\\"" + iface.getAddress() + " "
 								+ hostMachine.getLabel() + "\\\"");

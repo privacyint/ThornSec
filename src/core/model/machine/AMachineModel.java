@@ -30,8 +30,7 @@ import inet.ipaddr.HostName;
 
 public abstract class AMachineModel extends AModel {
 
-	private Set<NetworkInterfaceModel> lanInterfaces;
-	private Set<NetworkInterfaceModel> wanInterfaces;
+	private Set<NetworkInterfaceModel> networkInterfaces;
 
 	private final HostName domain;
 	private final Set<String> cnames;
@@ -62,18 +61,11 @@ public abstract class AMachineModel extends AModel {
 		this.domain = networkModel.getData().getDomain(getLabel());
 		this.cnames = networkModel.getData().getCNAMEs(getLabel());
 
-		this.lanInterfaces = null;
-		if (networkModel.getData().getLanIfaces(getLabel()) != null) {
-			for (final NetworkInterfaceData ifaceData : networkModel.getData().getLanIfaces(getLabel())) {
+		this.networkInterfaces = null;
+		if (networkModel.getData().getNetworkInterfaces(getLabel()) != null) {
+			for (final NetworkInterfaceData ifaceData : networkModel.getData().getNetworkInterfaces(getLabel())) {
 				final NetworkInterfaceModel iface = ifaceDataToModel(ifaceData);
-				addLANInterface(iface);
-			}
-		}
-
-		this.wanInterfaces = null;
-		if (networkModel.getData().getWanIfaces(getLabel()) != null) {
-			for (final NetworkInterfaceData ifaceData : networkModel.getData().getWanIfaces(getLabel())) {
-				addWANInterface(ifaceDataToModel(ifaceData));
+				addNetworkInterface(iface);
 			}
 		}
 
@@ -138,28 +130,16 @@ public abstract class AMachineModel extends AModel {
 		this.cidr = cidr;
 	}
 
-	public final void addLANInterface(NetworkInterfaceModel ifaceModel) {
-		if (this.lanInterfaces == null) {
-			this.lanInterfaces = new LinkedHashSet<>();
+	public final void addNetworkInterface(NetworkInterfaceModel ifaceModel) {
+		if (this.networkInterfaces == null) {
+			this.networkInterfaces = new LinkedHashSet<>();
 		}
 
-		this.lanInterfaces.add(ifaceModel);
+		this.networkInterfaces.add(ifaceModel);
 	}
 
-	final protected void addWANInterface(NetworkInterfaceModel ifaceModel) {
-		if (this.wanInterfaces == null) {
-			this.wanInterfaces = new LinkedHashSet<>();
-		}
-
-		this.wanInterfaces.add(ifaceModel);
-	}
-
-	public final Set<NetworkInterfaceModel> getLANInterfaces() {
-		return this.lanInterfaces;
-	}
-
-	public final Set<NetworkInterfaceModel> getWANInterfaces() {
-		return this.wanInterfaces;
+	public final Set<NetworkInterfaceModel> getNetworkInterfaces() {
+		return this.networkInterfaces;
 	}
 
 	public final String getIngressChain() {

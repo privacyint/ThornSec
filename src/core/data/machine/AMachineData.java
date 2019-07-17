@@ -70,8 +70,8 @@ public abstract class AMachineData extends AData {
 
 	public static Boolean DEFAULT_IS_THROTTLED = true;
 
-	private Set<NetworkInterfaceData> lanInterfaces;
-	private Set<NetworkInterfaceData> wanInterfaces;
+	@Attributes(required = false, description = "The machine's network interfaces")
+	private Set<NetworkInterfaceData> networkInterfaces;
 
 	private Set<IPAddress> externalIPAddresses;
 
@@ -94,8 +94,7 @@ public abstract class AMachineData extends AData {
 	protected AMachineData(String label) {
 		super(label);
 
-		this.lanInterfaces = null;
-		this.wanInterfaces = null;
+		this.networkInterfaces = null;
 
 		this.externalIPAddresses = null;
 
@@ -118,22 +117,13 @@ public abstract class AMachineData extends AData {
 		setData(data);
 
 		// Network Interfaces
-		if (data.containsKey("lan")) {
-			final JsonArray lanIfaces = data.getJsonArray("lan");
-			for (int i = 0; i < lanIfaces.size(); ++i) {
-				final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
-
-				iface.read(lanIfaces.getJsonObject(i));
-				putLanInterface(iface);
-			}
-		}
-		if (data.containsKey("wan")) {
+		if (data.containsKey("network_interfaces")) {
 			final JsonArray wanIfaces = data.getJsonArray("wan");
 			for (int i = 0; i < wanIfaces.size(); ++i) {
 				final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
 
 				iface.read(wanIfaces.getJsonObject(i));
-				putWanInterface(iface);
+				putNetworkInterface(iface);
 			}
 		}
 
@@ -283,28 +273,16 @@ public abstract class AMachineData extends AData {
 		this.externalIPAddresses.add(address);
 	}
 
-	private void putWanInterface(NetworkInterfaceData iface) {
-		if (this.wanInterfaces == null) {
-			this.wanInterfaces = new LinkedHashSet<>();
+	private void putNetworkInterface(NetworkInterfaceData iface) {
+		if (this.networkInterfaces == null) {
+			this.networkInterfaces = new LinkedHashSet<>();
 		}
 
-		this.wanInterfaces.add(iface);
+		this.networkInterfaces.add(iface);
 	}
 
-	private void putLanInterface(NetworkInterfaceData ifaceData) {
-		if (this.lanInterfaces == null) {
-			this.lanInterfaces = new LinkedHashSet<>();
-		}
-
-		this.lanInterfaces.add(ifaceData);
-	}
-
-	public final Set<NetworkInterfaceData> getLanInterfaces() {
-		return this.lanInterfaces;
-	}
-
-	public final Set<NetworkInterfaceData> getWanInterfaces() {
-		return this.wanInterfaces;
+	public final Set<NetworkInterfaceData> getNetworkInterfaces() {
+		return this.networkInterfaces;
 	}
 
 	public final Map<Encapsulation, Set<Integer>> getListens() {

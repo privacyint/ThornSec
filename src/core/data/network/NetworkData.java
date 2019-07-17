@@ -452,12 +452,8 @@ public class NetworkData extends AData {
 		return db;
 	}
 
-	public Set<NetworkInterfaceData> getLanIfaces(String machine) throws InvalidMachineException {
-		return getMachine(machine).getLanInterfaces();
-	}
-
-	public Set<NetworkInterfaceData> getWanIfaces(String machine) throws InvalidMachineException {
-		return getMachine(machine).getWanInterfaces();
+	public Set<NetworkInterfaceData> getNetworkInterfaces(String machine) throws InvalidMachineException {
+		return getMachine(machine).getNetworkInterfaces();
 	}
 
 	public Integer getRam(String service) throws InvalidServerException {
