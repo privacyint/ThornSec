@@ -34,7 +34,7 @@ import profile.machine.configuration.Processes;
 import profile.machine.configuration.UserAccounts;
 import profile.service.machine.SSH;
 import profile.type.Dedicated;
-import profile.type.Metal;
+import profile.type.HyperVisor;
 import profile.type.Router;
 import profile.type.Service;
 
@@ -83,7 +83,7 @@ public class ServerModel extends AMachineModel {
 				if (this.firewall == null) {
 					this.firewall = new CSFFirewall(getLabel(), networkModel);
 				}
-				this.types.add(new Metal(getLabel(), networkModel));
+				this.types.add(new HyperVisor(getLabel(), networkModel));
 				break;
 			case SERVICE:
 				if (this.firewall == null) {

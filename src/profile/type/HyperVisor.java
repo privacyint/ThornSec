@@ -10,6 +10,8 @@ package profile.type;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import java.util.regex.Pattern;
@@ -23,7 +25,7 @@ import core.exception.runtime.InvalidServerModelException;
 import core.exec.network.APassphrase;
 import core.exec.network.OpenKeePassPassphrase;
 import core.iface.IUnit;
-import core.model.machine.ServerModel;
+import core.model.machine.ServiceModel;
 import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
@@ -34,20 +36,28 @@ import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import profile.stack.Virtualisation;
 
-public class Metal extends AStructuredProfile {
+public class HyperVisor extends AStructuredProfile {
 
 	// TODO: roll scripts back in
 	private final Virtualisation hypervisor;
-	private final HashSet<ServerModel> services;
+	private Map<String, ServiceModel> services;
 
-	public Metal(String label, NetworkModel networkModel) throws InvalidServerModelException {
+	public HyperVisor(String label, NetworkModel networkModel) throws InvalidServerModelException {
 		super(label, networkModel);
 
 		this.hypervisor = new Virtualisation(label, networkModel);
-		this.services = new HashSet<>();
+		this.services = null;
 	}
 
-	public HashSet<ServerModel> getServices() {
+	public void addService(String label, ServiceModel service) {
+		if (this.services == null) {
+			this.services = new LinkedHashMap<>();
+		}
+
+		this.services.put(label, service);
+	}
+
+	public Map<String, ServiceModel> getServices() {
 		return this.services;
 	}
 
@@ -72,9 +82,11 @@ public class Metal extends AStructuredProfile {
 		final Set<IUnit> units = new HashSet<>();
 
 		this.networkModel.getServerModel(getLabel()).setFirstOctet(10);
-//TODO: fixme
+
+		// TODO: fixme
 		// this.networkModel.getServerModel(label)
 //				.setSecondOctet(this.networkModel.getMetalServers().indexOf(networkModel.getServerModel(label)) + 1);
+
 		this.networkModel.getServerModel(getLabel()).setThirdOctet(0);
 
 		final FileUnit fuseConf = new FileUnit("fuse", "proceed", "/etc/fuse.conf");
@@ -88,41 +100,6 @@ public class Metal extends AStructuredProfile {
 	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
 		final Set<IUnit> units = new HashSet<>();
 
-//		final NetworkInterfaceModel im = this.me.getLANInterfaces();
-//
-//
-//		final int i = 0;
-//
-//		// Add this machine's interfaces
-//		for (final Map.Entry<String, String> lanIface : this.networkModel.getData().getLanIfaces(getLabel())
-//				.entrySet()) {
-//			if (this.me.isRouter()
-//					|| this.networkModel.getData().getWanIfaces(getLabel()).containsKey(lanIface.getKey())) { // Try
-//				// not
-//				// to
-//				// duplicate
-//				// ifaces
-//				// if
-//				// we're
-//				// a
-//				// Router/Metal
-//				continue;
-//			}
-//
-//			final InetAddress subnet = this.networkModel.stringToIP(this.me.getFirstOctet() + "."
-//					+ this.me.getSecondOctet() + "." + this.me.getThirdOctet() + "." + (i * 4));
-//			final InetAddress router = this.networkModel.stringToIP(this.me.getFirstOctet() + "."
-//					+ this.me.getSecondOctet() + "." + this.me.getThirdOctet() + "." + ((i * 4) + 1));
-//			final InetAddress address = this.networkModel.stringToIP(this.me.getFirstOctet() + "."
-//					+ this.me.getSecondOctet() + "." + this.me.getThirdOctet() + "." + ((i * 4) + 2));
-//			final InetAddress broadcast = this.networkModel.stringToIP(this.me.getFirstOctet() + "."
-//					+ this.me.getSecondOctet() + "." + this.me.getThirdOctet() + "." + ((i * 4) + 3));
-//			final InetAddress netmask = this.networkModel.getData().getNetmask();
-//
-//			im.addIface(new InterfaceData(getLabel(), lanIface.getKey(), lanIface.getValue(), "static", null, subnet,
-//					address, netmask, broadcast, router, "comment goes here"));
-//		}
-
 		this.networkModel.getServerModel(getLabel()).addEgress("gensho.ftp.acc.umu.se");
 		this.networkModel.getServerModel(getLabel()).addEgress("github.com");
 
@@ -134,8 +111,8 @@ public class Metal extends AStructuredProfile {
 		final Set<IUnit> units = new HashSet<>();
 
 		final Vector<String> urls = new Vector<>();
-		for (final ServerModel service : this.networkModel.getServices(getLabel())) {
-			final String newURL = this.networkModel.getData().getDebianIsoUrl(service.getLabel());
+		for (final String service : getServices().keySet()) {
+			final String newURL = this.networkModel.getData().getDebianIsoUrl(service);
 			if (urls.contains(newURL)) {
 				continue;
 			} else {
@@ -167,10 +144,9 @@ public class Metal extends AStructuredProfile {
 							+ "Please check http://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA512SUMS (64 bit) or http://cdimage.debian.org/debian-cd/current/i386/iso-cd/SHA512SUMS (32 bit) for the correct checksum."));
 		}
 
-		for (final ServerModel service : this.networkModel.getServices(getLabel())) {
+		for (final String service : getServices().keySet()) {
 			String password = "";
-			final String serviceLabel = service.getLabel();
-			final APassphrase pass = new OpenKeePassPassphrase(serviceLabel, this.networkModel);
+			final APassphrase pass = new OpenKeePassPassphrase(service, this.networkModel);
 
 			if (pass.init()) {
 				password = pass.getPassphrase();
@@ -185,10 +161,10 @@ public class Metal extends AStructuredProfile {
 			if (pass.isADefaultPassphrase()) {
 			}
 
-			units.add(new SimpleUnit(serviceLabel + "_password", "proceed",
-					serviceLabel.toUpperCase() + "_PASSWORD=`printf \"" + password + "\" | mkpasswd -s -m md5`",
-					"echo $" + serviceLabel.toUpperCase() + "_PASSWORD", "", "fail", "Couldn't set the passphrase for "
-							+ serviceLabel + ".  You won't be able to configure this service."));
+			units.add(new SimpleUnit(service + "_password", "proceed",
+					service.toUpperCase() + "_PASSWORD=`printf \"" + password + "\" | mkpasswd -s -m md5`",
+					"echo $" + service.toUpperCase() + "_PASSWORD", "", "fail",
+					"Couldn't set the passphrase for " + service + ".  You won't be able to configure this service."));
 
 			// TODO: Networking stuff in here
 //			String bridge = this.networkModel.getData().getMetalIface(serviceLabel);
@@ -207,45 +183,42 @@ public class Metal extends AStructuredProfile {
 			// units.addAll(this.hypervisor.buildServiceVm(service.getLabel(), bridge));
 
 			final String bootDiskDir = this.networkModel.getData().getHypervisorThornsecBase(getLabel())
-					+ "/disks/boot/" + serviceLabel + "/";
+					+ "/disks/boot/" + service + "/";
 			final String dataDiskDir = this.networkModel.getData().getHypervisorThornsecBase(getLabel())
-					+ "/disks/data/" + serviceLabel + "/";
+					+ "/disks/data/" + service + "/";
 
-			units.add(new SimpleUnit(serviceLabel + "_boot_disk_formatted", "proceed", "",
+			units.add(new SimpleUnit(service + "_boot_disk_formatted", "proceed", "",
 					"sudo bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + "virt-filesystems -a " + bootDiskDir
-							+ serviceLabel + "_boot.v*'",
+							+ service + "_boot.v*'",
 					"", "fail",
 					"Boot disk is unformatted (therefore has no OS on it), please configure the service and try mounting again."));
 
 			// For now, do this as root. We probably want to move to another user, idk
-			units.add(new SimpleUnit(serviceLabel + "_boot_disk_loopback_mounted",
-					serviceLabel + "_boot_disk_formatted",
+			units.add(new SimpleUnit(service + "_boot_disk_loopback_mounted", service + "_boot_disk_formatted",
 					"sudo bash -c '" + " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + " guestmount -a "
-							+ bootDiskDir + serviceLabel + "_boot.v*" + " -i" // Inspect the disk for the relevant
-																				// partition
+							+ bootDiskDir + service + "_boot.v*" + " -i" // Inspect the disk for the relevant
+																			// partition
 							+ " -o direct_io" // All read operations must be done against live, not cache
 							+ " --ro" // _MOUNT THE DISK READ ONLY_
 							+ " " + bootDiskDir + "live/" + "'",
 					"sudo mount | grep " + bootDiskDir, "", "fail",
-					"I was unable to loopback mount the boot disk for " + serviceLabel + " in " + getLabel() + "."));
+					"I was unable to loopback mount the boot disk for " + service + " in " + getLabel() + "."));
 
-			units.add(new SimpleUnit(serviceLabel + "_data_disk_formatted", "proceed", "",
+			units.add(new SimpleUnit(service + "_data_disk_formatted", "proceed", "",
 					"sudo bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + "virt-filesystems -a " + dataDiskDir
-							+ serviceLabel + "_data.v*'",
+							+ service + "_data.v*'",
 					"", "fail",
 					"Data disk is unformatted (therefore hasn't been configured), please configure the service and try mounting again."));
 
-			units.add(
-					new SimpleUnit(serviceLabel + "_data_disk_loopback_mounted", serviceLabel + "_data_disk_formatted",
-							"sudo bash -c '" + " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + " guestmount -a "
-									+ dataDiskDir + serviceLabel + "_data.v*" + " -m /dev/sda1" // Mount the first
-																								// partition
-									+ " -o direct_io" // All read operations must be done against live, not cache
-									+ " --ro" // _MOUNT THE DISK READ ONLY_
-									+ " " + dataDiskDir + "live/" + "'",
-							"sudo mount | grep " + dataDiskDir, "", "fail",
-							"I was unable to loopback mount the data disk for " + serviceLabel + " in " + getLabel()
-									+ ".  Backups will not work."));
+			units.add(new SimpleUnit(service + "_data_disk_loopback_mounted", service + "_data_disk_formatted",
+					"sudo bash -c '" + " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + " guestmount -a "
+							+ dataDiskDir + service + "_data.v*" + " -m /dev/sda1" // Mount the first
+																					// partition
+							+ " -o direct_io" // All read operations must be done against live, not cache
+							+ " --ro" // _MOUNT THE DISK READ ONLY_
+							+ " " + dataDiskDir + "live/" + "'",
+					"sudo mount | grep " + dataDiskDir, "", "fail", "I was unable to loopback mount the data disk for "
+							+ service + " in " + getLabel() + ".  Backups will not work."));
 		}
 
 		return units;
