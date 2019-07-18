@@ -90,9 +90,9 @@ public class NetworkModel {
 			for (final String label : servers.keySet()) {
 				final ServerModel server = new ServerModel(label, this);
 				putMachine(MachineType.SERVER, label, server);
-
-//				putMachine(MachineType.EXTERNAL_ONLY, deviceLabel, device);
-//				putMachine(MachineType.DEVICE, deviceLabel, device);
+				for (final MachineType type : getData().getTypes(label)) {
+					putMachine(type, label, server);
+				}
 			}
 		}
 		//
