@@ -56,9 +56,9 @@ public class ServerModel extends AMachineModel {
 			InvalidServerModelException, URISyntaxException, AddressException {
 		super(label, networkModel);
 
-		// TODO
 		setFirstOctet(10);
 		setSecondOctet(10);
+		// TODO
 		// setThirdOctet(networkModel.getAllExternalOnlyDevices().hashCode());
 
 		final String firewallProfile = networkModel.getData().getFirewallProfile(getLabel());
@@ -73,29 +73,29 @@ public class ServerModel extends AMachineModel {
 		this.types = new HashSet<>();
 		for (final MachineType type : networkModel.getData().getTypes(getLabel())) {
 			switch (type) {
-			case ROUTER:
-				if (this.firewall == null) {
-					this.firewall = new ShorewallFirewall(getLabel(), networkModel);
-				}
-				this.types.add(new Router(getLabel(), networkModel));
-				break;
-			case HYPERVISOR:
-				if (this.firewall == null) {
-					this.firewall = new CSFFirewall(getLabel(), networkModel);
-				}
-				this.types.add(new HyperVisor(getLabel(), networkModel));
-				break;
-			case SERVICE:
-				if (this.firewall == null) {
-					this.firewall = new CSFFirewall(getLabel(), networkModel);
-				}
-				this.types.add(new Service(getLabel(), networkModel));
-				break;
-			case DEDICATED:
-				this.types.add(new Dedicated(getLabel(), networkModel));
-				break;
-			default:
-				break;
+				case ROUTER:
+					if (this.firewall == null) {
+						this.firewall = new ShorewallFirewall(getLabel(), networkModel);
+					}
+					this.types.add(new Router(getLabel(), networkModel));
+					break;
+				case HYPERVISOR:
+					if (this.firewall == null) {
+						this.firewall = new CSFFirewall(getLabel(), networkModel);
+					}
+					this.types.add(new HyperVisor(getLabel(), networkModel));
+					break;
+				case SERVICE:
+					if (this.firewall == null) {
+						this.firewall = new CSFFirewall(getLabel(), networkModel);
+					}
+					this.types.add(new Service(getLabel(), networkModel));
+					break;
+				case DEDICATED:
+					this.types.add(new Dedicated(getLabel(), networkModel));
+					break;
+				default:
+					break;
 			}
 		}
 
@@ -116,7 +116,6 @@ public class ServerModel extends AMachineModel {
 		this.bindMounts = new BindFS(getLabel(), networkModel);
 		this.aptSources = new AptSources(getLabel(), networkModel);
 		this.users = new UserAccounts(getLabel(), networkModel);
-//		this.configFiles = new ConfigFiles(getLabel(), networkModel);
 	}
 
 	public Set<IUnit> getPersistentFirewall() throws InvalidMachineException {
@@ -159,9 +158,6 @@ public class ServerModel extends AMachineModel {
 		final SSH ssh = new SSH(getLabel(), this.networkModel);
 		units.addAll(ssh.getUnits());
 
-		addProcessString("sshd: " + this.networkModel.getData().getUser() + " \\[priv\\]$");
-		addProcessString("sshd: " + this.networkModel.getData().getUser() + "@pts/0$");
-
 		// Useful packages
 		units.add(new InstalledUnit("sysstat", "proceed", "sysstat"));
 		units.add(new InstalledUnit("lsof", "proceed", "lsof"));
@@ -181,7 +177,6 @@ public class ServerModel extends AMachineModel {
 		units.addAll(this.firewall.getUnits());
 		units.addAll(this.bindMounts.getUnits());
 		units.addAll(this.aptSources.getUnits());
-		// units.addAll(this.configFiles.getUnits());
 		units.addAll(this.runningProcesses.getUnits());
 		units.addAll(this.users.getUnits());
 
@@ -345,10 +340,6 @@ public class ServerModel extends AMachineModel {
 	public UserAccounts getUserModel() {
 		return this.users;
 	}
-
-	// public ConfigFiles getConfigsModel() {
-	// return this.configFiles;
-	// }
 
 	public final void addProcessString(String psString) {
 		getProcessModel().addProcess(psString);
