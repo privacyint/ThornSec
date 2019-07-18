@@ -28,7 +28,7 @@ public class ExternalOnlyDeviceModel extends ADeviceModel {
 
 		setFirstOctet(10);
 		setSecondOctet(50);
-		setThirdOctet(networkModel.getAllExternalOnlyDevices().get(label).hashCode());
+		setThirdOctet(networkModel.getExternalOnlyDevices().get(label).hashCode());
 	}
 
 	@Override

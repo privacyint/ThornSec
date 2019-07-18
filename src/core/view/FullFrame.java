@@ -223,7 +223,7 @@ public class FullFrame {
 		final JPanel serverPanel = getNewPanel();
 		final DefaultMutableTreeNode serverRoot = new DefaultMutableTreeNode(model.getLabel());
 
-		for (final String server : model.getAllServers().keySet()) {
+		for (final String server : model.getServers().keySet()) {
 			serverRoot.add(new DefaultMutableTreeNode(server));
 //		for (ServerModel router : model.getRouterServers()) {
 //			if (!router.isMetal()) {
@@ -245,7 +245,7 @@ public class FullFrame {
 //		}
 		}
 
-		for (final String machine : model.getAllServers().keySet()) {
+		for (final String machine : model.getServers().keySet()) {
 			serverRoot.add(new DefaultMutableTreeNode(machine));
 		}
 		final JTree serverTree = new JTree(serverRoot);

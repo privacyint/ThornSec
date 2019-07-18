@@ -22,5 +22,6 @@
 	<classpathentry kind="lib" path="lib/core-1.58.0.0.jar"/>
 	<classpathentry kind="lib" path="lib/javax.xml.bind_2.1.9.v200905050702.jar"/>
 	<classpathentry kind="lib" path="lib/equalsverifier.jar"/>
+	<classpathentry kind="lib" path="lib/openkeepass-0.8.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

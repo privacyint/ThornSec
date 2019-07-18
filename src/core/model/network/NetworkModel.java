@@ -15,10 +15,8 @@ import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.util.Date;
-import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 import javax.mail.internet.AddressException;
 
@@ -36,34 +34,49 @@ import core.model.machine.AMachineModel;
 import core.model.machine.ExternalOnlyDeviceModel;
 import core.model.machine.InternalOnlyDeviceModel;
 import core.model.machine.ServerModel;
-import core.model.machine.ServiceModel;
 import core.model.machine.UserDeviceModel;
 
 public class NetworkModel {
 	private final String label;
 	private NetworkData data;
-	private Map<MachineType, Map<String, AMachineModel>> machines;
+	private Map<MachineType, Map<String, AMachineModel>> network;
 
 	NetworkModel(String label) {
 		this.label = label;
 
-		this.machines = null;
+		this.network = null;
 	}
 
 	final public String getLabel() {
 		return this.label;
 	}
 
+	/**
+	 * Initialises the various models across our network, building and initialising
+	 * all of our machines
+	 *
+	 * @throws InvalidMachineException
+	 * @throws AddressException
+	 * @throws InvalidServerModelException
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 * @throws IllegalArgumentException
+	 * @throws InvocationTargetException
+	 * @throws NoSuchMethodException
+	 * @throws SecurityException
+	 * @throws ClassNotFoundException
+	 * @throws URISyntaxException
+	 */
 	void init() throws InvalidMachineException, AddressException, InvalidServerModelException, InstantiationException,
 			IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
 			SecurityException, ClassNotFoundException, URISyntaxException {
-		// Start by instantiating all of our devices
+
 		final Map<String, AMachineData> externals = this.data.getExternalOnlyDevices();
 		if (externals != null) {
 			for (final String label : externals.keySet()) {
 				final AMachineModel device = new ExternalOnlyDeviceModel(label, this);
-				putMachine(MachineType.EXTERNAL_ONLY, label, device);
-				putMachine(MachineType.DEVICE, label, device);
+				addMachineToNetwork(MachineType.EXTERNAL_ONLY, label, device);
+				addMachineToNetwork(MachineType.DEVICE, label, device);
 			}
 		}
 
@@ -71,8 +84,8 @@ public class NetworkModel {
 		if (internals != null) {
 			for (final String label : internals.keySet()) {
 				final AMachineModel device = new InternalOnlyDeviceModel(label, this);
-				putMachine(MachineType.INTERNAL_ONLY, label, device);
-				putMachine(MachineType.DEVICE, label, device);
+				addMachineToNetwork(MachineType.INTERNAL_ONLY, label, device);
+				addMachineToNetwork(MachineType.DEVICE, label, device);
 			}
 		}
 
@@ -80,8 +93,8 @@ public class NetworkModel {
 		if (users != null) {
 			for (final String label : users.keySet()) {
 				final AMachineModel device = new UserDeviceModel(label, this);
-				putMachine(MachineType.USER, label, device);
-				putMachine(MachineType.DEVICE, label, device);
+				addMachineToNetwork(MachineType.USER, label, device);
+				addMachineToNetwork(MachineType.DEVICE, label, device);
 			}
 		}
 
@@ -89,115 +102,140 @@ public class NetworkModel {
 		if (servers != null) {
 			for (final String label : servers.keySet()) {
 				final ServerModel server = new ServerModel(label, this);
-				putMachine(MachineType.SERVER, label, server);
+				addMachineToNetwork(MachineType.SERVER, label, server);
 				for (final MachineType type : getData().getTypes(label)) {
-					putMachine(type, label, server);
+					addMachineToNetwork(type, label, server);
 				}
 			}
 		}
-		//
-//		for(ServerModel metal : metals) {
-//			if (metal.isRouter()) { //If it's an external server...
-//				continue; //Skip it, otherwise we'll be duplicating its ifaces!
-//			}
-//			metal.getNetworking();
-//		}
-//
-//		for(ServerModel dedi : dedis) {
-//			dedi.getNetworking();
-//		}
-//
-//		//Now populate our ipsets before building our Router
-//		this.ipsets.init();
-//
-//		for(ServerModel router : routers) { //This will also catch metal/routers
-//			router.getNetworking();
-//		}
-//
-//		//Finally, get all of the config units
-//		for (MachineModel machine : getAllMachines()) {
-//			units.put(machine.getLabel(), machine.getUnits());
-//		}
-
 	}
 
-	private void putMachine(MachineType type, String label, AMachineModel machine) {
-		if (this.machines == null) {
-			this.machines = new LinkedHashMap<>();
+	private void addMachineToNetwork(MachineType type, String label, AMachineModel machine) {
+		if (this.network == null) {
+			this.network = new LinkedHashMap<>();
 		}
 
-		Map<String, AMachineModel> machines = this.machines.get(type);
+		Map<String, AMachineModel> machines = this.network.get(type);
 		if (machines == null) {
 			machines = new LinkedHashMap<>();
 		}
 
 		machines.put(label, machine);
+
+		this.network.put(type, machines);
 	}
 
-	public final Map<MachineType, Map<String, AMachineModel>> getAllMachines() {
-		return this.machines;
+	/**
+	 * @return the whole network. Be aware that you will have to cast the values
+	 *         from this method; you are far better to use one of the specialised
+	 *         methods
+	 */
+	public final Map<MachineType, Map<String, AMachineModel>> getNetwork() {
+		return this.network;
 	}
 
-	public final Map<String, AMachineModel> getAllServers() {
-		Map<String, AMachineModel> servers = getAllMachines().get(MachineType.SERVER);
+	/**
+	 * @param type
+	 * @return A map of all machines of a given type
+	 */
+	public Map<String, AMachineModel> getMachines(MachineType type) {
+		return getNetwork().get(type);
+	}
 
-		if (servers == null) {
-			servers = new LinkedHashMap<>();
+	/**
+	 * @param type
+	 * @return A map of all servers of a given type
+	 */
+	public Map<String, ServerModel> getServers(MachineType type) {
+		final Map<String, ServerModel> servers = new LinkedHashMap<>();
+
+		if (getNetwork().get(type) != null) {
+			for (final AMachineModel server : getMachines(type).values()) {
+				servers.put(server.getLabel(), (ServerModel) server);
+			}
 		}
 
 		return servers;
 	}
 
-	public final Map<String, AMachineModel> getAllDevices() {
-		Map<String, AMachineModel> devicen = getAllMachines().get(MachineType.DEVICE);
-
-		if (devicen == null) {
-			devicen = new LinkedHashMap<>();
-		}
-
-		return devicen;
+	/**
+	 * @return A linked map containing all server models for this network. Because
+	 *         it is a linked map, it has predictable iteration meaning we can use
+	 *         it to e.g. generate IP Addresses
+	 */
+	public final Map<String, ServerModel> getServers() {
+		return getServers(MachineType.SERVER);
 	}
 
-	public final Hashtable<String, ADeviceModel> getAllUserDevices() {
-		final Hashtable<String, ADeviceModel> devicen = new Hashtable<>();
+	/**
+	 * @return A linked map containing all device models for this network. Because
+	 *         it is a linked map, it has predictable iteration meaning we can use
+	 *         it to e.g. generate IP Addresses
+	 */
+	public final Map<String, ADeviceModel> getDevices(MachineType type) {
+		final Map<String, ADeviceModel> devices = new LinkedHashMap<>();
 
-		assert getAllMachines().get(MachineType.USER) != null;
-
-		for (final AMachineModel device : getAllMachines().get(MachineType.USER).values()) {
-			devicen.put(device.getLabel(), (ADeviceModel) device);
-		}
-
-		return devicen;
-	}
-
-	public final Hashtable<String, InternalOnlyDeviceModel> getAllInternalOnlyDevices() {
-		final Hashtable<String, InternalOnlyDeviceModel> devicen = new Hashtable<>();
-
-		if (getAllMachines().get(MachineType.INTERNAL_ONLY) != null) {
-			for (final AMachineModel device : getAllMachines().get(MachineType.INTERNAL_ONLY).values()) {
-				devicen.put(device.getLabel(), (InternalOnlyDeviceModel) device);
+		if (getNetwork().get(type) != null) {
+			for (final AMachineModel device : getMachines(type).values()) {
+				devices.put(device.getLabel(), (ADeviceModel) device);
 			}
 		}
 
-		return devicen;
+		return devices;
 	}
 
-	public final Hashtable<String, ExternalOnlyDeviceModel> getAllExternalOnlyDevices() {
-		final Hashtable<String, ExternalOnlyDeviceModel> devicen = new Hashtable<>();
+	/**
+	 * @return A linked map containing all server models for this network. Because
+	 *         it is a linked map, it has predictable iteration meaning we can use
+	 *         it to e.g. generate IP Addresses
+	 */
+	public final Map<String, UserDeviceModel> getUserDevices() {
+		final Map<String, UserDeviceModel> userDevices = new LinkedHashMap<>();
 
-		if (getAllMachines().get(MachineType.EXTERNAL_ONLY) != null) {
-			for (final AMachineModel device : getAllMachines().get(MachineType.EXTERNAL_ONLY).values()) {
-				devicen.put(device.getLabel(), (ExternalOnlyDeviceModel) device);
-			}
+		for (final ADeviceModel device : getDevices(MachineType.USER).values()) {
+			userDevices.put(device.getLabel(), (UserDeviceModel) device);
 		}
 
-		return devicen;
+		return userDevices;
 	}
 
+	/**
+	 * @return A linked map containing all internal-only device models for this
+	 *         network. Because it is a linked map, it has predictable iteration
+	 *         meaning we can use it to e.g. generate IP Addresses
+	 */
+	public final Map<String, InternalOnlyDeviceModel> getInternalOnlyDevices() {
+		final Map<String, InternalOnlyDeviceModel> internalOnlyDevices = new LinkedHashMap<>();
+
+		for (final ADeviceModel device : getDevices(MachineType.INTERNAL_ONLY).values()) {
+			internalOnlyDevices.put(device.getLabel(), (InternalOnlyDeviceModel) device);
+		}
+
+		return internalOnlyDevices;
+	}
+
+	/**
+	 * @return A linked map containing all external-only device models for this
+	 *         network. Because it is a linked map, it has predictable iteration
+	 *         meaning we can use it to e.g. generate IP Addresses
+	 */
+	public final Map<String, ExternalOnlyDeviceModel> getExternalOnlyDevices() {
+		final Map<String, ExternalOnlyDeviceModel> externalOnlyDevices = new LinkedHashMap<>();
+
+		for (final ADeviceModel device : getDevices(MachineType.EXTERNAL_ONLY).values()) {
+			externalOnlyDevices.put(device.getLabel(), (ExternalOnlyDeviceModel) device);
+		}
+
+		return externalOnlyDevices;
+	}
+
+	/**
+	 * @return A specific machine model.
+	 */
 	public final AMachineModel getMachineModel(String machine) throws InvalidMachineModelException {
-		final Map<MachineType, Map<String, AMachineModel>> allMachines = getAllMachines();
+		final Map<MachineType, Map<String, AMachineModel>> network = getNetwork();
 
-		for (final Map<String, AMachineModel> machines : allMachines.values()) {
+		for (final Map<String, AMachineModel> machines : network.values()) {
 			if (machines.containsKey(machine)) {
 				return machines.get(machine);
 			}
@@ -206,17 +244,23 @@ public class NetworkModel {
 		throw new InvalidMachineModelException();
 	}
 
+	/**
+	 * @return A specific server model.
+	 */
 	public final ServerModel getServerModel(String server) throws InvalidServerModelException {
-		if (getAllServers().containsKey(server)) {
-			return (ServerModel) getAllServers().get(server);
+		if (getServers().containsKey(server)) {
+			return getServers().get(server);
 		}
 
 		throw new InvalidServerModelException();
 	}
 
+	/**
+	 * @return A specific device model.
+	 */
 	public final ADeviceModel getDeviceModel(String device) throws InvalidDeviceModelException {
-		if (getAllDevices().containsKey(this.label)) {
-			return (ADeviceModel) getAllDevices().get(this.label);
+		if (getDevices(MachineType.DEVICE).containsKey(this.label)) {
+			return getDevices(MachineType.DEVICE).get(this.label);
 		}
 
 		throw new InvalidDeviceModelException();
@@ -231,7 +275,7 @@ public class NetworkModel {
 	}
 
 	public final void auditAll(OutputStream out, InputStream in, boolean quiet) throws InvalidServerModelException {
-		for (final String server : getAllServers().keySet()) {
+		for (final String server : getServers().keySet()) {
 			final ManageExec exec = getManageExec(server, "audit", out, quiet);
 			if (exec != null) {
 				exec.manage();
@@ -456,22 +500,4 @@ public class NetworkModel {
 		return null;
 	}
 
-	public Set<ServerModel> getDediServers() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public Set<ServerModel> getMetalServers() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public Set<ServiceModel> getServices(String hypervisorLabel) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public Map<String, AMachineModel> getMachines(MachineType type) {
-		return this.machines.get(type);
-	}
 }
