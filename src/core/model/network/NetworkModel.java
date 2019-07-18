@@ -80,7 +80,7 @@ public class NetworkModel {
 		if (users != null) {
 			for (final String label : users.keySet()) {
 				final AMachineModel device = new UserDeviceModel(label, this);
-				putMachine(MachineType.EXTERNAL_ONLY, label, device);
+				putMachine(MachineType.USER, label, device);
 				putMachine(MachineType.DEVICE, label, device);
 			}
 		}
