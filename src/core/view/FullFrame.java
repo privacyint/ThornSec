@@ -11,6 +11,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.util.Set;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -27,9 +28,12 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeSelectionModel;
 
 import core.exception.runtime.InvalidDeviceModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
+import core.model.machine.configuration.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.model.network.ThornsecModel;
+import inet.ipaddr.IPAddress;
 
 public class FullFrame {
 
@@ -295,18 +299,24 @@ public class FullFrame {
 
 			final JLabel addresses = new JLabel();
 
-//				if (server.getAddresses().size() > 1) {
-//					addresses.setText("<html><body><ul>");
-//					for (InetAddress address : model.getServerModel(serverLabel).getAddresses()) {
-//						if (address == null) { continue; }
-//						if (addresses.getText().contains(address.getHostAddress())) { continue; }
-//						addresses.setText(addresses.getText() + "<li>" + address.getHostAddress() + "</li>");
-//					}
-//					addresses.setText(addresses.getText() + "</ul></body></html>");
-//				}
-//				else {
-//					addresses.setText(server.getAddresses().firstElement().getHostAddress());
-//				}
+			addresses.setText(addresses.getText() + "<html><body><ul>");
+			try {
+				final Set<NetworkInterfaceModel> ifaces = model.getNetworkInterfaces(serverLabel);
+				if (ifaces.size() > 0) {
+					for (final NetworkInterfaceModel iface : ifaces) {
+						final IPAddress address = iface.getAddress();
+						if (address == null) {
+							continue;
+						}
+						addresses.setText(addresses.getText() + "<li>" + address.toCompressedString() + "</li>");
+					}
+				}
+			} catch (final InvalidMachineModelException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			addresses.setText(addresses.getText() + "</ul></body></html>");
+
 			detailsPanel.add(addresses, g);
 
 			// SSH

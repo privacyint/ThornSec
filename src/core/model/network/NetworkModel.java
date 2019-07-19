@@ -17,7 +17,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.mail.internet.AddressException;
 
@@ -37,6 +39,7 @@ import core.model.machine.ExternalOnlyDeviceModel;
 import core.model.machine.InternalOnlyDeviceModel;
 import core.model.machine.ServerModel;
 import core.model.machine.UserDeviceModel;
+import core.model.machine.configuration.NetworkInterfaceModel;
 
 public class NetworkModel {
 	private final String label;
@@ -127,6 +130,16 @@ public class NetworkModel {
 		machines.put(label, machine);
 
 		this.network.put(type, machines);
+	}
+
+	public Set<NetworkInterfaceModel> getNetworkInterfaces(String machine) throws InvalidMachineModelException {
+		Set<NetworkInterfaceModel> interfaces = getMachineModel(machine).getNetworkInterfaces();
+
+		if (interfaces == null) {
+			interfaces = new LinkedHashSet<>();
+		}
+
+		return interfaces;
 	}
 
 	/**
@@ -503,5 +516,4 @@ public class NetworkModel {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
 }
