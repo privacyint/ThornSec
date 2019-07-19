@@ -1,8 +1,8 @@
 /*
  * This code is part of the ThornSec project.
- * 
+ *
  * To learn more, please head to its GitHub repo: @privacyint
- * 
+ *
  * Pull requests encouraged.
  */
 package core.view;
@@ -252,9 +252,6 @@ public class FullFrame {
 //		}
 		}
 
-		for (final String machine : model.getServers().keySet()) {
-			serverRoot.add(new DefaultMutableTreeNode(machine));
-		}
 		final JTree serverTree = new JTree(serverRoot);
 		serverTree.setCellRenderer(new CustomServerIconRenderer(model));
 		serverTree.setRootVisible(false);
