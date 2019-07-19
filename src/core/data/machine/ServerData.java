@@ -14,6 +14,7 @@ import java.util.Set;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonString;
 import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
 
@@ -84,25 +85,25 @@ public class ServerData extends AMachineData {
 		if (data.containsKey("admins")) {
 			final JsonArray admins = data.getJsonArray("admins");
 			for (final JsonValue admin : admins) {
-				putAdmin(admin.toString());
+				putAdmin(((JsonString) admin).getString());
 			}
 		}
 		if (data.containsKey("sshsources")) {
 			final JsonArray sources = data.getJsonArray("sshsources");
 			for (final JsonValue source : sources) {
-				putSSHSource(new HostName(source.toString()));
+				putSSHSource(new HostName(((JsonString) source).getString()));
 			}
 		}
 		if (data.containsKey("types")) {
 			final JsonArray types = data.getJsonArray("types");
 			for (final JsonValue type : types) {
-				putType(type.toString());
+				putType(((JsonString) type).getString());
 			}
 		}
 		if (data.containsKey("profiles")) {
 			final JsonArray profiles = data.getJsonArray("profiles");
 			for (final JsonValue profile : profiles) {
-				putProfile(profile.toString());
+				putProfile(((JsonString) profile).getString());
 			}
 		}
 		if (data.containsKey("adminport")) {

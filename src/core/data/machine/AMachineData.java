@@ -17,6 +17,7 @@ import java.util.Set;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonString;
 import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
@@ -149,7 +150,7 @@ public abstract class AMachineData extends AData {
 		if (data.containsKey("cnames")) {
 			final JsonArray cnames = data.getJsonArray("cnames");
 			for (final JsonValue cname : cnames) {
-				putCNAME(cname.toString());
+				putCNAME(((JsonString) cname).getString());
 			}
 		}
 
@@ -164,15 +165,15 @@ public abstract class AMachineData extends AData {
 			if (listens.containsKey("tcp")) {
 				final JsonArray tcp = listens.getJsonArray("tcp");
 
-				for (int i = 0; i < tcp.size(); ++i) {
-					putPort(Encapsulation.TCP, tcp.getInt(i));
+				for (final JsonValue port : tcp) {
+					putPort(Encapsulation.TCP, Integer.parseInt(port.toString()));
 				}
 			}
 			if (listens.containsKey("udp")) {
 				final JsonArray udp = listens.getJsonArray("udp");
 
-				for (int i = 0; i < udp.size(); ++i) {
-					putPort(Encapsulation.UDP, udp.getInt(i));
+				for (final JsonValue port : udp) {
+					putPort(Encapsulation.UDP, Integer.parseInt(port.toString()));
 				}
 			}
 		}
@@ -180,21 +181,21 @@ public abstract class AMachineData extends AData {
 			final JsonArray forwards = data.getJsonArray("allowforwardto");
 
 			for (final JsonValue forward : forwards) {
-				addFoward(forward.toString());
+				addFoward(((JsonString) forward).getString());
 			}
 		}
 		if (data.containsKey("allowingressfrom")) {
 			final JsonArray sources = data.getJsonArray("allowingressfrom");
 
 			for (final JsonValue source : sources) {
-				addIngress(new HostName(source.toString()));
+				addIngress(new HostName(((JsonString) source).getString()));
 			}
 		}
 		if (data.containsKey("allowegressto")) {
 			final JsonArray destinations = data.getJsonArray("allowingressfrom");
 
 			for (final JsonValue destination : destinations) {
-				addEgress(new HostName(destination.toString()));
+				addEgress(new HostName(((JsonString) destination).getString()));
 			}
 		}
 		if (data.containsKey("email")) {

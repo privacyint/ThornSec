@@ -142,8 +142,14 @@ public class NetworkData extends AData {
 						.getAddress();
 			}
 
-			this.myUser = data.getString("myuser", null);
-			this.domain = data.getString("domain", DEFAULT_DOMAIN);
+			if (data.containsKey("myuser")) {
+				this.myUser = data.getJsonString("myuser").getString();
+			}
+			if (data.containsKey("domain")) {
+				this.domain = data.getJsonString("domain").getString();
+			} else {
+				this.domain = DEFAULT_DOMAIN;
+			}
 
 			this.adBlocking = data.getBoolean("adblocking", DEFAULT_ADBLOCKING);
 			this.autoGenPassphrases = data.getBoolean("autogenpasswds", DEFAULT_AUTOGENPASSWDS);
