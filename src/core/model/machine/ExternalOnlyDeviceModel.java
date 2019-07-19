@@ -7,11 +7,13 @@
  */
 package core.model.machine;
 
+import java.io.IOException;
 import java.util.Set;
 
+import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
 
-import core.exception.data.machine.InvalidMachineException;
+import core.exception.data.ADataException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
 
@@ -23,7 +25,7 @@ import core.model.network.NetworkModel;
  */
 public class ExternalOnlyDeviceModel extends ADeviceModel {
 	public ExternalOnlyDeviceModel(String label, NetworkModel networkModel)
-			throws InvalidMachineException, AddressException {
+			throws AddressException, JsonParsingException, ADataException, IOException {
 		super(label, networkModel);
 
 		setFirstOctet(10);

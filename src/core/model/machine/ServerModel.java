@@ -14,12 +14,14 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
 
 import com.metapossum.utils.scanner.reflect.ClassesInPackageScanner;
 
 import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
+import core.exception.data.ADataException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.runtime.InvalidProfileException;
 import core.exception.runtime.InvalidServerModelException;
@@ -55,10 +57,10 @@ public class ServerModel extends AMachineModel {
 	// private final ConfigFiles configFiles;
 	private final UserAccounts users;
 
-	public ServerModel(String label, NetworkModel networkModel)
-			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
-			NoSuchMethodException, SecurityException, ClassNotFoundException, InvalidMachineException,
-			InvalidServerModelException, URISyntaxException, AddressException, IOException, InvalidProfileException {
+	public ServerModel(String label, NetworkModel networkModel) throws InstantiationException, IllegalAccessException,
+			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException,
+			ClassNotFoundException, InvalidServerModelException, URISyntaxException, AddressException, IOException,
+			InvalidProfileException, JsonParsingException, ADataException {
 		super(label, networkModel);
 
 		setFirstOctet(10);

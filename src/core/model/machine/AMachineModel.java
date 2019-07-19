@@ -7,12 +7,14 @@
  */
 package core.model.machine;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
@@ -20,6 +22,7 @@ import core.StringUtils;
 import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.exception.AThornSecException;
+import core.exception.data.ADataException;
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidMachineException;
 import core.iface.IUnit;
@@ -29,7 +32,6 @@ import core.model.network.NetworkModel;
 import inet.ipaddr.HostName;
 
 public abstract class AMachineModel extends AModel {
-
 	private Set<NetworkInterfaceModel> networkInterfaces;
 
 	private final HostName domain;
@@ -53,7 +55,7 @@ public abstract class AMachineModel extends AModel {
 
 	private final Hashtable<String, Set<Integer>> dnat;
 
-	AMachineModel(String label, NetworkModel networkModel) throws InvalidMachineException, AddressException {
+	AMachineModel(String label, NetworkModel networkModel) throws AddressException, JsonParsingException, ADataException, IOException {
 		super(label, networkModel);
 
 		this.emailAddress = networkModel.getData().getEmailAddress(getLabel());

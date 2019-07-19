@@ -21,12 +21,14 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
@@ -77,6 +79,7 @@ public class NetworkData extends AData {
 	private static final String DEFAULT_NETMASK = "/30";
 	private static final String DEFAULT_KEEPASS_DB = "ThornSec.kdbx";
 	private static final String DEFAULT_DOMAIN = "lan";
+	private static final String DEFAULT_NETWORK_INTERFACE = "enp0s7"; // TODO: this is from memory
 
 	private static final Integer DEFAULT_RAM = 2048;
 	private static final Integer DEFAULT_CPUS = 1;
@@ -388,6 +391,28 @@ public class NetworkData extends AData {
 		return types;
 	}
 
+	public Set<NetworkInterfaceData> getNetworkInterfaces(String machine)
+			throws JsonParsingException, ADataException, IOException {
+		Set<NetworkInterfaceData> interfaces = getMachine(machine).getNetworkInterfaces();
+
+		if (interfaces == null) {
+			interfaces = this.defaultServiceData.getNetworkInterfaces();
+			if (interfaces == null) {
+				interfaces = new LinkedHashSet<>();
+
+				final NetworkInterfaceData defaultIface = new NetworkInterfaceData(machine);
+
+				final JsonObjectBuilder defaultNetworkInterfaceData = Json.createObjectBuilder();
+				defaultNetworkInterfaceData.add("iface", NetworkData.DEFAULT_NETWORK_INTERFACE);
+
+				defaultIface.read(defaultNetworkInterfaceData.build());
+
+			}
+		}
+
+		return interfaces;
+	}
+
 	public Set<String> getCNAMEs(String machine) throws InvalidMachineException {
 		return getMachine(machine).getCNAMEs();
 	}
@@ -456,10 +481,6 @@ public class NetworkData extends AData {
 		}
 
 		return db;
-	}
-
-	public Set<NetworkInterfaceData> getNetworkInterfaces(String machine) throws InvalidMachineException {
-		return getMachine(machine).getNetworkInterfaces();
 	}
 
 	public Integer getRam(String service) throws InvalidServerException {

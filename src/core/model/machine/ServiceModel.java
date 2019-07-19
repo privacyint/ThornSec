@@ -13,10 +13,11 @@ import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
 
 import core.exception.AThornSecException;
-import core.exception.data.machine.InvalidMachineException;
+import core.exception.data.ADataException;
 import core.exception.runtime.InvalidProfileException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
@@ -28,10 +29,10 @@ import core.model.network.NetworkModel;
  * A service is a machine which is run on a HyperVisor
  */
 public class ServiceModel extends ServerModel {
-	public ServiceModel(String label, NetworkModel networkModel)
-			throws InvalidServerModelException, InvalidMachineException, InstantiationException, IllegalAccessException,
-			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException,
-			ClassNotFoundException, URISyntaxException, AddressException, IOException, InvalidProfileException {
+	public ServiceModel(String label, NetworkModel networkModel) throws InvalidServerModelException,
+			InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
+			NoSuchMethodException, SecurityException, ClassNotFoundException, URISyntaxException, AddressException,
+			IOException, InvalidProfileException, JsonParsingException, ADataException {
 		super(label, networkModel);
 	}
 

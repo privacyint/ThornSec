@@ -21,12 +21,13 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
 
 import core.data.machine.AMachineData;
 import core.data.machine.AMachineData.MachineType;
 import core.data.network.NetworkData;
-import core.exception.data.machine.InvalidMachineException;
+import core.exception.data.ADataException;
 import core.exception.runtime.InvalidDeviceModelException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidProfileException;
@@ -60,7 +61,6 @@ public class NetworkModel {
 	 * Initialises the various models across our network, building and initialising
 	 * all of our machines
 	 *
-	 * @throws InvalidMachineException
 	 * @throws AddressException
 	 * @throws InvalidServerModelException
 	 * @throws InstantiationException
@@ -73,10 +73,13 @@ public class NetworkModel {
 	 * @throws URISyntaxException
 	 * @throws IOException
 	 * @throws InvalidProfileException
+	 * @throws ADataException
+	 * @throws JsonParsingException
 	 */
-	void init() throws InvalidMachineException, AddressException, InvalidServerModelException, InstantiationException,
-			IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
-			SecurityException, ClassNotFoundException, URISyntaxException, IOException, InvalidProfileException {
+	void init() throws AddressException, InvalidServerModelException, InstantiationException, IllegalAccessException,
+			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException,
+			ClassNotFoundException, URISyntaxException, IOException, InvalidProfileException, JsonParsingException,
+			ADataException {
 
 		final Map<String, AMachineData> externals = this.data.getExternalOnlyDevices();
 		if (externals != null) {

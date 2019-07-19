@@ -7,11 +7,13 @@
  */
 package core.model.machine;
 
+import java.io.IOException;
 import java.util.Collection;
 
+import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
 
-import core.exception.data.machine.InvalidMachineException;
+import core.exception.data.ADataException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
 
@@ -22,7 +24,8 @@ import core.model.network.NetworkModel;
  * with these devices!
  */
 public class UserDeviceModel extends ADeviceModel {
-	public UserDeviceModel(String label, NetworkModel networkModel) throws InvalidMachineException, AddressException {
+	public UserDeviceModel(String label, NetworkModel networkModel)
+			throws AddressException, JsonParsingException, ADataException, IOException {
 		super(label, networkModel);
 	}
 
