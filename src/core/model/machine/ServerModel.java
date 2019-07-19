@@ -7,16 +7,21 @@
  */
 package core.model.machine;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import javax.mail.internet.AddressException;
 
+import com.metapossum.utils.scanner.reflect.ClassesInPackageScanner;
+
 import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidMachineException;
+import core.exception.runtime.InvalidProfileException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
@@ -40,7 +45,7 @@ import profile.type.Service;
 
 public class ServerModel extends AMachineModel {
 	private final Set<AStructuredProfile> types;
-	private final Set<AProfile> profiles;
+	private Set<AProfile> profiles;
 
 	// Server-specific
 	private AFirewallProfile firewall;
@@ -53,7 +58,7 @@ public class ServerModel extends AMachineModel {
 	public ServerModel(String label, NetworkModel networkModel)
 			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
 			NoSuchMethodException, SecurityException, ClassNotFoundException, InvalidMachineException,
-			InvalidServerModelException, URISyntaxException, AddressException {
+			InvalidServerModelException, URISyntaxException, AddressException, IOException, InvalidProfileException {
 		super(label, networkModel);
 
 		setFirstOctet(10);
@@ -61,61 +66,92 @@ public class ServerModel extends AMachineModel {
 		// TODO
 		// setThirdOctet(networkModel.getAllExternalOnlyDevices().hashCode());
 
-		final String firewallProfile = networkModel.getData().getFirewallProfile(getLabel());
+		final String firewall = networkModel.getData().getFirewallProfile(getLabel());
 
 		// It's going to be *exceedingly* rare that this is set, but it should be
 		// customisable tbf
-		if (firewallProfile != null) {
-			this.firewall = (AFirewallProfile) Class.forName("profile.firewall." + firewallProfile)
-					.getDeclaredConstructor(ServerModel.class, NetworkModel.class).newInstance(this, networkModel);
+		if (firewall != null) {
+			final Set<Class<?>> firewallClasses = new ClassesInPackageScanner()
+					.setResourceNameFilter((packageName, fileName) -> fileName.equals(firewall + ".class"))
+					.scan("profile.firewall");
+
+			if (firewallClasses.isEmpty()) {
+				throw new InvalidProfileException();
+			}
+
+			final String firewallClass = firewallClasses.iterator().next().getPackageName();
+
+			this.firewall = (AFirewallProfile) Class.forName(firewallClass)
+					.getDeclaredConstructor(String.class, NetworkModel.class).newInstance(getLabel(), networkModel);
 		}
 
 		this.types = new HashSet<>();
 		for (final MachineType type : networkModel.getData().getTypes(getLabel())) {
 			switch (type) {
-				case ROUTER:
-					if (this.firewall == null) {
-						this.firewall = new ShorewallFirewall(getLabel(), networkModel);
-					}
-					this.types.add(new Router(getLabel(), networkModel));
-					break;
-				case HYPERVISOR:
-					if (this.firewall == null) {
-						this.firewall = new CSFFirewall(getLabel(), networkModel);
-					}
-					this.types.add(new HyperVisor(getLabel(), networkModel));
-					break;
-				case SERVICE:
-					if (this.firewall == null) {
-						this.firewall = new CSFFirewall(getLabel(), networkModel);
-					}
-					this.types.add(new Service(getLabel(), networkModel));
-					break;
-				case DEDICATED:
-					this.types.add(new Dedicated(getLabel(), networkModel));
-					break;
-				default:
-					break;
+			case ROUTER:
+				if (this.firewall == null) {
+					this.firewall = new ShorewallFirewall(getLabel(), networkModel);
+				}
+				this.types.add(new Router(getLabel(), networkModel));
+				break;
+			case HYPERVISOR:
+				if (this.firewall == null) {
+					this.firewall = new CSFFirewall(getLabel(), networkModel);
+				}
+				this.types.add(new HyperVisor(getLabel(), networkModel));
+				break;
+			case SERVICE:
+				if (this.firewall == null) {
+					this.firewall = new CSFFirewall(getLabel(), networkModel);
+				}
+				this.types.add(new Service(getLabel(), networkModel));
+				break;
+			case DEDICATED:
+				this.types.add(new Dedicated(getLabel(), networkModel));
+				break;
+			default:
+				break;
 			}
 		}
 
 		this.profiles = new HashSet<>();
 		for (final String profile : networkModel.getData().getProfiles(getLabel())) {
-			if (profile.equals("")) {
-				continue;
-			}
-
-			// TODO
-			// final AProfile profileClass = (AProfile) Class.forName("profile." + profile)
-			// .getDeclaredConstructor(ServerModel.class,
-			// NetworkModel.class).newInstance(this, networkModel);
-			// this.profiles.add(profileClass);
+			addProfile(profile);
 		}
 
 		this.runningProcesses = new Processes(getLabel(), networkModel);
 		this.bindMounts = new BindFS(getLabel(), networkModel);
 		this.aptSources = new AptSources(getLabel(), networkModel);
 		this.users = new UserAccounts(getLabel(), networkModel);
+	}
+
+	private void addProfile(String... profiles) throws IOException, InvalidProfileException, InstantiationException,
+			IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
+			SecurityException, ClassNotFoundException {
+		if (this.profiles == null) {
+			this.profiles = new LinkedHashSet<>();
+		}
+
+		for (final String profile : profiles) {
+			if (profile.equals("")) {
+				continue;
+			}
+
+			final Set<Class<?>> classes = new ClassesInPackageScanner()
+					.setResourceNameFilter((packageName, fileName) -> fileName.equals(profile + ".class"))
+					.scan("profile");
+
+			if (classes.isEmpty()) {
+				throw new InvalidProfileException();
+			}
+
+			for (final Class<?> profileClass : classes) {
+				final AProfile theProfile = (AProfile) Class.forName(profileClass.getName())
+						.getDeclaredConstructor(String.class, NetworkModel.class)
+						.newInstance(getLabel(), this.networkModel);
+				this.profiles.add(theProfile);
+			}
+		}
 	}
 
 	public Set<IUnit> getPersistentFirewall() throws InvalidMachineException {

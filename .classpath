@@ -23,5 +23,8 @@
 	<classpathentry kind="lib" path="lib/javax.xml.bind_2.1.9.v200905050702.jar"/>
 	<classpathentry kind="lib" path="lib/equalsverifier.jar"/>
 	<classpathentry kind="lib" path="lib/openkeepass-0.8.2.jar"/>
+	<classpathentry kind="lib" path="lib/metapossum-scanner-1.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-io-2.6.jar"/>
+	<classpathentry kind="lib" path="lib/commons-lang-2.6.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

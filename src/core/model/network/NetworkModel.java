@@ -9,6 +9,7 @@ package core.model.network;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -26,6 +27,7 @@ import core.data.network.NetworkData;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.runtime.InvalidDeviceModelException;
 import core.exception.runtime.InvalidMachineModelException;
+import core.exception.runtime.InvalidProfileException;
 import core.exception.runtime.InvalidServerModelException;
 import core.exec.ManageExec;
 import core.exec.network.OpenKeePassPassphrase;
@@ -66,10 +68,12 @@ public class NetworkModel {
 	 * @throws SecurityException
 	 * @throws ClassNotFoundException
 	 * @throws URISyntaxException
+	 * @throws IOException
+	 * @throws InvalidProfileException
 	 */
 	void init() throws InvalidMachineException, AddressException, InvalidServerModelException, InstantiationException,
 			IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
-			SecurityException, ClassNotFoundException, URISyntaxException {
+			SecurityException, ClassNotFoundException, URISyntaxException, IOException, InvalidProfileException {
 
 		final Map<String, AMachineData> externals = this.data.getExternalOnlyDevices();
 		if (externals != null) {
