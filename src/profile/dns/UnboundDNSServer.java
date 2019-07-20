@@ -30,6 +30,7 @@ import inet.ipaddr.HostName;
 public class UnboundDNSServer extends ADNSServerProfile {
 
 	private static String UNBOUND_CONFIG_FILE_PATH = "/etc/unbound/unbound.conf";
+	private static Integer DEFAULT_UPSTREAM_DNS_PORT = 853;
 
 	private final Hashtable<String, Hashtable<String, Set<HostName>>> zones;
 
@@ -114,7 +115,14 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		unboundConf.appendLine("    forward-zone:");
 		unboundConf.appendLine("        name: \\\".\\\"");
 		for (final HostName upstream : this.networkModel.getData().getUpstreamDNSServers()) {
-			unboundConf.appendLine("        forward-addr: " + upstream.getHost() + "@" + upstream.getPort());
+			Integer port = upstream.getPort();
+			if (port == null) {
+				port = DEFAULT_UPSTREAM_DNS_PORT;
+			}
+			if (port == 853) {
+				unboundConf.appendLine("        forward-ssl-upstream: yes");
+			}
+			unboundConf.appendLine("        forward-addr: " + upstream.getHost() + "@" + port);
 		}
 
 		return units;
@@ -168,7 +176,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 					hostMachine = this.networkModel.getMachineModel(hostName);
 
 					for (final NetworkInterfaceModel iface : hostMachine.getNetworkInterfaces()) {
-						// @TODO
+						// @TODO: Double-check logic here
 						zoneFile.appendLine("    local-data-ptr: \\\"" + iface.getAddress() + " "
 								+ hostMachine.getLabel() + "\\\"");
 						zoneFile.appendLine("    local-data-ptr: \\\"" + iface.getGateway() + " router."
@@ -204,7 +212,10 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 	@Override
 	public Set<IUnit> getPersistentFirewall() throws ARuntimeException {
-		// TODO Auto-generated method stub
+		for (final HostName upstream : this.networkModel.getData().getUpstreamDNSServers()) {
+			getNetworkModel().getServerModel(getLabel()).addEgress(upstream);
+		}
+
 		return null;
 	}
 
