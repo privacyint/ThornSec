@@ -19,6 +19,7 @@ import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.CrontabUnit;
 import core.unit.fs.FileChecksumUnit;
+import core.unit.fs.FileChecksumUnit.Checksum;
 import core.unit.fs.FileDownloadUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
@@ -70,7 +71,7 @@ public class Nextcloud extends AStructuredProfile {
 		units.add(new FileDownloadUnit("nextcloud", "nextcloud_data_mounted",
 				"https://download.nextcloud.com/server/releases/latest.zip", "/root/nextcloud.zip",
 				"Couldn't download NextCloud.  This could mean you have no network connection, or that the specified download is no longer available."));
-		units.add(new FileChecksumUnit("nextcloud", "nextcloud_downloaded", "/root/nextcloud.zip",
+		units.add(new FileChecksumUnit("nextcloud", "nextcloud_downloaded", Checksum.SHA512, "/root/nextcloud.zip",
 				"$(curl -s https://download.nextcloud.com/server/releases/latest.zip.sha512 | awk '{print $1}')",
 				"NextCloud's checksum doesn't match.  This could indicate a failed download, or a MITM attack.  NextCloud's installation will fail."));
 

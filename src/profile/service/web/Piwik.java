@@ -18,6 +18,7 @@ import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileChecksumUnit;
+import core.unit.fs.FileChecksumUnit.Checksum;
 import core.unit.fs.FileDownloadUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
@@ -50,7 +51,7 @@ public class Piwik extends AStructuredProfile {
 
 		units.add(new FileDownloadUnit("piwik", "proceed", "https://builds.matomo.org/piwik.zip", "/root/piwik.zip",
 				"Couldn't download Piwik.  This could mean you ave no network connection, or that the specified download is no longer available."));
-		units.add(new FileChecksumUnit("piwik", "piwik_downloaded", "/root/piwik.zip",
+		units.add(new FileChecksumUnit("piwik", "piwik_downloaded", Checksum.SHA512, "/root/piwik.zip",
 				"449a91225b0f942f454bbccd5fba1ff9ea9d0459b37f69004d43060c24e3626b6303373c66711b316314ec72ed96fda3c76b4a4f6a930c1569a2a72ed6ff6a1f",
 				"Piwik's checksum doesn't match.  This could indicate a failed download, MITM attack, or a newer version than our code supports.  Piwik's installation will fail."));
 

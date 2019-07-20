@@ -20,6 +20,7 @@ import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileAppendUnit;
 import core.unit.fs.FileChecksumUnit;
+import core.unit.fs.FileChecksumUnit.Checksum;
 import core.unit.fs.FileDownloadUnit;
 import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
@@ -110,9 +111,8 @@ public class SVN extends AStructuredProfile {
 				"https://kent.dl.sourceforge.net/project/ifsvnadmin/svnadmin-1.6.2.zip",
 				"/root/svnadmin.zip"));
 
-		units.add(new FileChecksumUnit("svn_admin", "svn_admin_downloaded",
-				"/root/svnadmin.zip",
-				"065666dcddb96990b4bef37b5d6bf1689811eb3916a8107105935d9e6f8e05b9f99e6fdd8b4522dffab0ae8b17cfade80db891bd2a7ba7f49758f2133e4d26fa", "pass"));
+		units.add(new FileChecksumUnit("svn_admin", "svn_admin_downloaded", Checksum.SHA512, "/root/svnadmin.zip",
+				"065666dcddb96990b4bef37b5d6bf1689811eb3916a8107105935d9e6f8e05b9f99e6fdd8b4522dffab0ae8b17cfade80db891bd2a7ba7f49758f2133e4d26fa"));
 
 		units.add(new SimpleUnit("svn_admin_unzipped", "svn_admin_checksum",
 				"sudo unzip /root/svnadmin.zip -d /media/data/www/;"

@@ -31,6 +31,7 @@ import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileChecksumUnit;
+import core.unit.fs.FileChecksumUnit.Checksum;
 import core.unit.fs.FileDownloadUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
@@ -137,7 +138,7 @@ public class HyperVisor extends AStructuredProfile {
 					this.networkModel.getData().getHypervisorThornsecBase(getLabel()) + "/" + filename,
 					"The Debian net install ISO couldn't be downloaded.  Please check the URI in your config."));
 			units.add(new FileChecksumUnit("debian_netinst_iso",
-					"debian_netinst_iso_" + cleanedFilename + "_downloaded",
+					"debian_netinst_iso_" + cleanedFilename + "_downloaded", Checksum.SHA512,
 					this.networkModel.getData().getHypervisorThornsecBase(getLabel()) + "/" + filename,
 					this.networkModel.getData().getDebianIsoSha512(getLabel()),
 					"The sha512 sum of the Debian net install in your config doesn't match what has been downloaded.  This could mean your connection is man-in-the-middle'd, or it could just be that the file has been updated on the server. "
