@@ -16,6 +16,7 @@ import java.util.Set;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
+import core.unit.SimpleUnit;
 import core.unit.fs.FileChecksumUnit;
 import core.unit.fs.FileChecksumUnit.Checksum;
 import core.unit.fs.FileDownloadUnit;
@@ -60,7 +61,12 @@ public class CSFFirewall extends AFirewallProfile {
 
 		units.add(new FileChecksumUnit("csf", "csf_downloaded", Checksum.SHA256, digest, "/root/csf.tgz"));
 
-		// units.add(e)
+		// TODO: build ExtractUnit
+		units.add(new SimpleUnit("csf_extracted", "csf_checksum", "sudo tar xzf /root/csf.tar.gz",
+				"sudo [ -d /root/csf ] && echo pass || echo fail", "pass", "pass"));
+
+		units.add(new SimpleUnit("csf_installed", "csf_extracted", "/root/csf/install.sh > /dev/null",
+				"[ -d /etc/csf ] && echo pass || echo fail", "pass", "pass"));
 
 		return units;
 	}
