@@ -74,6 +74,7 @@ public class CSFFirewall extends AFirewallProfile {
 				"pass"));
 
 		units.add(new InstalledUnit("ipset", "proceed", "ipset"));
+		units.add(new InstalledUnit("msmtp_mta", "proceed", "msmtp_mta"));
 		units.add(new InstalledUnit("libwww_perl", "proceed", "libwww-perl"));
 		units.add(new InstalledUnit("liblwp-protocol_https_perl", "proceed", "liblwp-protocol-https-perl"));
 
