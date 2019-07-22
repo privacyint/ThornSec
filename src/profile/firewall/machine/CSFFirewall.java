@@ -73,7 +73,9 @@ public class CSFFirewall extends AFirewallProfile {
 				"sudo perl /usr/local/csf/bin/csftest.pl | grep RESULT:", "RESULT: csf should function on this server",
 				"pass"));
 
+		units.add(new InstalledUnit("host", "proceed", "host"));
 		units.add(new InstalledUnit("ipset", "proceed", "ipset"));
+		units.add(new InstalledUnit("unzip", "proceed", "unzip"));
 		units.add(new InstalledUnit("msmtp_mta", "proceed", "msmtp_mta"));
 		units.add(new InstalledUnit("libwww_perl", "proceed", "libwww-perl"));
 		units.add(new InstalledUnit("liblwp-protocol_https_perl", "proceed", "liblwp-protocol-https-perl"));
