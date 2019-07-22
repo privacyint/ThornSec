@@ -92,6 +92,7 @@ public class SSH extends AStructuredProfile {
 		sshdConf.appendLine("UsePAM yes");
 		sshdConf.appendLine("Banner /etc/ssh/sshd_banner");
 		sshdConf.appendLine("MaxSessions 1");
+		sshdConf.appendLine("UseDNS no");
 
 		// this.networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFilePath("/etc/ssh/sshd_config");
 

@@ -20,6 +20,7 @@ import core.unit.SimpleUnit;
 import core.unit.fs.FileChecksumUnit;
 import core.unit.fs.FileChecksumUnit.Checksum;
 import core.unit.fs.FileDownloadUnit;
+import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import inet.ipaddr.HostName;
 import profile.firewall.AFirewallProfile;
@@ -68,12 +69,131 @@ public class CSFFirewall extends AFirewallProfile {
 		units.add(new SimpleUnit("csf_installed", "csf_extracted", "/root/csf/install.sh > /dev/null",
 				"[ -d /etc/csf ] && echo pass || echo fail", "pass", "pass"));
 
+		units.add(new SimpleUnit("iptables_modules_installed", "csf_installed", "",
+				"sudo perl /usr/local/csf/bin/csftest.pl | grep RESULT:", "RESULT: csf should function on this server",
+				"pass"));
+
+		units.add(new InstalledUnit("ipset", "proceed", "ipset"));
+		units.add(new InstalledUnit("libwww_perl", "proceed", "libwww-perl"));
+		units.add(new InstalledUnit("liblwp-protocol_https_perl", "proceed", "liblwp-protocol-https-perl"));
+
 		return units;
 	}
 
 	@Override
 	public Set<IUnit> getPersistentConfig() throws ARuntimeException {
-		return null;
+		final Set<IUnit> units = new LinkedHashSet<>();
+
+		final FileUnit csfConf = new FileUnit("csf_config", "csf_installed", "/etc/csf/csf.conf");
+		units.add(csfConf);
+
+		csfConf.appendLine("TESTING = \\\"0\\\"");
+		csfConf.appendLine("RESTRICT_SYSLOG = \\\"0\\\"");
+		csfConf.appendLine("RESTRICT_SYSLOG_GROUP = \\\"restricted-syslog\\\"");
+		csfConf.appendLine("RESTRICT_UI = \\\"1\\\"");
+		csfConf.appendLine(
+				"AUTO_UPDATES = \\\"" + (getNetworkModel().getData().getAutoUpdate(getLabel()) ? "1" : "0") + "\\\"");
+		csfConf.appendLine("LF_SPI = \\\"1\\\"");
+		csfConf.appendLine("ICMP_IN = \\\"1\\\"");
+		csfConf.appendLine("ICMP_IN_RATE = \\\"1/s\\\"");
+		csfConf.appendLine("ICMP_OUT = \\\"1\\\"");
+		csfConf.appendLine("ICMP_OUT_RATE = \\\"0\\\"");
+		csfConf.appendLine("ICMP_TIMESTAMP_DROP = \\\"0\\\"");
+		csfConf.appendLine("IPV6 = \\\"0\\\"");
+		csfConf.appendLine("USE_CONNTRACK = \\\"1\\\"");
+		csfConf.appendLine("USE_FTP_HELPER = \\\"0\\\"");
+		csfConf.appendLine("SYSLOG_CHECK = \\\"600\\\"");
+		csfConf.appendLine("IGNORE_ALLOW = \\\"0\\\"");
+		csfConf.appendLine("DNS_STRICT = \\\"1\\\""); // TODO
+		csfConf.appendLine("DENY_IP_LIMIT = \\\"200\\\"");
+		csfConf.appendLine("DENY_TEMP_IP_LIMIT = \\\"100\\\"");
+		csfConf.appendLine("LF_DAEMON = \\\"1\\\"");
+		csfConf.appendLine("LF_CSF = \\\"1\\\"");
+		csfConf.appendLine("FASTSTART = \\\"1\\\"");
+		csfConf.appendLine("LF_IPSET = \\\"1\\\"");
+		csfConf.appendLine("WAITLOCK = \\\"1\\\"");
+		csfConf.appendLine("WAITLOCK_TIMEOUT = \\\"300\\\"");
+		csfConf.appendLine("LF_IPSET_HASHSIZE = \\\"1024\\\"");
+		csfConf.appendLine("LF_IPSET_MAXELEM = \\\"65535\\\"");
+		csfConf.appendLine("LFD_START = \\\"0\\\"");
+		csfConf.appendLine("VERBOSE = \\\"1\\\"");
+		csfConf.appendLine("PACKET_FILTER = \\\"1\\\"");
+		csfConf.appendLine("LF_LOOKUPS = \\\"0\\\"");
+		csfConf.appendLine("STYLE_CUSTOM = \\\"0\\\"");
+		csfConf.appendLine("STYLE_MOBILE = \\\"1\\\"");
+		csfConf.appendLine("SMTP_BLOCK = \\\"1\\\"");
+		csfConf.appendLine("SMTP_ALLOWLOCAL = \\\"1\\\"");
+		csfConf.appendLine("SMTP_REDIRECT = \\\"0\\\"");
+		csfConf.appendLine("SMTP_ALLOWUSER = \\\"\\\"");
+		csfConf.appendLine("SMTP_ALLOWGROUP = \\\"mail,mailman\\\"");
+		csfConf.appendLine("SMTPAUTH_RESTRICT = \\\"0\\\"");
+		csfConf.appendLine("SYNFLOOD = \\\"0\\\"");
+		csfConf.appendLine("SYNFLOOD_RATE = \\\"100/s\\\"");
+		csfConf.appendLine("SYNFLOOD_BURST = \\\"150\\\"");
+		csfConf.appendLine("CONNLIMIT = \\\"\\\""); // TODO
+		csfConf.appendLine("PORTFLOOD = \\\"\\\""); // TODO
+		csfConf.appendLine("UDPFLOOD = \\\"0\\\""); // TODO
+		csfConf.appendLine("UDPFLOOD_LIMIT = \\\"100/s\\\"");
+		csfConf.appendLine("UDPFLOOD_BURST = \\\"500\\\"");
+		csfConf.appendLine("SYSLOG = \\\"0\\\"");
+		csfConf.appendLine("DROP = \\\"DROP\\\"");
+		csfConf.appendLine("DROP_OUT = \\\"REJECT\\\"");
+		csfConf.appendLine("DROP_LOGGING = \\\"1\\\"");
+		csfConf.appendLine("DROP_IP_LOGGING = \\\"0\\\"");
+		csfConf.appendLine("DROP_OUT_LOGGING = \\\"1\\\"");
+		csfConf.appendLine("DROP_UID_LOGGING = \\\"1\\\"");
+		csfConf.appendLine("DROP_ONLY_RES = \\\"0\\\"");
+		csfConf.appendLine("DROP_NOLOG = \\\"23,67,68,111,113,135:139,556,500,513,520\\\"");
+		csfConf.appendLine("DROP_PF_LOGGING = \\\"0\\\"");
+		csfConf.appendLine("CONNLIMIT_LOGGING = \\\"0\\\""); // TODO
+		csfConf.appendLine("UDPFLOOD_LOGGING = \\\"1\\\"");
+		csfConf.appendLine("LOGFLOOD_ALERT = \\\"1\\\"");
+		csfConf.appendLine("LF_ALERT_TO = \\\"\\\"");
+		csfConf.appendLine("LF_ALERT_FROM = \\\"\\\"");
+		csfConf.appendLine("LF_ALERT_SMTP = \\\"\\\"");
+		csfConf.appendLine("BLOCK_REPORT = \\\"\\\"");
+		csfConf.appendLine("UNBLOCK_REPORT = \\\"0\\\"");
+		csfConf.appendLine("X_ARF = \\\"0\\\"");
+		csfConf.appendLine("X_ARF_TO = \\\"\\\"");
+		csfConf.appendLine("X_ARF_ABUSE = \\\"0\\\"");
+		csfConf.appendLine("LF_PERMBLOCK = \\\"0\\\""); // TODO
+		csfConf.appendLine("LF_NETBLOCK = \\\"0\\\"");
+		csfConf.appendLine("SAFECHAINUPDATE = \\\"1\\\"");
+		csfConf.appendLine("DYNDNS = \\\"0\\\"");
+		csfConf.appendLine("DYNDNS_IGNORE = \\\"0\\\"");
+		csfConf.appendLine("LF_GLOBAL = \\\"0\\\"");
+		csfConf.appendLine("LF_BOGON_SKIP = \\\"\\\"");
+		csfConf.appendLine("URLGET = \\\"2\\\"");
+		csfConf.appendLine("URLPROXY = \\\"\\\"");
+		csfConf.appendLine("LF_SSH_EMAIL_ALERT = \\\"1\\\"");
+		csfConf.appendLine("LF_SU_EMAIL_ALERT = \\\"1\\\"");
+		csfConf.appendLine("LF_WEBMIN_EMAIL_ALERT = \\\"1\\\"");
+		csfConf.appendLine("LF_CONSOLE_EMAIL_ALERT = \\\"1\\\"");
+		csfConf.appendLine("LF_EXPLOIT = \\\"300\\\"");
+		csfConf.appendLine("LF_INTERVAL = \\\"3600\\\"");
+		csfConf.appendLine("LF_PARSE = \\\"5\\\"");
+		csfConf.appendLine("LF_FLUSH = \\\"3600\\\"");
+		csfConf.appendLine("LF_REPEATBLOCK = \\\"0\\\"");
+		csfConf.appendLine("LF_DIRWATCH = \\\"300\\\"");
+		csfConf.appendLine("LF_DIRWATCH_DISABLE = \\\"0\\\"");
+		csfConf.appendLine("LF_INTEGRITY = \\\"3600\\\"");
+		csfConf.appendLine("LF_DISTATTACK = \\\"0\\\""); // TODO
+		csfConf.appendLine("CT_LIMIT = \\\"0\\\""); // TODO
+		csfConf.appendLine("CT_SUBNET_LIMIT = \\\"0\\\""); // TODO
+		csfConf.appendLine("PT_LIMIT = \\\"60\\\"");
+		csfConf.appendLine("PT_INTERVAL  \\\"60\\\"");
+		csfConf.appendLine("PT_DELETED = \\\"1\\\""); // TODO
+		csfConf.appendLine("PT_USERPROC = \\\"10\\\"");
+		csfConf.appendLine("PT_USERMEM = \\\"512\\\"");
+		csfConf.appendLine("PT_USERTIME = \\\"1800\\\"");
+		csfConf.appendLine("PT_USERKILL = \\\"0\\\"");
+		csfConf.appendLine("PT_LOAD = \\\"30\\\"");
+		csfConf.appendLine("PT_LOAD_AVG = \\\"5\\\"");
+		csfConf.appendLine("PT_LOAD_LEVEL = \\\"6\\\"");
+		csfConf.appendLine("PT_LOAD_SKIP = \\\"3600\\\"");
+		csfConf.appendLine("PT_FORKBOMB = \\\"250\\\"");
+
+		return units;
 	}
 
 	@Override
