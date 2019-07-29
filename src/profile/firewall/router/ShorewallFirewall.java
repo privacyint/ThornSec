@@ -19,6 +19,8 @@ import profile.firewall.AFirewallProfile;
 
 public class ShorewallFirewall extends AFirewallProfile {
 
+	private static String CONFIG_BASEDIR = "/etc/shorewall";
+
 	public ShorewallFirewall(String label, NetworkModel networkModel) {
 		super(label, networkModel);
 	}
@@ -37,9 +39,9 @@ public class ShorewallFirewall extends AFirewallProfile {
 		final Set<IUnit> units = new LinkedHashSet<>();
 
 		// Build our default policies
-		final FileUnit policies = new FileUnit("shorewall_policies", "shorewall_installed", "/etc/shorewall/policy");
+		final FileUnit policies = new FileUnit("shorewall_policies", "shorewall_installed", CONFIG_BASEDIR + "/policy");
 		policies.appendLine("#Default policies to use for intra-zone communication");
-		policies.appendLine("#For specific rules, please look at /etc/shorewall/rules file");
+		policies.appendLine("#For specific rules, please look at " + CONFIG_BASEDIR + "/rules file");
 		policies.appendLine("#Please see http://shorewall.net/manpages/shorewall-policy.html for more details");
 		policies.appendLine("#source destination action");
 		policies.appendLine("wan all DROP"); // DROP all ingress traffic
@@ -55,10 +57,11 @@ public class ShorewallFirewall extends AFirewallProfile {
 		// iface can be more than one zone), so we can be a bit more explicit in its
 		// hosts file
 		final FileUnit interfaces = new FileUnit("shorewall_interfaces", "shorewall_installed",
-				"/etc/shorewall/interfaces");
+				CONFIG_BASEDIR + "/interfaces");
 		interfaces.appendLine("#Dedicate interfaces to zones");
 		interfaces.appendLine("#Please see http://shorewall.net/manpages/shorewall-interfaces.html for more details");
-		interfaces.appendLine("#If you're looking for how we are assigning zones, please see /etc/shorewall/hosts");
+		interfaces.appendLine(
+				"#If you're looking for how we are assigning zones, please see " + CONFIG_BASEDIR + "/hosts");
 		interfaces.appendLine("#zone interface options");
 		// The below zone is currently a catch-all so we can create Routers with a
 		// single iface...(!)
@@ -81,7 +84,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		final Set<IUnit> units = new LinkedHashSet<>();
 
 		// Build our zones
-		final FileUnit zones = new FileUnit("shorewall_zones", "shorewall_installed", "/etc/shorewall/zones");
+		final FileUnit zones = new FileUnit("shorewall_zones", "shorewall_installed", CONFIG_BASEDIR + "/zones");
 		zones.appendLine("#This is the file which creates our various zones");
 		zones.appendLine("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
 		zones.appendLine("#zone type");
