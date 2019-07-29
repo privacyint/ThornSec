@@ -75,6 +75,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		policies.appendLine("#For specific rules, please look at /etc/shorewall/rules file");
 		policies.appendLine("#source destination action");
 		policies.appendLine("wan all DROP"); // DROP all ingress traffic
+		policies.appendLine("fw all REJECT"); // REJECT all traffic
 		policies.appendLine("servers all REJECT"); // REJECT all traffic
 		policies.appendLine("users all REJECT"); // REJECT all traffic
 		policies.appendLine("admins all REJECT"); // REJECT all traffic
