@@ -36,39 +36,6 @@ public class ShorewallFirewall extends AFirewallProfile {
 	public Set<IUnit> getPersistentConfig() throws ARuntimeException {
 		final Set<IUnit> units = new LinkedHashSet<>();
 
-		// Build our zones
-		final FileUnit zones = new FileUnit("shorewall_zones", "shorewall_installed", "/etc/shorewall/zones");
-		zones.appendLine("#This is the file which creates our various zones");
-		zones.appendLine("#zone type");
-		zones.appendLine("fw firewall");
-		zones.appendLine("wan ipv4");
-		zones.appendLine("servers ipv4");
-		zones.appendLine("admins ipv4");
-		zones.appendLine("users ipv4");
-		zones.appendLine("internalOnlys ipv4");
-		zones.appendLine("externalOnlys ipv4");
-		if (this.networkModel.getData().buildAutoGuest()) {
-			zones.appendLine("autoguest ipv4");
-		}
-		units.add(zones);
-
-		// Dedicate interfaces to zones
-		final FileUnit interfaces = new FileUnit("shorewall_interfaces", "shorewall_installed",
-				"/etc/shorewall/interfaces");
-		interfaces.appendLine("#Dedicate interfaces to zones");
-		interfaces.appendLine("#zone interface options");
-		interfaces.appendLine("wan " + this.networkModel.getServerModel(getLabel())); // TODO
-		interfaces.appendLine("servers servers detect tcpflags,nosmurfs,routefiulter,logmartians");
-		interfaces.appendLine("users users detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
-		interfaces.appendLine("admins:users users detect tcpflags,nosmurfs,routefiulter,logmartians");
-		interfaces.appendLine("internalOnlys internalOnlys detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
-		interfaces.appendLine("externalOnlys externalOnlys detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
-		if (this.networkModel.getData().buildAutoGuest()) {
-			interfaces
-					.appendLine("autoguest:externalOnlys autoguest detect tcpflags,nosmurfs,routefiulter,logmartians");
-		}
-		units.add(interfaces);
-
 		// Build our default policies
 		final FileUnit policies = new FileUnit("shorewall_policies", "shorewall_installed", "/etc/shorewall/policy");
 		policies.appendLine("#Default policies to use");
@@ -88,8 +55,54 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 	@Override
 	public Set<IUnit> getLiveConfig() throws ARuntimeException {
-		// TODO Auto-generated method stub
-		return null;
+		final Set<IUnit> units = new LinkedHashSet<>();
+
+		// Build our zones
+		final FileUnit zones = new FileUnit("shorewall_zones", "shorewall_installed", "/etc/shorewall/zones");
+		zones.appendLine("#This is the file which creates our various zones");
+		zones.appendLine("#zone type");
+		zones.appendLine("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
+		zones.appendLine("fw firewall");
+		zones.appendLine("wan ipv4");
+		zones.appendLine("servers ipv4");
+		for (final String serverLabel : getNetworkModel().getServers().keySet()) {
+			zones.appendLine("servers:" + serverLabel + " ipv4");
+		}
+		zones.appendLine("users ipv4");
+		for (final String userLabel : getNetworkModel().getUserDevices().keySet()) {
+			zones.appendLine("");
+		}
+		zones.appendLine("admins:users ipv4");
+		zones.appendLine("internalOnlys ipv4");
+		zones.appendLine("externalOnlys ipv4");
+		if (this.networkModel.getData().buildAutoGuest()) {
+			zones.appendLine("autoguest ipv4");
+		}
+		units.add(zones);
+
+		// Dedicate interfaces to zones
+		final FileUnit interfaces = new FileUnit("shorewall_interfaces", "shorewall_installed",
+				"/etc/shorewall/interfaces");
+		interfaces.appendLine("#Dedicate interfaces to zones");
+		interfaces.appendLine("#zone interface options");
+		interfaces.appendLine("wan " + this.networkModel.getServerModel(getLabel())); // TODO
+		interfaces.appendLine("servers servers detect tcpflags,nosmurfs,routefiulter,logmartians");
+
+		for (final String server : this.networkModel.getServers().keySet()) {
+			interfaces.appendLine("servers:" + server);
+		}
+
+		interfaces.appendLine("users users detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
+		interfaces.appendLine("admins:users users detect tcpflags,nosmurfs,routefiulter,logmartians");
+		interfaces.appendLine("internalOnlys internalOnlys detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
+		interfaces.appendLine("externalOnlys externalOnlys detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
+		if (this.networkModel.getData().buildAutoGuest()) {
+			interfaces
+					.appendLine("autoguest:externalOnlys autoguest detect tcpflags,nosmurfs,routefiulter,logmartians");
+		}
+		units.add(interfaces);
+
+		return units;
 	}
 
 	@Override
