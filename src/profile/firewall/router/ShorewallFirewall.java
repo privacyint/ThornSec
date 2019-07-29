@@ -64,20 +64,39 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zones.appendLine("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
 		zones.appendLine("fw firewall");
 		zones.appendLine("wan ipv4");
+
+		// Build a sub-zone per server
 		zones.appendLine("servers ipv4");
 		for (final String serverLabel : getNetworkModel().getServers().keySet()) {
 			zones.appendLine("servers:" + serverLabel + " ipv4");
 		}
+
+		// Build a sub-zone per user
 		zones.appendLine("users ipv4");
 		for (final String userLabel : getNetworkModel().getUserDevices().keySet()) {
-			zones.appendLine("");
+			zones.appendLine("users:" + userLabel + " ipv4");
 		}
+
+		// TODO: Do we need an admin zone? Should it be sub-zoned too?
 		zones.appendLine("admins:users ipv4");
+
+		// Build a sub-zone per internal only device
 		zones.appendLine("internalOnlys ipv4");
-		zones.appendLine("externalOnlys ipv4");
-		if (getNetworkModel().getData().buildAutoGuest()) {
-			zones.appendLine("autoguest ipv4");
+		for (final String deviceLabel : getNetworkModel().getInternalOnlyDevices().keySet()) {
+			zones.appendLine("internalOnlys:" + deviceLabel + " ipv4");
 		}
+
+		// Build a sub-zone per external only device
+		zones.appendLine("externalOnlys ipv4");
+		for (final String deviceLabel : getNetworkModel().getExternalOnlyDevices().keySet()) {
+			zones.appendLine("externalOnlys:" + deviceLabel + " ipv4");
+		}
+
+		// Do we want an autoguest network? Build its zone if so
+		if (getNetworkModel().getData().buildAutoGuest()) {
+			zones.appendLine("externalOnlys:autoguest ipv4");
+		}
+
 		units.add(zones);
 
 		// Dedicate interfaces to zones
