@@ -40,6 +40,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		final FileUnit policies = new FileUnit("shorewall_policies", "shorewall_installed", "/etc/shorewall/policy");
 		policies.appendLine("#Default policies to use");
 		policies.appendLine("#For specific rules, please look at /etc/shorewall/rules file");
+		policies.appendLine("#Please see http://shorewall.net/manpages/shorewall-policy.html for more details");
 		policies.appendLine("#source destination action");
 		policies.appendLine("wan all DROP"); // DROP all ingress traffic
 		policies.appendLine("fw all REJECT"); // REJECT all traffic
