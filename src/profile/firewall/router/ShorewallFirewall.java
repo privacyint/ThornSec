@@ -41,7 +41,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zones.appendLine("#This is the file which creates our various zones");
 		zones.appendLine("#zone type");
 		zones.appendLine("fw firewall");
-		zones.appendLine("net ipv4");
+		zones.appendLine("wan ipv4");
 		zones.appendLine("servers ipv4");
 		zones.appendLine("admins ipv4");
 		zones.appendLine("users ipv4");
@@ -57,7 +57,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 				"/etc/shorewall/interfaces");
 		interfaces.appendLine("#Dedicate interfaces to zones");
 		interfaces.appendLine("#zone interface options");
-		interfaces.appendLine("net " + this.networkModel.getServerModel(getLabel())); // TODO
+		interfaces.appendLine("wan " + this.networkModel.getServerModel(getLabel())); // TODO
 		interfaces.appendLine("servers servers detect tcpflags,nosmurfs,routefiulter,logmartians");
 		interfaces.appendLine("users users detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
 		interfaces.appendLine("admins:users users detect tcpflags,nosmurfs,routefiulter,logmartians");
@@ -74,7 +74,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		policies.appendLine("#Default policies to use");
 		policies.appendLine("#For specific rules, please look at /etc/shorewall/rules file");
 		policies.appendLine("#source destination action");
-		policies.appendLine("net all DROP"); // DROP all ingress traffic
+		policies.appendLine("wan all DROP"); // DROP all ingress traffic
 		policies.appendLine("servers all REJECT"); // REJECT all traffic
 		policies.appendLine("users all REJECT"); // REJECT all traffic
 		policies.appendLine("admins all REJECT"); // REJECT all traffic
