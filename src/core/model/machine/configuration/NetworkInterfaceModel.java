@@ -7,12 +7,15 @@
  */
 package core.model.machine.configuration;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import core.StringUtils;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
+import core.iface.IUnit;
 import core.model.AModel;
 import core.model.network.NetworkModel;
+import core.unit.fs.FileUnit;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.mac.MACAddress;
 
@@ -158,17 +161,53 @@ public class NetworkInterfaceModel extends AModel {
 		return ifaceConf;
 	}
 
-	public String getServerStanza() {
-		String ifaceConf = "";
-		ifaceConf += getStanzaHeader();
-		ifaceConf += "iface " + getIface() + " inet " + getInet();
-		ifaceConf += (getBridgePorts() != null) ? "\n" + "bridge_ports " + String.join(" ", getBridgePorts()) : "";
-		ifaceConf += (getAddress() != null) ? "\n" + "address " + getAddress() : "";
-		ifaceConf += (getNetmask() != null) ? "\n" + "netmask " + getNetmask() : "";
-		ifaceConf += (getBroadcast() != null) ? "\n" + "broadcast " + getBroadcast() : "";
-		ifaceConf += (getGateway() != null) ? "\n" + "gateway " + getGateway() : "";
+	/**
+	 * Build a Systemd-networkd .network file for this NIC
+	 *
+	 * @return FileUnit in /etc/systemd/network/
+	 */
+	public FileUnit getNetworkFile() {
+		final FileUnit network = new FileUnit(getIface() + "_network", "proceed",
+				"/etc/systemd/network/" + getIface() + ".network");
+		network.appendLine("[Match]");
+		network.appendLine("Name=" + getIface());
+		network.appendCarriageReturn();
 
-		return ifaceConf;
+		network.appendLine("[Network]");
+		switch (getInet()) {
+			case DHCP:
+				network.appendLine("DHCP=yes");
+				break;
+			case STATIC:
+				if (getAddress() != null) {
+					network.appendLine("Address=" + getAddress().toFullString());
+				}
+				if (getNetmask() != null) {
+					network.appendLine("Netmask=" + getNetmask().toFullString());
+				}
+				if (getBroadcast() != null) {
+					network.appendLine("Broadcast=" + getBroadcast().toFullString());
+				}
+				if (getGateway() != null) {
+					network.appendLine("Gateway=" + getGateway().toFullString());
+				}
+				break;
+			case MACVLAN:
+				break;
+			default:
+				break;
+		}
+		return network;
+//		String ifaceConf = "";
+///		ifaceConf += getStanzaHeader();
+//		ifaceConf += "iface " + getIface() + " inet " + getInet();
+//	/	ifaceConf += (getBridgePorts() != null) ? "\n" + "bridge_ports " + String.join(" ", getBridgePorts()) : "";
+//		ifaceConf += (getAddress() != null) ? "\n" + "address " + getAddress() : "";
+//		ifaceConf += (getNetmask() != null) ? "\n" + "netmask " + getNetmask() : "";
+//		ifaceConf += (getBroadcast() != null) ? "\n" + "broadcast " + getBroadcast() : "";
+//		ifaceConf += (getGateway() != null) ? "\n" + "gateway " + getGateway() : "";
+
+//		return ifaceConf;
 	}
 
 	public String getRouterStanza() {
@@ -201,6 +240,30 @@ public class NetworkInterfaceModel extends AModel {
 		}
 
 		return null;
+	}
+
+	public static Set<IUnit> buildVLAN(String device, String ip) {
+		final Set<IUnit> units = new HashSet<>();
+
+		final FileUnit netDev = new FileUnit(device + "_netdev", "proceed", "/etc/systemd/" + device + ".netdev");
+		netDev.appendLine("[NetDev]");
+		netDev.appendLine("Name=" + device);
+		netDev.appendLine("Kind=macvlan");
+		netDev.appendCarriageReturn();
+		netDev.appendLine("[MACVLAN]");
+		netDev.appendLine("Mode=vepa");
+		units.add(netDev);
+
+		final FileUnit network = new FileUnit(device + "_network", "proceed", "/etc/systemd/" + device + ".network");
+		network.appendLine("[Match]");
+		network.appendLine("Name=" + device);
+		network.appendCarriageReturn();
+		network.appendLine("[Network]");
+		network.appendLine("IPForward=yes");
+		network.appendLine("Address=" + ip);
+		units.add(network);
+
+		return units;
 	}
 
 //	private Hashtable<String, InterfaceData> interfaces;
