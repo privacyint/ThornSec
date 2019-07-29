@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.exception.AThornSecException;
 import core.iface.IUnit;
 import core.model.machine.configuration.NetworkInterfaceModel;
@@ -21,7 +20,6 @@ import core.profile.AStructuredProfile;
 import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
-import inet.ipaddr.IPAddressString;
 import profile.dhcp.ADHCPServerProfile;
 import profile.dhcp.ISCDHCPServer;
 import profile.dns.ADNSServerProfile;
@@ -85,18 +83,15 @@ public class Router extends AStructuredProfile {
 		sysctl.appendLine("net.ipv6.conf.default.disable_ipv6=1");
 		sysctl.appendLine("net.ipv6.conf.lo.disable_ipv6=1");
 
-		// this.networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFilePath("/etc/sysctl.conf");
+		// Create our VLANs for our various networks.
+		units.addAll(NetworkInterfaceModel.buildVLAN("servers", "10.0.0.1"));
+		units.addAll(NetworkInterfaceModel.buildVLAN("admins", "10.0.0.1"));
+		units.addAll(NetworkInterfaceModel.buildVLAN("users", "10.0.0.1"));
+		units.addAll(NetworkInterfaceModel.buildVLAN("externalOnlys", "10.0.0.1"));
+		units.addAll(NetworkInterfaceModel.buildVLAN("internalOnlys", "10.0.0.1"));
 
 		if (this.networkModel.getData().buildAutoGuest()) {
-			final NetworkInterfaceModel iface = new NetworkInterfaceModel("autoguest", this.networkModel);
-			this.networkModel.getServerModel(getLabel()).addNetworkInterface(iface);
-
-			iface.setIface("lan0:9001");
-			iface.setInet(Inet.STATIC);
-			iface.setSubnet(new IPAddressString("10.250.0.0").getAddress());
-			iface.setNetmask(new IPAddressString("255.255.252.0").getAddress());
-			iface.setGateway(new IPAddressString("10.250.0.1").getAddress());
-			iface.setComment("Auto Guest pool, bridged to our lan");
+			units.addAll(NetworkInterfaceModel.buildVLAN("autoguest", "10.0.0.1"));
 		}
 
 		return units;
