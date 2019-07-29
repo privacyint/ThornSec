@@ -51,6 +51,27 @@ public class ShorewallFirewall extends AFirewallProfile {
 		policies.appendLine("externalOnlys all REJECT"); // REJECT all traffic
 		units.add(policies);
 
+		// Dedicate interfaces to zones - we'll just do it generically here (i.e. an
+		// iface can be more than one zone), so we can
+		// be a bit more explicit in its hosts file
+		final FileUnit interfaces = new FileUnit("shorewall_interfaces", "shorewall_installed",
+				"/etc/shorewall/interfaces");
+		interfaces.appendLine("#Dedicate interfaces to zones");
+		interfaces.appendLine("#Please see http://shorewall.net/manpages/shorewall-interfaces.html for more details");
+		interfaces.appendLine("#If you're looking for how we are assigning zones, please see /etc/shorewall/hosts");
+		interfaces.appendLine("#zone interface options");
+		// The below zone is currently a catch-all so we can create Routers with a
+		// single iface...(!)
+		interfaces.appendLine("- " + getNetworkModel().getServerModel(getLabel())); // TODO
+		interfaces.appendLine("- servers detect tcpflags,nosmurfs,routefiulter,logmartians");
+		interfaces.appendLine("- users detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
+		interfaces.appendLine("- admins detect tcpflags,nosmurfs,routefiulter,logmartians"); // TODO: Do we need this?
+		interfaces.appendLine("- internalOnlys detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
+		interfaces.appendLine("- externalOnlys detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
+		if (getNetworkModel().getData().buildAutoGuest()) {
+			interfaces.appendLine("autoguest autoguest detect tcpflags,nosmurfs,routefiulter,logmartians");
+		}
+		units.add(interfaces);
 		return units;
 	}
 
@@ -99,28 +120,6 @@ public class ShorewallFirewall extends AFirewallProfile {
 		}
 
 		units.add(zones);
-
-		// Dedicate interfaces to zones
-		final FileUnit interfaces = new FileUnit("shorewall_interfaces", "shorewall_installed",
-				"/etc/shorewall/interfaces");
-		interfaces.appendLine("#Dedicate interfaces to zones");
-		interfaces.appendLine("#zone interface options");
-		interfaces.appendLine("wan " + getNetworkModel().getServerModel(getLabel())); // TODO
-		interfaces.appendLine("servers servers detect tcpflags,nosmurfs,routefiulter,logmartians");
-
-		for (final String server : getNetworkModel().getServers().keySet()) {
-			interfaces.appendLine("servers:" + server);
-		}
-
-		interfaces.appendLine("users users detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
-		interfaces.appendLine("admins:users users detect tcpflags,nosmurfs,routefiulter,logmartians");
-		interfaces.appendLine("internalOnlys internalOnlys detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
-		interfaces.appendLine("externalOnlys externalOnlys detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
-		if (getNetworkModel().getData().buildAutoGuest()) {
-			interfaces
-					.appendLine("autoguest:externalOnlys autoguest detect tcpflags,nosmurfs,routefiulter,logmartians");
-		}
-		units.add(interfaces);
 
 		return units;
 	}
