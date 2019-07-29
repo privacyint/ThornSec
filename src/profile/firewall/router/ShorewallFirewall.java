@@ -75,7 +75,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zones.appendLine("admins:users ipv4");
 		zones.appendLine("internalOnlys ipv4");
 		zones.appendLine("externalOnlys ipv4");
-		if (this.networkModel.getData().buildAutoGuest()) {
+		if (getNetworkModel().getData().buildAutoGuest()) {
 			zones.appendLine("autoguest ipv4");
 		}
 		units.add(zones);
@@ -85,10 +85,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 				"/etc/shorewall/interfaces");
 		interfaces.appendLine("#Dedicate interfaces to zones");
 		interfaces.appendLine("#zone interface options");
-		interfaces.appendLine("wan " + this.networkModel.getServerModel(getLabel())); // TODO
+		interfaces.appendLine("wan " + getNetworkModel().getServerModel(getLabel())); // TODO
 		interfaces.appendLine("servers servers detect tcpflags,nosmurfs,routefiulter,logmartians");
 
-		for (final String server : this.networkModel.getServers().keySet()) {
+		for (final String server : getNetworkModel().getServers().keySet()) {
 			interfaces.appendLine("servers:" + server);
 		}
 
@@ -96,7 +96,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		interfaces.appendLine("admins:users users detect tcpflags,nosmurfs,routefiulter,logmartians");
 		interfaces.appendLine("internalOnlys internalOnlys detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
 		interfaces.appendLine("externalOnlys externalOnlys detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
-		if (this.networkModel.getData().buildAutoGuest()) {
+		if (getNetworkModel().getData().buildAutoGuest()) {
 			interfaces
 					.appendLine("autoguest:externalOnlys autoguest detect tcpflags,nosmurfs,routefiulter,logmartians");
 		}
