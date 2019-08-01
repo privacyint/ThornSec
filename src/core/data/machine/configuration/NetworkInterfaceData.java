@@ -1,8 +1,8 @@
 /*
  * This code is part of the ThornSec project.
- * 
+ *
  * To learn more, please head to its GitHub repo: @privacyint
- * 
+ *
  * Pull requests encouraged.
  */
 package core.data.machine.configuration;
@@ -93,16 +93,16 @@ public class NetworkInterfaceData extends AData {
 			if (data.containsKey("gateway")) {
 				setGateway(new IPAddressString(data.getString("gateway")).toAddress(IPVersion.IPV4));
 			}
-		} catch (AddressStringException e) {
+		} catch (final AddressStringException e) {
 			throw new InvalidIPAddressException();
 		}
 		if (data.containsKey("mac")) {
 			setMAC(new MACAddressString(data.getString("mac")).getAddress());
 		}
 		if (data.containsKey("bridgeports")) {
-			String[] bridgePorts = data.getString("bridgeports", null).split("[^a-z0-9]");
+			final String[] bridgePorts = data.getString("bridgeports", null).split("[^a-z0-9]");
 
-			for (String bridgePort : bridgePorts) {
+			for (final String bridgePort : bridgePorts) {
 				putBridgePort(bridgePort);
 			}
 		}

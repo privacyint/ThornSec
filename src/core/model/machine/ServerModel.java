@@ -87,32 +87,33 @@ public class ServerModel extends AMachineModel {
 					.getDeclaredConstructor(String.class, NetworkModel.class).newInstance(getLabel(), networkModel);
 		}
 
+		// TODO: Probably a cleaner way of doing the below
 		this.types = new HashSet<>();
 		for (final MachineType type : networkModel.getData().getTypes(getLabel())) {
 			switch (type) {
-			case ROUTER:
-				if (this.firewall == null) {
-					this.firewall = new ShorewallFirewall(getLabel(), networkModel);
-				}
-				this.types.add(new Router(getLabel(), networkModel));
-				break;
-			case HYPERVISOR:
-				if (this.firewall == null) {
-					this.firewall = new CSFFirewall(getLabel(), networkModel);
-				}
-				this.types.add(new HyperVisor(getLabel(), networkModel));
-				break;
-			case SERVICE:
-				if (this.firewall == null) {
-					this.firewall = new CSFFirewall(getLabel(), networkModel);
-				}
-				this.types.add(new Service(getLabel(), networkModel));
-				break;
-			case DEDICATED:
-				this.types.add(new Dedicated(getLabel(), networkModel));
-				break;
-			default:
-				break;
+				case ROUTER:
+					if (this.firewall == null) {
+						this.firewall = new ShorewallFirewall(getLabel(), networkModel);
+					}
+					this.types.add(new Router(getLabel(), networkModel));
+					break;
+				case HYPERVISOR:
+					if (this.firewall == null) {
+						this.firewall = new CSFFirewall(getLabel(), networkModel);
+					}
+					this.types.add(new HyperVisor(getLabel(), networkModel));
+					break;
+				case SERVICE:
+					if (this.firewall == null) {
+						this.firewall = new CSFFirewall(getLabel(), networkModel);
+					}
+					this.types.add(new Service(getLabel(), networkModel));
+					break;
+				case DEDICATED:
+					this.types.add(new Dedicated(getLabel(), networkModel));
+					break;
+				default:
+					break;
 			}
 		}
 
@@ -181,7 +182,7 @@ public class ServerModel extends AMachineModel {
 		if (this.networkModel.getData().getAutoUpdate(getLabel())) {
 			aptCommand = "sudo apt-get --assume-yes upgrade;";
 		} else {
-			aptCommand = "echo \"There are $(sudo  apt-get upgrade -s | grep -P '^\\d+ upgraded'| cut -d' ' -f1) updates available, of which $(sudo apt-get upgrade -s | grep ^Inst | grep Security | wc -l) are security updates\"";
+			aptCommand = "echo \"There are $(sudo apt-get upgrade -s | grep -P '^\\d+ upgraded'| cut -d' ' -f1) updates available, of which $(sudo apt-get upgrade -s | grep ^Inst | grep Security | wc -l) are security updates\"";
 		}
 		units.add(new SimpleUnit("update", "proceed", aptCommand,
 				"sudo apt-get update > /dev/null; sudo apt-get --assume-no upgrade | grep \"[0-9] upgraded, [0-9] newly installed, [0-9] to remove and [0-9] not upgraded.\";",
@@ -359,7 +360,7 @@ public class ServerModel extends AMachineModel {
 		return units;
 	}
 
-	public AFirewallProfile getFirewallModel() {
+	public AFirewallProfile getFirewall() {
 		return this.firewall;
 	}
 
