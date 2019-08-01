@@ -98,12 +98,13 @@ public class Router extends AStructuredProfile {
 		sysctl.appendLine("net.ipv6.conf.lo.disable_ipv6=1");
 
 		// Create our VLANs for our various networks.
-		units.addAll(NetworkInterfaceModel.buildVLAN("servers", "10.0.0.1"));
-		units.addAll(NetworkInterfaceModel.buildVLAN("admins", "10.0.0.1"));
-		units.addAll(NetworkInterfaceModel.buildVLAN("users", "10.0.0.1"));
-		units.addAll(NetworkInterfaceModel.buildVLAN("externalOnlys", "10.0.0.1"));
-		units.addAll(NetworkInterfaceModel.buildVLAN("internalOnlys", "10.0.0.1"));
+		units.addAll(NetworkInterfaceModel.buildVLAN("servers", SERVERS_NETWORK));
+		units.addAll(NetworkInterfaceModel.buildVLAN("admins", ADMINS_NETWORK));
+		units.addAll(NetworkInterfaceModel.buildVLAN("users", USERS_NETWORK));
+		units.addAll(NetworkInterfaceModel.buildVLAN("externalOnlys", EXTERNALS_NETWORK));
+		units.addAll(NetworkInterfaceModel.buildVLAN("internalOnlys", INTERNALS_NETWORK));
 
+		// TODO: Revisit
 		if (this.networkModel.getData().buildAutoGuest()) {
 			units.addAll(NetworkInterfaceModel.buildVLAN("autoguest", "10.0.0.1"));
 		}
@@ -115,12 +116,12 @@ public class Router extends AStructuredProfile {
 	protected Set<IUnit> getInstalled() throws AThornSecException {
 		final Set<IUnit> units = new HashSet<>();
 
-		units.addAll(this.dnsServer.getInstalled());
-		units.addAll(this.dhcpServer.getInstalled());
-
 		// Add useful tools for Routers here
 		units.add(new InstalledUnit("traceroute", "proceed", "traceroute"));
 		units.add(new InstalledUnit("speedtest_cli", "proceed", "speedtest-cli"));
+
+		units.addAll(getDNSServer().getInstalled());
+		units.addAll(getDHCPServer().getInstalled());
 
 		return units;
 	}
@@ -129,18 +130,19 @@ public class Router extends AStructuredProfile {
 	protected Set<IUnit> getLiveConfig() throws AThornSecException {
 		final Set<IUnit> units = new HashSet<>();
 
-		units.addAll(this.dhcpServer.getLiveConfig());
-		units.addAll(this.dnsServer.getLiveConfig());
-
-		// TODO: add our live Shorewall rules here
+		units.addAll(getDHCPServer().getLiveConfig());
+		units.addAll(getDNSServer().getLiveConfig());
 
 		return units;
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() {
+	public Set<IUnit> getPersistentFirewall() throws AThornSecException {
 		final Set<IUnit> units = new HashSet<>();
-		// TODO: THIS!!!
+
+		units.addAll(getDHCPServer().getPersistentFirewall());
+		units.addAll(getDNSServer().getPersistentConfig());
+
 		return units;
 	}
 }
