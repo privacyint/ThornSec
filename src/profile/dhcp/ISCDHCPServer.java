@@ -38,7 +38,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	private final Set<String> classes;
 	private final Set<String> stanzas;
 
-	private final Map<String, IPAddress> subnets;
+	private final Map<String, IPAddress> groups;
 
 	public ISCDHCPServer(String label, NetworkModel networkModel) {
 		super(label, networkModel);
@@ -46,57 +46,17 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		this.classes = null;
 		this.stanzas = null;
 
-		this.subnets = new Hashtable<>();
-		// TODO Auto-generated catch block
+		this.groups = new Hashtable<>();
 		try {
-			putSubnet("servers", new IPAddressString(Router.SERVERS_NETWORK).toAddress());
-			putSubnet("users", new IPAddressString(Router.USERS_NETWORK).toAddress());
-			putSubnet("admins", new IPAddressString(Router.ADMINS_NETWORK).toAddress());
-			putSubnet("internalOnlys", new IPAddressString(Router.INTERNALS_NETWORK).toAddress());
-			putSubnet("externalOnlys", new IPAddressString(Router.EXTERNALS_NETWORK).toAddress());
-		} catch (final AddressStringException e) {
-			e.printStackTrace();
-		} catch (final IncompatibleAddressException e) {
+			putGroup("servers", new IPAddressString(Router.SERVERS_NETWORK).toAddress());
+			putGroup("users", new IPAddressString(Router.USERS_NETWORK).toAddress());
+			putGroup("admins", new IPAddressString(Router.ADMINS_NETWORK).toAddress());
+			putGroup("internalOnlys", new IPAddressString(Router.INTERNALS_NETWORK).toAddress());
+			putGroup("externalOnlys", new IPAddressString(Router.EXTERNALS_NETWORK).toAddress());
+		} catch (final AddressStringException | IncompatibleAddressException e) {
+			// in *theory*, the Router should pass proper subnets, however...
 			e.printStackTrace();
 		}
-	}
-
-	private IPAddress getSubnet(String key) {
-		return this.subnets.get(key);
-	}
-
-	private void putSubnet(String key, IPAddress subnet) {
-		this.subnets.put(key, subnet);
-	}
-
-	private IPAddress getServersNetwork() {
-		return getSubnet("servers");
-	}
-
-	private IPAddress getUsersNetwork() {
-		return getSubnet("users");
-	}
-
-	private IPAddress getAdminsNetwork() {
-		return getSubnet("admins");
-	}
-
-	private IPAddress getInternalOnlysNetwork() {
-		return getSubnet("internalOnlys");
-	}
-
-	private IPAddress getExternalOnlysNetwork() {
-		return getSubnet("externalOnlys");
-	}
-
-	@Deprecated
-	public void addStanza(String stanza) {
-		this.stanzas.add(stanza);
-	}
-
-	@Deprecated
-	public void addClass(String stanza) {
-		this.classes.add(stanza);
 	}
 
 	@Override
@@ -141,11 +101,11 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		// dhcpdConf.appendLine("use-host-decl-names on;");
 		dhcpdConf.appendCarriageReturn();
 
-		dhcpdConf.appendLine(subnetString(getServersNetwork(), "servers"));
-		dhcpdConf.appendLine(subnetString(getUsersNetwork(), "users"));
-		dhcpdConf.appendLine(subnetString(getAdminsNetwork(), "admins"));
-		dhcpdConf.appendLine(subnetString(getInternalOnlysNetwork(), "internalOnlys"));
-		dhcpdConf.appendLine(subnetString(getExternalOnlysNetwork(), "externalOnlys"));
+		dhcpdConf.appendLine(subnetString(getServersGroup(), "servers"));
+		dhcpdConf.appendLine(subnetString(getUsersGroup(), "users"));
+		dhcpdConf.appendLine(subnetString(getAdminsGroup(), "admins"));
+		dhcpdConf.appendLine(subnetString(getInternalOnlysGroup(), "internalOnlys"));
+		dhcpdConf.appendLine(subnetString(getExternalOnlysGroup(), "externalOnlys"));
 		dhcpdConf.appendCarriageReturn();
 
 		dhcpdConf.appendLine("include \\\"/etc/dhcp/dhcpd.conf.d/servers.conf\\\"");
@@ -231,5 +191,43 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	public Set<IUnit> getLiveFirewall() throws AThornSecException {
 		// There aren't any :)
 		return new HashSet<>();
+	}
+
+	private IPAddress getGroup(String key) {
+		return this.groups.get(key);
+	}
+
+	private void putGroup(String key, IPAddress subnet) {
+		this.groups.put(key, subnet);
+	}
+
+	private IPAddress getServersGroup() {
+		return getGroup("servers");
+	}
+
+	private IPAddress getUsersGroup() {
+		return getGroup("users");
+	}
+
+	private IPAddress getAdminsGroup() {
+		return getGroup("admins");
+	}
+
+	private IPAddress getInternalOnlysGroup() {
+		return getGroup("internalOnlys");
+	}
+
+	private IPAddress getExternalOnlysGroup() {
+		return getGroup("externalOnlys");
+	}
+
+	@Deprecated
+	public void addStanza(String stanza) {
+		this.stanzas.add(stanza);
+	}
+
+	@Deprecated
+	public void addClass(String stanza) {
+		this.classes.add(stanza);
 	}
 }
