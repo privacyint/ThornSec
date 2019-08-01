@@ -31,7 +31,7 @@ import inet.ipaddr.mac.MACAddress;
  */
 public class NetworkInterfaceData extends AData {
 	public enum Inet {
-		MANUAL("manual"), STATIC("static"), DHCP("dhcp");
+		MANUAL("manual"), STATIC("static"), DHCP("dhcp"), MACVLAN("macvlan");
 
 		private String inet;
 
