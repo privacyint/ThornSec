@@ -20,6 +20,9 @@ import core.profile.AStructuredProfile;
 import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.AddressStringException;
+import inet.ipaddr.IPAddressString;
+import inet.ipaddr.IncompatibleAddressException;
 import profile.dhcp.ADHCPServerProfile;
 import profile.dhcp.ISCDHCPServer;
 import profile.dns.ADNSServerProfile;
@@ -37,7 +40,11 @@ public class Router extends AStructuredProfile {
 	private final ADNSServerProfile dnsServer;
 	private final ADHCPServerProfile dhcpServer;
 
-	private final HashMap<String, InetAddress[]> resolved;
+	public final static String SERVERS_NETWORK = "10.0.0.0/255.0.0.0";
+	public final static String USERS_NETWORK = "172.16.0.0/255.255.0.0";
+	public final static String ADMINS_NETWORK = "172.20.0.0/255.255.0.0";
+	public final static String INTERNALS_NETWORK = "172.24.0.0/255.255.0.0";
+	public final static String EXTERNALS_NETWORK = "192.168.0.0/255.255.0.0";
 
 	public Router(String label, NetworkModel networkModel) {
 		super(label, networkModel);
@@ -45,7 +52,16 @@ public class Router extends AStructuredProfile {
 		this.dnsServer = new UnboundDNSServer(label, networkModel);
 		this.dhcpServer = new ISCDHCPServer(label, networkModel);
 
-		this.resolved = new HashMap<>();
+		// You've gotta give real addresses or stuff breaks!
+		try {
+			assert (new IPAddressString(Router.SERVERS_NETWORK).toAddress() != null);
+			assert (new IPAddressString(Router.USERS_NETWORK).toAddress() != null);
+			assert (new IPAddressString(Router.ADMINS_NETWORK).toAddress() != null);
+			assert (new IPAddressString(Router.INTERNALS_NETWORK).toAddress() != null);
+			assert (new IPAddressString(Router.EXTERNALS_NETWORK).toAddress() != null);
+		} catch (AddressStringException | IncompatibleAddressException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public ADHCPServerProfile getDHCPServer() {
