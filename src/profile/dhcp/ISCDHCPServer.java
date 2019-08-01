@@ -13,10 +13,11 @@ import java.util.Map;
 import java.util.Set;
 
 import core.data.machine.AMachineData.Encapsulation;
+import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.machine.ServerModel;
+import core.model.machine.AMachineModel;
 import core.model.machine.configuration.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.unit.fs.DirUnit;
@@ -135,32 +136,50 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		return units;
 	}
 
+	private FileUnit buildNetworkConf(String label, Map<String, AMachineModel> machines, IPAddress subnet) {
+		final Set<IUnit> units = new HashSet<>();
+
+		final FileUnit conf = new FileUnit("dhcp_" + label + "_conf", "dhcpd_installed",
+				"/etc/dhcp/dhcpd.conf.d/" + label + ".conf");
+		units.add(conf);
+
+		conf.appendLine("group " + label + " {");
+		conf.appendLine(
+				"\tserver-name \\\"" + label + "." + getNetworkModel().getData().getDomain(getLabel()) + "\\\"");
+		conf.appendLine("\t option routers " + subnet.getLowerNonZeroHost().toCompressedString() + ";");
+		conf.appendLine("\t option domain-name-servers " + subnet.getLowerNonZeroHost().toCompressedString() + ";");
+
+		if (machines != null) {
+			for (final AMachineModel machine : machines.values()) {
+				for (final NetworkInterfaceModel iface : machine.getNetworkInterfaces()) {
+					conf.appendCarriageReturn();
+					conf.appendLine("\thost " + machine.getLabel() + "-" + iface.getMac().toDashedString() + "{");
+					conf.appendLine("\t\thardware ethernet " + iface.getMac().toColonDelimitedString() + ";");
+					conf.appendLine("\t\tfixed-address " + iface.getAddress() + ";");
+					conf.appendLine("\t\toption host-name " + machine.getLabel() + ";");
+					conf.appendLine("\t}");
+				}
+			}
+		}
+		conf.appendLine("}");
+
+		return conf;
+	}
+
 	@Override
 	public Set<IUnit> getLiveConfig() {
 		final Set<IUnit> units = new HashSet<>();
 
-		final FileUnit serversConf = new FileUnit("dhcp_servers_conf", "dhcpd_installed",
-				"/etc/dhcp/dhcpd.conf.d/servers.conf");
-		units.add(serversConf);
+		// TODO: work out a way to do this in a loop
+		units.add(buildNetworkConf("servers", getNetworkModel().getMachines(MachineType.SERVER), getServersGroup()));
+		units.add(buildNetworkConf("users", getNetworkModel().getMachines(MachineType.USER), getUsersGroup()));
+		units.add(buildNetworkConf("admins", getNetworkModel().getMachines(MachineType.ADMIN), getAdminsGroup()));
+		units.add(buildNetworkConf("internalOnlys", getNetworkModel().getMachines(MachineType.INTERNAL_ONLY),
+				getInternalOnlysGroup()));
+		units.add(buildNetworkConf("externalOnlys", getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY),
+				getExternalOnlysGroup()));
 
-		serversConf.appendLine("group servers {");
-		serversConf.appendLine("\tserver-name \\\"" + getNetworkModel().getData().getDomain(getLabel()) + "\\\"");
-		serversConf.appendLine(
-				"\t option routers " + getServersNetwork().getLowerNonZeroHost().toCompressedString() + ";");
-
-		for (final ServerModel server : getNetworkModel().getServers().values()) {
-			for (final NetworkInterfaceModel iface : server.getNetworkInterfaces()) {
-				serversConf.appendCarriageReturn();
-				serversConf.appendLine("\thost " + server.getLabel() + "-" + iface.getMac().toDashedString() + "{");
-				serversConf.appendLine("\t\thardware ethernet " + iface.getMac().toColonDelimitedString() + ";");
-				serversConf.appendLine("\t\tfixed-address " + iface.getAddress() + ";");
-				serversConf.appendLine("\t}");
-			}
-		}
-		serversConf.appendLine("}");
-
-		// TODO: everything else!
-
+		// TODO: handle guest networking
 //		if (this.networkModel.getData().buildAutoGuest()) {
 //			serversConf.appendCarriageReturn();
 //			serversConf.appendLine("    #This is our pool for guest connections");
