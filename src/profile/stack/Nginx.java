@@ -1,49 +1,50 @@
+/*
+ * This code is part of the ThornSec project.
+ *
+ * To learn more, please head to its GitHub repo: @privacyint
+ *
+ * Pull requests encouraged.
+ */
 package profile.stack;
 
 import java.io.File;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import core.data.machine.AMachineData.Encapsulation;
-
+import core.exception.data.InvalidPortException;
+import core.exception.data.machine.InvalidServerException;
+import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-
 import core.model.network.NetworkModel;
-
 import core.profile.AStructuredProfile;
-
 import core.unit.SimpleUnit;
 import core.unit.fs.CustomFileUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
-import core.exception.data.InvalidPortException;
-import core.exception.data.machine.InvalidServerException;
-
-import core.exception.runtime.InvalidServerModelException;
-
 public class Nginx extends AStructuredProfile {
 	public static final File DEFAULT_CONFIG_FILE = new File("/etc/nginx/conf.d/default.conf");
-	
-	public static final File CONF_D_DIRECTORY    = new File("/etc/nginx/conf.d/");
+
+	public static final File CONF_D_DIRECTORY = new File("/etc/nginx/conf.d/");
 	private HashSet<FileUnit> liveConfigs;
-	
+
 	public Nginx(String label, NetworkModel networkModel) {
 		super(label, networkModel);
-		
+
 		this.liveConfigs = null;
 	}
 
 	@Override
-	public Set<IUnit> getInstalled()
-	throws InvalidServerModelException {
-		Set<IUnit> units = new HashSet<IUnit>();
+	public Set<IUnit> getInstalled() throws InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
 
-		//If we don't give the nginx user a home dir, it can cause problems with npm etc
-		units.add(new SimpleUnit("nginx_user", "proceed",
-				"sudo useradd -r -d /media/data/www nginx",
-				"id nginx 2>&1", "id: ‘nginx’: no such user", "fail",
+		// If we don't give the nginx user a home dir, it can cause problems with npm
+		// etc
+		units.add(new SimpleUnit("nginx_user", "proceed", "sudo useradd -r -d /media/data/www nginx",
+				"id nginx 2>&1 | grep 'no such'", "", "pass",
 				"The nginx user couldn't be added.  This will cause all sorts of errors."));
 
 		getNetworkModel().getServerModel(getLabel()).getUserModel().addUsername("nginx");
@@ -52,15 +53,14 @@ public class Nginx extends AStructuredProfile {
 				"nginx", "0600"));
 
 		units.add(new InstalledUnit("nginx", "nginx_pgp", "nginx"));
-		
+
 		return units;
 	}
-	
+
 	@Override
-	public Set<IUnit> getPersistentConfig()
-	throws InvalidServerException, InvalidServerModelException {
-		Set<IUnit> units =  new HashSet<IUnit>();
-		
+	public Set<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
+
 		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("www", "proceed",
 				"nginx", "nginx", "0750"));
 
@@ -70,18 +70,21 @@ public class Nginx extends AStructuredProfile {
 				"nginx_installed", "nginx", "nginx", "0750"));
 
 		units.add(new SimpleUnit("nginx_modules_symlink", "nginx_modules_data_bindpoint_created",
-				"sudo rm -r /etc/nginx/modules;"
-				+ "sudo ln -s /media/data/nginx_modules/ /etc/nginx/modules",
+				"sudo rm -r /etc/nginx/modules;" + "sudo ln -s /media/data/nginx_modules/ /etc/nginx/modules",
 				"readlink /etc/nginx/modules", "/media/data/nginx_modules/", "pass"));
-		
-		units.add(new CustomFileUnit("nginx_custom_nginx", "nginx_includes_data_bindpoint_created", "/media/data/nginx_includes/customNginxBlockParams"));
-		units.add(new CustomFileUnit("nginx_custom_http", "nginx_includes_data_bindpoint_created", "/media/data/nginx_includes/customHttpBlockParams"));
 
-		networkModel.getServerModel(getLabel()).getAptSourcesModel().addAptSource("nginx", "deb http://nginx.org/packages/mainline/debian/ stretch nginx", "keyserver.ubuntu.com", "ABF5BD827BD9BF62");
-		
-		FileUnit nginxConf = new FileUnit("nginx_conf", "nginx_installed", "/etc/nginx/nginx.conf");
+		units.add(new CustomFileUnit("nginx_custom_nginx", "nginx_includes_data_bindpoint_created",
+				"/media/data/nginx_includes/customNginxBlockParams"));
+		units.add(new CustomFileUnit("nginx_custom_http", "nginx_includes_data_bindpoint_created",
+				"/media/data/nginx_includes/customHttpBlockParams"));
+
+		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("nginx",
+				"deb http://nginx.org/packages/mainline/debian/ stretch nginx", "keyserver.ubuntu.com",
+				"ABF5BD827BD9BF62");
+
+		final FileUnit nginxConf = new FileUnit("nginx_conf", "nginx_installed", "/etc/nginx/nginx.conf");
 		units.add(nginxConf);
-		
+
 		nginxConf.appendLine("user nginx;");
 		nginxConf.appendCarriageReturn();
 		nginxConf.appendLine("worker_processes " + getNetworkModel().getData().getCpus(getLabel()));
@@ -96,11 +99,11 @@ public class Nginx extends AStructuredProfile {
 		nginxConf.appendLine("    multi_accept       on;");
 		nginxConf.appendLine("}");
 		nginxConf.appendCarriageReturn();
-		nginxConf.appendLine("http {");                                                                                                                       
-		nginxConf.appendLine("    include       /etc/nginx/mime.types;");                                                                                     
-		nginxConf.appendLine("    default_type  application/octet-stream;");                                                                                  
-		nginxConf.appendCarriageReturn();		                                                                                                                             
-		nginxConf.appendLine("    log_format  main  '\\$remote_addr - \\$remote_user [\\$time_local] \"\\$request\" '");                                                
+		nginxConf.appendLine("http {");
+		nginxConf.appendLine("    include       /etc/nginx/mime.types;");
+		nginxConf.appendLine("    default_type  application/octet-stream;");
+		nginxConf.appendCarriageReturn();
+		nginxConf.appendLine("    log_format  main  '\\$remote_addr - \\$remote_user [\\$time_local] \"\\$request\" '");
 		nginxConf.appendLine("                      '\\$status \\$body_bytes_sent \"\\$http_referer\" '");
 		nginxConf.appendLine("                      '\"\\$http_user_agent\" \"\\$http_x_forwarded_for\"';");
 		nginxConf.appendCarriageReturn();
@@ -118,15 +121,14 @@ public class Nginx extends AStructuredProfile {
 		nginxConf.appendCarriageReturn();
 		nginxConf.appendLine("    include /etc/nginx/conf.d/*.conf;");
 		nginxConf.appendLine("}");
-		
+
 		return units;
 	}
 
 	@Override
-	public Set<IUnit> getLiveConfig()
-	throws InvalidServerModelException {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
+	public Set<IUnit> getLiveConfig() throws InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
+
 		getNetworkModel().getServerModel(getLabel())
 				.addProcessString("nginx: master process /usr/sbin/nginx -g daemon on; master_process on;$");
 		getNetworkModel().getServerModel(getLabel())
@@ -134,14 +136,15 @@ public class Nginx extends AStructuredProfile {
 		getNetworkModel().getServerModel(getLabel()).addProcessString("nginx: worker process *$");
 
 		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel()
+				.addDataBindPoint("nginx_custom_conf_d", "nginx_installed", "nginx", "nginx", "0750"));
 
-		if (! liveConfigs.isEmpty()) {		
-			units.addAll(liveConfigs);
-		}
-		else {
-			FileUnit defaultServerBlock = new FileUnit("nginx_default", "nginx_installed", Nginx.CONF_D_DIRECTORY + "default.conf");
+		if ((getLiveConfigs() != null) && !getLiveConfigs().isEmpty()) {
+			units.addAll(this.liveConfigs);
+		} else {
+			final FileUnit defaultServerBlock = new FileUnit("nginx_default", "nginx_installed",
+					Nginx.CONF_D_DIRECTORY + "default.conf");
 			units.add(defaultServerBlock);
-			
+
 			defaultServerBlock.appendLine("server {");
 			defaultServerBlock.appendLine("    listen 80;");
 			defaultServerBlock.appendLine("    server_name _;");
@@ -159,30 +162,41 @@ public class Nginx extends AStructuredProfile {
 			defaultServerBlock.appendLine("    include /media/data/nginx_custom_conf_d/default.conf;");
 			defaultServerBlock.appendLine("}");
 		}
-		
+
 		units.add(new RunningUnit("nginx", "nginx", "nginx"));
 
 		return units;
 	}
-	
+
 	public final void addLiveConfig(FileUnit config) {
-		liveConfigs.add(config);
+		if (this.liveConfigs == null) {
+			this.liveConfigs = new LinkedHashSet<>();
+		}
+
+		this.liveConfigs.add(config);
+	}
+
+	private final Set<FileUnit> getLiveConfigs() {
+		if (this.liveConfigs == null) {
+			this.liveConfigs = new LinkedHashSet<>();
+		}
+
+		return this.liveConfigs;
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall()
-	throws InvalidServerModelException, InvalidPortException {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
+	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+		final Set<IUnit> units = new HashSet<>();
+
 		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 80);
 		// Allow the server to call out to nginx.org to download mainline
 		getNetworkModel().getServerModel(getLabel()).addEgress("nginx.org");
 
 		return units;
 	}
-	
+
 	@Override
 	public Set<IUnit> getLiveFirewall() {
-		return new HashSet<IUnit>(); //Empty (for now?)
+		return new HashSet<>(); // Empty (for now?)
 	}
 }

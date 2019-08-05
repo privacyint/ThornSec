@@ -11,6 +11,8 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import javax.json.JsonArray;
+import javax.json.JsonString;
 import javax.json.JsonValue;
 
 import core.data.machine.AMachineData;
@@ -44,7 +46,7 @@ public class Webproxy extends AStructuredProfile {
 	private Set<String> backends;
 
 	public Webproxy(String label, NetworkModel networkModel) {
-		super("webproxy", networkModel);
+		super(label, networkModel);
 
 		this.webserver = new Nginx(getLabel(), networkModel);
 		this.liveConfig = null;
@@ -130,26 +132,34 @@ public class Webproxy extends AStructuredProfile {
 		return units;
 	}
 
+	private void putBackend(String label) {
+		if (this.backends == null) {
+			this.backends = new LinkedHashSet();
+		}
+
+		this.backends.add(label);
+	}
+
 	@Override
 	protected Set<IUnit> getLiveConfig()
 			throws InvalidMachineModelException, InvalidPropertyArrayException, InvalidMachineException {
 		final Set<IUnit> units = new HashSet<>();
 
 		final AMachineData data = getNetworkModel().getData().getMachine(MachineType.SERVER, getLabel());
-		final Set<String> backends = new LinkedHashSet<>();
 
 		if (data.getData().containsKey("proxyto")) {
-			for (final JsonValue backend : data.getData().getJsonArray("proxyto")) {
-				backends.add(backend.toString());
+			final JsonArray jsonBackends = data.getData().getJsonArray("proxyto");
+			for (final JsonValue backend : jsonBackends) {
+				putBackend(((JsonString) backend).getString());
 			}
 		} else {
 			throw new InvalidMachineException();
 		}
 
-		if (this.liveConfig.equals("")) {
+		if (this.liveConfig == null) {
 			Boolean isDefault = true;
 
-			for (final String backend : backends) {
+			for (final String backend : this.backends) {
 				final AMachineModel backendObj = getNetworkModel().getMachineModel(backend);
 
 				final Set<String> cnames = getNetworkModel().getData().getCNAMEs(backend);

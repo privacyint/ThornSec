@@ -1,8 +1,8 @@
 /*
  * This code is part of the ThornSec project.
- * 
+ *
  * To learn more, please head to its GitHub repo: @privacyint
- * 
+ *
  * Pull requests encouraged.
  */
 package profile.service.email;
@@ -10,78 +10,74 @@ package profile.service.email;
 import java.util.HashSet;
 import java.util.Set;
 
+import core.data.machine.AMachineData.Encapsulation;
+import core.exception.data.InvalidPortException;
+import core.exception.data.machine.InvalidServerException;
+import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
-import core.data.machine.AMachineData.Encapsulation;
-
 import core.profile.AStructuredProfile;
-
 import profile.stack.MariaDB;
 import profile.stack.Nginx;
 import profile.stack.PHP;
 
-import core.exception.data.InvalidPortException;
-import core.exception.data.machine.InvalidServerException;
-import core.exception.runtime.InvalidServerModelException;
-
-
 /**
  * This profile is, in effect, a stub for now.
- * 
+ *
  * It handles firewall stuff, but other than that, you're on your own.
  */
 public class EmailServer extends AStructuredProfile {
-	
-	private Nginx   webserver;
-	private PHP     php;
-	private MariaDB db;
-	
+
+	private final Nginx webserver;
+	private final PHP php;
+	private final MariaDB db;
+
 	public EmailServer(String label, NetworkModel networkModel) {
 		super(label, networkModel);
-		
-		webserver = new Nginx(getLabel(), networkModel);
- 		php       = new PHP(getLabel(), networkModel);
-		db        = new MariaDB(getLabel(), networkModel);
+
+		this.webserver = new Nginx(getLabel(), networkModel);
+		this.php = new PHP(getLabel(), networkModel);
+		this.db = new MariaDB(getLabel(), networkModel);
 	}
 
-	protected Set<IUnit> getInstalled()
-	throws InvalidServerModelException {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
-		units.addAll(webserver.getInstalled());
-		units.addAll(php.getInstalled());
-		units.addAll(db.getInstalled());
-		
-		return units;
-	}
-	
-	protected Set<IUnit> getPersistentConfig()
-	throws InvalidServerException, InvalidServerModelException {
-		Set<IUnit> units =  new HashSet<IUnit>();
-		
-		units.addAll(webserver.getPersistentConfig());
-		units.addAll(php.getPersistentConfig());
-		units.addAll(db.getPersistentConfig());
-		
+	@Override
+	protected Set<IUnit> getInstalled() throws InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
+
+		units.addAll(this.webserver.getInstalled());
+		units.addAll(this.php.getInstalled());
+		units.addAll(this.db.getInstalled());
+
 		return units;
 	}
 
-	protected Set<IUnit> getLiveConfig()
-	throws InvalidServerModelException {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
-		units.addAll(webserver.getLiveConfig());
-		units.addAll(php.getLiveConfig());
-		units.addAll(db.getLiveConfig());
-		
+	@Override
+	protected Set<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
+
+		units.addAll(this.webserver.getPersistentConfig());
+		units.addAll(this.php.getPersistentConfig());
+		units.addAll(this.db.getPersistentConfig());
+
 		return units;
 	}
-	
-	public Set<IUnit> getPersistentFirewall()
-	throws InvalidServerModelException, InvalidPortException {
-		Set<IUnit> units = new HashSet<IUnit>();
 
-		units.addAll(webserver.getPersistentFirewall());
+	@Override
+	protected Set<IUnit> getLiveConfig() throws InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
+
+		units.addAll(this.webserver.getLiveConfig());
+		units.addAll(this.php.getLiveConfig());
+		units.addAll(this.db.getLiveConfig());
+
+		return units;
+	}
+
+	@Override
+	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+		final Set<IUnit> units = new HashSet<>();
+
+		units.addAll(this.webserver.getPersistentFirewall());
 
 		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 25, 465, 993);
 		getNetworkModel().getServerModel(getLabel()).addEgress("spamassassin.apache.org");

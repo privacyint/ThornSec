@@ -22,8 +22,8 @@ public final class OpenKeePassPassphrase extends APassphrase {
 
 	@Override
 	public Boolean init() {
-		this.db = KeePassDatabase.getInstance(this.networkModel.getKeePassDBPath());
-		this.db.openDatabase(this.networkModel.getKeePassDBPassphrase());
+		this.db = KeePassDatabase.getInstance(getNetworkModel().getKeePassDBPath());
+		this.db.openDatabase(getNetworkModel().getKeePassDBPassphrase());
 
 		return true;
 	}

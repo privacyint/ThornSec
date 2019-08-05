@@ -38,7 +38,7 @@ public class ServerData extends AMachineData {
 
 	private Set<HostName> sshSources;
 	private Set<String> profiles;
-	private LinkedHashSet<MachineType> types;
+	private Set<MachineType> types;
 
 	private Set<String> adminUsernames;
 	private final Set<IPAddress> remoteAdminIPAddresses;
@@ -266,6 +266,10 @@ public class ServerData extends AMachineData {
 
 	public final String getKeePassDB() {
 		return this.keePassDB;
+	}
+
+	public final void setTypes(Set<MachineType> types) {
+		this.types = types;
 	}
 
 	/**

@@ -13,7 +13,7 @@ import core.model.network.NetworkModel;
 public abstract class AProfile implements IProfile {
 
 	private final String label;
-	protected NetworkModel networkModel;
+	private final NetworkModel networkModel;
 
 	protected AProfile(String label, NetworkModel networkModel) {
 		this.label = label;

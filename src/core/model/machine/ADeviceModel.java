@@ -9,6 +9,7 @@ package core.model.machine;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import javax.json.stream.JsonParsingException;
@@ -33,7 +34,7 @@ abstract public class ADeviceModel extends AMachineModel {
 			throws AddressException, JsonParsingException, ADataException, IOException {
 		super(label, networkModel);
 
-		this.managed = networkModel.getData().isManaged(getLabel());
+		this.managed = getNetworkModel().getData().isManaged(getLabel());
 	}
 
 	final public Boolean isManaged() throws InvalidMachineException {
@@ -45,8 +46,8 @@ abstract public class ADeviceModel extends AMachineModel {
 	}
 
 	@Override
-	protected Set<IUnit> getUnits() throws AThornSecException {
-		return null;
+	public Set<IUnit> getUnits() throws AThornSecException {
+		return new LinkedHashSet<>();
 	}
 
 	protected abstract Collection<? extends IUnit> getPersistentFirewall();

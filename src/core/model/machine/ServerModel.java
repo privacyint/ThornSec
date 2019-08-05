@@ -23,6 +23,7 @@ import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
 import core.exception.data.ADataException;
 import core.exception.data.machine.InvalidMachineException;
+import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidProfileException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
@@ -66,9 +67,9 @@ public class ServerModel extends AMachineModel {
 		setFirstOctet(10);
 		setSecondOctet(10);
 		// TODO
-		// setThirdOctet(networkModel.getAllExternalOnlyDevices().hashCode());
+		// setThirdOctet(getNetworkModel().getAllExternalOnlyDevices().hashCode());
 
-		final String firewall = networkModel.getData().getFirewallProfile(getLabel());
+		final String firewall = getNetworkModel().getData().getFirewallProfile(getLabel());
 
 		// It's going to be *exceedingly* rare that this is set, but it should be
 		// customisable tbf
@@ -89,7 +90,7 @@ public class ServerModel extends AMachineModel {
 
 		// TODO: Probably a cleaner way of doing the below
 		this.types = new HashSet<>();
-		for (final MachineType type : networkModel.getData().getTypes(getLabel())) {
+		for (final MachineType type : getNetworkModel().getData().getTypes(getLabel())) {
 			switch (type) {
 				case ROUTER:
 					if (this.firewall == null) {
@@ -118,7 +119,7 @@ public class ServerModel extends AMachineModel {
 		}
 
 		this.profiles = new HashSet<>();
-		for (final String profile : networkModel.getData().getProfiles(getLabel())) {
+		for (final String profile : getNetworkModel().getData().getProfiles(getLabel())) {
 			addProfile(profile);
 		}
 
@@ -145,20 +146,20 @@ public class ServerModel extends AMachineModel {
 					.scan("profile");
 
 			if (classes.isEmpty()) {
-				throw new InvalidProfileException();
+				// throw new InvalidProfileException();
 			}
 
 			for (final Class<?> profileClass : classes) {
 				final AProfile theProfile = (AProfile) Class.forName(profileClass.getName())
 						.getDeclaredConstructor(String.class, NetworkModel.class)
-						.newInstance(getLabel(), this.networkModel);
+						.newInstance(getLabel(), getNetworkModel());
 				this.profiles.add(theProfile);
 			}
 		}
 	}
 
 	public Set<IUnit> getPersistentFirewall() throws InvalidMachineException {
-		if (!this.networkModel.getData().getExternalIPs(getLabel()).isEmpty()) {
+		if (!getNetworkModel().getData().getExternalIPs(getLabel()).isEmpty()) {
 			addIngress("*");
 		}
 
@@ -179,7 +180,7 @@ public class ServerModel extends AMachineModel {
 
 		// Should we be autoupdating?
 		String aptCommand = "";
-		if (this.networkModel.getData().getAutoUpdate(getLabel())) {
+		if (getNetworkModel().getData().getAutoUpdate(getLabel())) {
 			aptCommand = "sudo apt-get --assume-yes upgrade;";
 		} else {
 			aptCommand = "echo \"There are $(sudo apt-get upgrade -s | grep -P '^\\d+ upgraded'| cut -d' ' -f1) updates available, of which $(sudo apt-get upgrade -s | grep ^Inst | grep Security | wc -l) are security updates\"";
@@ -194,7 +195,7 @@ public class ServerModel extends AMachineModel {
 				"dpkg-query --status rdnssd 2>&1 | grep \"Status:\";", "Status: install ok installed", "fail",
 				"Couldn't uninstall rdnssd.  This is a package which attempts to be \"clever\" in DNS configuration and just breaks everything instead."));
 
-		final SSH ssh = new SSH(getLabel(), this.networkModel);
+		final SSH ssh = new SSH(getLabel(), getNetworkModel());
 		units.addAll(ssh.getUnits());
 
 		// Useful packages
@@ -257,8 +258,8 @@ public class ServerModel extends AMachineModel {
 		// https://security.stackexchange.com/a/151581
 		String excludeKnownSSHKeys = "";
 
-		for (final String admin : this.networkModel.getData().getAdmins(getLabel())) {
-			excludeKnownSSHKeys += " | grep -v \"" + this.networkModel.getData().getSSHKey(admin) + "\"";
+		for (final String admin : getNetworkModel().getData().getAdmins(getLabel())) {
+			excludeKnownSSHKeys += " | grep -v \"" + getNetworkModel().getData().getSSHKey(admin) + "\"";
 		}
 
 		units.add(new SimpleUnit("no_additional_ssh_keys", "proceed", "",
@@ -292,18 +293,20 @@ public class ServerModel extends AMachineModel {
 		// emailOnPAM += "#!/bin/bash\n";
 		// emailOnPAM += "\n";
 		// emailOnPAM += "host=\\$(hostname)\n";
-		// emailOnPAM += "domain=\\\"" + networkModel.getData().getDomain(getLabel()) +
+		// emailOnPAM += "domain=\\\"" +
+		// getNetworkModel().getData().getDomain(getLabel()) +
 		// "\\\"\n";
 		// emailOnPAM += "sender=\\\"" +
-		// networkModel.getMachineModel(getLabel()).getEmailAddress() + "\\\"\n";
+		// getNetworkModel().getMachineModel(getLabel()).getEmailAddress() + "\\\"\n";
 		// emailOnPAM += "recipients=( ";
 
-		// for (String admin : networkModel.getData().getAdmins()) {
+		// for (String admin : getNetworkModel().getData().getAdmins()) {
 		// emailOnPAM += "\\\"" + admin + "@\\$domain\\\" ";
 		// }
 
-		// for (String admin : networkModel.getData().getAdmins(getLabel())) {
-		// emailOnPAM += "\\\"" + networkModel.getDeviceModel(admin).getEmailAddress() +
+		// for (String admin : getNetworkModel().getData().getAdmins(getLabel())) {
+		// emailOnPAM += "\\\"" +
+		// getNetworkModel().getDeviceModel(admin).getEmailAddress() +
 		// "\\\" ";
 		// }
 
@@ -358,6 +361,22 @@ public class ServerModel extends AMachineModel {
 //		units.add(this.getConfigsModel().addConfigFile("pam_sshd_script_created", "email_on_pam_script_created", sshdPAM, "/etc/pam.d/sshd"));
 
 		return units;
+	}
+
+	public Set<AStructuredProfile> getTypes() {
+		return this.types;
+	}
+
+	public Boolean isType(MachineType type) throws InvalidServerException {
+		return getNetworkModel().getData().getTypes(getLabel()).contains(type);
+	}
+
+	public Boolean isRouter() throws InvalidServerException {
+		return isType(MachineType.ROUTER);
+	}
+
+	public Boolean isHyperVisor() throws InvalidServerException {
+		return isType(MachineType.HYPERVISOR);
 	}
 
 	public AFirewallProfile getFirewall() {

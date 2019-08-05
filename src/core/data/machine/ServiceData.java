@@ -18,6 +18,7 @@ import javax.json.stream.JsonParsingException;
 
 import core.data.machine.configuration.DiskData;
 import core.exception.data.ADataException;
+import profile.type.HyperVisor;
 
 /**
  * This Class represents the data of a Service For our purposes, this is

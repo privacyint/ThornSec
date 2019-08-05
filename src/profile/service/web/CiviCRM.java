@@ -32,7 +32,7 @@ public class CiviCRM extends AStructuredProfile {
 	private final MariaDB db;
 
 	public CiviCRM(String label, NetworkModel networkModel) {
-		super("civicrm", networkModel);
+		super(label, networkModel);
 
 		this.drupal = new Drupal7(getLabel(), networkModel);
 		this.db = new MariaDB(getLabel(), networkModel);

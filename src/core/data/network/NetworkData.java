@@ -126,58 +126,74 @@ public class NetworkData extends AData {
 	}
 
 	@Override
-	public void read(JsonObject data) throws ADataException, JsonParsingException, IOException, URISyntaxException {
-		super.setData(data);
+	public void read(JsonObject networkJSONData)
+			throws ADataException, JsonParsingException, IOException, URISyntaxException {
+		super.setData(networkJSONData);
 
-		final String include = data.getString("include", null);
+		final String include = networkJSONData.getString("include", null);
 
 		if (include != null) {
 			readInclude(include);
 		} else {
-			this.defaultServiceData.read(data);
+			this.defaultServiceData.read(networkJSONData);
 
-			if (data.containsKey("upstreamdns")) {
+			if (networkJSONData.containsKey("upstreamdns")) {
 				this.upstreamDNS = getHostNameArray("upstreamdns");
 			}
 
-			if (data.containsKey("configip")) {
-				this.configIP = new IPAddressString(data.getString("configip").replaceAll("[^\\.0-9]", ""))
+			if (networkJSONData.containsKey("configip")) {
+				this.configIP = new IPAddressString(networkJSONData.getString("configip").replaceAll("[^\\.0-9]", ""))
 						.getAddress();
 			}
 
-			if (data.containsKey("myuser")) {
-				this.myUser = data.getJsonString("myuser").getString();
+			if (networkJSONData.containsKey("myuser")) {
+				this.myUser = networkJSONData.getJsonString("myuser").getString();
 			}
-			if (data.containsKey("domain")) {
-				this.domain = data.getJsonString("domain").getString();
+			if (networkJSONData.containsKey("domain")) {
+				this.domain = networkJSONData.getJsonString("domain").getString();
 			} else {
 				this.domain = DEFAULT_DOMAIN;
 			}
 
-			this.adBlocking = data.getBoolean("adblocking", DEFAULT_ADBLOCKING);
-			this.autoGenPassphrases = data.getBoolean("autogenpasswds", DEFAULT_AUTOGENPASSWDS);
-			this.vpnOnly = data.getBoolean("vpnonly", DEFAULT_VPNONLY);
-			this.autoGuest = data.getBoolean("autoguest", DEFAULT_AUTOGUEST);
+			this.adBlocking = networkJSONData.getBoolean("adblocking", DEFAULT_ADBLOCKING);
+			this.autoGenPassphrases = networkJSONData.getBoolean("autogenpasswds", DEFAULT_AUTOGENPASSWDS);
+			this.vpnOnly = networkJSONData.getBoolean("vpnonly", DEFAULT_VPNONLY);
+			this.autoGuest = networkJSONData.getBoolean("autoguest", DEFAULT_AUTOGUEST);
 
-			if (data.containsKey("servers")) {
-				final JsonObject jsonServers = data.getJsonObject("servers");
+			if (networkJSONData.containsKey("servers")) {
+				final JsonObject jsonServerData = networkJSONData.getJsonObject("servers");
 
-				for (final String jsonServer : jsonServers.keySet()) {
-					final ServerData server = new ServerData(jsonServer);
-					server.read(jsonServers.getJsonObject(jsonServer));
+				for (final String label : jsonServerData.keySet()) {
+					// We have to read it in first to find out what it is - we can then replace it
+					// with a specialised version
+					ServerData serverData = new ServerData(label);
+					serverData.read(jsonServerData.getJsonObject(label));
 
-					putMachine(MachineType.SERVER, server);
-
-					if (server.getTypes() != null) {
-						for (final MachineType type : server.getTypes()) {
-							putMachine(type, server);
-						}
+					// Some servers don't have types set, as they inherit them. Let's make sure they
+					// inherit them.
+					Set<MachineType> serverTypes = serverData.getTypes();
+					if (serverTypes == null) {
+						serverTypes = this.defaultServiceData.getTypes();
 					}
+
+					if (serverTypes.contains(MachineType.HYPERVISOR)) {
+						serverData = new HypervisorData(label);
+						serverData.read(jsonServerData.getJsonObject(label));
+					}
+					if (serverTypes.contains(MachineType.SERVICE)) {
+						serverData = new ServiceData(label);
+						serverData.read(jsonServerData.getJsonObject(label));
+					}
+					for (final MachineType type : serverTypes) {
+						putMachine(type, serverData);
+					}
+
+					putMachine(MachineType.SERVER, serverData);
 				}
 			}
 
-			if (data.containsKey("internaldevices")) {
-				final JsonObject jsonDevices = data.getJsonObject("internaldevices");
+			if (networkJSONData.containsKey("internaldevices")) {
+				final JsonObject jsonDevices = networkJSONData.getJsonObject("internaldevices");
 
 				for (final String jsonDevice : jsonDevices.keySet()) {
 					final InternalDeviceData device = new InternalDeviceData(jsonDevice);
@@ -188,8 +204,8 @@ public class NetworkData extends AData {
 				}
 			}
 
-			if (data.containsKey("externaldevices")) {
-				final JsonObject jsonDevices = data.getJsonObject("externaldevices");
+			if (networkJSONData.containsKey("externaldevices")) {
+				final JsonObject jsonDevices = networkJSONData.getJsonObject("externaldevices");
 
 				for (final String jsonDevice : jsonDevices.keySet()) {
 					final ExternalDeviceData device = new ExternalDeviceData(jsonDevice);
@@ -200,8 +216,8 @@ public class NetworkData extends AData {
 				}
 			}
 
-			if (data.containsKey("users")) {
-				final JsonObject jsonDevices = data.getJsonObject("users");
+			if (networkJSONData.containsKey("users")) {
+				final JsonObject jsonDevices = networkJSONData.getJsonObject("users");
 
 				for (final String jsonDevice : jsonDevices.keySet()) {
 					final UserDeviceData device = new UserDeviceData(jsonDevice);
@@ -484,7 +500,7 @@ public class NetworkData extends AData {
 	}
 
 	public Integer getRam(String service) throws InvalidServerException {
-		Integer ram = ((ServiceData) getMachine(MachineType.SERVICE, service)).getRAM();
+		Integer ram = ((ServerData) getMachine(MachineType.SERVICE, service)).getRAM();
 
 		if (ram == null) {
 			ram = this.defaultServiceData.getRAM();
@@ -496,8 +512,8 @@ public class NetworkData extends AData {
 		return ram;
 	}
 
-	public Integer getCpus(String service) throws InvalidServerException {
-		Integer cpus = ((ServiceData) getMachine(MachineType.SERVICE, service)).getCPUs();
+	public Integer getCpus(String server) throws InvalidServerException {
+		Integer cpus = ((ServerData) getMachine(MachineType.SERVER, server)).getCPUs();
 
 		if (cpus == null) {
 			cpus = this.defaultServiceData.getCPUs();
@@ -562,7 +578,8 @@ public class NetworkData extends AData {
 	}
 
 	public File getHypervisorThornsecBase(String hypervisor) throws InvalidServerException {
-		File baseDir = ((HypervisorData) getMachine(MachineType.HYPERVISOR, hypervisor)).getVmBase();
+		final ServerData data = (ServerData) getMachine(MachineType.HYPERVISOR, hypervisor);
+		File baseDir = ((HypervisorData) data).getVmBase();
 
 		if (baseDir == null) {
 			baseDir = this.defaultHypervisorData.getVmBase();

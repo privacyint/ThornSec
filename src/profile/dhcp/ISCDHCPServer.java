@@ -9,6 +9,7 @@ package profile.dhcp;
 
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,8 +45,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	public ISCDHCPServer(String label, NetworkModel networkModel) {
 		super(label, networkModel);
 
-		this.classes = null;
-		this.stanzas = null;
+		this.classes = new LinkedHashSet<>();
+		this.stanzas = new LinkedHashSet<>();
 
 		this.groups = new Hashtable<>();
 		try {
@@ -130,7 +131,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		units.add(dhcpdListen);
 
 		dhcpdListen.appendLine("INTERFACES=\\\"servers users admins internalOnlys externalOnlys\\\"");
-		this.networkModel.getServerModel(getLabel()).addProcessString(
+		getNetworkModel().getServerModel(getLabel()).addProcessString(
 				"/usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf servers users admins internalOnlys externalOnlys$");
 
 		return units;
@@ -201,7 +202,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	@Override
 	public Set<IUnit> getPersistentFirewall() throws AThornSecException {
 		// DNS needs to talk on :67 UDP
-		this.networkModel.getServerModel(getLabel()).addListen(Encapsulation.UDP, 67);
+		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.UDP, 67);
 
 		return new HashSet<>();
 	}

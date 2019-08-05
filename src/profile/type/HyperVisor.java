@@ -11,9 +11,9 @@ import java.net.URI;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
@@ -41,20 +41,16 @@ public class HyperVisor extends AStructuredProfile {
 
 	// TODO: roll scripts back in
 	private final Virtualisation hypervisor;
-	private Map<String, ServiceModel> services;
+	private final Map<String, ServiceModel> services;
 
 	public HyperVisor(String label, NetworkModel networkModel) throws InvalidServerModelException {
 		super(label, networkModel);
 
 		this.hypervisor = new Virtualisation(label, networkModel);
-		this.services = null;
+		this.services = new LinkedHashMap<>();
 	}
 
 	public void addService(String label, ServiceModel service) {
-		if (this.services == null) {
-			this.services = new LinkedHashMap<>();
-		}
-
 		this.services.put(label, service);
 	}
 
@@ -111,7 +107,8 @@ public class HyperVisor extends AStructuredProfile {
 	protected Set<IUnit> getLiveConfig() throws ARuntimeException, ADataException {
 		final Set<IUnit> units = new HashSet<>();
 
-		final Vector<String> urls = new Vector<>();
+		final Set<String> urls = new LinkedHashSet<>();
+
 		for (final String service : getServices().keySet()) {
 			final String newURL = getNetworkModel().getData().getDebianIsoUrl(service);
 			if (urls.contains(newURL)) {

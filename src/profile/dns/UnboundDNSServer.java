@@ -27,6 +27,11 @@ import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 import inet.ipaddr.HostName;
 
+/**
+ * Creates and configures an internal, recursive DNS server for your network.
+ *
+ * Please see https://nlnetlabs.nl/projects/unbound/about/ for more details.
+ */
 public class UnboundDNSServer extends ADNSServerProfile {
 
 	private static String UNBOUND_CONFIG_FILE_PATH = "/etc/unbound/unbound.conf";
@@ -37,7 +42,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	public UnboundDNSServer(String label, NetworkModel networkModel) {
 		super(label, networkModel);
 
-		this.zones = null;
+		this.zones = new Hashtable<>();
 	}
 
 	@Override
@@ -64,6 +69,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		// Upstream DNS isn't allowed to point somewhere internal
 		// Also stops DNS Rebinding attacks.
 		unboundConf.appendLine("    private-address: 10.0.0.0/8");
+		unboundConf.appendLine("    private-address: 176.16.0.0/12");
+		unboundConf.appendLine("    private-address: 192.168.0.0/16");
 		// Don't listen to anything else.
 		unboundConf.appendLine("    access-control: 0.0.0.0/0 refuse");
 		// Listen on :53

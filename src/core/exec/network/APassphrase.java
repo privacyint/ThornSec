@@ -32,6 +32,10 @@ public abstract class APassphrase {
 
 	protected abstract String generatePassphrase();
 
+	public final NetworkModel getNetworkModel() {
+		return this.networkModel;
+	}
+
 	public final String getLabel() {
 		return this.label;
 	}

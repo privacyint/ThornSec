@@ -24,13 +24,17 @@ import core.data.machine.configuration.NetworkInterfaceData;
 import core.exception.AThornSecException;
 import core.exception.data.ADataException;
 import core.exception.data.InvalidPortException;
-import core.exception.data.machine.InvalidMachineException;
 import core.iface.IUnit;
 import core.model.AModel;
 import core.model.machine.configuration.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import inet.ipaddr.HostName;
 
+/**
+ * This class represents a Machine on our network.
+ *
+ * This is where we stash our various networking rules
+ */
 public abstract class AMachineModel extends AModel {
 	private Set<NetworkInterfaceModel> networkInterfaces;
 
@@ -55,17 +59,18 @@ public abstract class AMachineModel extends AModel {
 
 	private final Hashtable<String, Set<Integer>> dnat;
 
-	AMachineModel(String label, NetworkModel networkModel) throws AddressException, JsonParsingException, ADataException, IOException {
+	AMachineModel(String label, NetworkModel networkModel)
+			throws AddressException, JsonParsingException, ADataException, IOException {
 		super(label, networkModel);
 
-		this.emailAddress = networkModel.getData().getEmailAddress(getLabel());
+		this.emailAddress = getNetworkModel().getData().getEmailAddress(getLabel());
 
-		this.domain = networkModel.getData().getDomain(getLabel());
-		this.cnames = networkModel.getData().getCNAMEs(getLabel());
+		this.domain = getNetworkModel().getData().getDomain(getLabel());
+		this.cnames = getNetworkModel().getData().getCNAMEs(getLabel());
 
 		this.networkInterfaces = null;
-		if (networkModel.getData().getNetworkInterfaces(getLabel()) != null) {
-			for (final NetworkInterfaceData ifaceData : networkModel.getData().getNetworkInterfaces(getLabel())) {
+		if (getNetworkModel().getData().getNetworkInterfaces(getLabel()) != null) {
+			for (final NetworkInterfaceData ifaceData : getNetworkModel().getData().getNetworkInterfaces(getLabel())) {
 				final NetworkInterfaceModel iface = ifaceDataToModel(ifaceData);
 				addNetworkInterface(iface);
 			}
@@ -75,17 +80,17 @@ public abstract class AMachineModel extends AModel {
 		this.secondOctet = null;
 		this.thirdOctet = null;
 
-		this.throttled = networkModel.getData().isThrottled(getLabel());
+		this.throttled = getNetworkModel().getData().isThrottled(getLabel());
 
-		this.listens = networkModel.getData().getListens(getLabel());
-		this.ingresses = networkModel.getData().getIngresses(getLabel());
-		this.egresses = networkModel.getData().getEgresses(getLabel());
-		this.forwards = networkModel.getData().getForwards(getLabel());
+		this.listens = getNetworkModel().getData().getListens(getLabel());
+		this.ingresses = getNetworkModel().getData().getIngresses(getLabel());
+		this.egresses = getNetworkModel().getData().getEgresses(getLabel());
+		this.forwards = getNetworkModel().getData().getForwards(getLabel());
 		this.dnat = null;
 	}
 
 	final private NetworkInterfaceModel ifaceDataToModel(NetworkInterfaceData ifaceData) {
-		final NetworkInterfaceModel ifaceModel = new NetworkInterfaceModel(getLabel(), this.networkModel);
+		final NetworkInterfaceModel ifaceModel = new NetworkInterfaceModel(getLabel(), getNetworkModel());
 
 		ifaceModel.setAddress(ifaceData.getAddress());
 		ifaceModel.setBridgePorts(ifaceData.getBridgePorts());
@@ -267,7 +272,7 @@ public abstract class AMachineModel extends AModel {
 		this.throttled = throttled;
 	}
 
-	protected abstract Set<IUnit> getUnits() throws AThornSecException;
+	public abstract Set<IUnit> getUnits() throws AThornSecException;
 
 	public String getIP() {
 		// TODO Auto-generated method stub

@@ -1,8 +1,16 @@
+/*
+ * This code is part of the ThornSec project.
+ *
+ * To learn more, please head to its GitHub repo: @privacyint
+ *
+ * Pull requests encouraged.
+ */
 package profile.machine.configuration;
 
 import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import core.exception.runtime.InvalidServerModelException;
@@ -51,7 +59,7 @@ public class AptSources extends AStructuredProfile {
 		getNetworkModel().getServerModel(getLabel()).addEgress(this.debianRepo);
 		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName("security.debian.org"));
 
-		return null;
+		return new LinkedHashSet<>();
 	}
 
 	@Override
