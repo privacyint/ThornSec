@@ -33,8 +33,36 @@ import profile.firewall.AFirewallProfile;
  */
 public class CSFFirewall extends AFirewallProfile {
 
+	private static String csfHashDigest;
+
 	public CSFFirewall(String label, NetworkModel networkModel) {
 		super(label, networkModel);
+
+		if (getCSFHashDigest() == null) {
+			try {
+				final URL checksums = new URL("https://www.configserver.com/checksums.txt");
+				final BufferedReader line = new BufferedReader(new InputStreamReader(checksums.openStream()));
+				String inputLine;
+				while ((inputLine = line.readLine()) != null) {
+					final String[] netInst = inputLine.split(" ");
+					if (netInst[2].equals("csf.tgz")) {
+						setCSFHashDigest(netInst[1]);
+						break;
+					}
+				}
+				line.close();
+			} catch (final Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	protected String getCSFHashDigest() {
+		return CSFFirewall.csfHashDigest;
+	}
+
+	protected void setCSFHashDigest(String digest) {
+		CSFFirewall.csfHashDigest = digest;
 	}
 
 	@Override
@@ -42,25 +70,8 @@ public class CSFFirewall extends AFirewallProfile {
 		final Set<IUnit> units = new LinkedHashSet<>();
 
 		units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
-
 		units.add(new FileDownloadUnit("csf", "proceed", "https://download.configserver.com/csf.tgz", "/root/csf.tgz"));
-
-		String digest = null;
-
-		try {
-			final URL checksums = new URL("https://www.configserver.com/checksums.txt");
-			final BufferedReader line = new BufferedReader(new InputStreamReader(checksums.openStream()));
-			String inputLine;
-			if ((inputLine = line.readLine()) != null) {
-				final String[] netInst = inputLine.split(" ");
-				digest = netInst[9];
-			}
-			line.close();
-		} catch (final Exception e) {
-			e.printStackTrace();
-		}
-
-		units.add(new FileChecksumUnit("csf", "csf_downloaded", Checksum.SHA256, digest, "/root/csf.tgz"));
+		units.add(new FileChecksumUnit("csf", "csf_downloaded", Checksum.SHA256, getCSFHashDigest(), "/root/csf.tgz"));
 
 		// TODO: build ExtractUnit
 		units.add(new SimpleUnit("csf_extracted", "csf_checksum", "sudo tar xzf /root/csf.tar.gz",
