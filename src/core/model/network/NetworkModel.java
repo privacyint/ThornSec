@@ -7,6 +7,7 @@
  */
 package core.model.network;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -329,9 +331,9 @@ public class NetworkModel {
 
 		if (action.equals("dryrun")) {
 			try {
-				final Date now = new Date();
-				final PrintWriter wr = new PrintWriter(
-						new FileOutputStream("./" + server + "_" + now.toString() + ".sh"));
+				final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
+				final String filename = server + "_" + dateFormat.format(new Date()) + ".sh";
+				final PrintWriter wr = new PrintWriter(new FileOutputStream(new File("./", filename), false));
 				wr.write(audit);
 				wr.flush();
 				wr.close();
