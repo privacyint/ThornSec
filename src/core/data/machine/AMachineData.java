@@ -119,12 +119,16 @@ public abstract class AMachineData extends AData {
 
 		// Network Interfaces
 		if (data.containsKey("network_interfaces")) {
-			final JsonArray wanIfaces = data.getJsonArray("wan");
-			for (int i = 0; i < wanIfaces.size(); ++i) {
-				final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
+			final JsonObject networkInterfaces = data.getJsonObject("network_interfaces");
 
-				iface.read(wanIfaces.getJsonObject(i));
-				putNetworkInterface(iface);
+			if (networkInterfaces.containsKey("wan")) {
+				final JsonArray wanIfaces = networkInterfaces.getJsonArray("wan");
+				for (int i = 0; i < wanIfaces.size(); ++i) {
+					final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
+
+					iface.read(wanIfaces.getJsonObject(i));
+					putNetworkInterface(iface);
+				}
 			}
 		}
 
