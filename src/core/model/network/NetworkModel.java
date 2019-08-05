@@ -47,12 +47,12 @@ import core.model.machine.configuration.NetworkInterfaceModel;
 public class NetworkModel {
 	private final String label;
 	private NetworkData data;
-	private Map<MachineType, Map<String, AMachineModel>> network;
+	private Map<MachineType, Map<String, AMachineModel>> machines;
 
 	NetworkModel(String label) {
 		this.label = label;
 
-		this.network = null;
+		this.machines = null;
 	}
 
 	final public String getLabel() {
@@ -123,18 +123,18 @@ public class NetworkModel {
 	}
 
 	private void addMachineToNetwork(MachineType type, String label, AMachineModel machine) {
-		if (this.network == null) {
-			this.network = new LinkedHashMap<>();
+		if (this.machines == null) {
+			this.machines = new LinkedHashMap<>();
 		}
 
-		Map<String, AMachineModel> machines = this.network.get(type);
+		Map<String, AMachineModel> machines = this.machines.get(type);
 		if (machines == null) {
 			machines = new LinkedHashMap<>();
 		}
 
 		machines.put(label, machine);
 
-		this.network.put(type, machines);
+		this.machines.put(type, machines);
 	}
 
 	public Set<NetworkInterfaceModel> getNetworkInterfaces(String machine) throws InvalidMachineModelException {
@@ -152,8 +152,8 @@ public class NetworkModel {
 	 *         from this method; you are far better to use one of the specialised
 	 *         methods
 	 */
-	public final Map<MachineType, Map<String, AMachineModel>> getNetwork() {
-		return this.network;
+	public final Map<MachineType, Map<String, AMachineModel>> getMachines() {
+		return this.machines;
 	}
 
 	/**
@@ -161,7 +161,7 @@ public class NetworkModel {
 	 * @return A map of all machines of a given type
 	 */
 	public Map<String, AMachineModel> getMachines(MachineType type) {
-		return getNetwork().get(type);
+		return getMachines().get(type);
 	}
 
 	/**
@@ -171,7 +171,7 @@ public class NetworkModel {
 	public Map<String, ServerModel> getServers(MachineType type) {
 		final Map<String, ServerModel> servers = new LinkedHashMap<>();
 
-		if (getNetwork().get(type) != null) {
+		if (getMachines().get(type) != null) {
 			for (final AMachineModel server : getMachines(type).values()) {
 				servers.put(server.getLabel(), (ServerModel) server);
 			}
@@ -190,14 +190,14 @@ public class NetworkModel {
 	}
 
 	/**
-	 * @return A linked map containing all device models for this network. Because
-	 *         it is a linked map, it has predictable iteration meaning we can use
-	 *         it to e.g. generate IP Addresses
+	 * @return A linked map containing all device models *of a particular type* for
+	 *         this network. Because it is a linked map, it has predictable
+	 *         iteration meaning we can use it to e.g. generate IP Addresses
 	 */
 	public final Map<String, ADeviceModel> getDevices(MachineType type) {
 		final Map<String, ADeviceModel> devices = new LinkedHashMap<>();
 
-		if (getNetwork().get(type) != null) {
+		if (getMachines().get(type) != null) {
 			for (final AMachineModel device : getMachines(type).values()) {
 				devices.put(device.getLabel(), (ADeviceModel) device);
 			}
@@ -264,9 +264,7 @@ public class NetworkModel {
 	 * @return A specific machine model.
 	 */
 	public final AMachineModel getMachineModel(String machine) throws InvalidMachineModelException {
-		final Map<MachineType, Map<String, AMachineModel>> network = getNetwork();
-
-		for (final Map<String, AMachineModel> machines : network.values()) {
+		for (final Map<String, AMachineModel> machines : getMachines().values()) {
 			if (machines.containsKey(machine)) {
 				return machines.get(machine);
 			}
