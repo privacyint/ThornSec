@@ -35,6 +35,7 @@ import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.exec.ManageExec;
 import core.exec.network.OpenKeePassPassphrase;
+import core.iface.IUnit;
 import core.model.machine.ADeviceModel;
 import core.model.machine.AMachineModel;
 import core.model.machine.ExternalOnlyDeviceModel;
@@ -52,11 +53,13 @@ public class NetworkModel {
 	private final String label;
 	private NetworkData data;
 	private Map<MachineType, Map<String, AMachineModel>> machines;
+	private Map<String, Set<IUnit>> networkUnits;
 
 	NetworkModel(String label) {
 		this.label = label;
 
 		this.machines = null;
+		this.networkUnits = null;
 	}
 
 	final public String getLabel() {
@@ -122,6 +125,39 @@ public class NetworkModel {
 				}
 			}
 		}
+
+		// Now, step through our devices, initialise them, and run through their units.
+		for (final ADeviceModel device : getDevices().values()) {
+			device.init();
+			putUnits(device.getLabel(), device.getUnits());
+		}
+
+		// We want to initialise the whole network first before we start getting units
+		for (final ServerModel server : getServers().values()) {
+			server.init();
+		}
+
+		// We want to separate the Routers out; they need to be the very last thing, as
+		// it relies on everythign else being inited & configured
+		for (final ServerModel server : getServers().values()) {
+			if (!server.isRouter()) {
+				putUnits(server.getLabel(), server.getUnits());
+			}
+		}
+
+		// Finally, let's build our Routers
+		for (final AMachineModel router : getMachines(MachineType.ROUTER).values()) {
+			putUnits(router.getLabel(), router.getUnits());
+		}
+
+	}
+
+	private void putUnits(String label, Set<IUnit> units) {
+		if (this.networkUnits == null) {
+			this.networkUnits = new LinkedHashMap<>();
+		}
+
+		this.networkUnits.put(label, units);
 	}
 
 	private void addMachineToNetwork(MachineType type, String label, AMachineModel machine) {
