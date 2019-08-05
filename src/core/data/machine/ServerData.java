@@ -1,42 +1,47 @@
 /*
  * This code is part of the ThornSec project.
- * 
+ *
  * To learn more, please head to its GitHub repo: @privacyint
- * 
+ *
  * Pull requests encouraged.
  */
 package core.data.machine;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
+import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
 
-import inet.ipaddr.IPAddress;
-import inet.ipaddr.IPAddressString;
-
 import core.exception.data.ADataException;
+import core.exception.data.InvalidPortException;
+import inet.ipaddr.HostName;
+import inet.ipaddr.IPAddress;
 
 /**
- * This class represents a "Server" on our network - that is,
- * a computer which is providing a function on your network.
- * 
- *  I'd not be expecting you to instantiate this directly,
- *  (although you may, of course!) rather one of its descendants.
+ * This class represents a "Server" on our network - that is, a computer which
+ * is providing a function on your network.
+ *
+ * I'd not be expecting you to instantiate this directly, (although you may, of
+ * course!) rather one of its descendants.
  */
 public class ServerData extends AMachineData {
 
-	public enum SSHConnection { DIRECT, TUNNELLED; }
-	public enum WANConnection { PPP, DHCP, STATIC; }
-	
-	private Set<String> types;
-	private Set<String> profiles;
+	public enum SSHConnection {
+		DIRECT, TUNNELLED
+	}
 
-	private Set<String>    adminUsernames;
-	private Set<IPAddress> remoteAdminIPAddresses;
+	private Set<HostName> sshSources;
+	private Set<String> profiles;
+	private Set<MachineType> types;
+
+	private Set<String> adminUsernames;
+	private final Set<IPAddress> remoteAdminIPAddresses;
 
 	private Integer adminSSHConnectPort;
 	private Integer sshListenPort;
@@ -44,93 +49,187 @@ public class ServerData extends AMachineData {
 	private Boolean update;
 
 	private SSHConnection sshConnection;
-	private WANConnection wanConnection;
 
+	private HostName debianMirror;
 	private String debianDirectory;
-	private URI    debianMirror;
 
 	private String keePassDB;
-	
+
+	private final Integer ram;
+	private final Integer cpus;
+
 	public ServerData(String label) {
 		super(label);
-		
-		this.adminUsernames         = null;
+
+		this.sshSources = null;
+		this.profiles = null;
+		this.types = null;
+
+		this.adminUsernames = null;
 		this.remoteAdminIPAddresses = null;
-		this.types                  = null;
-		this.profiles               = null;
-		
+
 		this.adminSSHConnectPort = null;
-		this.sshListenPort       = null;
-				
+		this.sshListenPort = null;
+
 		this.update = null;
-		
+
 		this.sshConnection = null;
-		this.wanConnection    = null;
-		
+
 		this.debianDirectory = null;
-		this.debianMirror    = null;
-		
+		this.debianMirror = null;
+
 		this.keePassDB = null;
+
+		this.ram = null;
+		this.cpus = null;
 	}
 
-	public void read(JsonObject data)
-	throws ADataException, JsonParsingException, IOException, URISyntaxException {
+	@Override
+	public void read(JsonObject data) throws ADataException, JsonParsingException, IOException, URISyntaxException {
 		super.read(data);
-		
-		this.adminUsernames = getPropertyArray("admins");
-		Set<String> sources = getPropertyArray("sshsource");
-		if (sources != null) { //There must be a way to make this better
-			for (String source : sources) {
-				this.remoteAdminIPAddresses.add(new IPAddressString(source).getAddress());
+
+		if (data.containsKey("admins")) {
+			final JsonArray admins = data.getJsonArray("admins");
+			for (final JsonValue admin : admins) {
+				putAdmin(((JsonString) admin).getString());
 			}
 		}
-		this.types           = getPropertyArray("types");
-		this.profiles        = getPropertyArray("profiles");
+		if (data.containsKey("sshsources")) {
+			final JsonArray sources = data.getJsonArray("sshsources");
+			for (final JsonValue source : sources) {
+				putSSHSource(new HostName(((JsonString) source).getString()));
+			}
+		}
+		if (data.containsKey("types")) {
+			final JsonArray types = data.getJsonArray("types");
+			for (final JsonValue type : types) {
+				putType(((JsonString) type).getString());
+			}
+		}
+		if (data.containsKey("profiles")) {
+			final JsonArray profiles = data.getJsonArray("profiles");
+			for (final JsonValue profile : profiles) {
+				putProfile(((JsonString) profile).getString());
+			}
+		}
+		if (data.containsKey("adminport")) {
+			setAdminPort(data.getInt("adminport"));
+		}
+		if (data.containsKey("sshport")) {
+			setSSHListenPort(data.getInt("sshport"));
+		}
+		if (data.containsKey("update")) {
+			this.update = data.getBoolean("update");
+		}
+		if (data.containsKey("sshconnection")) {
+			this.sshConnection = SSHConnection.valueOf(data.getString("sshconnection").toUpperCase());
+		}
+		if (data.containsKey("debianmirror")) {
+			setDebianMirror(new HostName(data.getString("debianmirror")));
+		}
+		if (data.containsKey("debiandirectory")) {
+			setDebianDirectory(data.getString("debiandirectory"));
+		}
+		if (data.containsKey("keepassdb")) {
+			setKeePassDB(data.getString("keepassdb"));
+		}
+	}
 
-		this.adminSSHConnectPort = getIntegerProperty("adminport");
-		this.sshListenPort       = getIntegerProperty("sshport");
+	private void setKeePassDB(String keePassDB) {
+		this.keePassDB = keePassDB;
+	}
 
-		this.update = Boolean.valueOf(super.getStringProperty("update", null));
+	private void setDebianDirectory(String dir) {
+		this.debianDirectory = dir;
+	}
 
-		this.sshConnection   = SSHConnection.valueOf(getStringProperty("connection"));
-		this.wanConnection   = WANConnection.valueOf(getStringProperty("extconnection"));
+	private void setDebianMirror(HostName mirror) {
+		this.debianMirror = mirror;
+	}
 
-		this.debianMirror    = new URI(getStringProperty("debianmirror"));
-		this.debianDirectory = getStringProperty("debiandirectory");
+	private void setSSHListenPort(Integer port) throws InvalidPortException {
+		if ((port < 0) || (port > 65535)) {
+			throw new InvalidPortException();
+		}
 
-		this.keePassDB = getStringProperty("keepassdb");
+		this.sshListenPort = port;
+	}
+
+	private void setAdminPort(Integer port) throws InvalidPortException {
+		if ((port < 0) || (port > 65535)) {
+			throw new InvalidPortException();
+		}
+
+		this.adminSSHConnectPort = port;
+	}
+
+	private void putProfile(String... profiles) {
+		if (this.profiles == null) {
+			this.profiles = new LinkedHashSet<>();
+		}
+
+		for (final String profile : profiles) {
+			this.profiles.add(profile);
+		}
+	}
+
+	private void putType(String... types) {
+		if (this.types == null) {
+			this.types = new LinkedHashSet<>();
+		}
+
+		for (String type : types) {
+			type = type.replaceAll("[^a-zA-Z]", "").toUpperCase();
+			this.types.add(MachineType.valueOf(type));
+		}
+	}
+
+	private void putSSHSource(HostName... sources) {
+		if (this.sshSources == null) {
+			this.sshSources = new LinkedHashSet<>();
+		}
+
+		for (final HostName source : sources) {
+			this.sshSources.add(source);
+		}
+	}
+
+	private void putAdmin(String... admins) {
+		if (this.adminUsernames == null) {
+			this.adminUsernames = new LinkedHashSet<>();
+		}
+
+		for (final String admin : admins) {
+			this.adminUsernames.add(admin);
+		}
 	}
 
 	public final Set<String> getAdminUsernames() {
-		return adminUsernames;
+		return this.adminUsernames;
 	}
 
 	public final Set<IPAddress> getRemoteAdminIPAddresses() {
-		return remoteAdminIPAddresses;
+		return this.remoteAdminIPAddresses;
 	}
 
 	public final Integer getAdminSSHConnectPort() {
-		return adminSSHConnectPort;
+		return this.adminSSHConnectPort;
 	}
 
 	public final Integer getSshListenPort() {
-		return sshListenPort;
+		return this.sshListenPort;
 	}
 
 	public final SSHConnection getSshConnection() {
-		return sshConnection;
+		return this.sshConnection;
 	}
 
-	public final WANConnection getWanConnection() {
-		return wanConnection;
-	}
-
-	public final URI getDebianMirror() {
-		return debianMirror;
+	public final HostName getDebianMirror() {
+		return this.debianMirror;
 	}
 
 	public final String getDebianDirectory() {
-		return debianDirectory;
+		return this.debianDirectory;
 	}
 
 	public final Set<String> getAdmins() {
@@ -140,23 +239,23 @@ public class ServerData extends AMachineData {
 	public final SSHConnection getConnection() {
 		return this.sshConnection;
 	}
-	
+
 	public final Integer getAdminPort() {
 		return this.adminSSHConnectPort;
 	}
-	
+
 	public final Integer getSSHPort() {
 		return this.sshListenPort;
 	}
-	
+
 	public final Boolean getUpdate() {
 		return this.update;
 	}
-	
-	public final Set<String> getTypes() {
+
+	public final Set<MachineType> getTypes() {
 		return this.types;
 	}
-	
+
 	public final Set<String> getProfiles() {
 		return this.profiles;
 	}
@@ -164,8 +263,26 @@ public class ServerData extends AMachineData {
 	public final Set<IPAddress> getSSHSources() {
 		return this.remoteAdminIPAddresses;
 	}
-	
+
 	public final String getKeePassDB() {
 		return this.keePassDB;
+	}
+
+	public final void setTypes(Set<MachineType> types) {
+		this.types = types;
+	}
+
+	/**
+	 * @return the ram in megabytes
+	 */
+	public final Integer getRAM() {
+		return this.ram;
+	}
+
+	/**
+	 * @return the number of CPUs assigned to this service
+	 */
+	public final Integer getCPUs() {
+		return this.cpus;
 	}
 }

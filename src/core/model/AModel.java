@@ -1,25 +1,38 @@
+/*
+ * This code is part of the ThornSec project.
+ *
+ * To learn more, please head to its GitHub repo: @privacyint
+ *
+ * Pull requests encouraged.
+ */
 package core.model;
 
+import core.exception.runtime.ARuntimeException;
+import core.model.network.NetworkModel;
+
+/**
+ * This class represents a Model of some type.
+ *
+ * A Model is what we build from Data objects.
+ */
 public abstract class AModel {
 
 	protected String label;
-	protected MachineModel me;
 	protected NetworkModel networkModel;
 
-	AModel(String label, MachineModel me, NetworkModel networkModel) {
-		this.label        = label;
-		this.me           = me;
+	protected AModel(String label, NetworkModel networkModel) {
+		this.label = label;
 		this.networkModel = networkModel;
-	}
-	
-	public AModel(String label, NetworkModel networkModel) {
-		this(label, null, networkModel);
 	}
 
 	public final String getLabel() {
-		return label;
+		return this.label;
 	}
 
-	public void init() { /* stub */	}
-	
+	public final NetworkModel getNetworkModel() {
+		return this.networkModel;
+	}
+
+	public void init() throws ARuntimeException { /* stub */ }
+
 }

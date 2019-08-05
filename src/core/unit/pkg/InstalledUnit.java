@@ -1,7 +1,13 @@
+/*
+ * 
+ */
 package core.unit.pkg;
 
 import core.unit.SimpleUnit;
 
+/**
+ * This Unit manages the installation of a given package on Debian
+ */
 public class InstalledUnit extends SimpleUnit {
 
 	public InstalledUnit(String name, String precondition, String pkg, String message) {
@@ -13,6 +19,7 @@ public class InstalledUnit extends SimpleUnit {
 				message);
 	}
 
+	@Deprecated
 	public InstalledUnit(String name, String pkg) {
 		this(name, "proceed", pkg, "Couldn't install " + pkg + ".  This is pretty serious.");
 	}

@@ -1,35 +1,31 @@
+/*
+ * This code is part of the ThornSec project.
+ *
+ * To learn more, please head to its GitHub repo: @privacyint
+ *
+ * Pull requests encouraged.
+ */
 package core.profile;
 
-import java.util.Vector;
-
 import core.iface.IProfile;
-import core.iface.IUnit;
-import core.model.MachineModel;
-import core.model.NetworkModel;
+import core.model.network.NetworkModel;
 
 public abstract class AProfile implements IProfile {
 
-	protected String name;
-	protected NetworkModel networkModel;
-	protected MachineModel me;
+	private final String label;
+	private final NetworkModel networkModel;
 
-	protected AProfile(String name, MachineModel me, NetworkModel networkModel) {
-		this.name         = name;
+	protected AProfile(String label, NetworkModel networkModel) {
+		this.label = label;
 		this.networkModel = networkModel;
-		this.me           = me;
 	}
 
-	public String getLabel() {
-		return name;
-	}
-	
-	public NetworkModel getNetworkModel() {
-		return networkModel;
+	@Override
+	public final String getLabel() {
+		return this.label;
 	}
 
-	public MachineModel getMachineModel() {
-		return me;
+	public final NetworkModel getNetworkModel() {
+		return this.networkModel;
 	}
-	
-	public abstract Vector<IUnit> getNetworking();
 }
