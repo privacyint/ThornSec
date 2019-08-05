@@ -201,18 +201,18 @@ public class CSFFirewall extends AFirewallProfile {
 
 	@Override
 	public Set<IUnit> getLiveConfig() throws ARuntimeException {
-		return null;
+		return new LinkedHashSet<>();
 	}
 
 	@Override
 	public Set<IUnit> getPersistentFirewall() throws ARuntimeException {
 		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName("download.configserver.com:443"));
-		return null;
+		return new LinkedHashSet<>();
 	}
 
 	@Override
 	public Set<IUnit> getLiveFirewall() throws ARuntimeException {
-		return null;
+		return new LinkedHashSet<>();
 	}
 
 	/*
