@@ -53,7 +53,7 @@ public class Redmine extends AStructuredProfile {
 		units.add(new InstalledUnit("thin", "redmine_installed", "thin"));
 		units.add(new InstalledUnit("sendmail", "proceed", "sendmail"));
 
-		this.networkModel.getServerModel(getLabel())
+		getNetworkModel().getServerModel(getLabel())
 				.addProcessString("thin server \\(/var/run/thin/sockets/thin.[0-3].sock\\)$");
 
 		return units;
@@ -63,11 +63,11 @@ public class Redmine extends AStructuredProfile {
 	protected Set<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
 		final Set<IUnit> units = new HashSet<>();
 
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("redmine_logs",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("redmine_logs",
 				"proceed", "www-data", "www-data", "0640"));
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("redmine_files",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("redmine_files",
 				"proceed", "www-data", "www-data", "0750"));
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("redmine_data",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("redmine_data",
 				"proceed", "www-data", "www-data", "0750"));
 
 		this.db.setUsername("redmine");
@@ -227,7 +227,7 @@ public class Redmine extends AStructuredProfile {
 		units.addAll(this.webserver.getPersistentFirewall());
 		units.addAll(this.db.getPersistentFirewall());
 
-		this.networkModel.getServerModel(getLabel()).addEgress("rubygems.org:443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("rubygems.org:443");
 
 		return units;
 	}

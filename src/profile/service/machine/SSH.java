@@ -54,7 +54,7 @@ public class SSH extends AStructuredProfile {
 		final FileUnit sshdConf = new FileUnit("sshd_config", "sshd_installed", "/etc/ssh/sshd_config");
 		units.add(sshdConf);
 
-		sshdConf.appendLine("Port " + this.networkModel.getData().getSSHPort(getLabel()));
+		sshdConf.appendLine("Port " + getNetworkModel().getData().getSSHPort(getLabel()));
 		// sshdConf.appendLine((((ServerModel)me).isRouter()) ? "ListenAddress " +
 		// networkModel.getData().getIP().getHostAddress() + "\n" : "";
 		sshdConf.appendLine("Protocol 2");
@@ -179,8 +179,8 @@ public class SSH extends AStructuredProfile {
 	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
 		final Set<IUnit> units = new HashSet<>();
 
-		this.networkModel.getServerModel(getLabel()).addListen(Encapsulation.TCP,
-				this.networkModel.getData().getSSHPort(getLabel()));
+		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP,
+				getNetworkModel().getData().getSSHPort(getLabel()));
 
 		return units;
 	}
@@ -189,7 +189,7 @@ public class SSH extends AStructuredProfile {
 	protected Set<IUnit> getLiveConfig() throws InvalidMachineException {
 		final Set<IUnit> units = new HashSet<>();
 
-		for (final String admin : this.networkModel.getData().getAdmins(getLabel())) {
+		for (final String admin : getNetworkModel().getData().getAdmins(getLabel())) {
 			final String sshDir = "/home/" + admin + "/.ssh";
 			final String keys = sshDir + "/authorized_keys";
 
@@ -201,7 +201,7 @@ public class SSH extends AStructuredProfile {
 			// Create the authorized_keys file, with root permissions (we don't want users
 			// to be able to add arbitrary keys)
 			units.add(new FileUnit("ssh_key_" + admin, "ssh_dir_" + admin + "_created",
-					this.networkModel.getData().getSSHKey(admin), keys));
+					getNetworkModel().getData().getSSHKey(admin), keys));
 			units.add(new FileOwnUnit("ssh_key_" + admin, "ssh_key_" + admin, keys, "root"));
 			units.add(new FilePermsUnit("ssh_key_" + admin, "ssh_key_" + admin + "_chowned", keys, "644"));
 		}

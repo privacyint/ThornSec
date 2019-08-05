@@ -33,7 +33,7 @@ public class Jail extends AStructuredProfile {
 		//a=D   : ALL, execute bit only on dirs only
 		//fu=rw : Files; user, R+W
 		//fog=r : Files; group + others, R
-		networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("jails", "proceed", "root", "root", "a=D:fu=rw:fog=r");
+		getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("jails", "proceed", "root", "root", "a=D:fu=rw:fog=r");
 		
 		return units;
 	}

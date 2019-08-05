@@ -54,11 +54,11 @@ public class Virtualisation extends AStructuredProfile {
 	protected final Set<IUnit> getPersistentConfig() throws InvalidServerModelException {
 		final Set<IUnit> units = new HashSet<>();
 
-		this.networkModel.getServerModel(getLabel()).addProcessString("/usr/lib/virtualbox/VBoxXPCOMIPCD$");
-		this.networkModel.getServerModel(getLabel()).addProcessString("/usr/lib/virtualbox/VBoxSVC --auto-shutdown$");
-		this.networkModel.getServerModel(getLabel()).addProcessString("\\[iprt-VBoxWQueue\\]$");
-		this.networkModel.getServerModel(getLabel()).addProcessString("\\[iprt-VBoxTscThr\\]$");
-		this.networkModel.getServerModel(getLabel()).addProcessString("\\[kvm-irqfd-clean\\]$");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/lib/virtualbox/VBoxXPCOMIPCD$");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/lib/virtualbox/VBoxSVC --auto-shutdown$");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("\\[iprt-VBoxWQueue\\]$");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("\\[iprt-VBoxTscThr\\]$");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("\\[kvm-irqfd-clean\\]$");
 
 		return units;
 	}
@@ -74,10 +74,10 @@ public class Virtualisation extends AStructuredProfile {
 	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
 		final Set<IUnit> units = new HashSet<>();
 
-		this.networkModel.getServerModel(getLabel()).getAptSourcesModel().addAptSource("virtualbox",
+		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("virtualbox",
 				"deb http://download.virtualbox.org/virtualbox/debian stretch contrib", "keyserver.ubuntu.com",
 				"0xa2f683c52980aecf");
-		this.networkModel.getServerModel(getLabel()).addEgress("download.virtualbox.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("download.virtualbox.org");
 
 		return units;
 	}
@@ -86,14 +86,14 @@ public class Virtualisation extends AStructuredProfile {
 
 		final Set<IUnit> units = new HashSet<>();
 
-		final String isoDir = this.networkModel.getData().getHypervisorThornsecBase(getLabel()) + "/isos/" + service
+		final String isoDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/isos/" + service
 				+ "/";
 
 		String filename = null;
 		String cleanedFilename = null;
 
 		try {
-			filename = Paths.get(new URI(this.networkModel.getData().getDebianIsoUrl(service)).getPath()).getFileName()
+			filename = Paths.get(new URI(getNetworkModel().getData().getDebianIsoUrl(service)).getPath()).getFileName()
 					.toString();
 			cleanedFilename = filename.replaceAll("[^A-Za-z0-9]", "_");
 		} catch (final Exception e) {
@@ -113,7 +113,7 @@ public class Virtualisation extends AStructuredProfile {
 		// Create a working copy of the iso for preseeding
 		buildIso += " cd " + isoDir + ";";
 		buildIso += " mkdir loopdir;";
-		buildIso += " mount -o loop " + this.networkModel.getData().getHypervisorThornsecBase(getLabel()) + "/"
+		buildIso += " mount -o loop " + getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/"
 				+ filename + " loopdir;";
 		buildIso += " mkdir cd;";
 		buildIso += " rsync -a -H --exclude=TRANS.TBL loopdir/ cd;";
@@ -153,7 +153,7 @@ public class Virtualisation extends AStructuredProfile {
 
 	public Set<IUnit> buildServiceVm(String service, String bridge)
 			throws InvalidServerModelException, InvalidServerException {
-		final File baseDir = this.networkModel.getData().getHypervisorThornsecBase(getLabel());
+		final File baseDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel());
 
 		// Disks
 		final String diskExtension = "vmdk";
@@ -172,7 +172,7 @@ public class Virtualisation extends AStructuredProfile {
 		final String installIso = baseDir + "/isos/" + service + "/" + service + ".iso";
 		final String user = "vboxuser_" + service;
 		final String group = "vboxusers";
-		final String osType = this.networkModel.getData().getDebianIsoUrl(service).contains("amd64") ? "Debian_64"
+		final String osType = getNetworkModel().getData().getDebianIsoUrl(service).contains("amd64") ? "Debian_64"
 				: "Debian";
 
 		final Set<IUnit> units = new HashSet<>();
@@ -233,9 +233,9 @@ public class Virtualisation extends AStructuredProfile {
 		units.add(new SimpleUnit(service + "_exists", "boot_disk_dir_" + service + "_chmoded",
 				"sudo -u " + user + " VBoxManage createvm --name " + service + " --ostype \"" + osType
 						+ "\" --register;" + "sudo -u " + user + " VBoxManage modifyvm " + service + " --description "
-						+ "\"" + service + "." + this.networkModel.getData().getDomain() + "\n"
+						+ "\"" + service + "." + getNetworkModel().getData().getDomain() + "\n"
 						+ "ThornSec guest machine\n" + "Built with profile(s): "
-						+ String.join(", ", this.networkModel.getData().getProfiles(service)) + "\n"
+						+ String.join(", ", getNetworkModel().getData().getProfiles(service)) + "\n"
 						+ "Built at $(date)" + "\"",
 				"sudo -u " + user + " VBoxManage list vms | grep " + service, "", "fail", "Couldn't create " + service
 						+ " on its metal.  This is fatal, " + service + " will not be installed."));
@@ -244,7 +244,7 @@ public class Virtualisation extends AStructuredProfile {
 		// TODO: iterate through the disks properly
 //		units.add(new SimpleUnit(service + "_boot_disk", "boot_disk_dir_" + service + "_chmoded",
 //				"sudo -u " + user + " VBoxManage createmedium --filename " + bootDiskImg + diskExtension + " --size "
-//						+ this.networkModel.getData().getBootDiskSize(service) + " --format VMDK",
+//						+ getNetworkModel().getData().getBootDiskSize(service) + " --format VMDK",
 //				"sudo [ -f " + bootDiskImg + diskExtension + " ] && echo pass;", "pass", "pass",
 //				"Couldn't create the disk for " + service + "'s base filesystem.  This is fatal."));
 //		units.add(new FileOwnUnit(service + "_boot_disk", service + "_boot_disk", bootDiskImg + diskExtension, user,
@@ -252,7 +252,7 @@ public class Virtualisation extends AStructuredProfile {
 //
 //		units.add(new SimpleUnit(service + "_data_disk", "data_disk_dir_" + service + "_chmoded",
 //				"sudo -u " + user + " VBoxManage createmedium --filename " + dataDiskImg + diskExtension + " --size "
-//						+ this.networkModel.getData().getDataDiskSize(service) + " --format VMDK",
+//						+ getNetworkModel().getData().getDataDiskSize(service) + " --format VMDK",
 //				"sudo [ -f " + dataDiskImg + diskExtension + " ] && echo pass;", "pass", "pass",
 //				"Couldn't create the disk for " + service + "'s data.  This is fatal."));
 //		units.add(new FileOwnUnit(service + "_data_disk", service + "_data_disk", dataDiskImg + diskExtension, user,
@@ -307,10 +307,10 @@ public class Virtualisation extends AStructuredProfile {
 				+ ".  This is required for 64-bit installations, and for more than 1 virtual CPU in a service."));
 		units.add(modifyVm(service, user, "hwvirtex", "on"));
 		units.add(modifyVm(service, user, "pae", "on"));
-		units.add(modifyVm(service, user, "cpus", this.networkModel.getData().getCpus(service)));
+		units.add(modifyVm(service, user, "cpus", getNetworkModel().getData().getCpus(service)));
 
 		// RAM setup
-		units.add(modifyVm(service, user, "memory", this.networkModel.getData().getRam(service)));
+		units.add(modifyVm(service, user, "memory", getNetworkModel().getData().getRam(service)));
 		units.add(modifyVm(service, user, "vram", "16"));
 		units.add(modifyVm(service, user, "nestedpaging", "on"));
 		units.add(modifyVm(service, user, "largepages", "on"));
@@ -388,13 +388,13 @@ public class Virtualisation extends AStructuredProfile {
 		// "sudo -u " + user + " bash -c 'VBoxManage list runningvms | grep " + service
 		// + "'", "", "fail"));
 
-		this.networkModel.getServerModel(getLabel())
+		getNetworkModel().getServerModel(getLabel())
 				.addProcessString("/usr/lib/virtualbox/VBoxHeadless --comment " + service + " --startvm `if id '" + user
 						+ "' >/dev/null 2>&1; then sudo -u " + user + " bash -c 'VBoxManage list runningvms | grep "
 						+ service + "' | awk '{ print $2 }' | tr -d '{}'; else echo ''; fi` --vrde config *$");
-		this.networkModel.getServerModel(getLabel()).addProcessString("awk \\{");
-		this.networkModel.getServerModel(getLabel()).addProcessString("tr -d \\{\\}$");
-		this.networkModel.getServerModel(getLabel()).getUserModel().addUsername(user);
+		getNetworkModel().getServerModel(getLabel()).addProcessString("awk \\{");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("tr -d \\{\\}$");
+		getNetworkModel().getServerModel(getLabel()).getUserModel().addUsername(user);
 
 		return units;
 	}

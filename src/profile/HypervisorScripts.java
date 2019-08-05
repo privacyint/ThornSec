@@ -44,7 +44,7 @@ public class HypervisorScripts extends AStructuredProfile {
 	throws InvalidServerException {
 		Set<IUnit> units = new HashSet<IUnit>();
 
-		this.vmBase = networkModel.getData().getHypervisorThornsecBase(getLabel());
+		this.vmBase = getNetworkModel().getData().getHypervisorThornsecBase(getLabel());
 
 		this.scriptsBase         = this.vmBase + "/scripts";
 		this.recoveryScriptsBase = this.scriptsBase + "/recovery";

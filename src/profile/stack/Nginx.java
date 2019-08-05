@@ -46,9 +46,10 @@ public class Nginx extends AStructuredProfile {
 				"id nginx 2>&1", "id: ‘nginx’: no such user", "fail",
 				"The nginx user couldn't be added.  This will cause all sorts of errors."));
 
-		networkModel.getServerModel(getLabel()).getUserModel().addUsername("nginx");
-		
-		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addLogBindPoint("nginx", "proceed", "nginx", "0600"));
+		getNetworkModel().getServerModel(getLabel()).getUserModel().addUsername("nginx");
+
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addLogBindPoint("nginx", "proceed",
+				"nginx", "0600"));
 
 		units.add(new InstalledUnit("nginx", "nginx_pgp", "nginx"));
 		
@@ -60,11 +61,14 @@ public class Nginx extends AStructuredProfile {
 	throws InvalidServerException, InvalidServerModelException {
 		Set<IUnit> units =  new HashSet<IUnit>();
 		
-		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("www", "proceed", "nginx", "nginx", "0750"));
-		
-		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("nginx_includes", "nginx_installed", "nginx", "nginx", "0750"));
-		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("nginx_modules", "nginx_installed", "nginx", "nginx", "0750"));
-		
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("www", "proceed",
+				"nginx", "nginx", "0750"));
+
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("nginx_includes",
+				"nginx_installed", "nginx", "nginx", "0750"));
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("nginx_modules",
+				"nginx_installed", "nginx", "nginx", "0750"));
+
 		units.add(new SimpleUnit("nginx_modules_symlink", "nginx_modules_data_bindpoint_created",
 				"sudo rm -r /etc/nginx/modules;"
 				+ "sudo ln -s /media/data/nginx_modules/ /etc/nginx/modules",
@@ -80,7 +84,7 @@ public class Nginx extends AStructuredProfile {
 		
 		nginxConf.appendLine("user nginx;");
 		nginxConf.appendCarriageReturn();
-		nginxConf.appendLine("worker_processes " + networkModel.getData().getCpus(getLabel()));
+		nginxConf.appendLine("worker_processes " + getNetworkModel().getData().getCpus(getLabel()));
 		nginxConf.appendCarriageReturn();
 		nginxConf.appendLine("error_log  /var/log/nginx/error.log warn;");
 		nginxConf.appendLine("pid        /var/run/nginx.pid;");
@@ -123,12 +127,14 @@ public class Nginx extends AStructuredProfile {
 	throws InvalidServerModelException {
 		Set<IUnit> units = new HashSet<IUnit>();
 		
-		networkModel.getServerModel(getLabel()).addProcessString("nginx: master process /usr/sbin/nginx -g daemon on; master_process on;$");
-		networkModel.getServerModel(getLabel()).addProcessString("nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf$");
-		networkModel.getServerModel(getLabel()).addProcessString("nginx: worker process *$");
-		
-		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("nginx_custom_conf_d", "nginx_installed", "nginx", "nginx", "0750"));
-		
+		getNetworkModel().getServerModel(getLabel())
+				.addProcessString("nginx: master process /usr/sbin/nginx -g daemon on; master_process on;$");
+		getNetworkModel().getServerModel(getLabel())
+				.addProcessString("nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf$");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("nginx: worker process *$");
+
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel()
+
 		if (! liveConfigs.isEmpty()) {		
 			units.addAll(liveConfigs);
 		}
@@ -168,10 +174,10 @@ public class Nginx extends AStructuredProfile {
 	throws InvalidServerModelException, InvalidPortException {
 		Set<IUnit> units = new HashSet<IUnit>();
 		
-		networkModel.getServerModel(getLabel()).addListen(Encapsulation.TCP, 80);
-		//Allow the server to call out to nginx.org to download mainline
-		networkModel.getServerModel(getLabel()).addEgress("nginx.org");
-		
+		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 80);
+		// Allow the server to call out to nginx.org to download mainline
+		getNetworkModel().getServerModel(getLabel()).addEgress("nginx.org");
+
 		return units;
 	}
 	

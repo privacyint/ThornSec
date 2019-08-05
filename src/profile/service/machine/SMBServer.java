@@ -29,7 +29,7 @@ public class SMBServer extends AStructuredProfile {
 	throws InvalidServerModelException, InvalidPortException {
 		Set<IUnit> units = new HashSet<IUnit>();
 		
-		networkModel.getServerModel(getLabel()).addListen(Encapsulation.TCP, 137, 138, 139, 445);
+		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 137, 138, 139, 445);
 		
 /*		for (ServerModel router : networkModel.getRouterServers()) {
 			

@@ -80,10 +80,10 @@ public class NodeJS extends AStructuredProfile {
 		final Set<IUnit> units = new HashSet<>();
 
 		// Let's open this box up to most of the internet. Thanks, node!
-		this.networkModel.getServerModel(getLabel()).addEgress("github.com");
-		this.networkModel.getServerModel(getLabel()).addEgress("deb.nodesource.com");
-		this.networkModel.getServerModel(getLabel()).addEgress("npmjs.org");
-		this.networkModel.getServerModel(getLabel()).addEgress("registry.npmjs.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("deb.nodesource.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("npmjs.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("registry.npmjs.org");
 
 		return units;
 	}

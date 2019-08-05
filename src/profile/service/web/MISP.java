@@ -73,7 +73,7 @@ public class MISP extends AStructuredProfile {
 		units.add(new InstalledUnit("redis_server", "proceed", "redis-server"));
 		units.add(new InstalledUnit("zip", "proceed", "zip"));
 
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addBindPoint("gnupg_home",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addBindPoint("gnupg_home",
 				"gnupg_agent_installed", "/media/metaldata/gpg", "/media/data/gpg", "nginx", "nginx", "0750"));
 
 		// Install PHP dependencies
@@ -169,9 +169,9 @@ public class MISP extends AStructuredProfile {
 		units.addAll(this.lempStack.getPersistentConfig());
 
 		units.addAll(
-				this.networkModel.getServerModel(getLabel()).getBindFsModel().addBindPoint("nginx", "nginx_installed",
+				getNetworkModel().getServerModel(getLabel()).getBindFsModel().addBindPoint("nginx", "nginx_installed",
 						"/media/metaldata/www/MISP/app/tmp", "/media/data/www/MISP/app/tmp", "nginx", "nginx", "0770"));
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addBindPoint("nginx",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addBindPoint("nginx",
 				"nginx_installed", "/media/metaldata/www/MISP/app/files", "/media/data/www/MISP/app/files", "nginx",
 				"nginx", "0770"));
 

@@ -43,8 +43,8 @@ public class LetsEncrypt extends AStructuredProfile {
 		
 		String config = "";
 		config += "rsa-key-size = 4096\n";
-		config += "email = " + networkModel.getServerModel(getLabel()).getEmailAddress();
-		
+		config += "email = " + getNetworkModel().getServerModel(getLabel()).getEmailAddress();
+
 		units.add(new FileUnit("certbot_default_config", "certbot_installed", config, "/etc/letsencrypt/cli.ini"));
 		
 		return units;
@@ -78,8 +78,8 @@ public class LetsEncrypt extends AStructuredProfile {
 	throws InvalidServerModelException {
 		Set<IUnit> units = new HashSet<IUnit>();
 
-		networkModel.getServerModel(getLabel()).addEgress("acme-v01.api.letsencrypt.org");
-		
+		getNetworkModel().getServerModel(getLabel()).addEgress("acme-v01.api.letsencrypt.org");
+
 		return units;
 	}
 }

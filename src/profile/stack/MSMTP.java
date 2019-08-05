@@ -58,7 +58,7 @@ public class MSMTP extends AStructuredProfile {
 	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
 		final Set<IUnit> units = new HashSet<>();
 
-		this.networkModel.getServerModel(getLabel()).addEgress("*:25,465");
+		getNetworkModel().getServerModel(getLabel()).addEgress("*:25,465");
 
 		return units;
 	}

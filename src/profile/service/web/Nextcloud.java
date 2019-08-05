@@ -51,7 +51,7 @@ public class Nextcloud extends AStructuredProfile {
 		this.lempStack.getDB().setUserPassword("${NEXTCLOUD_PASSWORD}");
 		this.lempStack.getDB().setDb("nextcloud");
 
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("nextcloud",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("nextcloud",
 				"proceed", "nginx", "nginx", "0770"));
 
 		units.add(new InstalledUnit("unzip", "proceed", "unzip"));
@@ -228,7 +228,7 @@ public class Nextcloud extends AStructuredProfile {
 				"sudo -u nginx php /media/data/www/nextcloud/updater/updater.phar | grep \"No update available\"",
 				"No update available.", "pass"));
 
-		this.networkModel.getServerModel(getLabel()).getUserModel().addUsername("redis");
+		getNetworkModel().getServerModel(getLabel()).getUserModel().addUsername("redis");
 
 		return units;
 	}
@@ -237,12 +237,12 @@ public class Nextcloud extends AStructuredProfile {
 	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
 		final Set<IUnit> units = new HashSet<>();
 
-		this.networkModel.getServerModel(getLabel()).addEgress("nextcloud.com");
-		this.networkModel.getServerModel(getLabel()).addEgress("apps.nextcloud.com");
-		this.networkModel.getServerModel(getLabel()).addEgress("download.nextcloud.com");
-		this.networkModel.getServerModel(getLabel()).addEgress("updates.nextcloud.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("nextcloud.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("apps.nextcloud.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("download.nextcloud.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("updates.nextcloud.com");
 		// It requires opening to the wider web anyway :(
-		this.networkModel.getServerModel(getLabel()).addEgress("github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
 
 		units.addAll(this.lempStack.getPersistentFirewall());
 

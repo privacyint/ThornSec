@@ -25,8 +25,8 @@ public class AptSources extends AStructuredProfile {
 	public AptSources(String label, NetworkModel networkModel) throws URISyntaxException, InvalidServerModelException {
 		super(label, networkModel);
 
-		this.debianRepo = networkModel.getData().getDebianMirror(getLabel());
-		this.debianDir = networkModel.getData().getDebianDirectory(getLabel());
+		this.debianRepo = getNetworkModel().getData().getDebianMirror(getLabel());
+		this.debianDir = getNetworkModel().getData().getDebianDirectory(getLabel());
 
 		this.sources = new Hashtable<>();
 		this.pgpKeys = new Hashtable<>();
@@ -40,7 +40,7 @@ public class AptSources extends AStructuredProfile {
 				"Couldn't install dirmngr.  Anything which requires a PGP key to be downloaded and installed won't work. "
 						+ "You can possibly fix this by running a configuration again."));
 
-		this.networkModel.getServerModel(getLabel())
+		getNetworkModel().getServerModel(getLabel())
 				.addProcessString("dirmngr --daemon --homedir /tmp/apt-key-gpghome.[a-zA-Z0-9]*$");
 
 		return units;
@@ -48,8 +48,8 @@ public class AptSources extends AStructuredProfile {
 
 	@Override
 	public final Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
-		this.networkModel.getServerModel(getLabel()).addEgress(this.debianRepo);
-		this.networkModel.getServerModel(getLabel()).addEgress(new HostName("security.debian.org"));
+		getNetworkModel().getServerModel(getLabel()).addEgress(this.debianRepo);
+		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName("security.debian.org"));
 
 		return null;
 	}
@@ -105,7 +105,7 @@ public class AptSources extends AStructuredProfile {
 
 	public final void addAptSource(String name, String sourceLine, String keyserver, String fingerprint)
 			throws InvalidServerModelException {
-		this.networkModel.getServerModel(getLabel()).addEgress(new HostName(keyserver + "11371"));
+		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName(keyserver + "11371"));
 
 		this.addAptSource(name, sourceLine);
 		addPGPKey(keyserver, fingerprint);

@@ -55,7 +55,7 @@ public class Drupal8 extends AStructuredProfile {
 		units.add(new InstalledUnit("php_mod_curl", "php_fpm_installed", "php-curl"));
 		units.add(new InstalledUnit("php_mbstring", "php_fpm_installed", "php-mbstring"));
 
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("drush",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("drush",
 				"composer_installed", "nginx", "nginx", "0750"));
 
 		units.add(new SimpleUnit("drush_installed", "composer_installed",
@@ -160,11 +160,11 @@ public class Drupal8 extends AStructuredProfile {
 	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
 		final Set<IUnit> units = new HashSet<>();
 
-		this.networkModel.getServerModel(getLabel()).addEgress("drupal.org");
-		this.networkModel.getServerModel(getLabel()).addEgress("packagist.org");
-		this.networkModel.getServerModel(getLabel()).addEgress("api.github.com");
-		this.networkModel.getServerModel(getLabel()).addEgress("github.com");
-		this.networkModel.getServerModel(getLabel()).addEgress("codeload.github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("drupal.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("packagist.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("api.github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("codeload.github.com");
 
 		units.addAll(this.lempStack.getPersistentFirewall());
 

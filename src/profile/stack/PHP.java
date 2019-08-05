@@ -206,7 +206,7 @@ public class PHP extends AStructuredProfile {
 		//This is approximate, and very(!!!) generous(!!!) to give the box some breathing room.
 		//On most VMs I have configured, it's usually below 40M.
 		int mbRamPerProcess = 75;
-		int serverTotalRam  = networkModel.getData().getRam(getLabel());
+		int serverTotalRam  = getNetworkModel().getData().getRam(getLabel());
 		
 		int maxChildren     = serverTotalRam / mbRamPerProcess; 
 		int minSpareServers = maxChildren / 3;
@@ -238,8 +238,8 @@ public class PHP extends AStructuredProfile {
 		
 		units.add(new RunningUnit("php_fpm", "php7.0-fpm", "php7.0-fpm"));
 		
-		networkModel.getServerModel(getLabel()).addProcessString("php-fpm: master process \\(/etc/php/7.0/fpm/php-fpm\\.conf\\) *$");
-		networkModel.getServerModel(getLabel()).addProcessString("php-fpm: pool www *$");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("php-fpm: master process \\(/etc/php/7.0/fpm/php-fpm\\.conf\\) *$");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("php-fpm: pool www *$");
 		
 		return units;
 	}

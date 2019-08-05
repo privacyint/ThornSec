@@ -46,7 +46,7 @@ public class Tor extends AStructuredProfile {
 		units.add(new InstalledUnit("tor_keyring", "tor_pgp", "deb.torproject.org-keyring"));
 		units.add(new InstalledUnit("tor", "tor_keyring_installed", "tor"));
 
-		this.networkModel.getServerModel(getLabel()).getUserModel().addUsername("debian-tor");
+		getNetworkModel().getServerModel(getLabel()).getUserModel().addUsername("debian-tor");
 
 		units.addAll(this.proxy.getInstalled());
 
@@ -58,9 +58,9 @@ public class Tor extends AStructuredProfile {
 			InvalidServerModelException, InvalidPropertyException {
 		final Set<IUnit> units = new HashSet<>();
 
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("tor",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("tor",
 				"tor_installed", "debian-tor", "debian-tor", "0700"));
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addLogBindPoint("tor",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addLogBindPoint("tor",
 				"tor_installed", "debian-tor", "0750"));
 
 		units.add(new DirUnit("torhs_files_dir", "tor_installed", "/var/lib/tor/hidden_service"));
@@ -123,7 +123,7 @@ public class Tor extends AStructuredProfile {
 				"sudo systemctl is-enabled tor", "enabled", "pass",
 				"Couldn't set tor to auto-start on boot.  You will need to manually start the service (\"sudo service tor start\") on reboot."));
 
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("tls", "proceed",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("tls", "proceed",
 				"root", "root", "600"));
 
 		final FileUnit proxyConfig = new FileUnit("tor_nginx_config", "tor_installed",
@@ -201,7 +201,7 @@ public class Tor extends AStructuredProfile {
 		final Set<IUnit> units = new HashSet<>();
 
 		units.add(new RunningUnit("tor", "tor", "/usr/bin/tor"));
-		this.networkModel.getServerModel(getLabel()).addProcessString(
+		getNetworkModel().getServerModel(getLabel()).addProcessString(
 				"/usr/bin/tor --defaults-torrc /usr/share/tor/tor-service-defaults-torrc -f /etc/tor/torrc --RunAsDaemon 0$");
 		units.addAll(this.proxy.getLiveConfig());
 
@@ -215,12 +215,12 @@ public class Tor extends AStructuredProfile {
 
 		units.addAll(this.proxy.getPersistentFirewall());
 
-		this.networkModel.getServerModel(getLabel()).getAptSourcesModel().addAptSource("tor",
+		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("tor",
 				"deb http://deb.torproject.org/torproject.org stretch main", "keys.gnupg.net",
 				"A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
 
 		// Allow the server to call out everywhere
-		this.networkModel.getServerModel(getLabel()).addEgress("255.255.255.255");
+		getNetworkModel().getServerModel(getLabel()).addEgress("255.255.255.255");
 
 		return units;
 	}

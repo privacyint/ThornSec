@@ -52,7 +52,7 @@ public class OpenSocial extends AStructuredProfile {
 		units.add(new InstalledUnit("unzip", "proceed", "unzip"));
 		units.add(new InstalledUnit("php_mod_curl", "php_fpm_installed", "php-curl"));
 
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("drush",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("drush",
 				"composer_installed", "nginx", "nginx", "0750"));
 
 		units.add(new SimpleUnit("drush_installed", "composer_installed",
@@ -139,8 +139,8 @@ public class OpenSocial extends AStructuredProfile {
 		units.addAll(this.lempStack.getLiveConfig());
 
 		// Set up our database
-		final Set<String> cnames = this.networkModel.getData().getCNAMEs(getLabel());
-		final String domain = this.networkModel.getData().getDomain().replaceAll("\\.", "\\\\.");
+		final Set<String> cnames = getNetworkModel().getData().getCNAMEs(getLabel());
+		final String domain = getNetworkModel().getData().getDomain().replaceAll("\\.", "\\\\.");
 
 		final FileUnit opensocialConf = new FileUnit("opensocial", "opensocial_installed",
 				"/media/data/www/html/sites/default/settings.php");
@@ -157,7 +157,7 @@ public class OpenSocial extends AStructuredProfile {
 		opensocialConf.appendCarriageReturn();
 		opensocialConf.appendLine("\\$settings['trusted_host_patterns'] = array(");
 		// TODO: fix this config file
-		opensocialConf.appendLine("    '^" + this.networkModel.getMachineModel(getLabel()) + "\\\\." + domain + "$',");
+		opensocialConf.appendLine("    '^" + getNetworkModel().getMachineModel(getLabel()) + "\\\\." + domain + "$',");
 
 		for (final String cname : cnames) {
 			opensocialConf.appendLine("    '^" + cname + "$',");
@@ -192,13 +192,13 @@ public class OpenSocial extends AStructuredProfile {
 	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
 		final Set<IUnit> units = new HashSet<>();
 
-		this.networkModel.getServerModel(getLabel()).addEgress("packagist.org");
-		this.networkModel.getServerModel(getLabel()).addEgress("github.com");
-		this.networkModel.getServerModel(getLabel()).addEgress("packages.drupal.org");
-		this.networkModel.getServerModel(getLabel()).addEgress("asset-packagist.org");
-		this.networkModel.getServerModel(getLabel()).addEgress("api.github.com");
-		this.networkModel.getServerModel(getLabel()).addEgress("codeload.github.com");
-		this.networkModel.getServerModel(getLabel()).addEgress("git.drupal.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("packagist.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("packages.drupal.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("asset-packagist.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("api.github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("codeload.github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("git.drupal.org");
 
 		units.addAll(this.lempStack.getPersistentFirewall());
 

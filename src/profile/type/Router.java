@@ -105,7 +105,7 @@ public class Router extends AStructuredProfile {
 		units.addAll(NetworkInterfaceModel.buildVLAN("internalOnlys", INTERNALS_NETWORK));
 
 		// TODO: Revisit
-		if (this.networkModel.getData().buildAutoGuest()) {
+		if (getNetworkModel().getData().buildAutoGuest()) {
 			units.addAll(NetworkInterfaceModel.buildVLAN("autoguest", "10.0.0.1"));
 		}
 

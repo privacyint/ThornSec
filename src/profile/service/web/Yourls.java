@@ -108,7 +108,7 @@ public class Yourls extends AStructuredProfile {
 		yourlsConfig.appendLine("	define('YOURLS_DB_HOST', 'localhost');");
 		yourlsConfig.appendLine("	define('YOURLS_DB_PREFIX', 'yourls_');");
 		yourlsConfig.appendLine(
-				"	define('YOURLS_SITE', '" + this.networkModel.getServerModel(getLabel()).getDomain() + "');");
+				"	define('YOURLS_SITE', '" + getNetworkModel().getServerModel(getLabel()).getDomain() + "');");
 		yourlsConfig.appendLine("	define('YOURLS_HOURS_OFFSET', 0);");
 		yourlsConfig.appendLine("	define('YOURLS_LANG', '');");
 		yourlsConfig.appendLine("	define('YOURLS_UNIQUE_URLS', false);");
@@ -145,7 +145,7 @@ public class Yourls extends AStructuredProfile {
 
 		units.addAll(this.lempStack.getPersistentFirewall());
 
-		this.networkModel.getServerModel(getLabel()).addEgress("github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
 
 		return units;
 	}

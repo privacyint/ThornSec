@@ -83,10 +83,10 @@ public class EmailServer extends AStructuredProfile {
 
 		units.addAll(webserver.getPersistentFirewall());
 
-		networkModel.getServerModel(getLabel()).addListen(Encapsulation.TCP, 25, 465, 993);
-		networkModel.getServerModel(getLabel()).addEgress("spamassassin.apache.org");
-		networkModel.getServerModel(getLabel()).addEgress("www.sa-update.pccc.com");
-		
+		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 25, 465, 993);
+		getNetworkModel().getServerModel(getLabel()).addEgress("spamassassin.apache.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.sa-update.pccc.com");
+
 		return units;
 	}
 }

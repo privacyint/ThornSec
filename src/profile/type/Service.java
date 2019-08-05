@@ -59,9 +59,9 @@ public class Service extends AStructuredProfile {
 				"$(ls /opt | tr -d \\\"[A-Za-z\\-]\\\";)", "pass",
 				"This server is running an outdated version of the guest additions.  If you're running a configuration, this can be fixed by restarting the VM."));
 
-		this.networkModel.getServerModel(getLabel()).getUserModel().addUsername("vboxadd");
-		this.networkModel.getServerModel(getLabel()).addProcessString("\\[iprt-VBoxWQueue\\]$");
-		this.networkModel.getServerModel(getLabel())
+		getNetworkModel().getServerModel(getLabel()).getUserModel().addUsername("vboxadd");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("\\[iprt-VBoxWQueue\\]$");
+		getNetworkModel().getServerModel(getLabel())
 				.addProcessString("/usr/sbin/VBoxService --pidfile /var/run/vboxadd-service.sh$");
 
 		// haveged is not perfect, but according to
@@ -76,7 +76,7 @@ public class Service extends AStructuredProfile {
 				"while [ $(cat /proc/sys/kernel/random/entropy_avail) -le 600 ]; do sleep 2; done;",
 				"(( $(cat /proc/sys/kernel/random/entropy_avail) > 600 )) && echo pass || echo fail", "pass", "pass"));
 
-		this.networkModel.getServerModel(getLabel())
+		getNetworkModel().getServerModel(getLabel())
 				.addProcessString("/usr/sbin/haveged --Foreground --verbose=1 -w 1024$");
 
 		return units;
@@ -138,7 +138,7 @@ public class Service extends AStructuredProfile {
 	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
 		final Set<IUnit> units = new HashSet<>();
 
-		this.networkModel.getServerModel(getLabel()).addEgress("download.virtualbox.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("download.virtualbox.org");
 
 		return units;
 	}

@@ -105,10 +105,10 @@ public class CiviCRM extends AStructuredProfile {
 	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
 		final Set<IUnit> units = new HashSet<>();
 
-		this.networkModel.getServerModel(getLabel()).addEgress("download.civicrm.org");
-		this.networkModel.getServerModel(getLabel()).addEgress("latest.civicrm.org");
-		this.networkModel.getServerModel(getLabel()).addEgress("civicrm.org");
-		this.networkModel.getServerModel(getLabel()).addEgress("storage.googleapis.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("download.civicrm.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("latest.civicrm.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("civicrm.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("storage.googleapis.com");
 
 		units.addAll(this.db.getPersistentFirewall());
 		units.addAll(this.drupal.getPersistentFirewall());

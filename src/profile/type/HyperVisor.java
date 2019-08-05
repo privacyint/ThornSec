@@ -69,7 +69,7 @@ public class HyperVisor extends AStructuredProfile {
 		units.addAll(this.hypervisor.getInstalled());
 
 		units.add(new DirUnit("media_dir", "proceed",
-				this.networkModel.getData().getHypervisorThornsecBase(getLabel()).toString()));
+				getNetworkModel().getData().getHypervisorThornsecBase(getLabel()).toString()));
 
 		units.add(new InstalledUnit("whois", "proceed", "whois"));
 		units.add(new InstalledUnit("tmux", "proceed", "tmux"));
@@ -82,13 +82,13 @@ public class HyperVisor extends AStructuredProfile {
 	protected Set<IUnit> getPersistentConfig() throws InvalidServerModelException {
 		final Set<IUnit> units = new HashSet<>();
 
-		this.networkModel.getServerModel(getLabel()).setFirstOctet(10);
+		getNetworkModel().getServerModel(getLabel()).setFirstOctet(10);
 
 		// TODO: fixme
-		// this.networkModel.getServerModel(label)
-//				.setSecondOctet(this.networkModel.getMetalServers().indexOf(networkModel.getServerModel(label)) + 1);
+		// getNetworkModel().getServerModel(label)
+//				.setSecondOctet(getNetworkModel().getMetalServers().indexOf(getNetworkModel().getServerModel(label)) + 1);
 
-		this.networkModel.getServerModel(getLabel()).setThirdOctet(0);
+		getNetworkModel().getServerModel(getLabel()).setThirdOctet(0);
 
 		final FileUnit fuseConf = new FileUnit("fuse", "proceed", "/etc/fuse.conf");
 		units.add(fuseConf);
@@ -101,8 +101,8 @@ public class HyperVisor extends AStructuredProfile {
 	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
 		final Set<IUnit> units = new HashSet<>();
 
-		this.networkModel.getServerModel(getLabel()).addEgress("gensho.ftp.acc.umu.se");
-		this.networkModel.getServerModel(getLabel()).addEgress("github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("gensho.ftp.acc.umu.se");
+		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
 
 		return units;
 	}
@@ -113,7 +113,7 @@ public class HyperVisor extends AStructuredProfile {
 
 		final Vector<String> urls = new Vector<>();
 		for (final String service : getServices().keySet()) {
-			final String newURL = this.networkModel.getData().getDebianIsoUrl(service);
+			final String newURL = getNetworkModel().getData().getDebianIsoUrl(service);
 			if (urls.contains(newURL)) {
 				continue;
 			} else {
@@ -135,19 +135,19 @@ public class HyperVisor extends AStructuredProfile {
 			}
 
 			units.add(new FileDownloadUnit("debian_netinst_iso_" + cleanedFilename, "metal_genisoimage_installed", url,
-					this.networkModel.getData().getHypervisorThornsecBase(getLabel()) + "/" + filename,
+					getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/" + filename,
 					"The Debian net install ISO couldn't be downloaded.  Please check the URI in your config."));
 			units.add(new FileChecksumUnit("debian_netinst_iso",
 					"debian_netinst_iso_" + cleanedFilename + "_downloaded", Checksum.SHA512,
-					this.networkModel.getData().getHypervisorThornsecBase(getLabel()) + "/" + filename,
-					this.networkModel.getData().getDebianIsoSha512(getLabel()),
+					getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/" + filename,
+					getNetworkModel().getData().getDebianIsoSha512(getLabel()),
 					"The sha512 sum of the Debian net install in your config doesn't match what has been downloaded.  This could mean your connection is man-in-the-middle'd, or it could just be that the file has been updated on the server. "
 							+ "Please check http://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA512SUMS (64 bit) or http://cdimage.debian.org/debian-cd/current/i386/iso-cd/SHA512SUMS (32 bit) for the correct checksum."));
 		}
 
 		for (final String service : getServices().keySet()) {
 			String password = "";
-			final APassphrase pass = new OpenKeePassPassphrase(service, this.networkModel);
+			final APassphrase pass = new OpenKeePassPassphrase(service, getNetworkModel());
 
 			if (pass.init()) {
 				password = pass.getPassphrase();
@@ -183,9 +183,9 @@ public class HyperVisor extends AStructuredProfile {
 			// this.hypervisor.preseed(service.getLabel(), expirePasswords)));
 			// units.addAll(this.hypervisor.buildServiceVm(service.getLabel(), bridge));
 
-			final String bootDiskDir = this.networkModel.getData().getHypervisorThornsecBase(getLabel())
+			final String bootDiskDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel())
 					+ "/disks/boot/" + service + "/";
-			final String dataDiskDir = this.networkModel.getData().getHypervisorThornsecBase(getLabel())
+			final String dataDiskDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel())
 					+ "/disks/data/" + service + "/";
 
 			units.add(new SimpleUnit(service + "_boot_disk_formatted", "proceed", "",

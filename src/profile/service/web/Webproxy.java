@@ -70,7 +70,7 @@ public class Webproxy extends AStructuredProfile {
 
 		// Should we pass through real IPs?
 		final Boolean passThroughIps = Boolean
-				.parseBoolean(this.networkModel.getData().getProperty(getLabel(), "passrealips")); // Defaults false
+				.parseBoolean(getNetworkModel().getData().getProperty(getLabel(), "passrealips")); // Defaults false
 
 		// First, build our ssl config
 		units.add(new DirUnit("nginx_ssl_include_dir", "proceed", "/etc/nginx/includes"));
@@ -89,7 +89,7 @@ public class Webproxy extends AStructuredProfile {
 		sslConf.appendCarriageReturn();
 		sslConf.appendLine("    ssl_stapling on;");
 		sslConf.appendLine("    ssl_stapling_verify on;");
-		for (final HostName resolver : this.networkModel.getData().getUpstreamDNSServers()) {
+		for (final HostName resolver : getNetworkModel().getData().getUpstreamDNSServers()) {
 			sslConf.appendLine("    resolver " + resolver.asInetAddress() + " valid=300s;");
 		}
 		sslConf.appendLine("    resolver_timeout 5s;");
@@ -135,7 +135,7 @@ public class Webproxy extends AStructuredProfile {
 			throws InvalidMachineModelException, InvalidPropertyArrayException, InvalidMachineException {
 		final Set<IUnit> units = new HashSet<>();
 
-		final AMachineData data = this.networkModel.getData().getMachine(MachineType.SERVER, getLabel());
+		final AMachineData data = getNetworkModel().getData().getMachine(MachineType.SERVER, getLabel());
 		final Set<String> backends = new LinkedHashSet<>();
 
 		if (data.getData().containsKey("proxyto")) {
@@ -150,15 +150,15 @@ public class Webproxy extends AStructuredProfile {
 			Boolean isDefault = true;
 
 			for (final String backend : backends) {
-				final AMachineModel backendObj = this.networkModel.getMachineModel(backend);
+				final AMachineModel backendObj = getNetworkModel().getMachineModel(backend);
 
-				final Set<String> cnames = this.networkModel.getData().getCNAMEs(backend);
-				final HostName domain = this.networkModel.getServerModel(backend).getDomain();
+				final Set<String> cnames = getNetworkModel().getData().getCNAMEs(backend);
+				final HostName domain = getNetworkModel().getServerModel(backend).getDomain();
 				final String logDir = "/var/log/nginx/" + backend + "." + domain + "/";
 
 				units.add(new DirUnit(backend + "_log_dir", "proceed", logDir,
 						"Could not create the directory for " + backend + "'s logs. Nginx will refuse to start."));
-				units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addBindPoint(
+				units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addBindPoint(
 						backend + "_tls_certs", "proceed", "/media/metaldata/tls/" + backend,
 						"/media/data/tls/" + backend, "root", "root", "600", "/media/metaldata", false));
 
@@ -198,7 +198,7 @@ public class Webproxy extends AStructuredProfile {
 				nginxConf.appendCarriageReturn();
 				nginxConf.appendLine("    location / {");
 				// for (final JsonValue source :
-				// this.networkModel.getData().getData().getJsonArray(backend, "allow")) {
+				// getNetworkModel().getData().getData().getJsonArray(backend, "allow")) {
 				// nginxConf.appendLine(" allow " + source + ";");
 				// nginxConf.appendLine(" deny all;");
 				// }
@@ -238,12 +238,12 @@ public class Webproxy extends AStructuredProfile {
 
 		units.addAll(this.webserver.getPersistentFirewall());
 
-		this.networkModel.getServerModel(getLabel()).addEgress("check.torproject.org");
-		this.networkModel.getServerModel(getLabel()).addListen(Encapsulation.TCP, 443);
+		getNetworkModel().getServerModel(getLabel()).addEgress("check.torproject.org");
+		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 443);
 
 		for (final String backend : getBackends()) {
-			this.networkModel.getMachineModel(getLabel()).addForward(backend);
-			this.networkModel.getMachineModel(getLabel()).addDnat(backend);
+			getNetworkModel().getMachineModel(getLabel()).addForward(backend);
+			getNetworkModel().getMachineModel(getLabel()).addDnat(backend);
 		}
 
 		return units;

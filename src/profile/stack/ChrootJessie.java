@@ -34,7 +34,7 @@ public class ChrootJessie extends AStructuredProfile {
 				"[ -d " + getChrootDir() + "/home ] && echo pass || echo fail", "pass", "pass"));
 
 		String configcmd = "";
-		if (networkModel.getData().getAutoUpdate(getLabel())) {
+		if (getNetworkModel().getData().getAutoUpdate(getLabel())) {
 			configcmd = "sudo chroot " + getChrootDir() + " apt-get --assume-yes upgrade;";
 		}
 		else {
@@ -61,7 +61,7 @@ public class ChrootJessie extends AStructuredProfile {
 	throws InvalidServerModelException {
 		Set<IUnit> units = new HashSet<IUnit>();
 		
-		networkModel.getServerModel(getLabel()).addEgress("deb.debian.org:80,443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("deb.debian.org:80,443");
 
 		return units;
 	}

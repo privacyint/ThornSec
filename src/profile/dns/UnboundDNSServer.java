@@ -42,7 +42,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 	@Override
 	public Set<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
-		final Integer cpus = this.networkModel.getData().getCpus(getLabel());
+		final Integer cpus = getNetworkModel().getData().getCpus(getLabel());
 		final Set<IUnit> units = new HashSet<>();
 
 		// Config originally based on https://calomel.org/unbound_dns.html
@@ -98,7 +98,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		unboundConf.appendLine("    msg-cache-size: " + (cpus / 8) + "m");
 		unboundConf.appendLine("    so-rcvbuf: 1m");
 		// Only switch on blocking if the user actually wants it...
-		if (this.networkModel.getData().adBlocking()) {
+		if (getNetworkModel().getData().adBlocking()) {
 			unboundConf.appendLine("    include: \\\"/etc/unbound/unbound.conf.d/adblock.zone\\\"");
 		}
 		// rDNS
@@ -114,7 +114,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		// Upstream DNS servers
 		unboundConf.appendLine("    forward-zone:");
 		unboundConf.appendLine("        name: \\\".\\\"");
-		for (final HostName upstream : this.networkModel.getData().getUpstreamDNSServers()) {
+		for (final HostName upstream : getNetworkModel().getData().getUpstreamDNSServers()) {
 			Integer port = upstream.getPort();
 			if (port == null) {
 				port = DEFAULT_UPSTREAM_DNS_PORT;
@@ -133,10 +133,10 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		final Set<IUnit> units = new HashSet<>();
 
 		units.add(new InstalledUnit("dns", "proceed", "unbound"));
-		this.networkModel.getServerModel(getLabel()).addSystemUsername("unbound");
-		this.networkModel.getServerModel(getLabel()).addProcessString("/usr/sbin/unbound -d$");
+		getNetworkModel().getServerModel(getLabel()).addSystemUsername("unbound");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/sbin/unbound -d$");
 
-		if (this.networkModel.getData().adBlocking()) {
+		if (getNetworkModel().getData().adBlocking()) {
 			units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
 		}
 
@@ -148,7 +148,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		final Set<IUnit> units = new HashSet<>();
 
 		// Start by updating the ad block list (if req'd)
-		if (this.networkModel.getData().adBlocking()) {
+		if (getNetworkModel().getData().adBlocking()) {
 			units.add(new SimpleUnit("adblock_up_to_date", "proceed",
 					"sudo wget -O /etc/unbound/rawhosts https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
 							+ " && cat /etc/unbound/rawhosts | grep '^0\\.0\\.0\\.0'"
@@ -173,7 +173,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 			for (final String hostName : zone.keySet()) {
 				// It may not be a real machine. It might be a poison. Deal with it.
 				try {
-					hostMachine = this.networkModel.getMachineModel(hostName);
+					hostMachine = getNetworkModel().getMachineModel(hostName);
 
 					for (final NetworkInterfaceModel iface : hostMachine.getNetworkInterfaces()) {
 						// @TODO: Double-check logic here
@@ -204,7 +204,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		final FileUnit resolvConf = new FileUnit("dns_resolv_conf", "dns_running", "/etc/resolv.conf",
 				"Unable to change your DNS to point at the local one.  This will probably cause VM building to fail, amongst other problems");
 		units.add(resolvConf);
-		resolvConf.appendLine("search " + this.networkModel.getData().getDomain(getLabel()));
+		resolvConf.appendLine("search " + getNetworkModel().getData().getDomain(getLabel()));
 		resolvConf.appendLine("nameserver 10.0.0.1");
 
 		return units;
@@ -212,7 +212,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 	@Override
 	public Set<IUnit> getPersistentFirewall() throws ARuntimeException {
-		for (final HostName upstream : this.networkModel.getData().getUpstreamDNSServers()) {
+		for (final HostName upstream : getNetworkModel().getData().getUpstreamDNSServers()) {
 			getNetworkModel().getServerModel(getLabel()).addEgress(upstream);
 		}
 

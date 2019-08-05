@@ -21,7 +21,7 @@ public class Msmtp extends AStructuredProfile {
 	throws InvalidServerModelException {
 		Set<IUnit> units = new HashSet<IUnit>();
 		
-		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addLogBindPoint("msmtp", "proceed", "nginx", "0750"));
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addLogBindPoint("msmtp", "proceed", "nginx", "0750"));
 
 		units.add(new InstalledUnit("msmtp", "proceed", "msmtp"));
 		units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));

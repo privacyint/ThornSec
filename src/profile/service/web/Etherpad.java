@@ -208,7 +208,7 @@ public class Etherpad extends AStructuredProfile {
 
 		units.add(new RunningUnit("etherpad", "etherpad-lite", "etherpad-lite"));
 
-		this.networkModel.getServerModel(getLabel())
+		getNetworkModel().getServerModel(getLabel())
 				.addProcessString("node /media/data/www/node_modules/ep_etherpad-lite/node/server.js$");
 
 		return units;
@@ -223,10 +223,10 @@ public class Etherpad extends AStructuredProfile {
 		units.addAll(this.db.getPersistentFirewall());
 
 		// Let's open this box up to most of the internet.
-		this.networkModel.getServerModel(getLabel()).addEgress("github.com");
-		this.networkModel.getServerModel(getLabel()).addEgress("etherpad.org");
-		this.networkModel.getServerModel(getLabel()).addEgress("beta.etherpad.org");
-		this.networkModel.getServerModel(getLabel()).addEgress("code.jquery.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("etherpad.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("beta.etherpad.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("code.jquery.com");
 
 		return units;
 	}

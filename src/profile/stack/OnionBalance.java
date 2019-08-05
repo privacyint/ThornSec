@@ -41,8 +41,8 @@ public class OnionBalance extends AStructuredProfile {
 
 		units.add(new InstalledUnit("onionbalance", "tor_installed", "onionbalance"));
 
-		this.networkModel.getServerModel(getLabel()).getUserModel().addUsername("debian-tor");
-		this.networkModel.getServerModel(getLabel()).getUserModel().addUsername("onionbalance");
+		getNetworkModel().getServerModel(getLabel()).getUserModel().addUsername("debian-tor");
+		getNetworkModel().getServerModel(getLabel()).getUserModel().addUsername("onionbalance");
 
 		return units;
 	}
@@ -51,13 +51,13 @@ public class OnionBalance extends AStructuredProfile {
 	protected Set<IUnit> getPersistentConfig() throws InvalidServerModelException {
 		final Set<IUnit> units = new HashSet<>();
 
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("onionbalance",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("onionbalance",
 				"onionbalance_installed", "onionbalance", "onionbalance", "0700"));
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addLogBindPoint("onionbalance",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addLogBindPoint("onionbalance",
 				"onionbalance_installed", "onionbalance", "0750"));
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("tor",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("tor",
 				"tor_installed", "debian-tor", "debian-tor", "0700"));
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addLogBindPoint("tor",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addLogBindPoint("tor",
 				"tor_installed", "debian-tor", "0750"));
 
 		units.add(new DirUnit("onionbalance_var_run", "onionbalance_installed", "/var/run/onionbalance"));
@@ -155,7 +155,7 @@ public class OnionBalance extends AStructuredProfile {
 		}
 
 		units.add(new RunningUnit("tor", "tor", "/usr/bin/tor"));
-		this.networkModel.getServerModel(getLabel()).addProcessString(
+		getNetworkModel().getServerModel(getLabel()).addProcessString(
 				"/usr/bin/tor --defaults-torrc /usr/share/tor/tor-service-defaults-torrc -f /etc/tor/torrc --RunAsDaemon 0$");
 
 		return units;
@@ -179,10 +179,10 @@ public class OnionBalance extends AStructuredProfile {
 	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
 		final Set<IUnit> units = new HashSet<>();
 
-		this.networkModel.getServerModel(getLabel()).getAptSourcesModel().addAptSource("tor",
+		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("tor",
 				"deb http://deb.torproject.org/torproject.org stretch main", "keys.gnupg.net",
 				"A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
-		this.networkModel.getServerModel(getLabel()).addEgress("*"); // Needs to be able to call out to everywhere
+		getNetworkModel().getServerModel(getLabel()).addEgress("*"); // Needs to be able to call out to everywhere
 
 		return units;
 	}

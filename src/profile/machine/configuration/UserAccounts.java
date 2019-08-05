@@ -19,7 +19,7 @@ public class UserAccounts extends AProfile {
 		
 		this.usernames = new HashSet<String>();
 		
-		for (String admin : networkModel.getData().getAdmins(getLabel())) {
+		for (String admin : getNetworkModel().getData().getAdmins(getLabel())) {
 			this.usernames.add(admin);
 		}
 		

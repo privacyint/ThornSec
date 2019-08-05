@@ -76,11 +76,11 @@ public class MariaDB extends AStructuredProfile {
 				"id mysql -u 2>&1 | grep id", "", "pass",
 				"The mysql user couldn't be added.  This will cause all sorts of errors."));
 		
-		networkModel.getServerModel(getLabel()).getUserModel().addUsername("mysql");
+		getNetworkModel().getServerModel(getLabel()).getUserModel().addUsername("mysql");
 		
-		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addLogBindPoint("mysql", "proceed", "mysql", "0750"));
-		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("mysql", "proceed", "mysql", "mysql", "0750"));
-		units.addAll(networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("mysql_backups", "proceed", "root", "root", "0600"));
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addLogBindPoint("mysql", "proceed", "mysql", "0750"));
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("mysql", "proceed", "mysql", "mysql", "0750"));
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("mysql_backups", "proceed", "root", "root", "0600"));
 
 		units.add(new SimpleUnit("mariadb_root_password", "openssl_installed",
 				"echo \"[client]\npassword=\\\"${MYSQL_PASSWORD}\\\"\" | sudo tee /root/.my.cnf > /dev/null;",
@@ -204,9 +204,9 @@ public class MariaDB extends AStructuredProfile {
 		
 		units.add(new RunningUnit("mariadb", "mysql", "mysql"));
 		
-		networkModel.getServerModel(getLabel()).addProcessString("/bin/bash /usr/bin/mysqld_safe$");
-		networkModel.getServerModel(getLabel()).addProcessString("/usr/sbin/mysqld$");
-		networkModel.getServerModel(getLabel()).addProcessString("logger -t mysqld -p daemon.error$");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("/bin/bash /usr/bin/mysqld_safe$");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/sbin/mysqld$");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("logger -t mysqld -p daemon.error$");
 		
 		units.add(new SimpleUnit("mariadb_no_failed_logins", "mariadb_installed",
 				"",
@@ -222,7 +222,7 @@ public class MariaDB extends AStructuredProfile {
 		
 		String userCreateSql = "CREATE USER IF NOT EXISTS '" + getUsername() + "'@'localhost' IDENTIFIED BY '" + getUserPassword() + "';";
 		
-		units.add(new SimpleUnit(networkModel.getServerModel(getLabel()) + "_mariadb_db_exists", "mariadb_installed",
+		units.add(new SimpleUnit(getNetworkModel().getServerModel(getLabel()) + "_mariadb_db_exists", "mariadb_installed",
 				"sudo mysql -uroot -B -N -e \"" + userCreateSql + "\" 2>&1",
 				"sudo mysql -uroot -B -N -e \"SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '" + getUsername() + "')\" 2>&1", "1", "pass",
 				"Could not create/update the MYSQL user required for " + getLabel() + ". Don't expect anything to work, I'm afraid"));
@@ -286,9 +286,9 @@ public class MariaDB extends AStructuredProfile {
 	throws InvalidServerModelException {
 		Set<IUnit> units = new HashSet<IUnit>();
 
-		networkModel.getServerModel(getLabel()).getAptSourcesModel().addAptSource("mariadb", "deb http://mirror.sax.uk.as61049.net/mariadb/repo/10.2/debian stretch main", "keyserver.ubuntu.com", "0xF1656F24C74CD1D8");
+		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("mariadb", "deb http://mirror.sax.uk.as61049.net/mariadb/repo/10.2/debian stretch main", "keyserver.ubuntu.com", "0xF1656F24C74CD1D8");
 
-		networkModel.getServerModel(getLabel()).addEgress("mirror.sax.uk.as61049.net");
+		getNetworkModel().getServerModel(getLabel()).addEgress("mirror.sax.uk.as61049.net");
 		
 		return units;
 	}

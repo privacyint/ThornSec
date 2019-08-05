@@ -24,10 +24,10 @@ public class Dedicated extends AStructuredProfile {
 	public Dedicated(String label, NetworkModel networkModel) throws InvalidServerModelException {
 		super(label, networkModel);
 
-		networkModel.getServerModel(label).setFirstOctet(10);
-		networkModel.getServerModel(label).setSecondOctet(0);
+		getNetworkModel().getServerModel(label).setFirstOctet(10);
+		getNetworkModel().getServerModel(label).setSecondOctet(0);
 		// TODO: fixme
-		// setThirdOctet(networkModel.getDediServers().indexOf(networkModel.getServerModel(label))
+		// setThirdOctet(getNetworkModel().getDediServers().indexOf(getNetworkModel().getServerModel(label))
 		// + 1);
 	}
 
@@ -35,10 +35,10 @@ public class Dedicated extends AStructuredProfile {
 	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
 		final Set<IUnit> units = new HashSet<>();
 
-		this.networkModel.getServerModel(getLabel()).addEgress("cdn.debian.net:80,443");
-		this.networkModel.getServerModel(getLabel()).addEgress("security-cdn.debian.org:80,443");
-		this.networkModel.getServerModel(getLabel()).addEgress("prod.debian.map.fastly.net:80,443");
-		this.networkModel.getServerModel(getLabel()).addEgress("download.virtualbox.org:80,443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("cdn.debian.net:80,443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("security-cdn.debian.org:80,443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("prod.debian.map.fastly.net:80,443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("download.virtualbox.org:80,443");
 
 		return units;
 	}

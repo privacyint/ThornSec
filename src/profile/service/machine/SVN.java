@@ -48,7 +48,7 @@ public class SVN extends AStructuredProfile {
 
 		units.add(new InstalledUnit("apache", "proceed", "apache2"));
 		units.add(new RunningUnit("apache", "apache2", "apache2"));
-		this.networkModel.getServerModel(getLabel()).addProcessString("/usr/sbin/apache2 -k start$");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/sbin/apache2 -k start$");
 
 		units.add(new InstalledUnit("svn", "proceed", "subversion"));
 		units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
@@ -65,7 +65,7 @@ public class SVN extends AStructuredProfile {
 
 		units.addAll(this.php.getPersistentConfig());
 
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("www", "proceed",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("www", "proceed",
 				"www-data", "www-data", "0750"));
 
 		units.add(new SimpleUnit("apache_mod_headers_enabled", "apache_installed", "sudo a2enmod headers;",
@@ -92,7 +92,7 @@ public class SVN extends AStructuredProfile {
 		units.add(new FileAppendUnit("hide_apache_version_headers", "apache_installed", "ServerTokens Prod",
 				"/etc/apache2/apache2.conf", "Couldn't hide the Apache version in its headers.  No real problem."));
 
-		units.addAll(this.networkModel.getServerModel(getLabel()).getBindFsModel().addDataBindPoint("svn", "proceed",
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("svn", "proceed",
 				"www-data", "www-data", "0750"));
 
 		units.add(new DirUnit("svn_repo_dir", "svn_data_mounted", "/media/data/svn/repos"));
@@ -216,7 +216,7 @@ public class SVN extends AStructuredProfile {
 	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
 		final Set<IUnit> units = new HashSet<>();
 
-		this.networkModel.getServerModel(getLabel()).addEgress("kent.dl.sourceforge.net:443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("kent.dl.sourceforge.net:443");
 
 		return units;
 	}

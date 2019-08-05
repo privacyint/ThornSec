@@ -141,7 +141,7 @@ public class Piwik extends AStructuredProfile {
 	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
 		final Set<IUnit> units = new HashSet<>();
 
-		this.networkModel.getServerModel(getLabel()).addEgress("builds.matomo.org:443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("builds.matomo.org:443");
 
 		units.addAll(this.lempStack.getPersistentFirewall());
 
