@@ -55,6 +55,9 @@ public class ServerData extends AMachineData {
 
 	private String keePassDB;
 
+	private final Integer ram;
+	private final Integer cpus;
+
 	public ServerData(String label) {
 		super(label);
 
@@ -76,6 +79,9 @@ public class ServerData extends AMachineData {
 		this.debianMirror = null;
 
 		this.keePassDB = null;
+
+		this.ram = null;
+		this.cpus = null;
 	}
 
 	@Override
@@ -260,5 +266,19 @@ public class ServerData extends AMachineData {
 
 	public final String getKeePassDB() {
 		return this.keePassDB;
+	}
+
+	/**
+	 * @return the ram in megabytes
+	 */
+	public final Integer getRAM() {
+		return this.ram;
+	}
+
+	/**
+	 * @return the number of CPUs assigned to this service
+	 */
+	public final Integer getCPUs() {
+		return this.cpus;
 	}
 }

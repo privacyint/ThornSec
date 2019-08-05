@@ -30,9 +30,6 @@ public class ServiceData extends ServerData {
 	private String debianISOURL;
 	private String debianISOSHA512;
 
-	private Integer ram;
-	private Integer cpus;
-
 	private Set<DiskData> disks;
 
 	private Integer backupFrequency;
@@ -44,9 +41,6 @@ public class ServiceData extends ServerData {
 
 		this.debianISOURL = null;
 		this.debianISOSHA512 = null;
-
-		this.ram = null;
-		this.cpus = null;
 
 		this.disks = null;
 
@@ -74,14 +68,6 @@ public class ServiceData extends ServerData {
 		this.debianISOURL = data.getString("debianisourl", null);
 		this.debianISOSHA512 = data.getString("debianisosha512", null);
 
-		if (data.containsKey("ram")) {
-			this.ram = data.getInt("ram");
-		}
-
-		if (data.containsKey("cpus")) {
-			this.cpus = data.getInt("cpus");
-		}
-
 		if (data.containsKey("backupfrequency")) {
 			this.backupFrequency = data.getInt("backupfrequency");
 		}
@@ -103,20 +89,6 @@ public class ServiceData extends ServerData {
 	 */
 	public final String getHypervisor() {
 		return this.hypervisor;
-	}
-
-	/**
-	 * @return the ram in megabytes
-	 */
-	public final Integer getRAM() {
-		return this.ram;
-	}
-
-	/**
-	 * @return the number of CPUs assigned to this service
-	 */
-	public final Integer getCPUs() {
-		return this.cpus;
 	}
 
 	/**
