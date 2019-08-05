@@ -68,7 +68,7 @@ public abstract class AMachineModel extends AModel {
 		this.domain = getNetworkModel().getData().getDomain(getLabel());
 		this.cnames = getNetworkModel().getData().getCNAMEs(getLabel());
 
-		this.networkInterfaces = null;
+		this.networkInterfaces = new LinkedHashSet<>();
 		if (getNetworkModel().getData().getNetworkInterfaces(getLabel()) != null) {
 			for (final NetworkInterfaceData ifaceData : getNetworkModel().getData().getNetworkInterfaces(getLabel())) {
 				final NetworkInterfaceModel iface = ifaceDataToModel(ifaceData);
@@ -86,7 +86,7 @@ public abstract class AMachineModel extends AModel {
 		this.ingresses = getNetworkModel().getData().getIngresses(getLabel());
 		this.egresses = getNetworkModel().getData().getEgresses(getLabel());
 		this.forwards = getNetworkModel().getData().getForwards(getLabel());
-		this.dnat = null;
+		this.dnat = new Hashtable<>();
 	}
 
 	final private NetworkInterfaceModel ifaceDataToModel(NetworkInterfaceData ifaceData) {

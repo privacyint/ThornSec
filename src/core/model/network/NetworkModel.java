@@ -29,10 +29,9 @@ import javax.mail.internet.AddressException;
 import core.data.machine.AMachineData;
 import core.data.machine.AMachineData.MachineType;
 import core.data.network.NetworkData;
-import core.exception.data.ADataException;
+import core.exception.AThornSecException;
 import core.exception.runtime.InvalidDeviceModelException;
 import core.exception.runtime.InvalidMachineModelException;
-import core.exception.runtime.InvalidProfileException;
 import core.exception.runtime.InvalidServerModelException;
 import core.exec.ManageExec;
 import core.exec.network.OpenKeePassPassphrase;
@@ -44,6 +43,11 @@ import core.model.machine.ServerModel;
 import core.model.machine.UserDeviceModel;
 import core.model.machine.configuration.NetworkInterfaceModel;
 
+/**
+ * Below the ThornsecModel comes the getNetworkModel().
+ *
+ * This model represents a given network;
+ */
 public class NetworkModel {
 	private final String label;
 	private NetworkData data;
@@ -64,7 +68,6 @@ public class NetworkModel {
 	 * all of our machines
 	 *
 	 * @throws AddressException
-	 * @throws InvalidServerModelException
 	 * @throws InstantiationException
 	 * @throws IllegalAccessException
 	 * @throws IllegalArgumentException
@@ -74,15 +77,14 @@ public class NetworkModel {
 	 * @throws ClassNotFoundException
 	 * @throws URISyntaxException
 	 * @throws IOException
-	 * @throws InvalidProfileException
-	 * @throws ADataException
 	 * @throws JsonParsingException
+	 * @throws AThornSecException
 	 */
-	void init() throws AddressException, InvalidServerModelException, InstantiationException, IllegalAccessException,
-			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException,
-			ClassNotFoundException, URISyntaxException, IOException, InvalidProfileException, JsonParsingException,
-			ADataException {
+	void init() throws AddressException, InstantiationException, IllegalAccessException, IllegalArgumentException,
+			InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException,
+			URISyntaxException, IOException, JsonParsingException, AThornSecException {
 
+		// Start by building our network
 		final Map<String, AMachineData> externals = this.data.getExternalOnlyDevices();
 		if (externals != null) {
 			for (final String label : externals.keySet()) {

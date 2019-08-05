@@ -170,7 +170,7 @@ public class NetworkData extends AData {
 					serverData.read(jsonServerData.getJsonObject(label));
 
 					// Some servers don't have types set, as they inherit them. Let's make sure they
-					// inherit them.
+					// actually do inherit them.
 					Set<MachineType> serverTypes = serverData.getTypes();
 					if (serverTypes == null) {
 						serverTypes = this.defaultServiceData.getTypes();

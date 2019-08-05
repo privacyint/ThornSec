@@ -1,3 +1,10 @@
+/*
+ * This code is part of the ThornSec project.
+ *
+ * To learn more, please head to its GitHub repo: @privacyint
+ *
+ * Pull requests encouraged.
+ */
 package core;
 
 import java.math.BigInteger;
@@ -5,18 +12,24 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * This is a collection of helper methods I've built for doing string operations
+ *
+ * TODO: Really, they probably don't belong exactly here. I've yet to work out
+ * where they do belong, however.
+ */
 public class StringUtils {
-	
+
 	/**
 	 * Cleans a string of all non-alphanumeric characters.
 	 *
-	 * @param toClean the dirty string
+	 * @param toClean     the dirty string
 	 * @param replacement what to replace all non-alphanumeric characters with
 	 * @return the cleaned string
 	 */
 	public static String stringToAlphaNumeric(String toClean, String replacement) {
-		String invalidChars = "[^a-zA-Z0-9]";
-		
+		final String invalidChars = "[^a-zA-Z0-9]";
+
 		return toClean.replaceAll(invalidChars, replacement);
 	}
 
