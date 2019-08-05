@@ -207,6 +207,15 @@ public class NetworkModel {
 	}
 
 	/**
+	 * @return a linked map of all devices (e.g. non-servers) on our network.
+	 *         Because it is a linked map, it has predictable iteration meaning we
+	 *         can use it to e.g. generate IP Addresses
+	 */
+	public final Map<String, ADeviceModel> getDevices() {
+		return getDevices(MachineType.DEVICE);
+	}
+
+	/**
 	 * @return A linked map containing all server models for this network. Because
 	 *         it is a linked map, it has predictable iteration meaning we can use
 	 *         it to e.g. generate IP Addresses
