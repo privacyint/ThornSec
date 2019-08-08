@@ -94,7 +94,7 @@ public class NetworkInterfaceData extends AData {
 				setGateway(new IPAddressString(data.getString("gateway")).toAddress(IPVersion.IPV4));
 			}
 		} catch (final AddressStringException e) {
-			throw new InvalidIPAddressException();
+			throw new InvalidIPAddressException(e.getMessage() + " is an invalid IP address");
 		}
 		if (data.containsKey("mac")) {
 			setMAC(new MACAddressString(data.getString("mac")).getAddress());

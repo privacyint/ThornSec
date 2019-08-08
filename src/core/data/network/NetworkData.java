@@ -373,7 +373,7 @@ public class NetworkData extends AData {
 	 */
 	public final IPAddress getIP() throws InvalidIPAddressException {
 		if (this.configIP == null) {
-			throw new InvalidIPAddressException();
+			throw new InvalidIPAddressException("You must set a valid IP address for this network");
 		}
 
 		return this.configIP;

@@ -149,7 +149,7 @@ public class ServerData extends AMachineData {
 
 	private void setSSHListenPort(Integer port) throws InvalidPortException {
 		if ((port < 0) || (port > 65535)) {
-			throw new InvalidPortException();
+			throw new InvalidPortException(port);
 		}
 
 		this.sshListenPort = port;
@@ -157,7 +157,7 @@ public class ServerData extends AMachineData {
 
 	private void setAdminPort(Integer port) throws InvalidPortException {
 		if ((port < 0) || (port > 65535)) {
-			throw new InvalidPortException();
+			throw new InvalidPortException(port);
 		}
 
 		this.adminSSHConnectPort = port;

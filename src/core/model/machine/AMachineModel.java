@@ -190,7 +190,7 @@ public abstract class AMachineModel extends AModel {
 
 		for (final Integer port : ports) {
 			if ((port < 1) || (port > 65535)) {
-				throw new InvalidPortException();
+				throw new InvalidPortException(port);
 			}
 
 			listening.add(port);

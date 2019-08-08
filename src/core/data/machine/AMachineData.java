@@ -139,10 +139,8 @@ public abstract class AMachineData extends AData {
 				IPAddress address;
 				try {
 					address = new IPAddressString(ip.toString()).toAddress();
-				} catch (final AddressStringException e) {
-					throw new InvalidDestinationException();
-				} catch (final IncompatibleAddressException e) {
-					throw new InvalidDestinationException();
+				} catch (final AddressStringException | IncompatibleAddressException e) {
+					throw new InvalidDestinationException(ip.toString() + " is an invalid IP address");
 				}
 				putExternalIPAddress(address);
 			}
@@ -208,7 +206,7 @@ public abstract class AMachineData extends AData {
 				this.emailAddress = new InternetAddress(data.getString("email"));
 
 			} catch (final AddressException e) {
-				throw new InvalidEmailAddressException();
+				throw new InvalidEmailAddressException(data.getString("email") + " is an invalid email address");
 			}
 		}
 	}
@@ -250,7 +248,7 @@ public abstract class AMachineData extends AData {
 
 		for (final Integer port : ports) {
 			if (((port < 0)) || ((port > 65535))) {
-				throw new InvalidPortException();
+				throw new InvalidPortException(port);
 			}
 			currentPorts.add(port);
 		}

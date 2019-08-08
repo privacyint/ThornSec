@@ -141,8 +141,8 @@ public class Webproxy extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig()
-			throws InvalidMachineModelException, InvalidPropertyArrayException, InvalidMachineException {
+	protected Set<IUnit> getLiveConfig() throws InvalidMachineModelException, InvalidPropertyArrayException,
+			InvalidMachineException, MissingPropertiesException {
 		final Set<IUnit> units = new HashSet<>();
 
 		final AMachineData data = getNetworkModel().getData().getMachine(MachineType.SERVER, getLabel());
@@ -153,7 +153,7 @@ public class Webproxy extends AStructuredProfile {
 				putBackend(((JsonString) backend).getString());
 			}
 		} else {
-			throw new InvalidMachineException();
+			throw new MissingPropertiesException("dave");
 		}
 
 		if (this.liveConfig == null) {

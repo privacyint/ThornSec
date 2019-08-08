@@ -13,6 +13,7 @@ import java.util.Set;
 import core.exception.data.InvalidPortException;
 import core.exception.data.InvalidPropertyArrayException;
 import core.exception.data.InvalidPropertyException;
+import core.exception.data.MissingPropertiesException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
@@ -196,8 +197,8 @@ public class Tor extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig()
-			throws InvalidMachineModelException, InvalidPropertyArrayException, InvalidMachineException {
+	protected Set<IUnit> getLiveConfig() throws InvalidMachineModelException, InvalidPropertyArrayException,
+			InvalidMachineException, MissingPropertiesException {
 		final Set<IUnit> units = new HashSet<>();
 
 		units.add(new RunningUnit("tor", "tor", "/usr/bin/tor"));

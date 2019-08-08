@@ -29,7 +29,7 @@ public class WebXRay extends AStructuredProfile {
 		String url = "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb";
 		
 		if (!is64bit) {
-			throw new I686Exception();
+			throw new I686Exception("WebXRay can only run on a 64-bit operating system.");
 		}
 		
 		units.add(new FileDownloadUnit("chrome", "proceed", url, "/root/chrome.deb"));

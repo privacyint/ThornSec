@@ -79,7 +79,7 @@ public class ServerModel extends AMachineModel {
 					.scan("profile.firewall");
 
 			if (firewallClasses.isEmpty()) {
-				throw new InvalidProfileException();
+				throw new InvalidProfileException(firewall + " is not a valid firewall profile");
 			}
 
 			final String firewallClass = firewallClasses.iterator().next().getPackageName();

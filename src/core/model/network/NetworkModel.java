@@ -308,7 +308,7 @@ public class NetworkModel {
 			}
 		}
 
-		throw new InvalidMachineModelException();
+		throw new InvalidMachineModelException(machine + " is not a machine on your network");
 	}
 
 	/**
@@ -319,7 +319,7 @@ public class NetworkModel {
 			return getServers().get(server);
 		}
 
-		throw new InvalidServerModelException();
+		throw new InvalidServerModelException(server + " is not a server on your network");
 	}
 
 	/**
@@ -330,7 +330,7 @@ public class NetworkModel {
 			return getDevices(MachineType.DEVICE).get(this.label);
 		}
 
-		throw new InvalidDeviceModelException();
+		throw new InvalidDeviceModelException(device + " is not a device on your network");
 	}
 
 	public final void auditNonBlock(String server, OutputStream out, InputStream in, boolean quiet)

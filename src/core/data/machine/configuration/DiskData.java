@@ -99,7 +99,7 @@ public class DiskData extends AData {
 
 	private void setSize(int size) throws InvalidDiskSizeException {
 		if (size < 512) {
-			throw new InvalidDiskSizeException();
+			throw new InvalidDiskSizeException(size);
 		}
 
 		this.size = size;
