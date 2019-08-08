@@ -12,6 +12,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import javax.json.JsonArray;
+import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
@@ -21,6 +22,7 @@ import core.data.machine.AMachineData.MachineType;
 import core.exception.data.InvalidPortException;
 import core.exception.data.InvalidPropertyArrayException;
 import core.exception.data.InvalidPropertyException;
+import core.exception.data.MissingPropertiesException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidMachineModelException;
@@ -147,9 +149,11 @@ public class Webproxy extends AStructuredProfile {
 
 		final AMachineData data = getNetworkModel().getData().getMachine(MachineType.SERVER, getLabel());
 
-		if (data.getData().containsKey("proxyto")) {
-			final JsonArray jsonBackends = data.getData().getJsonArray("proxyto");
-			for (final JsonValue backend : jsonBackends) {
+		if (data.getData().containsKey("webproxy")) {
+			final JsonObject proxyData = data.getData().getJsonObject("webproxy");
+			final JsonArray backends = proxyData.getJsonArray("webproxy");
+
+			for (final JsonValue backend : backends) {
 				putBackend(((JsonString) backend).getString());
 			}
 		} else {
