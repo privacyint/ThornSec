@@ -403,8 +403,46 @@ public class NetworkModel {
 	}
 
 	private String getScript(String server, String action, boolean quiet) {
-		// TODO Auto-generated method stub
-		return null;
+		System.out.println("=======================" + getLabel() + ":" + server + "==========================");
+		String line = getHeader(server, action) + "\n";
+		final Set<IUnit> units = this.networkUnits.get(server);
+		for (final IUnit unit : units) {
+			line += "#============ " + unit.getLabel() + " =============\n";
+			line += getText(action, unit, quiet) + "\n";
+		}
+		line += getFooter(server, action);
+		return line;
+	}
+
+	private String getText(String action, IUnit unit, boolean quiet) {
+		String line = "";
+		if (action.equals("audit")) {
+			line = unit.genAudit(quiet);
+		} else if (action.equals("config")) {
+			line = unit.genConfig();
+		} else if (action.equals("dryrun")) {
+			line = unit.genConfig();
+			// line = unit.genDryRun();
+		}
+		return line;
+	}
+
+	private String getHeader(String server, String action) {
+		String line = "#!/bin/bash\n";
+		line += "\n";
+		line += "hostname=$(hostname);\n";
+		line += "proceed=1;\n";
+		line += "\n";
+		line += "echo \"Started " + action + " ${hostname} with config label: " + server + "\"\n";
+		line += "pass=0; fail=0; fail_string=;";
+		return line;
+	}
+
+	private String getFooter(String server, String action) {
+		String line = "echo \"pass=$pass fail=$fail failed:$fail_string\"\n\n";
+		line += "\n";
+		line += "echo \"Finished " + action + " ${hostname} with config label: " + server + "\"";
+		return line;
 	}
 
 	public void setData(NetworkData data) {
