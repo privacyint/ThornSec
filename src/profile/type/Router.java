@@ -141,7 +141,7 @@ public class Router extends AStructuredProfile {
 		final Set<IUnit> units = new HashSet<>();
 
 		units.addAll(getDHCPServer().getPersistentFirewall());
-		units.addAll(getDNSServer().getPersistentConfig());
+		units.addAll(getDNSServer().getPersistentFirewall());
 
 		return units;
 	}
