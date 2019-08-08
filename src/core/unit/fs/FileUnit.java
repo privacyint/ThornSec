@@ -69,6 +69,9 @@ public class FileUnit extends SimpleUnit {
 	 * @param endWithCarriageReturn
 	 */
 	public final void appendLine(String line, Boolean endWithCarriageReturn) {
+		if (endWithCarriageReturn) {
+			line += "\n";
+		}
 		this.lines.add(line);
 		this.rebuildUnit();
 	}
