@@ -223,13 +223,12 @@ public class UnboundDNSServer extends ADNSServerProfile {
 			getNetworkModel().getServerModel(getLabel()).addEgress(upstream);
 		}
 
-		return null;
+		return new HashSet<>();
 	}
 
 	@Override
 	public Set<IUnit> getLiveFirewall() throws ARuntimeException {
-		// TODO Auto-generated method stub
-		return null;
+		return new HashSet<>();
 	}
 
 	@Override

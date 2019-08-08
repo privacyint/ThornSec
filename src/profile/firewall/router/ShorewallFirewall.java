@@ -7,6 +7,7 @@
  */
 package profile.firewall.router;
 
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -138,13 +139,11 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 	@Override
 	public Set<IUnit> getPersistentFirewall() throws ARuntimeException {
-		// TODO Auto-generated method stub
-		return null;
+		return new HashSet<>();
 	}
 
 	@Override
 	public Set<IUnit> getLiveFirewall() throws ARuntimeException {
-		// TODO Auto-generated method stub
-		return null;
+		return new HashSet<>();
 	}
 }
