@@ -146,19 +146,21 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 
 		conf.appendLine("group " + label + " {");
 		conf.appendLine(
-				"\tserver-name \\\"" + label + "." + getNetworkModel().getData().getDomain(getLabel()) + "\\\"");
+				"\tserver-name \\\"router." + label + "." + getNetworkModel().getData().getDomain(getLabel()) + "\\\"");
 		conf.appendLine("\t option routers " + subnet.getLowerNonZeroHost().toCompressedString() + ";");
 		conf.appendLine("\t option domain-name-servers " + subnet.getLowerNonZeroHost().toCompressedString() + ";");
 
 		if (machines != null) {
 			for (final AMachineModel machine : machines.values()) {
 				for (final NetworkInterfaceModel iface : machine.getNetworkInterfaces()) {
-					conf.appendCarriageReturn();
-					conf.appendLine("\thost " + machine.getLabel() + "-" + iface.getMac().toDashedString() + "{");
-					conf.appendLine("\t\thardware ethernet " + iface.getMac().toColonDelimitedString() + ";");
-					conf.appendLine("\t\tfixed-address " + iface.getAddress() + ";");
-					conf.appendLine("\t\toption host-name " + machine.getLabel() + ";");
-					conf.appendLine("\t}");
+					if (iface.getMac() != null) { // Only build if it's a real interface
+						conf.appendCarriageReturn();
+						conf.appendLine("\thost " + machine.getLabel() + "-" + iface.getMac().toDashedString() + "{");
+						conf.appendLine("\t\thardware ethernet " + iface.getMac().toColonDelimitedString() + ";");
+						conf.appendLine("\t\tfixed-address " + iface.getAddress() + ";");
+						conf.appendLine("\t\toption host-name " + machine.getLabel() + ";");
+						conf.appendLine("\t}");
+					}
 				}
 			}
 		}
