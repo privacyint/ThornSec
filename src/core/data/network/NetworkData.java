@@ -137,17 +137,17 @@ public class NetworkData extends AData {
 		} else {
 			this.defaultServiceData.read(networkJSONData);
 
-			if (networkJSONData.containsKey("upstreamdns")) {
-				this.upstreamDNS = getHostNameArray("upstreamdns");
+			if (networkJSONData.containsKey("upstream_dns")) {
+				this.upstreamDNS = getHostNameArray("upstream_dns");
 			}
 
 			if (networkJSONData.containsKey("configip")) {
-				this.configIP = new IPAddressString(networkJSONData.getString("configip").replaceAll("[^\\.0-9]", ""))
-						.getAddress();
+				this.configIP = new IPAddressString(
+						networkJSONData.getString("network_config_ip").replaceAll("[^\\.0-9]", "")).getAddress();
 			}
 
 			if (networkJSONData.containsKey("myuser")) {
-				this.myUser = networkJSONData.getJsonString("myuser").getString();
+				this.myUser = networkJSONData.getJsonString("my_ssh_user").getString();
 			}
 			if (networkJSONData.containsKey("domain")) {
 				this.domain = networkJSONData.getJsonString("domain").getString();
@@ -156,9 +156,9 @@ public class NetworkData extends AData {
 			}
 
 			this.adBlocking = networkJSONData.getBoolean("adblocking", DEFAULT_ADBLOCKING);
-			this.autoGenPassphrases = networkJSONData.getBoolean("autogenpasswds", DEFAULT_AUTOGENPASSWDS);
-			this.vpnOnly = networkJSONData.getBoolean("vpnonly", DEFAULT_VPNONLY);
-			this.autoGuest = networkJSONData.getBoolean("autoguest", DEFAULT_AUTOGUEST);
+			this.autoGenPassphrases = networkJSONData.getBoolean("autogen_passwds", DEFAULT_AUTOGENPASSWDS);
+			this.vpnOnly = networkJSONData.getBoolean("vpn_only", DEFAULT_VPNONLY);
+			this.autoGuest = networkJSONData.getBoolean("guest_network", DEFAULT_AUTOGUEST);
 
 			if (networkJSONData.containsKey("servers")) {
 				final JsonObject jsonServerData = networkJSONData.getJsonObject("servers");
