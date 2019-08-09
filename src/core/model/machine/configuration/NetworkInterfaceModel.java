@@ -10,7 +10,7 @@ package core.model.machine.configuration;
 import java.util.HashSet;
 import java.util.Set;
 
-import core.StringUtils;
+import core.data.machine.AMachineData.MachineType;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.iface.IUnit;
 import core.model.AModel;
@@ -20,15 +20,28 @@ import inet.ipaddr.IPAddress;
 import inet.ipaddr.mac.MACAddress;
 
 /**
- * This model represents a NIC.
+ * This model represents a Network Interface Card (NIC) attached to our network.
  *
+ * Whilst originally based on the traditional "SysVinit" /etc/network/interfaces
+ * file, with Debian's continued march towards its successor Systemd, we have
+ * migrated to utilise systemd-networkd.
+ *
+ * This provides portability to other GNU/Linux distributions, but was not a
+ * decision which was taken lightly. Systemd is a highly flawed technology,
+ * which flies in the face of not just decades of practice, but also the UNIX
+ * philosophy {@link https://en.wikipedia.org/wiki/Unix_philosophy} itself. Not
+ * to mention that it's incredibly buggy.
+ *
+ * In theory, it's possible to have Systemd run DHCP servers on a given network
+ * interface, however this functionality is _far_ from mature, and just isn't
+ * good enough for our needs at this time.
+ *
+ * For more information, see https://wiki.debian.org/Debate/initsystem/sysvinit
  */
 public class NetworkInterfaceModel extends AModel {
 
 	private String comment;
-	private String iface;
-	private String preUp;
-	private String postDown;
+	private String name;
 	private Inet inet;
 	private MACAddress mac;
 
@@ -43,9 +56,7 @@ public class NetworkInterfaceModel extends AModel {
 	public NetworkInterfaceModel(String label, NetworkModel networkModel) {
 		super(label, networkModel);
 
-		this.iface = null;
-		this.preUp = null;
-		this.postDown = null;
+		this.name = null;
 		this.subnet = null;
 		this.inet = null;
 		this.bridgePorts = null;
@@ -66,27 +77,11 @@ public class NetworkInterfaceModel extends AModel {
 	}
 
 	public final String getIface() {
-		return this.iface;
+		return this.name;
 	}
 
 	public final void setIface(String iface) {
-		this.iface = iface;
-	}
-
-	public final String getPreUp() {
-		return this.preUp;
-	}
-
-	public final void setPreUp(String preUp) {
-		this.preUp = preUp;
-	}
-
-	public final String getPostDown() {
-		return this.postDown;
-	}
-
-	public final void setPostDown(String postDown) {
-		this.postDown = postDown;
+		this.name = iface;
 	}
 
 	public final Inet getInet() {
@@ -153,14 +148,6 @@ public class NetworkInterfaceModel extends AModel {
 		this.gateway = gateway;
 	}
 
-	private String getStanzaHeader() {
-		String ifaceConf = "";
-		ifaceConf += "#" + getLabel() + " interface\n";
-		ifaceConf += "#" + getComment() + "\n";
-
-		return ifaceConf;
-	}
-
 	/**
 	 * Build a Systemd-networkd .network file for this NIC
 	 *
@@ -178,7 +165,9 @@ public class NetworkInterfaceModel extends AModel {
 			case DHCP:
 				network.appendLine("DHCP=yes");
 				break;
+			case MACVLAN:
 			case STATIC:
+				network.appendLine("IPForward=yes");
 				if (getAddress() != null) {
 					network.appendLine("Address=" + getAddress().toFullString());
 				}
@@ -192,75 +181,54 @@ public class NetworkInterfaceModel extends AModel {
 					network.appendLine("Gateway=" + getGateway().toFullString());
 				}
 				break;
-			case MACVLAN:
-				break;
 			default:
 				break;
 		}
+
 		return network;
-//		String ifaceConf = "";
-///		ifaceConf += getStanzaHeader();
-//		ifaceConf += "iface " + getIface() + " inet " + getInet();
-//	/	ifaceConf += (getBridgePorts() != null) ? "\n" + "bridge_ports " + String.join(" ", getBridgePorts()) : "";
-//		ifaceConf += (getAddress() != null) ? "\n" + "address " + getAddress() : "";
-//		ifaceConf += (getNetmask() != null) ? "\n" + "netmask " + getNetmask() : "";
-//		ifaceConf += (getBroadcast() != null) ? "\n" + "broadcast " + getBroadcast() : "";
-//		ifaceConf += (getGateway() != null) ? "\n" + "gateway " + getGateway() : "";
-
-//		return ifaceConf;
 	}
 
-	public String getRouterStanza() {
-		String ifaceConf = "";
-		ifaceConf += getStanzaHeader();
-		ifaceConf += "iface " + getIface() + " inet " + getInet();
-		ifaceConf += (getBridgePorts() != null) ? "\n" + "bridge_ports " + String.join(" ", getBridgePorts()) : "";
-		ifaceConf += (getGateway() != null) ? "\n" + "address " + getGateway() : "";
-		ifaceConf += (getNetmask() != null) ? "\n" + "netmask " + getNetmask() : "";
-
-		return ifaceConf;
-	}
-
-	public String getDhcpStanza() {
-		if (this.mac != null) {
-			String ifaceConfDhcp = "";
-			ifaceConfDhcp = "\n\n";
-			ifaceConfDhcp += "\t#" + getLabel() + " interface\n";
-			ifaceConfDhcp += "\t#" + getComment() + "\n";
-			ifaceConfDhcp += "\tsubnet " + getSubnet() + " netmask " + getNetmask() + " {\n";
-			ifaceConfDhcp += "\t\thost " + StringUtils.stringToAlphaNumeric(getLabel().toString(), "_") + "-"
-					+ StringUtils.stringToAlphaNumeric(getMac().toNormalizedString(), "") + " {\n";
-			ifaceConfDhcp += "\t\t\thardware ethernet " + getMac() + ";\n";
-			ifaceConfDhcp += "\t\t\tfixed-address " + getAddress() + ";\n";
-			ifaceConfDhcp += "\t\t\toption routers " + getGateway() + ";\n";
-			ifaceConfDhcp += "\t\t}\n";
-			ifaceConfDhcp += "\t}";
-
-			return ifaceConfDhcp;
-		}
-
-		return null;
-	}
-
-	public static Set<IUnit> buildVLAN(String device, String ip) {
+	public static final Set<IUnit> buildVXVLAN(String vlanName, String physical, IPAddress localAddress,
+			IPAddress remoteAddress) {
 		final Set<IUnit> units = new HashSet<>();
 
-		final FileUnit netDev = new FileUnit(device + "_netdev", "proceed", "/etc/systemd/" + device + ".netdev");
+		final FileUnit netDev = new FileUnit(vlanName + "_netdev", "proceed",
+				"/etc/systemd/network/" + vlanName + ".netdev");
 		netDev.appendLine("[NetDev]");
-		netDev.appendLine("Name=" + device);
+		netDev.appendLine("Name=" + vlanName);
+		netDev.appendLine("Kind=vxvlan");
+		netDev.appendCarriageReturn();
+		netDev.appendLine("[VXVLAN]");
+		netDev.appendLine("Id=" + remoteAddress.toFullString().replaceAll("\\.", ""));
+		netDev.appendLine("Remote=" + remoteAddress.toFullString());
+		netDev.appendLine("Local=" + localAddress.toFullString());
+		units.add(netDev);
+
+		return units;
+
+	}
+
+	public static final Set<IUnit> buildMACVLAN(MachineType vlanName, IPAddress gatewayAddress) {
+		final Set<IUnit> units = new HashSet<>();
+
+		final FileUnit netDev = new FileUnit(vlanName + "_netdev", "proceed",
+				"/etc/systemd/network/" + vlanName + ".netdev");
+		netDev.appendLine("[NetDev]");
+		netDev.appendLine("Name=" + vlanName);
 		netDev.appendLine("Kind=macvlan");
 		netDev.appendCarriageReturn();
 		netDev.appendLine("[MACVLAN]");
-		netDev.appendLine("Mode=vepa");
+		netDev.appendLine("Mode=vepa"); // TODO: what mode should this be in?
 		units.add(netDev);
 
-		final FileUnit network = new FileUnit(device + "_network", "proceed", "/etc/systemd/" + device + ".network");
+		final FileUnit network = new FileUnit(vlanName + "_network", "proceed",
+				"/etc/systemd/network/" + vlanName + ".network");
 		network.appendLine("[Match]");
-		network.appendLine("Name=" + device);
+		network.appendLine("Name=" + vlanName);
 		network.appendCarriageReturn();
 		network.appendLine("[Network]");
 		network.appendLine("IPForward=yes");
-		network.appendLine("Address=" + ip);
+		network.appendLine("Address=" + gatewayAddress.toFullString());
 		units.add(network);
 
 		return units;
