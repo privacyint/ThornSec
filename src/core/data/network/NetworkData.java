@@ -59,7 +59,8 @@ import inet.ipaddr.IPAddressString;
 /**
  * This class represents the state of our network *AS DEFINED IN THE JSON*
  *
- * If something isn't defined in our JSON, we will return default values.
+ * If something isn't defined in our JSON, we will _return_ default values, as
+ * required, or otherwise null.
  *
  * This is our "interface" between the data and the models ThornSec will build.
  */
@@ -104,6 +105,11 @@ public class NetworkData extends AData {
 
 	private Map<MachineType, Map<String, AMachineData>> machines;
 
+	/**
+	 * Create a new Network, populated with null values.
+	 *
+	 * @param label the network's name
+	 */
 	public NetworkData(String label) {
 		super(label);
 
@@ -340,6 +346,9 @@ public class NetworkData extends AData {
 		return this.myUser;
 	}
 
+	/**
+	 * @return the upstream DNS server addresses
+	 */
 	public final Set<HostName> getUpstreamDNSServers() {
 		return this.upstreamDNS;
 	}
@@ -386,6 +395,10 @@ public class NetworkData extends AData {
 		return this.adBlocking;
 	}
 
+	/**
+	 * Do we require users to be on a VPN connection to use our services? (This is
+	 * only useful for internal services...)
+	 */
 	public final boolean vpnOnly() {
 		return this.vpnOnly;
 	}
@@ -397,6 +410,14 @@ public class NetworkData extends AData {
 		return this.domain;
 	}
 
+	/**
+	 *
+	 * @param server Server's name
+	 * @return All types assigned to the given machine, or default values if not
+	 *         explicitly set
+	 * @throws InvalidServerException if attempting to find a server which isn't
+	 *                                defined
+	 */
 	final public Set<MachineType> getTypes(String server) throws InvalidServerException {
 		Set<MachineType> types = ((ServerData) getMachine(MachineType.SERVER, server)).getTypes();
 
@@ -404,10 +425,21 @@ public class NetworkData extends AData {
 			types = this.defaultServiceData.getTypes();
 		}
 
+		assert (types != null);
+
 		return types;
 	}
 
-	public Set<NetworkInterfaceData> getNetworkInterfaces(String machine)
+	/**
+	 * Get a given machine's NICs as an iterable
+	 * 
+	 * @param machine Machine's name
+	 * @return NICs
+	 * @throws JsonParsingException
+	 * @throws ADataException
+	 * @throws IOException
+	 */
+	final public Set<NetworkInterfaceData> getNetworkInterfaces(String machine)
 			throws JsonParsingException, ADataException, IOException {
 		Set<NetworkInterfaceData> interfaces = getMachine(machine).getNetworkInterfaces();
 
