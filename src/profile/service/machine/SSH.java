@@ -45,11 +45,14 @@ public class SSH extends AStructuredProfile {
 		return units;
 	}
 
+	/**
+	 * See https://man.openbsd.org/sshd_config
+	 */
 	@Override
 	protected Set<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidMachineException {
 		final Set<IUnit> units = new HashSet<>();
 
-		// TODO: Update to new config file format, many of these are derecated now
+		// The below is informed by https://infosec.mozilla.org/guidelines/openssh
 
 		final FileUnit sshdConf = new FileUnit("sshd_config", "sshd_installed", "/etc/ssh/sshd_config");
 		units.add(sshdConf);

@@ -24,7 +24,7 @@ public class FileUnit extends SimpleUnit {
 
 	/**
 	 * Unit for writing out a whole file, with custom fail message
-	 * 
+	 *
 	 * @param name         Name of unit test
 	 * @param precondition Precondition unit test name
 	 * @param path         Path to the file
@@ -39,7 +39,7 @@ public class FileUnit extends SimpleUnit {
 
 	/**
 	 * Unit for writing out a whole file, with default fail message
-	 * 
+	 *
 	 * @param name         Name of unit test
 	 * @param precondition Precondition unit test name
 	 * @param path         Path to the file
@@ -64,7 +64,7 @@ public class FileUnit extends SimpleUnit {
 
 	/**
 	 * Append a line of text to this FileUnit.
-	 * 
+	 *
 	 * @param line
 	 * @param endWithCarriageReturn
 	 */
@@ -76,10 +76,18 @@ public class FileUnit extends SimpleUnit {
 		rebuildUnit();
 	}
 
+	/**
+	 * Append a line of text to this FileUnit, ending with a carriage return
+	 *
+	 * @param line
+	 */
 	public final void appendLine(String line) {
 		this.appendLine(line, true);
 	}
 
+	/**
+	 * Append a carriage return to this FileUnit
+	 */
 	public final void appendCarriageReturn() {
 		this.appendLine("", true);
 	}

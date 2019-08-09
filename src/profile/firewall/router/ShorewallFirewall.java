@@ -71,13 +71,12 @@ public class ShorewallFirewall extends AFirewallProfile {
 		interfaces.appendLine("#zone       interface      options");
 		// The below zone is currently a catch-all so we can create Routers with a
 		// single iface...(!)
-		interfaces.appendLine("-           " + getNetworkModel().getServerModel(getLabel())); // TODO
+		// interfaces.appendLine("- " + getNetworkModel().getServerModel(getLabel()));
+		// // TODO
 		interfaces.appendLine("-           servers        detect tcpflags,nosmurfs,routefiulter,logmartians");
 		interfaces.appendLine("-           users          detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
-		interfaces.appendLine("-           admins         detect tcpflags,nosmurfs,routefiulter,logmartians"); // TODO:
-																												// Do we
-																												// need
-		// this?
+		// TODO: Do we need this admin VLAN?
+		interfaces.appendLine("-           admins         detect tcpflags,nosmurfs,routefiulter,logmartians");
 		interfaces.appendLine("-           internalOnlys  detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
 		interfaces.appendLine("-           externalOnlys  detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
 		if (getNetworkModel().getData().buildAutoGuest()) {
