@@ -136,7 +136,7 @@ public class Webproxy extends AStructuredProfile {
 
 	private void putBackend(String label) {
 		if (this.backends == null) {
-			this.backends = new LinkedHashSet();
+			this.backends = new LinkedHashSet<>();
 		}
 
 		this.backends.add(label);
