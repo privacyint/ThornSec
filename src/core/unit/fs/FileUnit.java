@@ -53,7 +53,7 @@ public class FileUnit extends SimpleUnit {
 
 		// Remove any trailing newline when echoing out...
 		if (body.endsWith("\n")) {
-			body = body.substring(0, body.length() - 3);
+			body = body.substring(0, body.length() - 1);
 		}
 
 		super.config = "sudo [ -f " + this.path + " ] || sudo touch " + this.path + ";" + "echo \"" + body
