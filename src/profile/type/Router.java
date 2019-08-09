@@ -181,4 +181,14 @@ public class Router extends AStructuredProfile {
 
 		return units;
 	}
+
+	@Override
+	public Set<IUnit> getLiveFirewall() throws AThornSecException {
+		final Set<IUnit> units = new HashSet<>();
+
+		units.addAll(getDHCPServer().getLiveFirewall());
+		units.addAll(getDNSServer().getLiveFirewall());
+
+		return units;
+	}
 }
