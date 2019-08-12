@@ -151,7 +151,7 @@ public class Webproxy extends AStructuredProfile {
 
 		if (data.getData().containsKey("webproxy")) {
 			final JsonObject proxyData = data.getData().getJsonObject("webproxy");
-			final JsonArray backends = proxyData.getJsonArray("webproxy");
+			final JsonArray backends = proxyData.getJsonArray("backends");
 
 			for (final JsonValue backend : backends) {
 				putBackend(((JsonString) backend).getString());

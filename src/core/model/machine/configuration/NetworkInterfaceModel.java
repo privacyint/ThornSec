@@ -228,7 +228,7 @@ public class NetworkInterfaceModel extends AModel {
 		network.appendCarriageReturn();
 		network.appendLine("[Network]");
 		network.appendLine("IPForward=yes");
-		network.appendLine("Address=" + gatewayAddress.toFullString());
+		network.appendLine("Address=" + gatewayAddress.toCompressedString());
 		units.add(network);
 
 		return units;
