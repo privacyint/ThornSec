@@ -8,21 +8,21 @@
 package profile.dhcp;
 
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Set;
 
 import core.data.machine.AMachineData.Encapsulation;
-import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
+import core.model.machine.configuration.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
+import inet.ipaddr.IPAddress;
 
 /**
  * Configure and set up our various different networks, and offer IP addresses
@@ -30,25 +30,8 @@ import core.unit.pkg.RunningUnit;
  */
 public class ISCDHCPServer extends ADHCPServerProfile {
 
-	// private final Set<String> classes;
-	// private final Set<String> stanzas;
-
-	private final Map<MachineType, Set<AMachineModel>> groups;
-
 	public ISCDHCPServer(String label, NetworkModel networkModel) {
 		super(label, networkModel);
-
-		this.groups = new LinkedHashMap<>();
-//		this.classes = new LinkedHashSet<>();
-//		this.stanzas = new LinkedHashSet<>();
-	}
-
-	public final void addGroups() {
-
-	}
-
-	public Map<MachineType, Set<AMachineModel>> getGroups() {
-		return this.groups;
 	}
 
 	@Override
@@ -65,7 +48,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		final Set<IUnit> units = new HashSet<>();
 
 		// Create sub-dir
-		final DirUnit dhcpdConfD = new DirUnit("dhcpd_conf", "dhcp_installed", "/etc/dhcp/dhcpd.conf.d");
+		final DirUnit dhcpdConfD = new DirUnit("dhcpd_confd_dir", "dhcp_installed", "/etc/dhcp/dhcpd.conf.d");
 		units.add(dhcpdConfD);
 		final FileUnit dhcpdConf = new FileUnit("dhcpd_conf", "dhcp_installed", "/etc/dhcp/dhcpd.conf");
 		units.add(dhcpdConf);
@@ -84,33 +67,74 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		// dhcpdConf.appendLine("use-host-decl-names on;");
 		dhcpdConf.appendCarriageReturn();
 
-		for (final MachineType vlan : getGroups().keySet()) {
-			// TODO FIXME
-			// dhcpdConf.appendLine(subnetString(vlan));
-			dhcpdConf.appendLine("include \\\"/etc/dhcp/dhcpd.conf.d/" + vlan.toString() + ".conf\\\"");
+		for (final String subnet : getSubnets().keySet()) {
+			dhcpdConf.appendLine("include \\\"/etc/dhcp/dhcpd.conf.d/" + subnet + ".conf\\\"");
 		}
-
-		dhcpdConf.appendLine("}");
 
 		final FileUnit dhcpdListen = new FileUnit("dhcpd_defiface", "dhcp_installed", "/etc/default/isc-dhcp-server");
 		units.add(dhcpdListen);
 
-		dhcpdListen.appendLine("INTERFACES=\\\"servers users admins internalOnlys externalOnlys\\\"");
-		getNetworkModel().getServerModel(getLabel()).addProcessString(
-				"/usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf servers users admins internalOnlys externalOnlys$");
+		dhcpdListen.appendLine("INTERFACES=\\\"", false);
+		for (final String subnet : getSubnets().keySet()) {
+			dhcpdListen.appendLine(" " + subnet, false);
+		}
+		dhcpdListen.appendLine("\\\"");
+
+		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf");
 
 		return units;
 	}
 
 	@Override
-	public Set<IUnit> getLiveConfig() {
+	public Set<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Set<IUnit> units = new HashSet<>();
 
-		// TODO: handle guest networking
-		for (final MachineType vlan : getGroups().keySet()) {
-			// TODO FIXME
-			// units.add(buildNetworkConf(vlan));
+		for (final String subnetName : getSubnets().keySet()) {
+			final FileUnit subnetConfig = new FileUnit(subnetName + "_dhcpd_live_config", "dhcp_installed",
+					"/etc/dhcp/dhcpd.conf.d/" + subnetName + ".conf");
+			units.add(subnetConfig);
+
+			final IPAddress subnet = getGateway(subnetName).withoutPrefixLength();
+			final Integer prefix = getGateway(subnetName).getNetworkPrefixLength();
+			final IPAddress netmask = subnet.getNetwork().getNetworkMask(prefix, false);
+
+			// Start by telling our DHCP Server about this subnet.
+			subnetConfig.appendLine(
+					"subnet " + subnet.withoutPrefixLength().toCompressedString() + " netmask " + netmask + " {}");
+
+			// Now let's create our subnet/groups!
+			subnetConfig.appendCarriageReturn();
+			subnetConfig.appendLine("group " + subnetName + " {");
+			subnetConfig.appendLine("\tserver-name \\\"" + subnetName + "." + getLabel() + "."
+					+ getNetworkModel().getData().getDomain() + "\\\";");
+			subnetConfig.appendLine("\toption routers " + subnet.toCompressedString() + ";");
+			subnetConfig.appendLine("\toption domain-name-servers " + subnet.toCompressedString() + ";");
+
+			for (final AMachineModel machine : getMachines(subnetName)) {
+
+				// Skip over ourself, we're a router.
+				if (machine.equals(getNetworkModel().getMachineModel(getLabel()))) {
+					continue;
+				}
+
+				for (final NetworkInterfaceModel iface : machine.getNetworkInterfaces()) {
+
+					// If I don't know its MAC address, I shouldn't attempt to route it.
+					if (iface.getMac() == null) {
+						continue;
+					}
+
+					subnetConfig.appendLine(
+							"\thost " + machine.getLabel() + "-" + iface.getMac().toNormalizedString() + " {");
+					subnetConfig.appendLine("\t\thardware ethernet " + iface.getMac().toColonDelimitedString() + ";");
+					subnetConfig.appendLine("\t\tfixed-address " + iface.getAddress().toCompressedString() + ";");
+					subnetConfig.appendLine("\t}");
+
+				}
+			}
+			subnetConfig.appendLine("}");
 		}
+
 		units.add(new RunningUnit("dhcp_running", "isc-dhcp-server", "dhcpd"));
 
 		return units;
