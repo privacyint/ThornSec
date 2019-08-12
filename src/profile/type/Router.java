@@ -16,6 +16,7 @@ import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
 import core.exception.data.InvalidIPAddressException;
 import core.iface.IUnit;
+import core.model.machine.AMachineModel;
 import core.model.machine.configuration.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
@@ -140,9 +141,12 @@ public class Router extends AStructuredProfile {
 		units.add(new EnabledServiceUnit("systemd_networkd", "proceed", "systemd-networkd",
 				"I was unable to enable the networking service. This is bad!"));
 
-		// Create our VLANs for our various networks.
+		// Create our VLANs for our various networks, and tell our DHCP Server about
+		// them
 		for (final MachineType vlan : getMACVLANs().keySet()) {
 			units.addAll(NetworkInterfaceModel.buildMACVLAN(vlan, getMACVLANs().get(vlan)));
+
+			getDHCPServer().addSubnet(vlan.toString(), getMACVLANs().get(vlan));
 		}
 
 		units.addAll(getDHCPServer().getPersistentConfig());
@@ -168,6 +172,13 @@ public class Router extends AStructuredProfile {
 	@Override
 	protected Set<IUnit> getLiveConfig() throws AThornSecException {
 		final Set<IUnit> units = new HashSet<>();
+
+		for (final MachineType vlan : getMACVLANs().keySet()) {
+
+			for (final AMachineModel machine : getNetworkModel().getMachines(vlan).values()) {
+				getDHCPServer().addToSubnet(vlan.toString(), machine);
+			}
+		}
 
 		units.addAll(getDHCPServer().getLiveConfig());
 		units.addAll(getDNSServer().getLiveConfig());
