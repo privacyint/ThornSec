@@ -13,6 +13,7 @@ import java.io.IOException;
 import javax.json.JsonObject;
 import javax.json.stream.JsonParsingException;
 
+import core.StringUtils;
 import core.data.AData;
 import core.exception.data.ADataException;
 import core.exception.data.machine.InvalidDiskSizeException;
@@ -78,10 +79,10 @@ public class DiskData extends AData {
 	@Override
 	public void read(JsonObject data) throws ADataException, JsonParsingException, IOException {
 		if (data.containsKey("medium")) {
-			setMedium(Medium.valueOf(data.getString("medium")));
+			setMedium(Medium.valueOf(data.getString("medium").toUpperCase()));
 		}
 		if (data.containsKey("format")) {
-			setFormat(Format.valueOf(data.getString("format")));
+			setFormat(Format.valueOf(data.getString("format").toUpperCase()));
 		}
 		if (data.containsKey("filename")) {
 			setFilename(new File(data.getString("filename")));
@@ -93,7 +94,8 @@ public class DiskData extends AData {
 			setComment(data.getString("comment"));
 		}
 		if (data.containsKey("size")) {
-			setSize(data.getInt("size"));
+			final Integer sizeInMB = StringUtils.stringToMegaBytes(data.getString("size"));
+			setSize(sizeInMB);
 		}
 	}
 

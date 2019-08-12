@@ -53,14 +53,14 @@ public class ServiceData extends ServerData {
 		super.read(data);
 
 		if (data.containsKey("disks")) {
-			final JsonArray disks = data.getJsonArray("disks");
-
 			this.disks = new HashSet<>();
+			final JsonObject disks = data.getJsonObject("disks");
 
-			for (int i = 0; i < disks.size(); ++i) {
-				final DiskData disk = new DiskData(getLabel());
-				disk.read(disks.getJsonObject(i));
-				this.disks.add(disk);
+			for (final String diskLabel : disks.keySet()) {
+				final DiskData diskData = new DiskData(diskLabel);
+				diskData.read(disks.getJsonObject(diskLabel));
+
+				this.disks.add(diskData);
 			}
 		}
 
