@@ -199,7 +199,7 @@ public class NetworkModel {
 	 * @return A map of all machines of a given type
 	 */
 	public Map<String, AMachineModel> getMachines(MachineType type) {
-		return getMachines().get(type);
+		return getMachines().getOrDefault(type, new LinkedHashMap<>());
 	}
 
 	/**
