@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -30,6 +31,7 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
+import javax.json.JsonString;
 import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
@@ -137,110 +139,156 @@ public class NetworkData extends AData {
 		this.machines = null;
 	}
 
+	private void readInclude(String include)
+			throws IOException, JsonParsingException, ADataException, URISyntaxException {
+		String rawIncludeData = null;
+
+		JsonReader jsonReader = null;
+
+		rawIncludeData = new String(Files.readAllBytes(Paths.get(include)), StandardCharsets.UTF_8);
+		jsonReader = Json.createReader(new StringReader(rawIncludeData));
+
+		read(jsonReader.readObject());
+	}
+
+	private ServerData readServer(String label, JsonObject dataObject)
+			throws JsonParsingException, ADataException, IOException, URISyntaxException {
+		// We have to read it in first to find out what it is - we can then replace it
+		// with a specialised version
+		ServerData serverData = new ServerData(label);
+		serverData.read(dataObject);
+
+		// Some servers don't have types set, as they inherit them. Let's make sure they
+		// actually do inherit them.
+		Set<MachineType> serverTypes = serverData.getTypes();
+		if (serverTypes == null) {
+			serverTypes = this.defaultServiceData.getTypes();
+
+			if (serverTypes == null) {
+				serverTypes = new HashSet<>();
+			}
+		}
+
+		// If we've just hit a hypervisor machine, we need to dig a little.
+		if (serverTypes.contains(MachineType.HYPERVISOR)) {
+			serverData = new HypervisorData(label);
+
+			// They *should* contain information about their services
+			if (dataObject.containsKey("services")) {
+				final JsonObject servicesData = dataObject.getJsonObject("services");
+
+				for (final String serviceLabel : servicesData.keySet()) {
+					final ServerData service = readServer(serviceLabel, servicesData.getJsonObject(serviceLabel));
+
+					// Register the service across various parts of our network...
+					putMachine(MachineType.SERVICE, service);
+					((HypervisorData) serverData).addVM(service);
+				}
+			} else {
+				System.out.println("No services found on " + label);
+			}
+		} else if (serverTypes.contains(MachineType.SERVICE)) {
+			serverData = new ServiceData(label);
+		}
+
+		// Read in data to the newly specialised object
+		serverData.read(dataObject);
+
+		for (final MachineType type : serverTypes) {
+			putMachine(type, serverData);
+		}
+
+		putMachine(MachineType.SERVER, serverData);
+
+		return serverData;
+	}
+
+	/**
+	 * This is where we build the objects for our network.
+	 */
 	@Override
 	public void read(JsonObject networkJSONData)
 			throws ADataException, JsonParsingException, IOException, URISyntaxException {
 		super.setData(networkJSONData);
 
-		final String include = networkJSONData.getString("include", null);
+		// Read in any include files, if we have them.
+		if (networkJSONData.containsKey("includes")) {
+			for (final JsonValue include : networkJSONData.getJsonArray("includes")) {
+				readInclude((((JsonString) include).getString()));
+			}
+		}
 
-		if (include != null) {
-			readInclude(include);
+		this.defaultServiceData.read(networkJSONData);
+
+		if (networkJSONData.containsKey("upstream_dns")) {
+			this.upstreamDNS = getHostNameArray("upstream_dns");
+		}
+
+		if (networkJSONData.containsKey("network_config_ip")) {
+			this.configIP = new IPAddressString(
+					networkJSONData.getString("network_config_ip").replaceAll("[^\\.0-9]", "")).getAddress();
+		}
+
+		if (networkJSONData.containsKey("my_ssh_user")) {
+			this.myUser = networkJSONData.getJsonString("my_ssh_user").getString();
+		}
+		if (networkJSONData.containsKey("domain")) {
+			this.domain = networkJSONData.getJsonString("domain").getString();
 		} else {
-			this.defaultServiceData.read(networkJSONData);
-
-			if (networkJSONData.containsKey("upstream_dns")) {
-				this.upstreamDNS = getHostNameArray("upstream_dns");
-			}
-
-			if (networkJSONData.containsKey("configip")) {
-				this.configIP = new IPAddressString(
-						networkJSONData.getString("network_config_ip").replaceAll("[^\\.0-9]", "")).getAddress();
-			}
-
-			if (networkJSONData.containsKey("myuser")) {
-				this.myUser = networkJSONData.getJsonString("my_ssh_user").getString();
-			}
-			if (networkJSONData.containsKey("domain")) {
-				this.domain = networkJSONData.getJsonString("domain").getString();
-			} else {
 			this.domain = MACHINE_DOMAIN;
-			}
+		}
 
 		this.adBlocking = networkJSONData.getBoolean("adblocking", NETWORK_ADBLOCKING);
 		this.autoGenPassphrases = networkJSONData.getBoolean("autogen_passwds", NETWORK_AUTOGENPASSWDS);
 		this.vpnOnly = networkJSONData.getBoolean("vpn_only", NETWORK_VPNONLY);
 		this.autoGuest = networkJSONData.getBoolean("guest_network", NETWORK_AUTOGUEST);
 
-			if (networkJSONData.containsKey("servers")) {
-				final JsonObject jsonServerData = networkJSONData.getJsonObject("servers");
+		// Look for "servers" first
+		if (networkJSONData.containsKey("servers")) {
+			final JsonObject jsonServerData = networkJSONData.getJsonObject("servers");
 
-				for (final String label : jsonServerData.keySet()) {
-					// We have to read it in first to find out what it is - we can then replace it
-					// with a specialised version
-					ServerData serverData = new ServerData(label);
-					serverData.read(jsonServerData.getJsonObject(label));
-
-					// Some servers don't have types set, as they inherit them. Let's make sure they
-					// actually do inherit them.
-					Set<MachineType> serverTypes = serverData.getTypes();
-					if (serverTypes == null) {
-						serverTypes = this.defaultServiceData.getTypes();
-					}
-
-					if (serverTypes.contains(MachineType.HYPERVISOR)) {
-						serverData = new HypervisorData(label);
-						serverData.read(jsonServerData.getJsonObject(label));
-					}
-					if (serverTypes.contains(MachineType.SERVICE)) {
-						serverData = new ServiceData(label);
-						serverData.read(jsonServerData.getJsonObject(label));
-					}
-					for (final MachineType type : serverTypes) {
-						putMachine(type, serverData);
-					}
-
-					putMachine(MachineType.SERVER, serverData);
-				}
+			for (final String label : jsonServerData.keySet()) {
+				readServer(label, jsonServerData.getJsonObject(label));
 			}
+		}
 
-			if (networkJSONData.containsKey("internaldevices")) {
-				final JsonObject jsonDevices = networkJSONData.getJsonObject("internaldevices");
+		// Then
+		if (networkJSONData.containsKey("peripherals")) {
+			final JsonObject jsonDevices = networkJSONData.getJsonObject("peripherals");
 
-				for (final String jsonDevice : jsonDevices.keySet()) {
-					final InternalDeviceData device = new InternalDeviceData(jsonDevice);
-					device.read(jsonDevices.getJsonObject(jsonDevice));
+			for (final String jsonDevice : jsonDevices.keySet()) {
+				final InternalDeviceData device = new InternalDeviceData(jsonDevice);
+				device.read(jsonDevices.getJsonObject(jsonDevice));
 
-					putMachine(MachineType.DEVICE, device);
-					putMachine(MachineType.INTERNAL_ONLY, device);
-				}
+				putMachine(MachineType.DEVICE, device);
+				putMachine(MachineType.INTERNAL_ONLY, device);
 			}
+		}
 
-			if (networkJSONData.containsKey("externaldevices")) {
-				final JsonObject jsonDevices = networkJSONData.getJsonObject("externaldevices");
+		if (networkJSONData.containsKey("guests")) {
+			final JsonObject jsonDevices = networkJSONData.getJsonObject("guests");
 
-				for (final String jsonDevice : jsonDevices.keySet()) {
-					final ExternalDeviceData device = new ExternalDeviceData(jsonDevice);
-					device.read(jsonDevices.getJsonObject(jsonDevice));
+			for (final String jsonDevice : jsonDevices.keySet()) {
+				final ExternalDeviceData device = new ExternalDeviceData(jsonDevice);
+				device.read(jsonDevices.getJsonObject(jsonDevice));
 
-					putMachine(MachineType.DEVICE, device);
-					putMachine(MachineType.EXTERNAL_ONLY, device);
-				}
+				putMachine(MachineType.DEVICE, device);
+				putMachine(MachineType.EXTERNAL_ONLY, device);
 			}
+		}
 
-			if (networkJSONData.containsKey("users")) {
-				final JsonObject jsonDevices = networkJSONData.getJsonObject("users");
+		if (networkJSONData.containsKey("users")) {
+			final JsonObject jsonDevices = networkJSONData.getJsonObject("users");
 
-				for (final String jsonDevice : jsonDevices.keySet()) {
-					final UserDeviceData device = new UserDeviceData(jsonDevice);
-					device.read(jsonDevices.getJsonObject(jsonDevice));
+			for (final String jsonDevice : jsonDevices.keySet()) {
+				final UserDeviceData device = new UserDeviceData(jsonDevice);
+				device.read(jsonDevices.getJsonObject(jsonDevice));
 
-					putMachine(MachineType.DEVICE, device);
-					putMachine(MachineType.USER, device);
-				}
-			} else { // We will *always* need user devices, or we will have no way to SSH in!
-				throw new NoValidUsersException();
+				putMachine(MachineType.DEVICE, device);
+				putMachine(MachineType.USER, device);
 			}
+		} else { // We will *always* need user devices, or we will have no way to SSH in!
+			throw new NoValidUsersException();
 		}
 	}
 
@@ -329,18 +377,6 @@ public class NetworkData extends AData {
 		}
 
 		return hosts;
-	}
-
-	private void readInclude(String include)
-			throws IOException, JsonParsingException, ADataException, URISyntaxException {
-		String rawIncludeData = null;
-
-		JsonReader jsonReader = null;
-
-		rawIncludeData = new String(Files.readAllBytes(Paths.get(include)), StandardCharsets.UTF_8);
-		jsonReader = Json.createReader(new StringReader(rawIncludeData));
-
-		read(jsonReader.readObject());
 	}
 
 	// Network only data
@@ -438,7 +474,7 @@ public class NetworkData extends AData {
 
 	/**
 	 * Get a given machine's NICs as an iterable
-	 * 
+	 *
 	 * @param machine Machine's name
 	 * @return NICs
 	 * @throws JsonParsingException
