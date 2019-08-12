@@ -10,9 +10,9 @@ package core.data.machine;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
-import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.stream.JsonParsingException;
 
@@ -69,8 +69,15 @@ public class ServiceData extends ServerData {
 		this.debianISOURL = data.getString("debianisourl", null);
 		this.debianISOSHA512 = data.getString("debianisosha512", null);
 
-		if (data.containsKey("backupfrequency")) {
-			this.backupFrequency = data.getInt("backupfrequency");
+		if (data.containsKey("backup_frequency")) {
+			this.backupFrequency = data.getInt("backup_frequency");
+		}
+
+		// Force it to recognise us as a service...
+		if ((getTypes() == null) || !getTypes().contains(MachineType.SERVICE)) {
+			final Set<MachineType> types = new LinkedHashSet<>();
+			types.add(MachineType.SERVICE);
+			setTypes(types);
 		}
 	}
 
@@ -105,4 +112,5 @@ public class ServiceData extends ServerData {
 	public final String getDebianIsoSha512() {
 		return this.debianISOSHA512;
 	}
+
 }

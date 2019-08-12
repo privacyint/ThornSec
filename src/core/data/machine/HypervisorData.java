@@ -10,6 +10,8 @@ package core.data.machine;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import javax.json.JsonObject;
 import javax.json.stream.JsonParsingException;
@@ -24,23 +26,47 @@ import core.exception.data.ADataException;
  */
 public class HypervisorData extends ServerData {
 	private File vmBase;
+	private Integer backupFrequency;
+	private Set<ServerData> vms;
 
 	public HypervisorData(String label) {
 		super(label);
 
 		this.vmBase = null;
+		this.backupFrequency = null;
+		this.vms = null;
 	}
 
 	@Override
 	public void read(JsonObject data) throws ADataException, JsonParsingException, IOException, URISyntaxException {
 		super.read(data);
 
-		if (data.containsKey("vmbase")) {
-			this.vmBase = new File(data.getString("vmbase"));
+		if (data.containsKey("vm_base")) {
+			this.vmBase = new File(data.getString("vm_base"));
 		}
+
+		if (data.containsKey("backup_frequency")) {
+			this.backupFrequency = data.getInt("backup_frequency");
+		}
+	}
+
+	public final Set<ServerData> getVMs() {
+		return this.vms;
+	}
+
+	public final void addVM(ServerData service) {
+		if (this.vms == null) {
+			this.vms = new LinkedHashSet<>();
+		}
+
+		this.vms.add(service);
 	}
 
 	public final File getVmBase() {
 		return this.vmBase;
+	}
+
+	public final Integer getBackupFrequency() {
+		return this.backupFrequency;
 	}
 }

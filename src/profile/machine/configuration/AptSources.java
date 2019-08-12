@@ -7,7 +7,9 @@
  */
 package profile.machine.configuration;
 
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashSet;
@@ -24,13 +26,14 @@ import inet.ipaddr.HostName;
 
 public class AptSources extends AStructuredProfile {
 
-	private final HostName debianRepo;
+	private final URL debianRepo;
 	private final String debianDir;
 
 	private final Hashtable<String, Set<String>> sources;
 	private final Hashtable<String, Set<String>> pgpKeys;
 
-	public AptSources(String label, NetworkModel networkModel) throws URISyntaxException, InvalidServerModelException {
+	public AptSources(String label, NetworkModel networkModel)
+			throws URISyntaxException, InvalidServerModelException, MalformedURLException {
 		super(label, networkModel);
 
 		this.debianRepo = getNetworkModel().getData().getDebianMirror(getLabel());
@@ -56,7 +59,7 @@ public class AptSources extends AStructuredProfile {
 
 	@Override
 	public final Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
-		getNetworkModel().getServerModel(getLabel()).addEgress(this.debianRepo);
+		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName(this.debianRepo.getHost()));
 		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName("security.debian.org"));
 
 		return new LinkedHashSet<>();
