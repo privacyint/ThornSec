@@ -65,28 +65,34 @@ import inet.ipaddr.IPAddressString;
  * This is our "interface" between the data and the models ThornSec will build.
  */
 public class NetworkData extends AData {
-	private static final Boolean DEFAULT_ADBLOCKING = false;
-	private static final Boolean DEFAULT_AUTOGENPASSWDS = false;
-	private static final Boolean DEFAULT_VPNONLY = false;
-	private static final Boolean DEFAULT_AUTOGUEST = false;
-	private static final Boolean DEFAULT_UPDATE = true;
-	private static final Boolean DEFAULT_DEVICE_IS_MANAGED = true;
-	private static final Boolean DEFAULT_MACHINE_IS_THROTTLED = true;
+	/*
+	 * To make this easier to read, please use a prefix which shows how far down the
+	 * inheritance chain we can override this
+	 */
+	private static final Boolean NETWORK_ADBLOCKING = false;
+	private static final Boolean NETWORK_AUTOGENPASSWDS = false;
+	private static final Boolean NETWORK_VPNONLY = false;
+	private static final Boolean NETWORK_AUTOGUEST = false;
 
-	private static final String DEFAULT_THORNSECBASE = "/srv/ThornSec";
-	private static final String DEFAULT_DEBIAN_ISO_DIR = "https://gensho.ftp.acc.umu.se/debian-cd/current/amd64/iso-cd/";
-	private static final String DEFAULT_DEBIANMIRROR = "free.hands.com";
-	private static final String DEFAULT_DEBIANDIR = "/debian";
-	private static final String DEFAULT_NETMASK = "/30";
-	private static final String DEFAULT_KEEPASS_DB = "ThornSec.kdbx";
-	private static final String DEFAULT_DOMAIN = "lan";
-	private static final String DEFAULT_NETWORK_INTERFACE = "enp0s7"; // TODO: this is from memory
+	private static final String HYPERVISOR_THORNSECBASE = "/srv/ThornSec";
 
-	private static final Integer DEFAULT_RAM = 2048;
-	private static final Integer DEFAULT_CPUS = 1;
+	private static final Boolean MACHINE_UPDATE = true;
+	private static final Boolean MACHINE_IS_MANAGED = false;
+	private static final Boolean MACHINE_IS_THROTTLED = true;
 
-	private static final Integer DEFAULT_SSH_PORT = 65422;
-	private static final Integer DEFAULT_ADMIN_PORT = 65422;
+	private static final String SERVICE_DEBIAN_ISO_DIR = "https://gensho.ftp.acc.umu.se/debian-cd/current/amd64/iso-cd/";
+	private static final String SERVER_DEBIANMIRROR = "free.hands.com";
+	private static final String SERVER_DEBIANDIR = "/debian";
+	private static final String MACHINE_NETMASK = "/32";
+	private static final String MACHINE_KEEPASS_DB = "ThornSec.kdbx";
+	private static final String MACHINE_DOMAIN = "lan";
+	private static final String MACHINE_NETWORK_INTERFACE = "enp0s7"; // TODO: this is from memory
+
+	private static final Integer MACHINE_RAM = 2048;
+	private static final Integer MACHINE_CPUS = 1;
+
+	private static final Integer MACHINE_SSH_PORT = 65422;
+	private static final Integer MACHINE_ADMIN_PORT = 65422;
 
 	private String myUser;
 	private IPAddress configIP;
@@ -158,13 +164,13 @@ public class NetworkData extends AData {
 			if (networkJSONData.containsKey("domain")) {
 				this.domain = networkJSONData.getJsonString("domain").getString();
 			} else {
-				this.domain = DEFAULT_DOMAIN;
+			this.domain = MACHINE_DOMAIN;
 			}
 
-			this.adBlocking = networkJSONData.getBoolean("adblocking", DEFAULT_ADBLOCKING);
-			this.autoGenPassphrases = networkJSONData.getBoolean("autogen_passwds", DEFAULT_AUTOGENPASSWDS);
-			this.vpnOnly = networkJSONData.getBoolean("vpn_only", DEFAULT_VPNONLY);
-			this.autoGuest = networkJSONData.getBoolean("guest_network", DEFAULT_AUTOGUEST);
+		this.adBlocking = networkJSONData.getBoolean("adblocking", NETWORK_ADBLOCKING);
+		this.autoGenPassphrases = networkJSONData.getBoolean("autogen_passwds", NETWORK_AUTOGENPASSWDS);
+		this.vpnOnly = networkJSONData.getBoolean("vpn_only", NETWORK_VPNONLY);
+		this.autoGuest = networkJSONData.getBoolean("guest_network", NETWORK_AUTOGUEST);
 
 			if (networkJSONData.containsKey("servers")) {
 				final JsonObject jsonServerData = networkJSONData.getJsonObject("servers");
@@ -373,7 +379,7 @@ public class NetworkData extends AData {
 	 * @return the netmask (255.255.255.252)
 	 */
 	public final IPAddress getNetmask() {
-		return new IPAddressString(DEFAULT_NETMASK).getAddress();
+		return new IPAddressString(MACHINE_NETMASK).getAddress();
 	}
 
 	/**
@@ -451,7 +457,7 @@ public class NetworkData extends AData {
 				final NetworkInterfaceData defaultIface = new NetworkInterfaceData(machine);
 
 				final JsonObjectBuilder defaultNetworkInterfaceData = Json.createObjectBuilder();
-				defaultNetworkInterfaceData.add("iface", NetworkData.DEFAULT_NETWORK_INTERFACE);
+				defaultNetworkInterfaceData.add("iface", NetworkData.MACHINE_NETWORK_INTERFACE);
 
 				defaultIface.read(defaultNetworkInterfaceData.build());
 
@@ -485,7 +491,7 @@ public class NetworkData extends AData {
 		if (port == null) {
 			port = this.defaultServiceData.getAdminPort();
 			if (port == null) {
-				port = NetworkData.DEFAULT_ADMIN_PORT;
+				port = NetworkData.MACHINE_ADMIN_PORT;
 			}
 		}
 
@@ -498,7 +504,7 @@ public class NetworkData extends AData {
 		if (port == null) {
 			port = this.defaultServiceData.getSSHPort();
 			if (port == null) {
-				port = NetworkData.DEFAULT_SSH_PORT;
+				port = NetworkData.MACHINE_SSH_PORT;
 			}
 		}
 
@@ -511,7 +517,7 @@ public class NetworkData extends AData {
 		if (update == null) {
 			update = this.defaultServiceData.getUpdate();
 			if (update == null) {
-				update = NetworkData.DEFAULT_UPDATE;
+				update = NetworkData.MACHINE_UPDATE;
 			}
 		}
 
@@ -524,7 +530,7 @@ public class NetworkData extends AData {
 		if (db == null) {
 			db = this.defaultServiceData.getKeePassDB();
 			if (db == null) {
-				db = NetworkData.DEFAULT_KEEPASS_DB;
+				db = NetworkData.MACHINE_KEEPASS_DB;
 			}
 		}
 
@@ -537,7 +543,7 @@ public class NetworkData extends AData {
 		if (ram == null) {
 			ram = this.defaultServiceData.getRAM();
 			if (ram == null) {
-				ram = NetworkData.DEFAULT_RAM;
+				ram = NetworkData.MACHINE_RAM;
 			}
 		}
 
@@ -550,7 +556,7 @@ public class NetworkData extends AData {
 		if (cpus == null) {
 			cpus = this.defaultServiceData.getCPUs();
 			if (cpus == null) {
-				cpus = NetworkData.DEFAULT_CPUS;
+				cpus = NetworkData.MACHINE_CPUS;
 			}
 		}
 
@@ -564,7 +570,7 @@ public class NetworkData extends AData {
 			url = this.defaultServiceData.getDebianIsoUrl();
 			if (url == null) {
 				try {
-					url = NetworkData.DEFAULT_DEBIAN_ISO_DIR;
+					url = NetworkData.SERVICE_DEBIAN_ISO_DIR;
 
 					final URL isoVersion = new URL(url + "SHA512SUMS");
 					final BufferedReader line = new BufferedReader(new InputStreamReader(isoVersion.openStream()));
@@ -590,7 +596,7 @@ public class NetworkData extends AData {
 			hash = this.defaultServiceData.getDebianIsoSha512();
 			if (hash == null) {
 				try {
-					final String url = NetworkData.DEFAULT_DEBIAN_ISO_DIR;
+					final String url = NetworkData.SERVICE_DEBIAN_ISO_DIR;
 
 					final URL isoVersion = new URL(url + "SHA512SUMS");
 					final BufferedReader line = new BufferedReader(new InputStreamReader(isoVersion.openStream()));
@@ -616,20 +622,20 @@ public class NetworkData extends AData {
 		if (baseDir == null) {
 			baseDir = this.defaultHypervisorData.getVmBase();
 			if (baseDir == null) {
-				baseDir = new File(NetworkData.DEFAULT_THORNSECBASE);
+				baseDir = new File(NetworkData.HYPERVISOR_THORNSECBASE);
 			}
 		}
 
 		return baseDir;
 	}
 
-	public HostName getDebianMirror(String server) throws URISyntaxException {
-		HostName mirror = ((ServerData) getMachine(MachineType.SERVER, server)).getDebianMirror();
+	public URL getDebianMirror(String server) throws URISyntaxException, MalformedURLException {
+		URL mirror = ((ServerData) getMachine(MachineType.SERVER, server)).getDebianMirror();
 
 		if (mirror == null) {
 			mirror = this.defaultServiceData.getDebianMirror();
 			if (mirror == null) {
-				mirror = new HostName(NetworkData.DEFAULT_DEBIANMIRROR);
+				mirror = new URL(NetworkData.SERVER_DEBIANMIRROR);
 			}
 		}
 
@@ -642,7 +648,7 @@ public class NetworkData extends AData {
 		if (directory == null) {
 			directory = this.defaultServiceData.getDebianDirectory();
 			if (directory == null) {
-				directory = NetworkData.DEFAULT_DEBIANDIR;
+				directory = NetworkData.SERVER_DEBIANDIR;
 			}
 		}
 
@@ -653,7 +659,7 @@ public class NetworkData extends AData {
 		Boolean managed = ((ADeviceData) getMachine(MachineType.DEVICE, label)).isManaged();
 
 		if (managed == null) {
-			managed = NetworkData.DEFAULT_DEVICE_IS_MANAGED;
+			managed = NetworkData.MACHINE_IS_MANAGED;
 		}
 
 		return managed;
@@ -686,7 +692,7 @@ public class NetworkData extends AData {
 		if (throttled == null) {
 			throttled = this.defaultServiceData.isThrottled();
 			if (throttled == null) {
-				throttled = NetworkData.DEFAULT_MACHINE_IS_THROTTLED;
+				throttled = NetworkData.MACHINE_IS_THROTTLED;
 			}
 		}
 
