@@ -286,7 +286,9 @@ public class MariaDB extends AStructuredProfile {
 	throws InvalidServerModelException {
 		Set<IUnit> units = new HashSet<IUnit>();
 
-		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("mariadb", "deb http://mirror.sax.uk.as61049.net/mariadb/repo/10.2/debian stretch main", "keyserver.ubuntu.com", "0xF1656F24C74CD1D8");
+		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("mariadb",
+				"deb http://mirror.sax.uk.as61049.net/mariadb/repo/10.2/debian buster main", "keyserver.ubuntu.com",
+				"0xF1656F24C74CD1D8");
 
 		getNetworkModel().getServerModel(getLabel()).addEgress("mirror.sax.uk.as61049.net");
 		

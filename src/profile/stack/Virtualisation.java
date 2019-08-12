@@ -75,7 +75,7 @@ public class Virtualisation extends AStructuredProfile {
 		final Set<IUnit> units = new HashSet<>();
 
 		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("virtualbox",
-				"deb http://download.virtualbox.org/virtualbox/debian stretch contrib", "keyserver.ubuntu.com",
+				"deb http://download.virtualbox.org/virtualbox/debian buster contrib", "keyserver.ubuntu.com",
 				"0xa2f683c52980aecf");
 		getNetworkModel().getServerModel(getLabel()).addEgress("download.virtualbox.org");
 

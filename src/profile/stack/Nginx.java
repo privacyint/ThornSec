@@ -79,7 +79,7 @@ public class Nginx extends AStructuredProfile {
 				"/media/data/nginx_includes/customHttpBlockParams"));
 
 		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("nginx",
-				"deb http://nginx.org/packages/mainline/debian/ stretch nginx", "keyserver.ubuntu.com",
+				"deb http://nginx.org/packages/mainline/debian/ buster nginx", "keyserver.ubuntu.com",
 				"ABF5BD827BD9BF62");
 
 		final FileUnit nginxConf = new FileUnit("nginx_conf", "nginx_installed", "/etc/nginx/nginx.conf");

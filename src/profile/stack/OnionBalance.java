@@ -1,8 +1,8 @@
 /*
  * This code is part of the ThornSec project.
- * 
+ *
  * To learn more, please head to its GitHub repo: @privacyint
- * 
+ *
  * Pull requests encouraged.
  */
 package profile.stack;
@@ -180,7 +180,7 @@ public class OnionBalance extends AStructuredProfile {
 		final Set<IUnit> units = new HashSet<>();
 
 		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("tor",
-				"deb http://deb.torproject.org/torproject.org stretch main", "keys.gnupg.net",
+				"deb http://deb.torproject.org/torproject.org buster main", "keys.gnupg.net",
 				"A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
 		getNetworkModel().getServerModel(getLabel()).addEgress("*"); // Needs to be able to call out to everywhere
 

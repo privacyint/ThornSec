@@ -217,7 +217,7 @@ public class Tor extends AStructuredProfile {
 		units.addAll(this.proxy.getPersistentFirewall());
 
 		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("tor",
-				"deb http://deb.torproject.org/torproject.org stretch main", "keys.gnupg.net",
+				"deb http://deb.torproject.org/torproject.org buster main", "keys.gnupg.net",
 				"A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
 
 		// Allow the server to call out everywhere
