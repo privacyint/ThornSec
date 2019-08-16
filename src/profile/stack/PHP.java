@@ -206,7 +206,7 @@ public class PHP extends AStructuredProfile {
 		//This is approximate, and very(!!!) generous(!!!) to give the box some breathing room.
 		//On most VMs I have configured, it's usually below 40M.
 		int mbRamPerProcess = 75;
-		int serverTotalRam  = getNetworkModel().getData().getRam(getLabel());
+		int serverTotalRam  = getNetworkModel().getData().getRAM(getLabel());
 		
 		int maxChildren     = serverTotalRam / mbRamPerProcess; 
 		int minSpareServers = maxChildren / 3;

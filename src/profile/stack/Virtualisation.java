@@ -310,7 +310,7 @@ public class Virtualisation extends AStructuredProfile {
 		units.add(modifyVm(service, user, "cpus", getNetworkModel().getData().getCpus(service)));
 
 		// RAM setup
-		units.add(modifyVm(service, user, "memory", getNetworkModel().getData().getRam(service)));
+		units.add(modifyVm(service, user, "memory", getNetworkModel().getData().getRAM(service)));
 		units.add(modifyVm(service, user, "vram", "16"));
 		units.add(modifyVm(service, user, "nestedpaging", "on"));
 		units.add(modifyVm(service, user, "largepages", "on"));

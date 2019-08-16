@@ -573,8 +573,8 @@ public class NetworkData extends AData {
 		return db;
 	}
 
-	public Integer getRam(String service) throws InvalidServerException {
-		Integer ram = ((ServerData) getMachine(MachineType.SERVICE, service)).getRAM();
+	public Integer getRAM(String server) throws InvalidServerException {
+		Integer ram = ((ServerData) getMachine(MachineType.SERVER, server)).getRAM();
 
 		if (ram == null) {
 			ram = this.defaultServiceData.getRAM();
