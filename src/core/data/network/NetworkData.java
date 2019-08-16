@@ -586,7 +586,7 @@ public class NetworkData extends AData {
 		return ram;
 	}
 
-	public Integer getCpus(String server) throws InvalidServerException {
+	public Integer getCPUs(String server) throws InvalidServerException {
 		Integer cpus = ((ServerData) getMachine(MachineType.SERVER, server)).getCPUs();
 
 		if (cpus == null) {

@@ -87,7 +87,7 @@ public class Nginx extends AStructuredProfile {
 
 		nginxConf.appendLine("user nginx;");
 		nginxConf.appendCarriageReturn();
-		nginxConf.appendLine("worker_processes " + getNetworkModel().getData().getCpus(getLabel()));
+		nginxConf.appendLine("worker_processes " + getNetworkModel().getData().getCPUs(getLabel()));
 		nginxConf.appendCarriageReturn();
 		nginxConf.appendLine("error_log  /var/log/nginx/error.log warn;");
 		nginxConf.appendLine("pid        /var/run/nginx.pid;");

@@ -47,7 +47,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 	@Override
 	public Set<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
-		final Integer cpus = getNetworkModel().getData().getCpus(getLabel());
+		final Integer cpus = getNetworkModel().getData().getCPUs(getLabel());
 		final Set<IUnit> units = new HashSet<>();
 
 		// Config originally based on https://calomel.org/unbound_dns.html

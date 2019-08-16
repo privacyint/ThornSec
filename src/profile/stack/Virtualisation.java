@@ -307,7 +307,7 @@ public class Virtualisation extends AStructuredProfile {
 				+ ".  This is required for 64-bit installations, and for more than 1 virtual CPU in a service."));
 		units.add(modifyVm(service, user, "hwvirtex", "on"));
 		units.add(modifyVm(service, user, "pae", "on"));
-		units.add(modifyVm(service, user, "cpus", getNetworkModel().getData().getCpus(service)));
+		units.add(modifyVm(service, user, "cpus", getNetworkModel().getData().getCPUs(service)));
 
 		// RAM setup
 		units.add(modifyVm(service, user, "memory", getNetworkModel().getData().getRAM(service)));
