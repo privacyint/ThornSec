@@ -78,7 +78,7 @@ public class NetworkInterfaceData extends AData {
 		this.iface = data.getString("iface", null);
 
 		if (data.containsKey("inet")) {
-			setInet(Inet.valueOf(data.getString("inet")));
+			setInet(Inet.valueOf(data.getString("inet").toUpperCase()));
 		}
 		try {
 			if (data.containsKey("address")) {
