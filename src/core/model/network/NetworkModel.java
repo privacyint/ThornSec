@@ -88,7 +88,7 @@ public class NetworkModel {
 			URISyntaxException, IOException, JsonParsingException, AThornSecException {
 
 		// Start by building our network
-		final Map<String, AMachineData> externals = this.data.getExternalOnlyDevices();
+		final Map<String, AMachineData> externals = getData().getExternalOnlyDevices();
 		if (externals != null) {
 			for (final String label : externals.keySet()) {
 				final AMachineModel device = new ExternalOnlyDeviceModel(label, this);
@@ -97,7 +97,7 @@ public class NetworkModel {
 			}
 		}
 
-		final Map<String, AMachineData> internals = this.data.getInternalOnlyDevices();
+		final Map<String, AMachineData> internals = getData().getInternalOnlyDevices();
 		if (internals != null) {
 			for (final String label : internals.keySet()) {
 				final AMachineModel device = new InternalOnlyDeviceModel(label, this);
@@ -106,7 +106,7 @@ public class NetworkModel {
 			}
 		}
 
-		final Map<String, AMachineData> users = this.data.getUserDevices();
+		final Map<String, AMachineData> users = getData().getUserDevices();
 		if (users != null) {
 			for (final String label : users.keySet()) {
 				final AMachineModel device = new UserDeviceModel(label, this);
@@ -115,7 +115,7 @@ public class NetworkModel {
 			}
 		}
 
-		final Map<String, AMachineData> servers = this.data.getServers();
+		final Map<String, AMachineData> servers = getData().getServers();
 		if (servers != null) {
 			for (final String label : servers.keySet()) {
 				final ServerModel server = new ServerModel(label, this);

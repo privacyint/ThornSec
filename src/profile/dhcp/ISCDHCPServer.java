@@ -12,7 +12,7 @@ import java.util.Set;
 
 import core.data.machine.AMachineData.Encapsulation;
 import core.exception.AThornSecException;
-import core.exception.runtime.InvalidMachineModelException;
+import core.exception.data.InvalidIPAddressException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
@@ -30,7 +30,7 @@ import inet.ipaddr.IPAddress;
  */
 public class ISCDHCPServer extends ADHCPServerProfile {
 
-	public ISCDHCPServer(String label, NetworkModel networkModel) {
+	public ISCDHCPServer(String label, NetworkModel networkModel) throws AThornSecException {
 		super(label, networkModel);
 	}
 
@@ -86,7 +86,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	}
 
 	@Override
-	public Set<IUnit> getLiveConfig() throws InvalidMachineModelException {
+	public Set<IUnit> getLiveConfig() throws AThornSecException {
 		final Set<IUnit> units = new HashSet<>();
 
 		for (final String subnetName : getSubnets().keySet()) {

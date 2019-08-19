@@ -17,7 +17,9 @@ import core.iface.IUnit;
 import core.model.machine.AMachineModel;
 import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
+import inet.ipaddr.AddressStringException;
 import inet.ipaddr.IPAddress;
+import inet.ipaddr.IncompatibleAddressException;
 
 /**
  * This is a DHCP server of some type.
@@ -29,6 +31,12 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 	private final Map<String, IPAddress> subnetsGateways;
 	private final Map<String, Set<AMachineModel>> subnetsMachines;
 
+	/**
+	 * In your constructor, you will need
+	 *
+	 * @param label
+	 * @param networkModel
+	 */
 	public ADHCPServerProfile(String label, NetworkModel networkModel) {
 		super(label, networkModel);
 

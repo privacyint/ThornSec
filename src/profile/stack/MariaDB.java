@@ -1,3 +1,10 @@
+/*
+ * This code is part of the ThornSec project.
+ * 
+ * To learn more, please head to its GitHub repo: @privacyint
+ * 
+ * Pull requests encouraged.
+ */
 package profile.stack;
 
 import java.util.HashSet;
@@ -13,19 +20,20 @@ import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 
 public class MariaDB extends AStructuredProfile {
-	
+
 	private String username;
 	private String password;
 	private String db;
 	private String privileges;
-	
-	public MariaDB(String label, NetworkModel networkModel, String username, String password, String dbName, String privileges) {
+
+	public MariaDB(String label, NetworkModel networkModel, String username, String password, String dbName,
+			String privileges) {
 		super(label, networkModel);
-		
-		this.setUsername(username);
-		this.setUserPassword(password);
-		this.setDb(dbName);
-		this.setUserPrivileges(privileges);
+
+		setUsername(username);
+		setUserPassword(password);
+		setDb(dbName);
+		setUserPrivileges(privileges);
 	}
 
 	public MariaDB(String label, NetworkModel networkModel) {
@@ -35,7 +43,7 @@ public class MariaDB extends AStructuredProfile {
 	public final String getDb() {
 		return this.db;
 	}
-	
+
 	public final String getUsername() {
 		return this.username;
 	}
@@ -51,7 +59,7 @@ public class MariaDB extends AStructuredProfile {
 	public final void setUserPrivileges(String privileges) {
 		this.privileges = privileges;
 	}
-	
+
 	public final void setUsername(String username) {
 		this.username = username;
 	}
@@ -65,65 +73,68 @@ public class MariaDB extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getInstalled()
-	throws InvalidServerModelException {
-		Set<IUnit> units = new HashSet<IUnit>();
+	public Set<IUnit> getInstalled() throws InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
 
 		units.add(new InstalledUnit("openssl", "proceed", "openssl"));
 
-		units.add(new SimpleUnit("mysql_user_exists", "proceed",
-				"sudo useradd -r -s /bin/false mysql",
+		units.add(new SimpleUnit("mysql_user_exists", "proceed", "sudo useradd -r -s /bin/false mysql",
 				"id mysql -u 2>&1 | grep id", "", "pass",
 				"The mysql user couldn't be added.  This will cause all sorts of errors."));
-		
+
 		getNetworkModel().getServerModel(getLabel()).getUserModel().addUsername("mysql");
-		
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addLogBindPoint("mysql", "proceed", "mysql", "0750"));
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("mysql", "proceed", "mysql", "mysql", "0750"));
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("mysql_backups", "proceed", "root", "root", "0600"));
+
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addLogBindPoint("mysql", "proceed",
+				"mysql", "0750"));
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("mysql", "proceed",
+				"mysql", "mysql", "0750"));
+		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("mysql_backups",
+				"proceed", "root", "root", "0600"));
 
 		units.add(new SimpleUnit("mariadb_root_password", "openssl_installed",
 				"echo \"[client]\npassword=\\\"${MYSQL_PASSWORD}\\\"\" | sudo tee /root/.my.cnf > /dev/null;",
-				"sudo [ -f /root/.my.cnf ] || echo '' && (${MYSQL_PASSWORD}=\\$(grep 'password' /root/.my.cnf | awk -F\\\" '{ print $2 }')", "", "fail") );
-		
-		//Generate a root password, if not already installed
-		units.add(new SimpleUnit("mariadb_root_password", "openssl_installed",
-				"MYSQL_PASSWORD=`openssl rand -hex 32`",
+				"sudo [ -f /root/.my.cnf ] || echo '' && (${MYSQL_PASSWORD}=\\$(grep 'password' /root/.my.cnf | awk -F\\\" '{ print $2 }')",
+				"", "fail"));
+
+		// Generate a root password, if not already installed
+		units.add(new SimpleUnit("mariadb_root_password", "openssl_installed", "MYSQL_PASSWORD=`openssl rand -hex 32`",
 				"echo $MYSQL_PASSWORD && dpkg -l | grep '^.i' | grep 'mariadb-server'", "", "fail",
 				"Couldn't set MariaDB's root password.  Best case scenario, it'll be installed with a blank root password - worst case, its installation will have failed.  Run \"sudo mysql-secure-installation\" to fix."));
-		
-		//Use our generated password for root, but only set if not already installed
+
+		// Use our generated password for root, but only set if not already installed
 		units.add(new SimpleUnit("mariadb_rootpass", "mariadb_root_password",
 				"sudo debconf-set-selections <<< 'mariadb-server-10.2 mysql-server/root_password password ${MYSQL_PASSWORD}'",
-				"sudo debconf-show mariadb-server-10.2 | grep 'mysql-server/root_password:' || dpkg -l | grep '^.i' | grep 'mariadb-server'", "", "fail",
+				"sudo debconf-show mariadb-server-10.2 | grep 'mysql-server/root_password:' || dpkg -l | grep '^.i' | grep 'mariadb-server'",
+				"", "fail",
 				"Couldn't set MariaDB's root password.  Best case scenario, it'll be installed with a blank root password - worst case, its installation will have failed.  Run \"sudo mysql-secure-installation\" to fix."));
 		units.add(new SimpleUnit("mariadb_rootpass_again", "mariadb_rootpass",
 				"sudo debconf-set-selections <<< 'mariadb-server-10.2 mysql-server/root_password_again password ${MYSQL_PASSWORD}'",
-				"sudo debconf-show mariadb-server-10.2 | grep 'mysql-server/root_password_again:' || dpkg -l | grep '^.i' | grep 'mariadb-server'", "", "fail",
+				"sudo debconf-show mariadb-server-10.2 | grep 'mysql-server/root_password_again:' || dpkg -l | grep '^.i' | grep 'mariadb-server'",
+				"", "fail",
 				"Couldn't set MariaDB's root password.  Best case scenario, it'll be installed with a blank root password - worst case, its installation will have failed.  Run \"sudo mysql-secure-installation\" to fix."));
-		
+
 		units.add(new InstalledUnit("mariadb", "mariadb_rootpass_again", "mariadb-server"));
-				
+
 		return units;
 	}
-	
+
 	@Override
 	public Set<IUnit> getPersistentConfig() {
-		Set<IUnit> units =  new HashSet<IUnit>();
+		final Set<IUnit> units = new HashSet<>();
 
 		units.add(new SimpleUnit("mariadb_data_dir_moved", "mariadb_installed",
-				//We only want to move over the files if they don't already exist
+				// We only want to move over the files if they don't already exist
 				"sudo [ -d /media/data/mysql/mysql ] || sudo mv /var/lib/mysql/* /media/data/mysql/;"
-				//Either which way, remove the new ones
-				+ "sudo rm -R /var/lib/mysql;",
+						// Either which way, remove the new ones
+						+ "sudo rm -R /var/lib/mysql;",
 				"sudo [ -d /var/lib/mysql ] && echo fail || echo pass", "pass", "pass",
 				"Couldn't move MariaDB's data directory.  This means that the database files will be stored in the VM, and won't be backed up."));
 
-		FileUnit myCnf = new FileUnit("mysql_conf", "mariadb_installed", "/etc/mysql/my.cnf");
+		final FileUnit myCnf = new FileUnit("mysql_conf", "mariadb_installed", "/etc/mysql/my.cnf");
 		units.add(myCnf);
-		
+
 		myCnf.appendLine("[client]");
- 		myCnf.appendLine("port                    = 3306");
+		myCnf.appendLine("port                    = 3306");
 		myCnf.appendLine("socket                  = /var/run/mysqld/mysqld.sock");
 		myCnf.appendCarriageReturn();
 		myCnf.appendLine("[mysqld_safe]");
@@ -175,7 +186,7 @@ public class MariaDB extends AStructuredProfile {
 		myCnf.appendLine("innodb_open_files       = 400");
 		myCnf.appendLine("innodb_io_capacity      = 400");
 		myCnf.appendLine("innodb_flush_method     = O_DIRECT");
-		//These are *probably* default, but let's be explicit about it...
+		// These are *probably* default, but let's be explicit about it...
 		myCnf.appendLine("innodb_large_prefix     = true");
 		myCnf.appendLine("innodb_file_format      = barracuda");
 		myCnf.appendLine("innodb_file_per_table   = true");
@@ -189,115 +200,115 @@ public class MariaDB extends AStructuredProfile {
 		myCnf.appendLine("key_buffer              = 16M");
 		myCnf.appendCarriageReturn();
 		myCnf.appendLine("!includedir /etc/mysql/conf.d/");
-				
+
 		units.add(new RunningUnit("mariadb", "mysql", "mysql"));
 
-		//units.add(new CrontabUnit("mysqldump", "mariadb_installed", true, "root", "mysqldump -uroot -h localhost --all-databases | gzip -9 > /media/data/mysql_backups/\\$(date -u).sql.gz > /dev/null", "*", "*", "*", "*/3", "30")); 
+		// units.add(new CrontabUnit("mysqldump", "mariadb_installed", true, "root",
+		// "mysqldump -uroot -h localhost --all-databases | gzip -9 >
+		// /media/data/mysql_backups/\\$(date -u).sql.gz > /dev/null", "*", "*", "*",
+		// "*/3", "30"));
 
 		return units;
 	}
 
 	@Override
-	public Set<IUnit> getLiveConfig()
-	throws InvalidServerModelException {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
+	public Set<IUnit> getLiveConfig() throws InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
+
 		units.add(new RunningUnit("mariadb", "mysql", "mysql"));
-		
+
 		getNetworkModel().getServerModel(getLabel()).addProcessString("/bin/bash /usr/bin/mysqld_safe$");
 		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/sbin/mysqld$");
 		getNetworkModel().getServerModel(getLabel()).addProcessString("logger -t mysqld -p daemon.error$");
-		
-		units.add(new SimpleUnit("mariadb_no_failed_logins", "mariadb_installed",
-				"",
+
+		units.add(new SimpleUnit("mariadb_no_failed_logins", "mariadb_installed", "",
 				"sudo grep \"[Warning] Access denied for user\" /var/log/syslog", "", "pass",
 				"There are failed logins to your mysql server.  This implies someone is trying to log in through the command line, and could be an indicator of compromise."));
-		
+
 		return units;
 	}
 
-	public Set<IUnit> checkUserExists()
-	throws InvalidServerModelException {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
-		String userCreateSql = "CREATE USER IF NOT EXISTS '" + getUsername() + "'@'localhost' IDENTIFIED BY '" + getUserPassword() + "';";
-		
-		units.add(new SimpleUnit(getNetworkModel().getServerModel(getLabel()) + "_mariadb_db_exists", "mariadb_installed",
-				"sudo mysql -uroot -B -N -e \"" + userCreateSql + "\" 2>&1",
-				"sudo mysql -uroot -B -N -e \"SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '" + getUsername() + "')\" 2>&1", "1", "pass",
-				"Could not create/update the MYSQL user required for " + getLabel() + ". Don't expect anything to work, I'm afraid"));
+	public Set<IUnit> checkUserExists() throws InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
+
+		final String userCreateSql = "CREATE USER IF NOT EXISTS '" + getUsername() + "'@'localhost' IDENTIFIED BY '"
+				+ getUserPassword() + "';";
+
+		units.add(new SimpleUnit(getNetworkModel().getServerModel(getLabel()) + "_mariadb_db_exists",
+				"mariadb_installed", "sudo mysql -uroot -B -N -e \"" + userCreateSql + "\" 2>&1",
+				"sudo mysql -uroot -B -N -e \"SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '" + getUsername()
+						+ "')\" 2>&1",
+				"1", "pass", "Could not create/update the MYSQL user required for " + getLabel()
+						+ ". Don't expect anything to work, I'm afraid"));
 
 		return units;
 	}
 
 	public Set<IUnit> checkDbExists() {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
+		final Set<IUnit> units = new HashSet<>();
+
 		String dbCreateSql = "";
 		dbCreateSql += "CREATE DATABASE IF NOT EXISTS '" + getDb() + ";";
 		dbCreateSql += "GRANT " + getUserPrivileges() + " ON " + getDb() + " TO '" + getUsername() + "'@'localhost';";
-		dbCreateSql += "SET GLOBAL default_storage_engine = 'InnoDB';"; 
+		dbCreateSql += "SET GLOBAL default_storage_engine = 'InnoDB';";
 		dbCreateSql += "SET GLOBAL innodb_large_prefix=on;";
 
 		units.add(new SimpleUnit(getLabel() + "_mariadb_db_exists", getLabel() + "_mariadb_user_exists",
 				"sudo mysql -uroot -B -N -e \"" + dbCreateSql + "\" 2>&1",
-				"mysql -u" + getUsername() + " -p" + getUserPassword() + " -B -N -e \"SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '" + getDb() + "'\" 2>&1", getDb(), "pass",
-				"Could not create the MYSQL database required for " + getLabel() + ". Don't expect anything to work, I'm afraid"));
-		
+				"mysql -u" + getUsername() + " -p" + getUserPassword()
+						+ " -B -N -e \"SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '"
+						+ getDb() + "'\" 2>&1",
+				getDb(), "pass", "Could not create the MYSQL database required for " + getLabel()
+						+ ". Don't expect anything to work, I'm afraid"));
+
 		return units;
 	}
 
 	public Set<IUnit> queryDb(String db, String username, String password, String query) {
-		Set<IUnit> units = new HashSet<IUnit>();
-	
+		final Set<IUnit> units = new HashSet<>();
+
 		return units;
 	}
-	
-/*	private String stopMariaDb() {
-		//Stop the service, and sleep until it stops to prevent race conditions
-		return "sudo kill -SIGTERM $(sudo cat /var/run/mysqld/mysqld.pid);"
-				+ "while sudo test -f /var/run/mysqld/mysqld.pid;" //Sleep until the pid file has gone (i.e. MySQL service has been killed)
-					+ "do sleep 2;"
-				+ "done;";
-	}
-	
-	private String startMariaDbWithInit(String query) {
-		return	stopMariaDb()
-				+ "echo \"" + query + "\" | sudo tee /etc/mysql/query.sql > /dev/null;" //Echo our user creation query out
-				+ "sudo -u mysql mysqld --init-file=/etc/mysql/query.sql --pid-file=/var/run/mysqld/mysqld.pid & disown;" //Start MariaDB, importing the sql query
-//				+ "sleep 5;" //Wait until MariaDB has started again
-				+ "while sudo test ! -f /var/run/mysqld/mysqld.pid;"
-					+ "do sleep 2;"
-				+ "done;"
-				+ "sudo rm /etc/mysql/query.sql"; //Then delete the query
-	}
-	
-	private String startMariaDbUser() {
-		//Forcibly restart the service and sleep until it's actually restarted
-		return "sudo service mysql stop && sudo service mysql start;"
-				+ "while sudo test ! -f /var/run/mysqld/mysqld.pid;"
-					+ "do sleep 2;"
-				+ "done;";
-	}
-	*/
-	
+
+	/*
+	 * private String stopMariaDb() { //Stop the service, and sleep until it stops
+	 * to prevent race conditions return
+	 * "sudo kill -SIGTERM $(sudo cat /var/run/mysqld/mysqld.pid);" +
+	 * "while sudo test -f /var/run/mysqld/mysqld.pid;" //Sleep until the pid file
+	 * has gone (i.e. MySQL service has been killed) + "do sleep 2;" + "done;"; }
+	 * 
+	 * private String startMariaDbWithInit(String query) { return stopMariaDb() +
+	 * "echo \"" + query + "\" | sudo tee /etc/mysql/query.sql > /dev/null;" //Echo
+	 * our user creation query out +
+	 * "sudo -u mysql mysqld --init-file=/etc/mysql/query.sql --pid-file=/var/run/mysqld/mysqld.pid & disown;"
+	 * //Start MariaDB, importing the sql query // + "sleep 5;" //Wait until MariaDB
+	 * has started again + "while sudo test ! -f /var/run/mysqld/mysqld.pid;" +
+	 * "do sleep 2;" + "done;" + "sudo rm /etc/mysql/query.sql"; //Then delete the
+	 * query }
+	 * 
+	 * private String startMariaDbUser() { //Forcibly restart the service and sleep
+	 * until it's actually restarted return
+	 * "sudo service mysql stop && sudo service mysql start;" +
+	 * "while sudo test ! -f /var/run/mysqld/mysqld.pid;" + "do sleep 2;" + "done;";
+	 * }
+	 */
+
 	@Override
-	public Set<IUnit> getPersistentFirewall()
-	throws InvalidServerModelException {
-		Set<IUnit> units = new HashSet<IUnit>();
+	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+		final Set<IUnit> units = new HashSet<>();
 
 		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("mariadb",
 				"deb http://mirror.sax.uk.as61049.net/mariadb/repo/10.2/debian buster main", "keyserver.ubuntu.com",
 				"0xF1656F24C74CD1D8");
 
 		getNetworkModel().getServerModel(getLabel()).addEgress("mirror.sax.uk.as61049.net");
-		
+
 		return units;
 	}
-	
+
 	@Override
 	public Set<IUnit> getLiveFirewall() {
-		return new HashSet<IUnit>(); //Empty (for now?)
+		return new HashSet<>(); // Empty (for now?)
 	}
 
 }

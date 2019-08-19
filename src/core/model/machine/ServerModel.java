@@ -21,11 +21,9 @@ import com.metapossum.utils.scanner.reflect.ClassesInPackageScanner;
 
 import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
-import core.exception.data.ADataException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidProfileException;
-import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
 import core.profile.AProfile;
@@ -87,29 +85,29 @@ public class ServerModel extends AMachineModel {
 		this.types = new HashSet<>();
 		for (final MachineType type : getNetworkModel().getData().getTypes(getLabel())) {
 			switch (type) {
-			case ROUTER:
-				if (this.firewall == null) {
-					this.firewall = new ShorewallFirewall(getLabel(), networkModel);
-				}
-				this.types.add(new Router(getLabel(), networkModel));
-				break;
-			case HYPERVISOR:
-				if (this.firewall == null) {
-					this.firewall = new CSFFirewall(getLabel(), networkModel);
-				}
-				this.types.add(new HyperVisor(getLabel(), networkModel));
-				break;
-			case SERVICE:
-				if (this.firewall == null) {
-					this.firewall = new CSFFirewall(getLabel(), networkModel);
-				}
-				this.types.add(new Service(getLabel(), networkModel));
-				break;
-			case DEDICATED:
-				this.types.add(new Dedicated(getLabel(), networkModel));
-				break;
-			default:
-				break;
+				case ROUTER:
+					if (this.firewall == null) {
+						this.firewall = new ShorewallFirewall(getLabel(), networkModel);
+					}
+					this.types.add(new Router(getLabel(), networkModel));
+					break;
+				case HYPERVISOR:
+					if (this.firewall == null) {
+						this.firewall = new CSFFirewall(getLabel(), networkModel);
+					}
+					this.types.add(new HyperVisor(getLabel(), networkModel));
+					break;
+				case SERVICE:
+					if (this.firewall == null) {
+						this.firewall = new CSFFirewall(getLabel(), networkModel);
+					}
+					this.types.add(new Service(getLabel(), networkModel));
+					break;
+				case DEDICATED:
+					this.types.add(new Dedicated(getLabel(), networkModel));
+					break;
+				default:
+					break;
 			}
 		}
 

@@ -54,11 +54,11 @@ public class Router extends AStructuredProfile {
 
 	private final Map<MachineType, IPAddress> macVLANs;
 
-	public Router(String label, NetworkModel networkModel) throws InvalidIPAddressException {
+	public Router(String label, NetworkModel networkModel) throws AThornSecException {
 		super(label, networkModel);
 
+		// Start by building the VLANs we'll be hanging all of our networking off
 		this.macVLANs = new LinkedHashMap<>();
-
 		addMACVLAN(MachineType.SERVER, SERVERS_NETWORK);
 		addMACVLAN(MachineType.USER, USERS_NETWORK);
 		addMACVLAN(MachineType.ADMIN, ADMINS_NETWORK);
@@ -68,8 +68,9 @@ public class Router extends AStructuredProfile {
 			addMACVLAN(MachineType.GUEST, AUTOGUEST_NETWORK);
 		}
 
-		this.dnsServer = new UnboundDNSServer(label, networkModel);
+		// Now create our DHCP Server.
 		this.dhcpServer = new ISCDHCPServer(label, networkModel);
+		this.dnsServer = new UnboundDNSServer(label, networkModel);
 	}
 
 	/**

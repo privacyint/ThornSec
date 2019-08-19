@@ -13,6 +13,8 @@ import java.util.Set;
 import core.exception.AThornSecException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
+import inet.ipaddr.AddressStringException;
+import inet.ipaddr.IncompatibleAddressException;
 
 /**
  * This represents a fully-fledged profile, designed to hold the end-to-end
@@ -67,6 +69,9 @@ public abstract class AStructuredProfile extends AProfile {
 	/**
 	 * This is Units for configurations you expect to change regularly, e.g. Devices
 	 * or Servers or similar.
+	 *
+	 * @throws IncompatibleAddressException
+	 * @throws AddressStringException
 	 */
 	protected Set<IUnit> getLiveConfig() throws AThornSecException {
 		return new HashSet<>();
