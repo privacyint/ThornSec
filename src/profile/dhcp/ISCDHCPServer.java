@@ -11,18 +11,23 @@ import java.util.HashSet;
 import java.util.Set;
 
 import core.data.machine.AMachineData.Encapsulation;
+import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
 import core.exception.data.InvalidIPAddressException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
+import core.model.machine.ServerModel;
 import core.model.machine.configuration.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
+import inet.ipaddr.AddressStringException;
 import inet.ipaddr.IPAddress;
+import inet.ipaddr.IPAddress.IPVersion;
+import inet.ipaddr.IPAddressString;
 
 /**
  * Configure and set up our various different networks, and offer IP addresses
@@ -32,6 +37,57 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 
 	public ISCDHCPServer(String label, NetworkModel networkModel) throws AThornSecException {
 		super(label, networkModel);
+	}
+
+	@Override
+	protected Set<IUnit> distributeIPs() throws AThornSecException {
+		// Start by iterating through our hypervisors, as we use them as a base for our
+		// IP addressing
+		int secondOctet = 0;
+		for (final String hvLabel : getNetworkModel().getServers(MachineType.HYPERVISOR).keySet()) {
+			final ServerModel hv = getNetworkModel().getServerModel(hvLabel);
+			int thirdOctet = 0;
+
+			hv.setSecondOctet(++secondOctet);
+			hv.setThirdOctet(thirdOctet++);
+
+			int fourthOctet = 0;
+			for (final NetworkInterfaceModel nic : hv.getNetworkInterfaces()) {
+				if (nic.getAddress() == null) {
+					try {
+						nic.setAddress(new IPAddressString(hv.getFirstOctet() + "." + hv.getSecondOctet() + "."
+								+ hv.getThirdOctet() + "." + (++fourthOctet)).toAddress(IPVersion.IPV4));
+					} catch (final AddressStringException e) {
+						throw new InvalidIPAddressException(e.getMessage() + " is an invalid IP address");
+					}
+				}
+			}
+
+			// While we're here - HyperVisors have services - let's iterate through those
+			// too!
+			fourthOctet = 0;
+			for (final String serviceLabel : getNetworkModel().getServicesOnHyperVisor(hvLabel)) {
+				final ServerModel service = getNetworkModel().getServerModel(serviceLabel);
+
+				service.setSecondOctet(secondOctet);
+				service.setThirdOctet(thirdOctet++);
+
+				for (final NetworkInterfaceModel nic : service.getNetworkInterfaces()) {
+					if (nic.getAddress() == null) {
+						try {
+							nic.setAddress(new IPAddressString(service.getFirstOctet() + "." + service.getSecondOctet()
+									+ "." + service.getThirdOctet() + "." + (++fourthOctet)).toAddress(IPVersion.IPV4));
+						} catch (final AddressStringException e) {
+							throw new InvalidIPAddressException(e.getMessage() + " is an invalid IP address");
+						}
+					}
+				}
+			}
+
+			// Now let's loop through the devices
+		}
+
+		return null;
 	}
 
 	@Override
@@ -88,6 +144,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	@Override
 	public Set<IUnit> getLiveConfig() throws AThornSecException {
 		final Set<IUnit> units = new HashSet<>();
+
+		distributeIPs();
 
 		for (final String subnetName : getSubnets().keySet()) {
 			final FileUnit subnetConfig = new FileUnit(subnetName + "_dhcpd_live_config", "dhcp_installed",

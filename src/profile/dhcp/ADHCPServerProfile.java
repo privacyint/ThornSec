@@ -106,4 +106,17 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 
 	@Override
 	public abstract Set<IUnit> getLiveFirewall() throws AThornSecException;
+
+	/**
+	 * The entire point of a DHCP server is to distribute IP Addresses.
+	 *
+	 * You must implement this method, and it must distribute IP addresses across
+	 * your various {@code AMachineModel}s.
+	 *
+	 * @return
+	 * @throws AThornSecException
+	 * @throws IncompatibleAddressException
+	 * @throws AddressStringException
+	 */
+	protected abstract Set<IUnit> distributeIPs() throws AThornSecException;
 }
