@@ -58,16 +58,11 @@ public class ServerModel extends AMachineModel {
 	// private final ConfigFiles configFiles;
 	private final UserAccounts users;
 
-	public ServerModel(String label, NetworkModel networkModel) throws InstantiationException, IllegalAccessException,
-			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException,
-			ClassNotFoundException, InvalidServerModelException, URISyntaxException, AddressException, IOException,
-			InvalidProfileException, JsonParsingException, ADataException {
+	public ServerModel(String label, NetworkModel networkModel)
+			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
+			NoSuchMethodException, SecurityException, ClassNotFoundException, URISyntaxException, AddressException,
+			IOException, JsonParsingException, AThornSecException {
 		super(label, networkModel);
-
-		setFirstOctet(10);
-		setSecondOctet(10);
-		// TODO
-		// setThirdOctet(getNetworkModel().getAllExternalOnlyDevices().hashCode());
 
 		final String firewall = getNetworkModel().getData().getFirewallProfile(getLabel());
 

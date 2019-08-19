@@ -20,6 +20,7 @@ import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
 
 import core.StringUtils;
+import core.data.machine.configuration.NetworkInterfaceData;
 import core.exception.data.ADataException;
 import core.exception.data.InvalidPortException;
 import core.exception.data.InvalidPropertyException;
@@ -141,6 +142,31 @@ public class ServerData extends AMachineData {
 		}
 		if (data.containsKey("ram")) {
 			setRAM(data.getString("ram"));
+		}
+
+		// Network Interfaces
+		if (data.containsKey("network_interfaces")) {
+			final JsonObject networkInterfaces = data.getJsonObject("network_interfaces");
+
+			if (networkInterfaces.containsKey("wan")) {
+				final JsonArray wanIfaces = networkInterfaces.getJsonArray("wan");
+				for (int i = 0; i < wanIfaces.size(); ++i) {
+					final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
+
+					iface.read(wanIfaces.getJsonObject(i));
+					super.putNetworkInterface(iface);
+				}
+			}
+
+			if (networkInterfaces.containsKey("lan")) {
+				final JsonArray lanIfaces = networkInterfaces.getJsonArray("lan");
+				for (int i = 0; i < lanIfaces.size(); ++i) {
+					final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
+
+					iface.read(lanIfaces.getJsonObject(i));
+					super.putNetworkInterface(iface);
+				}
+			}
 		}
 	}
 

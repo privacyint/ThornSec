@@ -10,10 +10,13 @@ package core.data.machine;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
+import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.stream.JsonParsingException;
 
+import core.data.machine.configuration.NetworkInterfaceData;
 import core.exception.data.ADataException;
+import inet.ipaddr.MACAddressString;
 
 /**
  * Abstract class for something representing "Device Data" on our network. This
@@ -35,6 +38,16 @@ public abstract class ADeviceData extends AMachineData {
 
 		if (data.containsKey("managed")) {
 			this.managed = data.getBoolean("managed");
+		}
+
+		if (data.containsKey("macs")) {
+			final JsonArray macs = data.getJsonArray("macs");
+			for (int i = 0; i < macs.size(); ++i) {
+				final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
+
+				iface.setMAC(new MACAddressString(macs.getString(i)).getAddress());
+				super.putNetworkInterface(iface);
+			}
 		}
 	}
 
