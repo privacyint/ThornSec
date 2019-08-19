@@ -143,7 +143,7 @@ public class NetworkInterfaceData extends AData {
 		this.inet = inet;
 	}
 
-	protected final void setMAC(MACAddress mac) {
+	public final void setMAC(MACAddress mac) {
 		this.mac = mac;
 	}
 

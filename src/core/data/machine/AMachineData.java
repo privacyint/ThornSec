@@ -276,7 +276,7 @@ public abstract class AMachineData extends AData {
 		this.externalIPAddresses.add(address);
 	}
 
-	private void putNetworkInterface(NetworkInterfaceData iface) {
+	protected void putNetworkInterface(NetworkInterfaceData iface) {
 		if (this.networkInterfaces == null) {
 			this.networkInterfaces = new LinkedHashSet<>();
 		}
