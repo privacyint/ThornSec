@@ -27,10 +27,6 @@ public class ExternalOnlyDeviceModel extends ADeviceModel {
 	public ExternalOnlyDeviceModel(String label, NetworkModel networkModel)
 			throws AddressException, JsonParsingException, ADataException, IOException {
 		super(label, networkModel);
-
-		setFirstOctet(10);
-		setSecondOctet(50);
-		setThirdOctet(getNetworkModel().getExternalOnlyDevices().get(label).hashCode());
 	}
 
 	@Override

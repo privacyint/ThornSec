@@ -27,11 +27,6 @@ public class InternalOnlyDeviceModel extends ADeviceModel {
 	public InternalOnlyDeviceModel(String label, NetworkModel networkModel)
 			throws AddressException, JsonParsingException, ADataException, IOException {
 		super(label, networkModel);
-
-		setFirstOctet(10);
-		setSecondOctet(60);
-		// TODO Third octet
-		// setThirdOctet(networkModel.getAllInternalOnlyDevices().get(label).hashCode());
 	}
 
 	@Override
