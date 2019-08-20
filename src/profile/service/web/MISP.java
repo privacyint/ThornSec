@@ -7,8 +7,8 @@
  */
 package profile.service.web;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
@@ -45,8 +45,8 @@ public class MISP extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getInstalled());
 
@@ -132,8 +132,8 @@ public class MISP extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		final FileUnit nginxConf = new FileUnit("misp_nginx_conf", "misp_installed",
 				Nginx.DEFAULT_CONFIG_FILE.toString());
@@ -179,8 +179,8 @@ public class MISP extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getLiveConfig());
 
@@ -225,8 +225,8 @@ public class MISP extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getPersistentFirewall());
 

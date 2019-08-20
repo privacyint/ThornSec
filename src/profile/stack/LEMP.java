@@ -7,8 +7,8 @@
  */
 package profile.stack;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
@@ -41,10 +41,9 @@ public class LEMP extends AStructuredProfile {
 	}
 
 	@Override
-	public final Set<IUnit> getInstalled()
-	throws InvalidServerModelException {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
+	public final Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
+
 		units.addAll(webserver.getInstalled());
 		units.addAll(php.getInstalled());
 		units.addAll(db.getInstalled());
@@ -53,10 +52,9 @@ public class LEMP extends AStructuredProfile {
 	}
 	
 	@Override
-	public final Set<IUnit> getPersistentConfig()
-	throws InvalidServerException, InvalidServerModelException {
-		Set<IUnit> units =  new HashSet<IUnit>();
-		
+	public final Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
+
 		units.addAll(webserver.getPersistentConfig());
 		units.addAll(db.getPersistentConfig());
 		units.addAll(php.getPersistentConfig());
@@ -65,10 +63,9 @@ public class LEMP extends AStructuredProfile {
 	}
 	
 	@Override
-	public final Set<IUnit> getLiveConfig()
-	throws InvalidServerModelException {
-		Set<IUnit> units =  new HashSet<IUnit>();
-		
+	public final Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
+
 		units.addAll(webserver.getLiveConfig());
 		units.addAll(db.getLiveConfig());
 		units.addAll(php.getLiveConfig());
@@ -77,10 +74,9 @@ public class LEMP extends AStructuredProfile {
 	}
 	
 	@Override
-	public final Set<IUnit> getPersistentFirewall()
-	throws InvalidServerModelException, InvalidPortException {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
+	public final Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+		final Collection<IUnit> units = new ArrayList<>();
+
 		units.addAll(webserver.getPersistentFirewall());
 		units.addAll(db.getPersistentFirewall());
 		units.addAll(php.getPersistentFirewall());
@@ -89,10 +85,9 @@ public class LEMP extends AStructuredProfile {
 	}
 
 	@Override
-	public final Set<IUnit> getLiveFirewall()
-	throws InvalidServerModelException, InvalidPortException {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
+	public final Collection<IUnit> getLiveFirewall() throws InvalidServerModelException, InvalidPortException {
+		final Collection<IUnit> units = new ArrayList<>();
+
 		units.addAll(webserver.getLiveFirewall());
 		units.addAll(db.getLiveFirewall());
 		units.addAll(php.getLiveFirewall());

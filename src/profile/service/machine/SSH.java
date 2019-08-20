@@ -7,8 +7,8 @@
  */
 package profile.service.machine;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.data.machine.AMachineData.Encapsulation;
 import core.exception.data.InvalidPortException;
@@ -37,8 +37,8 @@ public class SSH extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getInstalled() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("sshd", "proceed", "openssh-server"));
 
@@ -49,8 +49,8 @@ public class SSH extends AStructuredProfile {
 	 * See https://man.openbsd.org/sshd_config
 	 */
 	@Override
-	protected Set<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidMachineException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidMachineException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// The below is informed by https://infosec.mozilla.org/guidelines/openssh
 
@@ -179,8 +179,8 @@ public class SSH extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP,
 				getNetworkModel().getData().getSSHPort(getLabel()));
@@ -189,8 +189,8 @@ public class SSH extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig() throws InvalidMachineException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getLiveConfig() throws InvalidMachineException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		for (final String admin : getNetworkModel().getData().getAdmins(getLabel())) {
 			final String sshDir = "/home/" + admin + "/.ssh";

@@ -7,8 +7,8 @@
  */
 package profile.service.email;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.data.machine.AMachineData.Encapsulation;
 import core.exception.data.InvalidPortException;
@@ -41,8 +41,8 @@ public class EmailServer extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getInstalled());
 		units.addAll(this.php.getInstalled());
@@ -52,8 +52,8 @@ public class EmailServer extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getPersistentConfig());
 		units.addAll(this.php.getPersistentConfig());
@@ -63,8 +63,8 @@ public class EmailServer extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getLiveConfig());
 		units.addAll(this.php.getLiveConfig());
@@ -74,8 +74,8 @@ public class EmailServer extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getPersistentFirewall());
 

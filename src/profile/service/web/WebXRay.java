@@ -1,7 +1,7 @@
 package profile.service.web;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import javax.swing.JOptionPane;
 
@@ -20,9 +20,9 @@ public class WebXRay extends AStructuredProfile {
 		super(label, networkModel);
 	}
 
-	public Set<IUnit> getInstalled() 
-	throws InvalidServerException {
-		Set<IUnit> units = new HashSet<IUnit>();
+	@Override
+	public Collection<IUnit> getInstalled() throws InvalidServerException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		Boolean is64bit = getNetworkModel().getData().getDebianIsoUrl(getLabel()).contains("amd64");
 		String url = "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb";
@@ -44,9 +44,9 @@ public class WebXRay extends AStructuredProfile {
 		return units;
 	}
 	
-	public Set<IUnit> getPersistentFirewall()
-	throws InvalidServerModelException {
-		Set<IUnit> units = new HashSet<IUnit>();
+	@Override
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addEgress("*");
 		

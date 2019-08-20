@@ -7,8 +7,8 @@
  */
 package profile.service.web;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidMachineException;
@@ -36,8 +36,8 @@ public class OpenSocial extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getInstalled());
 
@@ -64,8 +64,8 @@ public class OpenSocial extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		this.lempStack.getDB().setUsername("opensocial");
 		this.lempStack.getDB().setUserPrivileges(
@@ -133,13 +133,13 @@ public class OpenSocial extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig() throws InvalidMachineException, InvalidMachineModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getLiveConfig() throws InvalidMachineException, InvalidMachineModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getLiveConfig());
 
 		// Set up our database
-		final Set<String> cnames = getNetworkModel().getData().getCNAMEs(getLabel());
+		final Collection<String> cnames = getNetworkModel().getData().getCNAMEs(getLabel());
 		final String domain = getNetworkModel().getData().getDomain().replaceAll("\\.", "\\\\.");
 
 		final FileUnit opensocialConf = new FileUnit("opensocial", "opensocial_installed",
@@ -189,8 +189,8 @@ public class OpenSocial extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addEgress("packagist.org");
 		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");

@@ -1,7 +1,7 @@
 package profile.machine.configuration;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.data.machine.InvalidServerException;
 import core.iface.IUnit;
@@ -11,7 +11,7 @@ import core.unit.SimpleUnit;
 
 public class UserAccounts extends AProfile {
 
-	private Set<String> usernames;
+	private final Collection<String> usernames;
 
 	public UserAccounts(String label, NetworkModel networkModel)
 	throws InvalidServerException {
@@ -51,9 +51,10 @@ public class UserAccounts extends AProfile {
 		this.usernames.add("statd");
 	}
 
-	public Set<IUnit> getUnits() {
+	@Override
+	public Collection<IUnit> getUnits() {
 		String grepString = "awk -F':' '{ print $1 }' /etc/passwd";
-		Set<IUnit> units = new HashSet<IUnit>();
+		final Collection<IUnit> units = new ArrayList<>();
 				
 		for (String username : usernames) {
 			grepString += " | egrep -v \"^" + username + "\\$\"";

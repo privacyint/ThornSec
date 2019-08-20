@@ -10,6 +10,7 @@ package core.data.machine;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -40,12 +41,12 @@ public class ServerData extends AMachineData {
 		DIRECT, TUNNELLED
 	}
 
-	private Set<HostName> sshSources;
-	private Set<String> profiles;
-	private Set<MachineType> types;
+	private Collection<HostName> sshSources;
+	private Collection<String> profiles;
+	private Collection<MachineType> types;
 
-	private Set<String> adminUsernames;
-	private final Set<IPAddress> remoteAdminIPAddresses;
+	private Collection<String> adminUsernames;
+	private final Collection<IPAddress> remoteAdminIPAddresses;
 
 	private Integer adminSSHConnectPort;
 	private Integer sshListenPort;
@@ -257,11 +258,11 @@ public class ServerData extends AMachineData {
 		}
 	}
 
-	public final Set<String> getAdminUsernames() {
+	public final Collection<String> getAdminUsernames() {
 		return this.adminUsernames;
 	}
 
-	public final Set<IPAddress> getRemoteAdminIPAddresses() {
+	public final Collection<IPAddress> getRemoteAdminIPAddresses() {
 		return this.remoteAdminIPAddresses;
 	}
 
@@ -285,7 +286,7 @@ public class ServerData extends AMachineData {
 		return this.debianDirectory;
 	}
 
-	public final Set<String> getAdmins() {
+	public final Collection<String> getAdmins() {
 		return this.adminUsernames;
 	}
 
@@ -305,15 +306,15 @@ public class ServerData extends AMachineData {
 		return this.update;
 	}
 
-	public final Set<MachineType> getTypes() {
+	public final Collection<MachineType> getTypes() {
 		return this.types;
 	}
 
-	public final Set<String> getProfiles() {
+	public final Collection<String> getProfiles() {
 		return this.profiles;
 	}
 
-	public final Set<IPAddress> getSSHSources() {
+	public final Collection<IPAddress> getSSHSources() {
 		return this.remoteAdminIPAddresses;
 	}
 

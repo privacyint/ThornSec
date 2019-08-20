@@ -1,6 +1,7 @@
 package core.profile;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Set;
 
 import core.iface.IChildUnit;
@@ -19,9 +20,9 @@ public abstract class ACompoundProfile extends AProfile {
 		this.config = config;
 	}
 
-	public Set<IUnit> getUnits() {
-		Set<IUnit> rules = new HashSet<IUnit>();
-		rules.add(new ComplexUnit(getLabel() + "_compound", precondition, "",
+	@Override
+	public Collection<IUnit> getUnits() {
+		final Collection<IUnit> rules = new ArrayList<>();
 				getLabel() + "_unchanged=1;\n" + getLabel() + "_compound=1;\n"));
 		rules.addAll(this.getChildren());
 		rules.add(new ComplexUnit(getLabel(), precondition, config + "\n" + getLabel() + "_unchanged=1;\n",

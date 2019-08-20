@@ -10,8 +10,8 @@ package profile.firewall.machine;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
@@ -66,8 +66,8 @@ public class CSFFirewall extends AFirewallProfile {
 	}
 
 	@Override
-	public Set<IUnit> getInstalled() throws ARuntimeException {
-		final Set<IUnit> units = new LinkedHashSet<>();
+	public Collection<IUnit> getInstalled() throws ARuntimeException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
 		units.add(new FileDownloadUnit("csf", "proceed", "https://download.configserver.com/csf.tgz", "/root/csf.tgz"));
@@ -95,8 +95,8 @@ public class CSFFirewall extends AFirewallProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentConfig() throws ARuntimeException {
-		final Set<IUnit> units = new LinkedHashSet<>();
+	public Collection<IUnit> getPersistentConfig() throws ARuntimeException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		final FileUnit csfConf = new FileUnit("csf_config", "csf_installed", "/etc/csf/csf.conf");
 		units.add(csfConf);
@@ -211,24 +211,24 @@ public class CSFFirewall extends AFirewallProfile {
 	}
 
 	@Override
-	public Set<IUnit> getLiveConfig() throws ARuntimeException {
-		return new LinkedHashSet<>();
+	public Collection<IUnit> getLiveConfig() throws ARuntimeException {
+		return new ArrayList<>();
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws ARuntimeException {
+	public Collection<IUnit> getPersistentFirewall() throws ARuntimeException {
 		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName("download.configserver.com:443"));
-		return new LinkedHashSet<>();
+		return new ArrayList<>();
 	}
 
 	@Override
-	public Set<IUnit> getLiveFirewall() throws ARuntimeException {
-		return new LinkedHashSet<>();
+	public Collection<IUnit> getLiveFirewall() throws ARuntimeException {
+		return new ArrayList<>();
 	}
 
 	/*
-	 * private Set<IUnit> machineIngressRules(MachineModel machine) { Set<IUnit>
-	 * units = new HashSet<IUnit>();
+	 * private Collection<IUnit> machineIngressRules(MachineModel machine) {
+	 * Collection<IUnit> units = new ArrayList<>();
 	 *
 	 * HashMap<String, Set<Integer>> ingress = machine.getIngressSources();
 	 *

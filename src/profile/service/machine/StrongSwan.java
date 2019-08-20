@@ -7,8 +7,8 @@
  */
 package profile.service.machine;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
@@ -24,15 +24,15 @@ public class StrongSwan extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getPersistentConfig() {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getPersistentConfig() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		return units;
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		/*
 		 * for (ServerModel router : getNetworkModel().getRouterServers()) {

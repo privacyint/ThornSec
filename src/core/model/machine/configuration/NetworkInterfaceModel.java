@@ -7,8 +7,8 @@
  */
 package core.model.machine.configuration;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.data.machine.AMachineData.MachineType;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
@@ -45,7 +45,7 @@ public class NetworkInterfaceModel extends AModel {
 	private Inet inet;
 	private MACAddress mac;
 
-	private Set<String> bridgePorts;
+	private Collection<String> bridgePorts;
 
 	private IPAddress subnet;
 	private IPAddress address;
@@ -100,12 +100,12 @@ public class NetworkInterfaceModel extends AModel {
 		this.mac = mac;
 	}
 
-	public final Set<String> getBridgePorts() {
+	public final Collection<String> getBridgePorts() {
 		return this.bridgePorts;
 	}
 
-	public final void setBridgePorts(Set<String> bridgePorts) {
-		this.bridgePorts = bridgePorts;
+	public final void setBridgePorts(Collection<String> collection) {
+		this.bridgePorts = collection;
 	}
 
 	public final IPAddress getSubnet() {
@@ -188,9 +188,9 @@ public class NetworkInterfaceModel extends AModel {
 		return network;
 	}
 
-	public static final Set<IUnit> buildVXVLAN(String vlanName, String physical, IPAddress localAddress,
+	public static final Collection<IUnit> buildVXVLAN(String vlanName, String physical, IPAddress localAddress,
 			IPAddress remoteAddress) {
-		final Set<IUnit> units = new HashSet<>();
+		final Collection<IUnit> units = new ArrayList<>();
 
 		final FileUnit netDev = new FileUnit(vlanName + "_netdev", "proceed",
 				"/etc/systemd/network/" + vlanName + ".netdev");
@@ -208,8 +208,8 @@ public class NetworkInterfaceModel extends AModel {
 
 	}
 
-	public static final Set<IUnit> buildMACVLAN(MachineType vlanName, IPAddress gatewayAddress) {
-		final Set<IUnit> units = new HashSet<>();
+	public static final Collection<IUnit> buildMACVLAN(MachineType vlanName, IPAddress gatewayAddress) {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		final FileUnit netDev = new FileUnit(vlanName + "_netdev", "proceed",
 				"/etc/systemd/network/" + vlanName + ".netdev");
@@ -250,7 +250,7 @@ public class NetworkInterfaceModel extends AModel {
 //	 * @return the units
 //	 */
 //	public Vector<IUnit> getUnits() {
-//		Vector<IUnit> units = new Vector<IUnit>();
+//		Vector<IUnit> units = new Vector<>();
 //
 //		//We need to handle network resets a bit more carefully (a little less #YOLO)
 //

@@ -10,8 +10,8 @@ package core.model.machine;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
@@ -34,8 +34,8 @@ public class ServiceModel extends ServerModel {
 	}
 
 	@Override
-	public Set<IUnit> getUnits() throws AThornSecException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getUnits() throws AThornSecException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(super.getUnits());
 

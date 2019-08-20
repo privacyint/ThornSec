@@ -8,7 +8,7 @@
 package core.model.machine;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.Collection;
 
 import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
@@ -34,7 +34,7 @@ public class ExternalOnlyDeviceModel extends ADeviceModel {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() {
+	public Collection<IUnit> getPersistentFirewall() {
 		addEgress("*");
 
 		return null;

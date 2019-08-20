@@ -17,11 +17,11 @@ import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 
 import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
@@ -55,8 +55,8 @@ public class NetworkModel {
 	private final String label;
 	private NetworkData data;
 	private Map<MachineType, Map<String, AMachineModel>> machines;
-	private Map<String, Set<IUnit>> networkUnits;
-	private Map<String, Set<String>> hypervisorLayout;
+	private Map<String, Collection<IUnit>> networkUnits;
+	private Map<String, Collection<String>> hypervisorLayout;
 
 	NetworkModel(String label) {
 		this.label = label;
@@ -169,7 +169,7 @@ public class NetworkModel {
 			this.hypervisorLayout = new LinkedHashMap<>();
 		}
 
-		Set<String> services = this.hypervisorLayout.get(hypervisor);
+		Collection<String> services = this.hypervisorLayout.get(hypervisor);
 		if (services == null) {
 			services = new LinkedHashSet<>();
 		}
@@ -179,7 +179,7 @@ public class NetworkModel {
 		this.hypervisorLayout.put(hypervisor, services);
 	}
 
-	private void putUnits(String label, Set<IUnit> units) {
+	private void putUnits(String label, Collection<IUnit> units) {
 		if (this.networkUnits == null) {
 			this.networkUnits = new LinkedHashMap<>();
 		}
@@ -202,8 +202,8 @@ public class NetworkModel {
 		this.machines.put(type, machines);
 	}
 
-	public Set<NetworkInterfaceModel> getNetworkInterfaces(String machine) throws InvalidMachineModelException {
-		Set<NetworkInterfaceModel> interfaces = getMachineModel(machine).getNetworkInterfaces();
+	public Collection<NetworkInterfaceModel> getNetworkInterfaces(String machine) throws InvalidMachineModelException {
+		Collection<NetworkInterfaceModel> interfaces = getMachineModel(machine).getNetworkInterfaces();
 
 		if (interfaces == null) {
 			interfaces = new LinkedHashSet<>();
@@ -214,11 +214,11 @@ public class NetworkModel {
 
 	/**
 	 * The VMs residing on a given hypervisor
-	 * 
+	 *
 	 * @param hypervisor
 	 * @return
 	 */
-	public final Set<String> getServicesOnHyperVisor(String hypervisor) {
+	public final Collection<String> getServicesOnHyperVisor(String hypervisor) {
 		return this.hypervisorLayout.get(hypervisor);
 	}
 
@@ -442,7 +442,7 @@ public class NetworkModel {
 	private String getScript(String server, String action, boolean quiet) {
 		System.out.println("=======================" + getLabel() + ":" + server + "==========================");
 		String line = getHeader(server, action) + "\n";
-		final Set<IUnit> units = this.networkUnits.get(server);
+		final Collection<IUnit> units = this.networkUnits.get(server);
 		for (final IUnit unit : units) {
 			line += "#============ " + unit.getLabel() + " =============\n";
 			line += getText(action, unit, quiet) + "\n";

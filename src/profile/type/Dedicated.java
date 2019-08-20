@@ -7,8 +7,8 @@
  */
 package profile.type;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
@@ -32,8 +32,8 @@ public class Dedicated extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addEgress("cdn.debian.net:80,443");
 		getNetworkModel().getServerModel(getLabel()).addEgress("security-cdn.debian.org:80,443");

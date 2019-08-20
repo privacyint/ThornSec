@@ -7,7 +7,8 @@
  */
 package profile.service.web;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -55,8 +56,8 @@ public class Webproxy extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("openssl", "proceed", "openssl"));
 
@@ -66,9 +67,9 @@ public class Webproxy extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getPersistentConfig()
+	protected Collection<IUnit> getPersistentConfig()
 			throws InvalidPropertyException, InvalidServerException, InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getPersistentConfig());
 
@@ -143,9 +144,9 @@ public class Webproxy extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig() throws InvalidMachineModelException, InvalidPropertyArrayException,
+	protected Collection<IUnit> getLiveConfig() throws InvalidMachineModelException, InvalidPropertyArrayException,
 			InvalidMachineException, MissingPropertiesException {
-		final Set<IUnit> units = new HashSet<>();
+		final Collection<IUnit> units = new ArrayList<>();
 
 		final AMachineData data = getNetworkModel().getData().getMachine(MachineType.SERVER, getLabel());
 
@@ -166,7 +167,7 @@ public class Webproxy extends AStructuredProfile {
 			for (final String backend : this.backends) {
 				final AMachineModel backendObj = getNetworkModel().getMachineModel(backend);
 
-				final Set<String> cnames = getNetworkModel().getData().getCNAMEs(backend);
+				final Collection<String> cnames = getNetworkModel().getData().getCNAMEs(backend);
 				final HostName domain = getNetworkModel().getServerModel(backend).getDomain();
 				final String logDir = "/var/log/nginx/" + backend + "." + domain + "/";
 
@@ -246,9 +247,9 @@ public class Webproxy extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidMachineModelException, InvalidPortException,
+	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException, InvalidPortException,
 			InvalidPropertyArrayException, InvalidMachineException {
-		final Set<IUnit> units = new HashSet<>();
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getPersistentFirewall());
 

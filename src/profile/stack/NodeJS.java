@@ -7,8 +7,8 @@
  */
 package profile.stack;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
@@ -31,8 +31,8 @@ public class NodeJS extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getInstalled() {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getInstalled() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("build_essential", "proceed", "build-essential"));
 		units.add(new InstalledUnit("gzip", "proceed", "gzip"));
@@ -58,8 +58,8 @@ public class NodeJS extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentConfig() {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentConfig() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// TODO: iunno. Is there something which needs to go here?
 
@@ -67,8 +67,8 @@ public class NodeJS extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getLiveConfig() {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getLiveConfig() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// TODO: check it's up to date, etc
 
@@ -76,8 +76,8 @@ public class NodeJS extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// Let's open this box up to most of the internet. Thanks, node!
 		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");

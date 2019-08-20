@@ -7,8 +7,8 @@
  */
 package core.profile;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.AThornSecException;
 import core.iface.IUnit;
@@ -37,8 +37,8 @@ public abstract class AStructuredProfile extends AProfile {
 	 * Returns a Set of all units related to this profile.
 	 */
 	@Override
-	public Set<IUnit> getUnits() throws AThornSecException {
-		final Set<IUnit> children = new HashSet<>();
+	public Collection<IUnit> getUnits() throws AThornSecException {
+		final Collection<IUnit> children = new ArrayList<>();
 
 		children.addAll(getInstalled());
 		children.addAll(getPersistentConfig());
@@ -52,8 +52,8 @@ public abstract class AStructuredProfile extends AProfile {
 	/**
 	 * This is units relating to installing software for this profile
 	 */
-	protected Set<IUnit> getInstalled() throws AThornSecException {
-		return new HashSet<>();
+	protected Collection<IUnit> getInstalled() throws AThornSecException {
+		return new ArrayList<>();
 	}
 
 	/**
@@ -62,8 +62,8 @@ public abstract class AStructuredProfile extends AProfile {
 	 *
 	 * @throws AThornSecException
 	 */
-	protected Set<IUnit> getPersistentConfig() throws AThornSecException {
-		return new HashSet<>();
+	protected Collection<IUnit> getPersistentConfig() throws AThornSecException {
+		return new ArrayList<>();
 	}
 
 	/**
@@ -73,8 +73,8 @@ public abstract class AStructuredProfile extends AProfile {
 	 * @throws IncompatibleAddressException
 	 * @throws AddressStringException
 	 */
-	protected Set<IUnit> getLiveConfig() throws AThornSecException {
-		return new HashSet<>();
+	protected Collection<IUnit> getLiveConfig() throws AThornSecException {
+		return new ArrayList<>();
 	}
 
 	/**
@@ -83,8 +83,8 @@ public abstract class AStructuredProfile extends AProfile {
 	 * Please put Units related to the persistent configuration of the firewall
 	 * (e.g. adding a Device) here.
 	 */
-	protected Set<IUnit> getPersistentFirewall() throws AThornSecException {
-		return new HashSet<>();
+	protected Collection<IUnit> getPersistentFirewall() throws AThornSecException {
+		return new ArrayList<>();
 	}
 
 	/**
@@ -96,8 +96,8 @@ public abstract class AStructuredProfile extends AProfile {
 	 * If you want to do configuration of the firewall (e.g. add a Device) please
 	 * see {@link #getPersistentFirewall()}
 	 */
-	protected Set<IUnit> getLiveFirewall() throws AThornSecException {
-		return new HashSet<>();
+	protected Collection<IUnit> getLiveFirewall() throws AThornSecException {
+		return new ArrayList<>();
 	}
 
 	/**
@@ -105,7 +105,7 @@ public abstract class AStructuredProfile extends AProfile {
 	 * actually use this method, it will be going soon
 	 */
 	@Deprecated
-	public Set<IUnit> init() {
-		return new HashSet<>();
+	public Collection<IUnit> init() {
+		return new ArrayList<>();
 	}
 }

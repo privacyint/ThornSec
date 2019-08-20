@@ -19,6 +19,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
@@ -106,7 +107,7 @@ public class NetworkData extends AData {
 	private Boolean vpnOnly;
 	private Boolean autoGuest;
 
-	private Set<HostName> upstreamDNS;
+	private Collection<HostName> upstreamDNS;
 
 	private final ServiceData defaultServiceData;
 	private final HypervisorData defaultHypervisorData;
@@ -160,7 +161,7 @@ public class NetworkData extends AData {
 
 		// Some servers don't have types set, as they inherit them. Let's make sure they
 		// actually do inherit them.
-		Set<MachineType> serverTypes = serverData.getTypes();
+		Collection<MachineType> serverTypes = serverData.getTypes();
 		if (serverTypes == null) {
 			serverTypes = this.defaultServiceData.getTypes();
 
@@ -391,7 +392,7 @@ public class NetworkData extends AData {
 	/**
 	 * @return the upstream DNS server addresses
 	 */
-	public final Set<HostName> getUpstreamDNSServers() {
+	public final Collection<HostName> getUpstreamDNSServers() {
 		return this.upstreamDNS;
 	}
 
@@ -460,8 +461,8 @@ public class NetworkData extends AData {
 	 * @throws InvalidServerException if attempting to find a server which isn't
 	 *                                defined
 	 */
-	final public Set<MachineType> getTypes(String server) throws InvalidServerException {
-		Set<MachineType> types = ((ServerData) getMachine(MachineType.SERVER, server)).getTypes();
+	final public Collection<MachineType> getTypes(String server) throws InvalidServerException {
+		Collection<MachineType> types = ((ServerData) getMachine(MachineType.SERVER, server)).getTypes();
 
 		if (types == null) {
 			types = this.defaultServiceData.getTypes();
@@ -481,9 +482,9 @@ public class NetworkData extends AData {
 	 * @throws ADataException
 	 * @throws IOException
 	 */
-	final public Set<NetworkInterfaceData> getNetworkInterfaces(String machine)
+	final public Collection<NetworkInterfaceData> getNetworkInterfaces(String machine)
 			throws JsonParsingException, ADataException, IOException {
-		Set<NetworkInterfaceData> interfaces = getMachine(machine).getNetworkInterfaces();
+		Collection<NetworkInterfaceData> interfaces = getMachine(machine).getNetworkInterfaces();
 
 		if (interfaces == null) {
 			interfaces = this.defaultServiceData.getNetworkInterfaces();
@@ -503,16 +504,16 @@ public class NetworkData extends AData {
 		return interfaces;
 	}
 
-	public Set<String> getCNAMEs(String machine) throws InvalidMachineException {
+	public Collection<String> getCNAMEs(String machine) throws InvalidMachineException {
 		return getMachine(machine).getCNAMEs();
 	}
 
-	public Set<IPAddress> getExternalIPs(String machine) throws InvalidMachineException {
+	public Collection<IPAddress> getExternalIPs(String machine) throws InvalidMachineException {
 		return getMachine(machine).getExternalIPs();
 	}
 
-	final public Set<String> getAdmins(String server) throws InvalidServerException {
-		Set<String> admins = ((ServerData) getMachine(MachineType.SERVER, server)).getAdmins();
+	final public Collection<String> getAdmins(String server) throws InvalidServerException {
+		Collection<String> admins = ((ServerData) getMachine(MachineType.SERVER, server)).getAdmins();
 
 		if (admins == null) {
 			admins = this.defaultServiceData.getAdmins();
@@ -735,8 +736,8 @@ public class NetworkData extends AData {
 		return throttled;
 	}
 
-	public Map<Encapsulation, Set<Integer>> getListens(String label) {
-		Map<Encapsulation, Set<Integer>> listens = getMachine(label).getListens();
+	public Map<Encapsulation, Collection<Integer>> getListens(String label) {
+		Map<Encapsulation, Collection<Integer>> listens = getMachine(label).getListens();
 
 		if (listens == null) {
 			listens = this.defaultServiceData.getListens();
@@ -747,8 +748,8 @@ public class NetworkData extends AData {
 		return listens;
 	}
 
-	public Set<HostName> getIngresses(String label) {
-		Set<HostName> ingresses = getMachine(label).getIngresses();
+	public Collection<HostName> getIngresses(String label) {
+		Collection<HostName> ingresses = getMachine(label).getIngresses();
 
 		if (ingresses == null) {
 			ingresses = this.defaultServiceData.getIngresses();
@@ -759,8 +760,8 @@ public class NetworkData extends AData {
 		return ingresses;
 	}
 
-	public Set<HostName> getEgresses(String label) {
-		Set<HostName> egresses = getMachine(label).getEgresses();
+	public Collection<HostName> getEgresses(String label) {
+		Collection<HostName> egresses = getMachine(label).getEgresses();
 
 		if (egresses == null) {
 			egresses = this.defaultServiceData.getEgresses();
@@ -771,8 +772,8 @@ public class NetworkData extends AData {
 		return egresses;
 	}
 
-	public Set<String> getForwards(String label) {
-		Set<String> forwards = getMachine(label).getForwards();
+	public Collection<String> getForwards(String label) {
+		Collection<String> forwards = getMachine(label).getForwards();
 
 		if (forwards == null) {
 			forwards = this.defaultServiceData.getForwards();
@@ -788,8 +789,8 @@ public class NetworkData extends AData {
 		return null;
 	}
 
-	public Set<String> getProfiles(String label) {
-		Set<String> profiles = ((ServerData) getMachine(MachineType.SERVER, label)).getProfiles();
+	public Collection<String> getProfiles(String label) {
+		Collection<String> profiles = ((ServerData) getMachine(MachineType.SERVER, label)).getProfiles();
 
 		if (profiles == null) {
 			profiles = this.defaultServiceData.getProfiles();

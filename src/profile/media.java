@@ -1,7 +1,7 @@
 package profile;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
@@ -18,9 +18,9 @@ public class media extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getLiveFirewall() {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
+	public Collection<IUnit> getLiveFirewall() {
+		final Collection<IUnit> units = new ArrayList<>();
+
 		/*
 		for (ServerModel router : networkModel.getRouterServers()) {
 			//DNAT
@@ -49,10 +49,10 @@ public class media extends AStructuredProfile {
 		
 		return units;
 	}
-	
+
 	@Override
-	protected Set<IUnit> getPersistentConfig() {
-		Set<IUnit> units = new HashSet<IUnit>();
+	protected Collection<IUnit> getPersistentConfig() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new SimpleUnit("candc_user", "proceed",
 				"sudo useradd -m candc -c 'C&C Music Factory'",

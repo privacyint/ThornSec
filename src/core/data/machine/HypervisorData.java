@@ -10,8 +10,8 @@ package core.data.machine;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.Set;
 
 import javax.json.JsonObject;
 import javax.json.stream.JsonParsingException;
@@ -27,7 +27,7 @@ import core.exception.data.ADataException;
 public class HypervisorData extends ServerData {
 	private File vmBase;
 	private Integer backupFrequency;
-	private Set<ServerData> vms;
+	private Collection<ServerData> vms;
 
 	public HypervisorData(String label) {
 		super(label);
@@ -50,7 +50,7 @@ public class HypervisorData extends ServerData {
 		}
 	}
 
-	public final Set<ServerData> getVMs() {
+	public final Collection<ServerData> getVMs() {
 		return this.vms;
 	}
 

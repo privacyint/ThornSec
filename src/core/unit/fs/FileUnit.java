@@ -8,7 +8,8 @@
 package core.unit.fs;
 
 import java.io.File;
-import java.util.LinkedHashSet;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.unit.SimpleUnit;
 
@@ -20,7 +21,7 @@ import core.unit.SimpleUnit;
 public class FileUnit extends SimpleUnit {
 
 	private final File path;
-	private final LinkedHashSet<String> lines;
+	private final Collection<String> lines;
 
 	/**
 	 * Unit for writing out a whole file, with custom fail message
@@ -33,7 +34,7 @@ public class FileUnit extends SimpleUnit {
 	public FileUnit(String name, String precondition, String path, String message) {
 		super(name, precondition, null, "sudo cat " + path + " 2>&1;", "", "pass", message);
 
-		this.lines = new LinkedHashSet<>();
+		this.lines = new ArrayList<>();
 		this.path = new File(path);
 	}
 

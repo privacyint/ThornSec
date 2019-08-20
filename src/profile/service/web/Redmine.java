@@ -7,8 +7,8 @@
  */
 package profile.service.web;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
@@ -43,8 +43,8 @@ public class Redmine extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getInstalled());
 		units.addAll(this.db.getInstalled());
@@ -60,8 +60,8 @@ public class Redmine extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("redmine_logs",
 				"proceed", "www-data", "www-data", "0640"));
@@ -211,8 +211,8 @@ public class Redmine extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getLiveConfig());
 		units.addAll(this.db.getLiveConfig());
@@ -221,8 +221,8 @@ public class Redmine extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getPersistentFirewall());
 		units.addAll(this.db.getPersistentFirewall());

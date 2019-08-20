@@ -8,8 +8,8 @@
 package profile.stack;
 
 import java.io.File;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.iface.IUnit;
 
@@ -37,9 +37,9 @@ public class PHP extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getInstalled() {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
+	public Collection<IUnit> getInstalled() {
+		final Collection<IUnit> units = new ArrayList<>();
+
 		units.add(new InstalledUnit("php_fpm", "proceed", "php-fpm"));
 		units.add(new InstalledUnit("php_base", "proceed", "php"));
 		units.add(new InstalledUnit("php_apcu", "proceed", "php-apcu"));
@@ -48,10 +48,9 @@ public class PHP extends AStructuredProfile {
 	}
 	
 	@Override
-	public Set<IUnit> getPersistentConfig()
-	throws InvalidServerException {
-		Set<IUnit> units =  new HashSet<IUnit>();
-		
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerException {
+		final Collection<IUnit> units = new ArrayList<>();
+
 		FileUnit iniConf  = new FileUnit("php_ini", "php_fpm_installed", CONFIG_ROOT + "php.ini");
 		FileUnit poolConf = new FileUnit("php_pool", "php_fpm_installed", CONFIG_ROOT + "pool.d/www.conf");
 		
@@ -232,10 +231,9 @@ public class PHP extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getLiveConfig()
-	throws InvalidServerModelException {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
+	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
+
 		units.add(new RunningUnit("php_fpm", "php7.0-fpm", "php7.0-fpm"));
 		
 		getNetworkModel().getServerModel(getLabel()).addProcessString("php-fpm: master process \\(/etc/php/7.0/fpm/php-fpm\\.conf\\) *$");
@@ -243,14 +241,14 @@ public class PHP extends AStructuredProfile {
 		
 		return units;
 	}
-	
+
 	@Override
-	public Set<IUnit> getPersistentFirewall() {
-		return new HashSet<IUnit>(); //Nothing to see here (yet?)
+	public Collection<IUnit> getPersistentFirewall() {
+		return new ArrayList<>(); // Nothing to see here (yet?)
 	}
-	
+
 	@Override
-	public Set<IUnit> getLiveFirewall() {
-		return new HashSet<IUnit>(); //Empty (for now?)
+	public Collection<IUnit> getLiveFirewall() {
+		return new ArrayList<>(); // Empty (for now?)
 	}
 }

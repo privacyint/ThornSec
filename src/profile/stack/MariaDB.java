@@ -7,8 +7,9 @@
  */
 package profile.stack;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
@@ -73,8 +74,8 @@ public class MariaDB extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getInstalled() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("openssl", "proceed", "openssl"));
 
@@ -119,8 +120,8 @@ public class MariaDB extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentConfig() {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentConfig() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new SimpleUnit("mariadb_data_dir_moved", "mariadb_installed",
 				// We only want to move over the files if they don't already exist
@@ -212,8 +213,8 @@ public class MariaDB extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getLiveConfig() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new RunningUnit("mariadb", "mysql", "mysql"));
 
@@ -228,8 +229,8 @@ public class MariaDB extends AStructuredProfile {
 		return units;
 	}
 
-	public Set<IUnit> checkUserExists() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> checkUserExists() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		final String userCreateSql = "CREATE USER IF NOT EXISTS '" + getUsername() + "'@'localhost' IDENTIFIED BY '"
 				+ getUserPassword() + "';";
@@ -244,8 +245,8 @@ public class MariaDB extends AStructuredProfile {
 		return units;
 	}
 
-	public Set<IUnit> checkDbExists() {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> checkDbExists() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		String dbCreateSql = "";
 		dbCreateSql += "CREATE DATABASE IF NOT EXISTS '" + getDb() + ";";
@@ -264,8 +265,8 @@ public class MariaDB extends AStructuredProfile {
 		return units;
 	}
 
-	public Set<IUnit> queryDb(String db, String username, String password, String query) {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> queryDb(String db, String username, String password, String query) {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		return units;
 	}
@@ -294,8 +295,8 @@ public class MariaDB extends AStructuredProfile {
 	 */
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("mariadb",
 				"deb http://mirror.sax.uk.as61049.net/mariadb/repo/10.2/debian buster main", "keyserver.ubuntu.com",
@@ -307,7 +308,7 @@ public class MariaDB extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getLiveFirewall() {
+	public Collection<IUnit> getLiveFirewall() {
 		return new HashSet<>(); // Empty (for now?)
 	}
 

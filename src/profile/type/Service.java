@@ -7,8 +7,8 @@
  */
 package profile.type;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
@@ -31,8 +31,8 @@ public class Service extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// First, we need to be sure we're actually in a VirtualBox guest, or the rest
 		// of this is moot
@@ -83,8 +83,8 @@ public class Service extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getPersistentConfig() {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getPersistentConfig() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new SimpleUnit("data_drive_is_partitioned", "proceed", "(\n" + "	echo o\n" // Create a new empty DOS
 																								// partition table
@@ -135,8 +135,8 @@ public class Service extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addEgress("download.virtualbox.org");
 
@@ -144,8 +144,8 @@ public class Service extends AStructuredProfile {
 	}
 
 	/*
-	 * public Set<IUnit> getPersistentFirewall() { Set<IUnit> units = new
-	 * HashSet<IUnit>();
+	 * public Collection<IUnit> getPersistentFirewall() { Collection<IUnit> units =
+	 * new ArrayList<>();
 	 *
 	 * String metal = networkModel.getData().getMetal(getLabel());
 	 *

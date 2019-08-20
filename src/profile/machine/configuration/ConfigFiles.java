@@ -8,8 +8,9 @@
 package profile.machine.configuration;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
@@ -18,18 +19,18 @@ import core.unit.SimpleUnit;
 
 public class ConfigFiles extends AProfile {
 
-	private Set<File> configFiles;
+	private final Collection<File> configFiles;
 
 	public ConfigFiles(String label, NetworkModel networkModel) {
 		super(label, networkModel);
 
-		this.configFiles = new HashSet<File>();
+		this.configFiles = new HashSet<>();
 	}
 
 	@Override
-	public Set<IUnit> getUnits() {
+	public Collection<IUnit> getUnits() {
 		String grepString = "sudo dpkg -V";
-		Set<IUnit> units = new HashSet<IUnit>();
+		final Collection<IUnit> units = new ArrayList<>();
 				
 		for (File file : configFiles) {
 			grepString += " | egrep -v \"" + file.getPath() + "\"";

@@ -10,8 +10,8 @@ package profile.stack;
 import java.io.File;
 import java.net.URI;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import javax.swing.JOptionPane;
 
@@ -36,8 +36,8 @@ public class Virtualisation extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getInstalled() {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getInstalled() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("build_essential", "proceed", "build-essential"));
 		units.add(new InstalledUnit("linux_headers", "build_essential_installed", "linux-headers-$(uname -r)"));
@@ -51,8 +51,8 @@ public class Virtualisation extends AStructuredProfile {
 	}
 
 	@Override
-	protected final Set<IUnit> getPersistentConfig() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected final Collection<IUnit> getPersistentConfig() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/lib/virtualbox/VBoxXPCOMIPCD$");
 		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/lib/virtualbox/VBoxSVC --auto-shutdown$");
@@ -64,15 +64,15 @@ public class Virtualisation extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig() {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getLiveConfig() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		return units;
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("virtualbox",
 				"deb http://download.virtualbox.org/virtualbox/debian buster contrib", "keyserver.ubuntu.com",
@@ -82,9 +82,9 @@ public class Virtualisation extends AStructuredProfile {
 		return units;
 	}
 
-	Set<IUnit> buildIso(String service, String preseed) throws InvalidServerException {
+	Collection<IUnit> buildIso(String service, String preseed) throws InvalidServerException {
 
-		final Set<IUnit> units = new HashSet<>();
+		final Collection<IUnit> units = new ArrayList<>();
 
 		final String isoDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/isos/" + service
 				+ "/";
@@ -151,7 +151,7 @@ public class Virtualisation extends AStructuredProfile {
 		return units;
 	}
 
-	public Set<IUnit> buildServiceVm(String service, String bridge)
+	public Collection<IUnit> buildServiceVm(String service, String bridge)
 			throws InvalidServerModelException, InvalidServerException {
 		final File baseDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel());
 
@@ -175,7 +175,7 @@ public class Virtualisation extends AStructuredProfile {
 		final String osType = getNetworkModel().getData().getDebianIsoUrl(service).contains("amd64") ? "Debian_64"
 				: "Debian";
 
-		final Set<IUnit> units = new HashSet<>();
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// Metal user setup
 		units.add(new SimpleUnit("metal_virtualbox_" + service + "_user", "metal_virtualbox_installed",

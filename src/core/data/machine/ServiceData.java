@@ -9,6 +9,7 @@ package core.data.machine;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -31,7 +32,7 @@ public class ServiceData extends ServerData {
 	private String debianISOURL;
 	private String debianISOSHA512;
 
-	private Set<DiskData> disks;
+	private Collection<DiskData> disks;
 
 	private Integer backupFrequency;
 
@@ -81,7 +82,7 @@ public class ServiceData extends ServerData {
 		}
 	}
 
-	public final Set<DiskData> getDisks() {
+	public final Collection<DiskData> getDisks() {
 		return this.disks;
 	}
 

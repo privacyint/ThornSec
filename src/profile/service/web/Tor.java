@@ -7,8 +7,8 @@
  */
 package profile.service.web;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.data.InvalidPortException;
 import core.exception.data.InvalidPropertyArrayException;
@@ -41,8 +41,8 @@ public class Tor extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("tor_keyring", "tor_pgp", "deb.torproject.org-keyring"));
 		units.add(new InstalledUnit("tor", "tor_keyring_installed", "tor"));
@@ -55,9 +55,9 @@ public class Tor extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getPersistentConfig() throws InvalidPropertyArrayException, InvalidMachineException,
+	protected Collection<IUnit> getPersistentConfig() throws InvalidPropertyArrayException, InvalidMachineException,
 			InvalidServerModelException, InvalidPropertyException {
-		final Set<IUnit> units = new HashSet<>();
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("tor",
 				"tor_installed", "debian-tor", "debian-tor", "0700"));
@@ -197,9 +197,9 @@ public class Tor extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig() throws InvalidMachineModelException, InvalidPropertyArrayException,
+	protected Collection<IUnit> getLiveConfig() throws InvalidMachineModelException, InvalidPropertyArrayException,
 			InvalidMachineException, MissingPropertiesException {
-		final Set<IUnit> units = new HashSet<>();
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new RunningUnit("tor", "tor", "/usr/bin/tor"));
 		getNetworkModel().getServerModel(getLabel()).addProcessString(
@@ -210,9 +210,9 @@ public class Tor extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidMachineModelException, InvalidPortException,
+	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException, InvalidPortException,
 			InvalidPropertyArrayException, InvalidMachineException {
-		final Set<IUnit> units = new HashSet<>();
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.proxy.getPersistentFirewall());
 

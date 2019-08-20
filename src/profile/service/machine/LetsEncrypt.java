@@ -7,8 +7,8 @@
  */
 package profile.service.machine;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
@@ -29,8 +29,8 @@ public class LetsEncrypt extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getInstalled() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("certbot", "proceed", "certbot"));
 
@@ -38,8 +38,8 @@ public class LetsEncrypt extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getPersistentConfig() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getPersistentConfig() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		String config = "";
 		config += "rsa-key-size = 4096\n";
@@ -51,16 +51,16 @@ public class LetsEncrypt extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig() {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getLiveConfig() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// First, are we a web proxy?
 
 		return units;
 	}
 
-//	private Set<IUnit> getCert(String name, String machineName, String path, String[] domains) {
-//		Set<IUnit> units = new HashSet<IUnit>();
+//	private Collection<IUnit> getCert(String name, String machineName, String path, String[] domains) {
+//		Collection<IUnit> units = new ArrayList<>();
 
 	// String invocation = "certbot"
 	// + " certonly" //Just issue cert
@@ -75,8 +75,8 @@ public class LetsEncrypt extends AStructuredProfile {
 //	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addEgress("acme-v01.api.letsencrypt.org");
 

@@ -8,8 +8,8 @@
 package core.data.machine.configuration;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 
 import javax.json.JsonObject;
 import javax.json.stream.JsonParsingException;
@@ -50,7 +50,7 @@ public class NetworkInterfaceData extends AData {
 	private String postDown;
 	private Inet inet;
 	private MACAddress mac;
-	private Set<String> bridgePorts;
+	private Collection<String> bridgePorts;
 	private IPAddress address;
 	private IPAddress gateway;
 	private IPAddress subnet;
@@ -112,7 +112,7 @@ public class NetworkInterfaceData extends AData {
 	}
 
 	protected final void putBridgePort(String bridgePort) {
-		Set<String> bridgePorts = this.bridgePorts;
+		Collection<String> bridgePorts = this.bridgePorts;
 
 		if (bridgePorts == null) {
 			bridgePorts = new HashSet<>();
@@ -191,7 +191,7 @@ public class NetworkInterfaceData extends AData {
 		return this.broadcast;
 	}
 
-	final public Set<String> getBridgePorts() {
+	final public Collection<String> getBridgePorts() {
 		return this.bridgePorts;
 	}
 

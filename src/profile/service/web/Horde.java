@@ -7,8 +7,8 @@
  */
 package profile.service.web;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
@@ -39,8 +39,8 @@ public class Horde extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getInstalled());
 
@@ -65,8 +65,8 @@ public class Horde extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new SimpleUnit("horde_mysql_password", "proceed",
 				"HORDE_PASSWORD=`grep \"password\" /media/data/www/sites/default/settings.php 2>/dev/null | grep -v \"[*#]\" | awk '{ print $3 }' | tr -d \"',\"`; [[ -z $HORDE_PASSWORD ]] && HORDE_PASSWORD=`openssl rand -hex 32`",
@@ -113,8 +113,8 @@ public class Horde extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getLiveConfig());
 
@@ -122,8 +122,8 @@ public class Horde extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getPersistentFirewall());
 

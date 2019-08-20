@@ -14,9 +14,9 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -71,7 +71,7 @@ public class ThornsecModel {
 		}
 	}
 
-	public Set<String> getNetworkLabels() {
+	public Collection<String> getNetworkLabels() {
 		return this.networks.keySet();
 	}
 

@@ -7,8 +7,8 @@
  */
 package profile.dhcp;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
@@ -91,8 +91,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	}
 
 	@Override
-	public Set<IUnit> getInstalled() {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getInstalled() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("dhcp", "proceed", "isc-dhcp-server"));
 
@@ -100,8 +100,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentConfig() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// Create sub-dir
 		final DirUnit dhcpdConfD = new DirUnit("dhcpd_confd_dir", "dhcp_installed", "/etc/dhcp/dhcpd.conf.d");
@@ -142,8 +142,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	}
 
 	@Override
-	public Set<IUnit> getLiveConfig() throws AThornSecException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getLiveConfig() throws AThornSecException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		distributeIPs();
 
@@ -199,16 +199,16 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws AThornSecException {
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
 		// DNS needs to talk on :67 UDP
 		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.UDP, 67);
 
-		return new HashSet<>();
+		return new ArrayList<>();
 	}
 
 	@Override
-	public Set<IUnit> getLiveFirewall() throws AThornSecException {
+	public Collection<IUnit> getLiveFirewall() throws AThornSecException {
 		// There aren't any :)
-		return new HashSet<>();
+		return new ArrayList<>();
 	}
 }

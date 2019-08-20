@@ -10,16 +10,16 @@ public class Wifi extends AStructuredProfile {
 		super(label, networkModel);
 	}
 /*
-	protected Set<IUnit> getInstalled(String server, NetworkModel model) {
-		Set<IUnit> units = new HashSet<IUnit>();
+	protected Collection<IUnit> getInstalled(String server, NetworkModel model) {
+		Collection<IUnit> units = new ArrayList<>();
 		
 		units.add(new InstalledUnit("hostapd", "proceed", "hostapd"));
 		
 		return units;
 	}
 	
-	protected Set<IUnit> getPersistentConfig(String server, NetworkModel model) {
-		Set<IUnit> units =  new HashSet<IUnit>();
+	protected Collection<IUnit> getPersistentConfig(String server, NetworkModel model) {
+		Collection<IUnit> units =  new ArrayList<>();
 		
 		String hostapdconf = "DAEMON_CONF=\"/etc/hostapd/hostapd.conf\"";
 		units.add(new FileUnit("wifi_set_config_location", "hostapd_installed", hostapdconf, "/etc/default/hostapd"));
@@ -69,8 +69,8 @@ public class Wifi extends AStructuredProfile {
 		return units;
 	}
 
-	protected Set<IUnit> getLiveConfig(String server, NetworkModel model) {
-		Set<IUnit> units = new HashSet<IUnit>();
+	protected Collection<IUnit> getLiveConfig(String server, NetworkModel model) {
+		Collection<IUnit> units = new ArrayList<>();
 		
 		String hostapdconf = "";
 		
@@ -118,8 +118,8 @@ public class Wifi extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Set<IUnit> getPersistentFirewall(String server, NetworkModel model) {
-		Set<IUnit> units = new HashSet<IUnit>();
+	protected Collection<IUnit> getPersistentFirewall(String server, NetworkModel model) {
+		Collection<IUnit> units = new ArrayList<>();
 		
 
 		return units;

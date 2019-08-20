@@ -8,9 +8,8 @@
 package core.model.machine;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
@@ -46,9 +45,9 @@ abstract public class ADeviceModel extends AMachineModel {
 	}
 
 	@Override
-	public Set<IUnit> getUnits() throws AThornSecException {
-		return new LinkedHashSet<>();
+	public Collection<IUnit> getUnits() throws AThornSecException {
+		return new ArrayList<>();
 	}
 
-	protected abstract Collection<? extends IUnit> getPersistentFirewall();
+	protected abstract Collection<IUnit> getPersistentFirewall();
 }

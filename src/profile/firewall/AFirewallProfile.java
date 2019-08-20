@@ -7,7 +7,7 @@
  */
 package profile.firewall;
 
-import java.util.Set;
+import java.util.Collection;
 
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
@@ -26,17 +26,17 @@ public abstract class AFirewallProfile extends AStructuredProfile {
 	}
 
 	@Override
-	public abstract Set<IUnit> getInstalled() throws ARuntimeException;
+	public abstract Collection<IUnit> getInstalled() throws ARuntimeException;
 
 	@Override
-	public abstract Set<IUnit> getPersistentConfig() throws ARuntimeException;
+	public abstract Collection<IUnit> getPersistentConfig() throws ARuntimeException;
 
 	@Override
-	public abstract Set<IUnit> getLiveConfig() throws ARuntimeException;
+	public abstract Collection<IUnit> getLiveConfig() throws ARuntimeException;
 
 	@Override
-	public abstract Set<IUnit> getPersistentFirewall() throws ARuntimeException;
+	public abstract Collection<IUnit> getPersistentFirewall() throws ARuntimeException;
 
 	@Override
-	public abstract Set<IUnit> getLiveFirewall() throws ARuntimeException;
+	public abstract Collection<IUnit> getLiveFirewall() throws ARuntimeException;
 }

@@ -7,7 +7,7 @@
  */
 package core.iface;
 
-import java.util.Set;
+import java.util.Collection;
 
 import core.exception.AThornSecException;
 
@@ -19,6 +19,6 @@ public interface IProfile {
 
 	String getLabel();
 
-	Set<IUnit> getUnits() throws AThornSecException;
+	Collection<IUnit> getUnits() throws AThornSecException;
 
 }

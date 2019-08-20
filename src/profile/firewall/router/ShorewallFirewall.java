@@ -7,9 +7,8 @@
  */
 package profile.firewall.router;
 
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
@@ -28,8 +27,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	@Override
-	public Set<IUnit> getInstalled() throws ARuntimeException {
-		final Set<IUnit> units = new LinkedHashSet<>();
+	public Collection<IUnit> getInstalled() throws ARuntimeException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new SimpleUnit("iptables_disabled", "proceed", "sudo systemctl disable iptables",
 				"systemctl is-enabled iptables", "disabled", "pass"));
@@ -40,8 +39,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentConfig() throws ARuntimeException {
-		final Set<IUnit> units = new LinkedHashSet<>();
+	public Collection<IUnit> getPersistentConfig() throws ARuntimeException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// Build our default policies
 		final FileUnit policies = new FileUnit("shorewall_policies", "shorewall_installed", CONFIG_BASEDIR + "/policy");
@@ -88,8 +87,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	@Override
-	public Set<IUnit> getLiveConfig() throws ARuntimeException {
-		final Set<IUnit> units = new LinkedHashSet<>();
+	public Collection<IUnit> getLiveConfig() throws ARuntimeException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// Build our zones
 		final FileUnit zones = new FileUnit("shorewall_zones", "shorewall_installed", CONFIG_BASEDIR + "/zones");
@@ -137,12 +136,12 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws ARuntimeException {
-		return new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws ARuntimeException {
+		return new ArrayList<>();
 	}
 
 	@Override
-	public Set<IUnit> getLiveFirewall() throws ARuntimeException {
-		return new HashSet<>();
+	public Collection<IUnit> getLiveFirewall() throws ARuntimeException {
+		return new ArrayList<>();
 	}
 }

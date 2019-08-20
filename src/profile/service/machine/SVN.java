@@ -7,8 +7,8 @@
  */
 package profile.service.machine;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidServerModelException;
@@ -41,8 +41,8 @@ public class SVN extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.php.getInstalled());
 
@@ -60,8 +60,8 @@ public class SVN extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.php.getPersistentConfig());
 
@@ -118,8 +118,8 @@ public class SVN extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig() {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getLiveConfig() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		String apacheConf = "";
 		apacheConf += "<VirtualHost *:80>\n";
@@ -213,8 +213,8 @@ public class SVN extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addEgress("kent.dl.sourceforge.net:443");
 

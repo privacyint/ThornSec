@@ -7,10 +7,10 @@
  */
 package profile.type;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
@@ -115,8 +115,8 @@ public class Router extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getPersistentConfig() throws AThornSecException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getPersistentConfig() throws AThornSecException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		final FileUnit resolvConf = new FileUnit("leave_my_resolv_conf_alone", "proceed",
 				"/etc/dhcp/dhclient-enter-hooks.d/leave_my_resolv_conf_alone");
@@ -157,8 +157,8 @@ public class Router extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() throws AThornSecException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getInstalled() throws AThornSecException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// Add useful tools for Routers here
 		units.add(new InstalledUnit("traceroute", "proceed", "traceroute"));
@@ -171,11 +171,10 @@ public class Router extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig() throws AThornSecException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getLiveConfig() throws AThornSecException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		for (final MachineType vlan : getMACVLANs().keySet()) {
-
 			for (final AMachineModel machine : getNetworkModel().getMachines(vlan).values()) {
 				getDHCPServer().addToSubnet(vlan.toString(), machine);
 			}
@@ -188,8 +187,8 @@ public class Router extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws AThornSecException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getDHCPServer().getPersistentFirewall());
 		units.addAll(getDNSServer().getPersistentFirewall());
@@ -198,8 +197,8 @@ public class Router extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getLiveFirewall() throws AThornSecException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getLiveFirewall() throws AThornSecException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getDHCPServer().getLiveFirewall());
 		units.addAll(getDNSServer().getLiveFirewall());

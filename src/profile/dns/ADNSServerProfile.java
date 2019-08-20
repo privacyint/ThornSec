@@ -7,7 +7,7 @@
  */
 package profile.dns;
 
-import java.util.Set;
+import java.util.Collection;
 
 import core.exception.AThornSecException;
 import core.iface.IUnit;
@@ -27,19 +27,19 @@ public abstract class ADNSServerProfile extends AStructuredProfile {
 	}
 
 	@Override
-	public abstract Set<IUnit> getInstalled() throws AThornSecException;
+	public abstract Collection<IUnit> getInstalled() throws AThornSecException;
 
 	@Override
-	public abstract Set<IUnit> getPersistentConfig() throws AThornSecException;
+	public abstract Collection<IUnit> getPersistentConfig() throws AThornSecException;
 
 	@Override
-	public abstract Set<IUnit> getLiveConfig() throws AThornSecException;
+	public abstract Collection<IUnit> getLiveConfig() throws AThornSecException;
 
 	@Override
-	public abstract Set<IUnit> getPersistentFirewall() throws AThornSecException;
+	public abstract Collection<IUnit> getPersistentFirewall() throws AThornSecException;
 
 	@Override
-	public abstract Set<IUnit> getLiveFirewall() throws AThornSecException;
+	public abstract Collection<IUnit> getLiveFirewall() throws AThornSecException;
 
 	/**
 	 * add a DNS record to a given domain

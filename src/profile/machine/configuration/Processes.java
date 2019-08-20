@@ -1,7 +1,8 @@
 package profile.machine.configuration;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 
 import core.iface.IUnit;
 import core.model.AModel;
@@ -119,9 +120,9 @@ public class Processes extends AModel {
 	 * Checks for unexpected processes
 	 *
 	 */
-	public Set<IUnit> getUnits() {
+	public Collection<IUnit> getUnits() {
 		String grepString = "sudo ps -Awwo pid,user,comm,args | grep -v grep | grep -v 'ps -Awwo pid,user,comm,args$'";
-		Set<IUnit> units = new HashSet<IUnit>();
+		final Collection<IUnit> units = new ArrayList<>();
 		
 		for (String processString : processStrings) {
 			grepString += " | egrep -v \"" + processString + "\"";

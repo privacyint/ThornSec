@@ -7,8 +7,8 @@
  */
 package profile.service.machine;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.I686Exception;
@@ -26,8 +26,8 @@ public class WebXRay extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getInstalled() throws InvalidServerException, I686Exception {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getInstalled() throws InvalidServerException, I686Exception {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		final Boolean is64bit = getNetworkModel().getData().getDebianIsoUrl(getLabel()).contains("amd64");
 		final String url = "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb";
@@ -52,8 +52,8 @@ public class WebXRay extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addEgress("*");
 

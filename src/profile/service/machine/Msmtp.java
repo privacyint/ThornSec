@@ -7,8 +7,8 @@
  */
 package profile.service.machine;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
@@ -24,8 +24,8 @@ public class Msmtp extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addLogBindPoint("msmtp", "proceed",
 				"nginx", "0750"));
@@ -37,8 +37,8 @@ public class Msmtp extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig() {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getLiveConfig() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		String msmtprc = "";
 		msmtprc += "account        default\n";

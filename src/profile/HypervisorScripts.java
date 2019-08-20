@@ -1,8 +1,8 @@
 package profile;
 
 import java.io.File;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.data.machine.InvalidServerException;
 import core.iface.IUnit;
@@ -30,8 +30,9 @@ public class HypervisorScripts extends AStructuredProfile {
 		super(label, networkModel);
 	}
 
-	protected Set<IUnit> getInstalled() {
-		Set<IUnit> units = new HashSet<IUnit>();
+	@Override
+	protected Collection<IUnit> getInstalled() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("metal_git", "proceed", "git"));
 		units.add(new InstalledUnit("metal_duplicity", "proceed", "duplicity"));
@@ -40,9 +41,9 @@ public class HypervisorScripts extends AStructuredProfile {
 		return units;
 	}
 	
-	protected Set<IUnit> getPersistentConfig()
-	throws InvalidServerException {
-		Set<IUnit> units = new HashSet<IUnit>();
+	@Override
+	protected Collection<IUnit> getPersistentConfig() throws InvalidServerException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		this.vmBase = getNetworkModel().getData().getHypervisorThornsecBase(getLabel());
 

@@ -9,11 +9,11 @@ package core.data.machine;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -72,11 +72,9 @@ public abstract class AMachineData extends AData {
 
 	public static Boolean DEFAULT_IS_THROTTLED = true;
 
-	private Set<NetworkInterfaceData> networkInterfaces;
-
-	private Set<IPAddress> externalIPAddresses;
-
-	private Set<String> cnames;
+	private Collection<NetworkInterfaceData> networkInterfaces;
+	private Collection<IPAddress> externalIPAddresses;
+	private Collection<String> cnames;
 	// Alerting
 	private InternetAddress emailAddress;
 
@@ -84,11 +82,11 @@ public abstract class AMachineData extends AData {
 	private String firewallProfile;
 	private Boolean throttled;
 
-	private Map<Encapsulation, Set<Integer>> listens;
+	private Map<Encapsulation, Collection<Integer>> listens;
 
-	private Set<String> forwards;
-	private Set<HostName> ingresses;
-	private Set<HostName> egresses;
+	private Collection<String> forwards;
+	private Collection<HostName> ingresses;
+	private Collection<HostName> egresses;
 
 	private HostName domain;
 
@@ -225,7 +223,7 @@ public abstract class AMachineData extends AData {
 			this.listens = new Hashtable<>();
 		}
 
-		Set<Integer> currentPorts = this.listens.get(encapsulation);
+		Collection<Integer> currentPorts = this.listens.get(encapsulation);
 
 		if (currentPorts == null) {
 			currentPorts = new HashSet<>();
@@ -269,23 +267,23 @@ public abstract class AMachineData extends AData {
 		this.networkInterfaces.add(iface);
 	}
 
-	public final Set<NetworkInterfaceData> getNetworkInterfaces() {
+	public final Collection<NetworkInterfaceData> getNetworkInterfaces() {
 		return this.networkInterfaces;
 	}
 
-	public final Map<Encapsulation, Set<Integer>> getListens() {
+	public final Map<Encapsulation, Collection<Integer>> getListens() {
 		return this.listens;
 	}
 
-	public final Set<String> getForwards() {
+	public final Collection<String> getForwards() {
 		return this.forwards;
 	}
 
-	public final Set<HostName> getIngresses() {
+	public final Collection<HostName> getIngresses() {
 		return this.ingresses;
 	}
 
-	public final Set<HostName> getEgresses() {
+	public final Collection<HostName> getEgresses() {
 		return this.egresses;
 	}
 
@@ -293,7 +291,7 @@ public abstract class AMachineData extends AData {
 		return this.throttled;
 	}
 
-	public final Set<String> getCNAMEs() {
+	public final Collection<String> getCNAMEs() {
 		return this.cnames;
 	}
 
@@ -301,7 +299,7 @@ public abstract class AMachineData extends AData {
 		return this.emailAddress;
 	}
 
-	public final Set<IPAddress> getExternalIPs() {
+	public final Collection<IPAddress> getExternalIPs() {
 		return this.externalIPAddresses;
 	}
 

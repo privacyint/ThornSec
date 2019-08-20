@@ -1,6 +1,7 @@
 package profile.firewall;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -69,9 +70,9 @@ public class IPTablesFirewall extends AStructuredProfile {
 	 * 
 	 * @return Configuration units
 	 */
-	public Set<IUnit> getUnits() {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
+	@Override
+	public Collection<IUnit> getUnits() {
+
 		//Need to do IPSet stuff up here, as iptables now relies on it
 		//units.addAll(networkModel.getIPSet().getUnits());
 		units.add(new SimpleUnit("iptables_running_conf_backup", "iptables_dir_created",
@@ -293,7 +294,7 @@ public class IPTablesFirewall extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() {
+	public Collection<IUnit> getPersistentFirewall() {
 		// TODO Auto-generated method stub
 		return null;
 	}

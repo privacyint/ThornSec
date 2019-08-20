@@ -9,7 +9,8 @@ package profile.type;
 
 import java.net.URI;
 import java.nio.file.Paths;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -59,8 +60,8 @@ public class HyperVisor extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() throws InvalidServerException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getInstalled() throws InvalidServerException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.hypervisor.getInstalled());
 
@@ -75,8 +76,8 @@ public class HyperVisor extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getPersistentConfig() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getPersistentConfig() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).setFirstOctet(10);
 
@@ -94,8 +95,8 @@ public class HyperVisor extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addEgress("gensho.ftp.acc.umu.se");
 		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
@@ -104,8 +105,8 @@ public class HyperVisor extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig() throws ARuntimeException, ADataException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getLiveConfig() throws ARuntimeException, ADataException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		final Set<String> urls = new LinkedHashSet<>();
 

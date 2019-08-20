@@ -8,9 +8,9 @@
 package profile.stack;
 
 import java.io.File;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.Set;
 
 import core.data.machine.AMachineData.Encapsulation;
 import core.exception.data.InvalidPortException;
@@ -29,7 +29,7 @@ public class Nginx extends AStructuredProfile {
 	public static final File DEFAULT_CONFIG_FILE = new File("/etc/nginx/conf.d/default.conf");
 
 	public static final File CONF_D_DIRECTORY = new File("/etc/nginx/conf.d/");
-	private HashSet<FileUnit> liveConfigs;
+	private Collection<FileUnit> liveConfigs;
 
 	public Nginx(String label, NetworkModel networkModel) {
 		super(label, networkModel);
@@ -38,8 +38,8 @@ public class Nginx extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getInstalled() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// If we don't give the nginx user a home dir, it can cause problems with npm
 		// etc
@@ -58,8 +58,8 @@ public class Nginx extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("www", "proceed",
 				"nginx", "nginx", "0750"));
@@ -126,8 +126,8 @@ public class Nginx extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getLiveConfig() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel())
 				.addProcessString("nginx: master process /usr/sbin/nginx -g daemon on; master_process on;$");
@@ -176,7 +176,7 @@ public class Nginx extends AStructuredProfile {
 		this.liveConfigs.add(config);
 	}
 
-	private final Set<FileUnit> getLiveConfigs() {
+	private final Collection<FileUnit> getLiveConfigs() {
 		if (this.liveConfigs == null) {
 			this.liveConfigs = new LinkedHashSet<>();
 		}
@@ -185,8 +185,8 @@ public class Nginx extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 80);
 		// Allow the server to call out to nginx.org to download mainline
@@ -196,7 +196,7 @@ public class Nginx extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getLiveFirewall() {
-		return new HashSet<>(); // Empty (for now?)
+	public Collection<IUnit> getLiveFirewall() {
+		return new ArrayList<>(); // Empty (for now?)
 	}
 }

@@ -11,7 +11,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.util.Set;
+import java.util.Collection;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -301,7 +301,7 @@ public class FullFrame {
 
 			addresses.setText(addresses.getText() + "<html><body><ul>");
 			try {
-				final Set<NetworkInterfaceModel> ifaces = model.getNetworkInterfaces(serverLabel);
+				final Collection<NetworkInterfaceModel> ifaces = model.getNetworkInterfaces(serverLabel);
 				if (ifaces.size() > 0) {
 					for (final NetworkInterfaceModel iface : ifaces) {
 						final IPAddress address = iface.getAddress();

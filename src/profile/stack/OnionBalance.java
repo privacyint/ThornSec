@@ -7,7 +7,8 @@
  */
 package profile.stack;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -33,8 +34,8 @@ public class OnionBalance extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("tor_keyring", "tor_pgp", "deb.torproject.org-keyring"));
 		units.add(new InstalledUnit("tor", "tor_keyring_installed", "tor"));
@@ -48,8 +49,8 @@ public class OnionBalance extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getPersistentConfig() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	protected Collection<IUnit> getPersistentConfig() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("onionbalance",
 				"onionbalance_installed", "onionbalance", "onionbalance", "0700"));
@@ -136,9 +137,9 @@ public class OnionBalance extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getLiveConfig()
+	protected Collection<IUnit> getLiveConfig()
 			throws InvalidServerModelException, InvalidPropertyArrayException, InvalidMachineException {
-		final Set<IUnit> units = new HashSet<>();
+		final Collection<IUnit> units = new ArrayList<>();
 
 		final FileUnit onionbalanceConfig = new FileUnit("onionbalance", "onionbalance_installed",
 				"/etc/onionbalance/config.yaml");
@@ -176,8 +177,8 @@ public class OnionBalance extends AStructuredProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("tor",
 				"deb http://deb.torproject.org/torproject.org buster main", "keys.gnupg.net",

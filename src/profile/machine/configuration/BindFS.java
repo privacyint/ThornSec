@@ -7,9 +7,9 @@
  */
 package profile.machine.configuration;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Objects;
-import java.util.Set;
 
 import core.iface.IUnit;
 
@@ -28,28 +28,30 @@ public class BindFS extends AModel {
 		super(label, networkModel);
 	}
 
-	public Set<IUnit> getUnits() {
-		Set<IUnit> units = new HashSet<IUnit>();
+	public Collection<IUnit> getUnits() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("bindfs", "proceed", "bindfs"));
 		
 		return units;
 	}
 
-	public Set<IUnit> addLogBindPoint(String name, String precondition, String username, String permissions) {
+	public Collection<IUnit> addLogBindPoint(String name, String precondition, String username, String permissions) {
 		return addBindPoint(name + "_log", precondition, "/var/log/." + name.replaceAll("-",  "_"), "/var/log/" + name.replaceAll("-",  "_"), username, username, permissions, "/var/log", true);
 	}
 
-	public Set<IUnit> addDataBindPoint(String name, String precondition, String username, String group, String permissions) {
-		return addBindPoint(name + "_data", precondition, "/media/metaldata/" + name.replaceAll("-",  "_"), "/media/data/" + name.replaceAll("-",  "_"), username, group, permissions, "/media/metaldata", false);
+	public Collection<IUnit> addDataBindPoint(String name, String precondition, String username, String group,
+			String permissions) {
 	}
 	
-	public Set<IUnit> addBindPoint(String name, String precondition, String baseDirectory, String bindPoint, String username, String group, String permissions) {
+	public Collection<IUnit> addBindPoint(String name, String precondition, String baseDirectory, String bindPoint,
+			String username, String group, String permissions) {
 		return addBindPoint(name, precondition, baseDirectory, bindPoint, username, group, permissions, "", false);
 	}
 		
-	public Set<IUnit> addBindPoint(String name, String precondition, String baseDirectory, String bindPoint, String username, String group, String permissions, String mountAfter, Boolean isNetDev) {
-		Set<IUnit> units = new HashSet<IUnit>();
+	public Collection<IUnit> addBindPoint(String name, String precondition, String baseDirectory, String bindPoint,
+			String username, String group, String permissions, String mountAfter, Boolean isNetDev) {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		String requires = (Objects.equals(mountAfter, "")) ? "" : ",x-systemd.after=" + mountAfter;
 		

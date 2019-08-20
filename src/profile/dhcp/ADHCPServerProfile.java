@@ -7,10 +7,10 @@
  */
 package profile.dhcp;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 
 import core.exception.AThornSecException;
 import core.iface.IUnit;
@@ -29,7 +29,7 @@ import inet.ipaddr.IncompatibleAddressException;
 public abstract class ADHCPServerProfile extends AStructuredProfile {
 
 	private final Map<String, IPAddress> subnetsGateways;
-	private final Map<String, Set<AMachineModel>> subnetsMachines;
+	private final Map<String, Collection<AMachineModel>> subnetsMachines;
 
 	/**
 	 * In your constructor, you will need
@@ -57,7 +57,7 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 		return this.subnetsGateways;
 	}
 
-	private final void putMachines(String subnetName, Set<AMachineModel> machines) {
+	private final void putMachines(String subnetName, Collection<AMachineModel> machines) {
 		this.subnetsMachines.put(subnetName, machines);
 	}
 
@@ -66,7 +66,7 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 	 * @param subnetName
 	 * @return null if doesn't exist
 	 */
-	protected final Set<AMachineModel> getMachines(String subnetName) {
+	protected final Collection<AMachineModel> getMachines(String subnetName) {
 		return this.subnetsMachines.get(subnetName);
 	}
 
@@ -81,7 +81,7 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 	 * @return false if machine already added, true otherwise
 	 */
 	public final void addToSubnet(String subnetName, AMachineModel... machines) {
-		final Set<AMachineModel> currentMachines = getMachines(subnetName);
+		final Collection<AMachineModel> currentMachines = getMachines(subnetName);
 
 		for (final AMachineModel machine : machines) {
 			currentMachines.add(machine);
@@ -93,19 +93,19 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 	// Set all of these as abstract, you'll need to write them, even if they return
 	// empty Sets.
 	@Override
-	public abstract Set<IUnit> getInstalled() throws AThornSecException;
+	public abstract Collection<IUnit> getInstalled() throws AThornSecException;
 
 	@Override
-	public abstract Set<IUnit> getPersistentConfig() throws AThornSecException;
+	public abstract Collection<IUnit> getPersistentConfig() throws AThornSecException;
 
 	@Override
-	public abstract Set<IUnit> getLiveConfig() throws AThornSecException;
+	public abstract Collection<IUnit> getLiveConfig() throws AThornSecException;
 
 	@Override
-	public abstract Set<IUnit> getPersistentFirewall() throws AThornSecException;
+	public abstract Collection<IUnit> getPersistentFirewall() throws AThornSecException;
 
 	@Override
-	public abstract Set<IUnit> getLiveFirewall() throws AThornSecException;
+	public abstract Collection<IUnit> getLiveFirewall() throws AThornSecException;
 
 	/**
 	 * The entire point of a DHCP server is to distribute IP Addresses.

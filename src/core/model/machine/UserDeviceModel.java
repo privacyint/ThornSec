@@ -30,7 +30,7 @@ public class UserDeviceModel extends ADeviceModel {
 	}
 
 	@Override
-	protected Collection<? extends IUnit> getPersistentFirewall() {
+	protected Collection<IUnit> getPersistentFirewall() {
 		return null;
 	}
 }

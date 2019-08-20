@@ -8,11 +8,11 @@
 package core.model.machine;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 
 import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
@@ -36,10 +36,10 @@ import inet.ipaddr.HostName;
  * This is where we stash our various networking rules
  */
 public abstract class AMachineModel extends AModel {
-	private Set<NetworkInterfaceModel> networkInterfaces;
+	private Collection<NetworkInterfaceModel> networkInterfaces;
 
 	private final HostName domain;
-	private final Set<String> cnames;
+	private final Collection<String> cnames;
 
 	private InternetAddress emailAddress;
 
@@ -51,13 +51,13 @@ public abstract class AMachineModel extends AModel {
 
 	private Boolean throttled;
 
-	private final Map<Encapsulation, Set<Integer>> listens;
+	private final Map<Encapsulation, Collection<Integer>> listens;
 
-	private Set<String> forwards;
-	private Set<HostName> ingresses;
-	private Set<HostName> egresses;
+	private Collection<String> forwards;
+	private Collection<HostName> ingresses;
+	private Collection<HostName> egresses;
 
-	private final Hashtable<String, Set<Integer>> dnat;
+	private final Map<String, Collection<Integer>> dnat;
 
 	AMachineModel(String label, NetworkModel networkModel)
 			throws AddressException, JsonParsingException, ADataException, IOException {
@@ -145,7 +145,7 @@ public abstract class AMachineModel extends AModel {
 		this.networkInterfaces.add(ifaceModel);
 	}
 
-	public final Set<NetworkInterfaceModel> getNetworkInterfaces() {
+	public final Collection<NetworkInterfaceModel> getNetworkInterfaces() {
 		return this.networkInterfaces;
 	}
 
@@ -177,12 +177,12 @@ public abstract class AMachineModel extends AModel {
 		}
 	}
 
-	public final Set<HostName> getIngresses() {
+	public final Collection<HostName> getIngresses() {
 		return this.ingresses;
 	}
 
 	public final void addListen(Encapsulation enc, Integer... ports) throws InvalidPortException {
-		Set<Integer> listening = this.listens.get(enc);
+		Collection<Integer> listening = this.listens.get(enc);
 
 		if (listening == null) {
 			listening = new HashSet<>();
@@ -199,7 +199,7 @@ public abstract class AMachineModel extends AModel {
 		this.listens.put(enc, listening);
 	}
 
-	public final Map<Encapsulation, Set<Integer>> getListens() {
+	public final Map<Encapsulation, Collection<Integer>> getListens() {
 		return this.listens;
 	}
 
@@ -220,11 +220,11 @@ public abstract class AMachineModel extends AModel {
 
 	}
 
-	public final Set<HostName> getEgresses() {
+	public final Collection<HostName> getEgresses() {
 		return this.egresses;
 	}
 
-	public final Hashtable<String, Set<Integer>> getRequiredDnat() {
+	public final Map<String, Collection<Integer>> getRequiredDnat() {
 		return this.dnat;
 	}
 
@@ -238,7 +238,7 @@ public abstract class AMachineModel extends AModel {
 		}
 	}
 
-	public final Set<String> getForwards() {
+	public final Collection<String> getForwards() {
 		return this.forwards;
 	}
 
@@ -250,7 +250,7 @@ public abstract class AMachineModel extends AModel {
 		this.emailAddress = emailAddress;
 	}
 
-	public final Set<String> getCNAMEs() {
+	public final Collection<String> getCNAMEs() {
 		return this.cnames;
 	}
 
@@ -272,7 +272,7 @@ public abstract class AMachineModel extends AModel {
 		this.throttled = throttled;
 	}
 
-	public abstract Set<IUnit> getUnits() throws AThornSecException;
+	public abstract Collection<IUnit> getUnits() throws AThornSecException;
 
 	public String getIP() {
 		// TODO Auto-generated method stub

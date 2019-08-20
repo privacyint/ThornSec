@@ -7,7 +7,9 @@
  */
 package profile.dns;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
@@ -46,9 +48,9 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
 		final Integer cpus = getNetworkModel().getData().getCPUs(getLabel());
-		final Set<IUnit> units = new HashSet<>();
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// Config originally based on https://calomel.org/unbound_dns.html
 		// See https://linux.die.net/man/5/unbound.conf for full config file
@@ -136,8 +138,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	}
 
 	@Override
-	public Set<IUnit> getInstalled() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("dns", "proceed", "unbound"));
 		getNetworkModel().getServerModel(getLabel()).addSystemUsername("unbound");
@@ -151,8 +153,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	}
 
 	@Override
-	public Set<IUnit> getLiveConfig() throws InvalidMachineException, InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineException, InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// Start by updating the ad block list (if req'd)
 		if (getNetworkModel().getData().adBlocking()) {
@@ -218,7 +220,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	}
 
 	@Override
-	public Set<IUnit> getPersistentFirewall() throws ARuntimeException {
+	public Collection<IUnit> getPersistentFirewall() throws ARuntimeException {
 		for (final HostName upstream : getNetworkModel().getData().getUpstreamDNSServers()) {
 			getNetworkModel().getServerModel(getLabel()).addEgress(upstream);
 		}
@@ -227,7 +229,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	}
 
 	@Override
-	public Set<IUnit> getLiveFirewall() throws ARuntimeException {
+	public Collection<IUnit> getLiveFirewall() throws ARuntimeException {
 		return new HashSet<>();
 	}
 

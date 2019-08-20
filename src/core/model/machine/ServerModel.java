@@ -10,9 +10,10 @@ package core.model.machine;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.Set;
 
 import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
@@ -45,8 +46,8 @@ import profile.type.Router;
 import profile.type.Service;
 
 public class ServerModel extends AMachineModel {
-	private final Set<AStructuredProfile> types;
-	private Set<AProfile> profiles;
+	private final Collection<AStructuredProfile> types;
+	private Collection<AProfile> profiles;
 
 	// Server-specific
 	private AFirewallProfile firewall;
@@ -67,7 +68,7 @@ public class ServerModel extends AMachineModel {
 		// It's going to be *exceedingly* rare that this is set, but it should be
 		// customisable tbf
 		if (firewall != null) {
-			final Set<Class<?>> firewallClasses = new ClassesInPackageScanner()
+			final Collection<Class<?>> firewallClasses = new ClassesInPackageScanner()
 					.setResourceNameFilter((packageName, fileName) -> fileName.equals(firewall + ".class"))
 					.scan("profile.firewall");
 
@@ -134,7 +135,7 @@ public class ServerModel extends AMachineModel {
 				continue;
 			}
 
-			final Set<Class<?>> classes = new ClassesInPackageScanner()
+			final Collection<Class<?>> classes = new ClassesInPackageScanner()
 					.setResourceNameFilter((packageName, fileName) -> fileName.equals(profile + ".class"))
 					.scan("profile");
 
@@ -151,7 +152,7 @@ public class ServerModel extends AMachineModel {
 		}
 	}
 
-	public Set<IUnit> getPersistentFirewall() throws InvalidMachineException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineException {
 		if (!getNetworkModel().getData().getExternalIPs(getLabel()).isEmpty()) {
 			addIngress("*");
 		}
@@ -165,8 +166,8 @@ public class ServerModel extends AMachineModel {
 	}
 
 	@Override
-	public Set<IUnit> getUnits() throws AThornSecException {
-		final Set<IUnit> units = new HashSet<>();
+	public Collection<IUnit> getUnits() throws AThornSecException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new SimpleUnit("host", "proceed", "printf \"ERROR: Configuring with hostname mismatch\";",
 				"sudo -S hostname;", getLabel(), "pass"));
@@ -223,8 +224,8 @@ public class ServerModel extends AMachineModel {
 		return units;
 	}
 
-	private Set<IUnit> serverConfig() throws InvalidMachineException {
-		final Set<IUnit> units = new HashSet<>();
+	private Collection<IUnit> serverConfig() throws InvalidMachineException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// Shouldn't /really/ be doing this out here, but these should be the only RAW
 		// sockets, in the only circumstances, in a TS network...
@@ -356,7 +357,7 @@ public class ServerModel extends AMachineModel {
 		return units;
 	}
 
-	public Set<AStructuredProfile> getTypes() {
+	public Collection<AStructuredProfile> getTypes() {
 		return this.types;
 	}
 

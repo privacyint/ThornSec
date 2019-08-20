@@ -1,8 +1,8 @@
 package profile.stack;
 
 import java.io.File;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
@@ -24,9 +24,8 @@ public class Jail extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled()
-	throws InvalidServerModelException {
-		Set<IUnit> units = new HashSet<IUnit>();
+	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 		
 		units.add(new InstalledUnit("libcap2_bin", "proceed", "libcap2-bin"));
 		
@@ -38,9 +37,9 @@ public class Jail extends AStructuredProfile {
 		return units;
 	}
 
-	public Set<IUnit> buildJail(String jail) {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
+	public Collection<IUnit> buildJail(String jail) {
+		final Collection<IUnit> units = new ArrayList<>();
+
 		String   jailRoot    = "/media/data/jails/" + jail;
 		String[] directories = { "/dev",
 								 "/etc",
@@ -100,8 +99,8 @@ public class Jail extends AStructuredProfile {
 		return units;
 	}
 
-	public Set<IUnit> addUser(String jail, String user, String uid, String gid) {
-		Set<IUnit> units = new HashSet<IUnit>();
+	public Collection<IUnit> addUser(String jail, String user, String uid, String gid) {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		String jailRoot = "/media/data/jails/" + jail;
 
@@ -113,8 +112,8 @@ public class Jail extends AStructuredProfile {
 		return units;
 	}
 	
-	public Set<IUnit> createDirs(String jail, String[] directories) {
-		Set<IUnit> units = new HashSet<IUnit>();
+	public Collection<IUnit> createDirs(String jail, String[] directories) {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		String jailRoot = "/media/data/jails/" + jail;
 		
@@ -125,8 +124,8 @@ public class Jail extends AStructuredProfile {
 		return units;
 	}
 	
-	public Set<IUnit> addBinary(String jail, String binary) {
-		Set<IUnit> units = new HashSet<IUnit>();
+	public Collection<IUnit> addBinary(String jail, String binary) {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		String jailRoot   = "/media/data/jails/" + jail;
 		String name = new File(binary).getName().replace(".", "_");
@@ -149,12 +148,12 @@ public class Jail extends AStructuredProfile {
 		return units;
 	}
 	
-	public Set<IUnit> copyToJail(String jail, String source) {
+	public Collection<IUnit> copyToJail(String jail, String source) {
 		return copyToJail(jail, source, source);
 	}
 	
-	public Set<IUnit> copyToJail(String jail, String source, String destination) {
-		Set<IUnit> units = new HashSet<IUnit>();
+	public Collection<IUnit> copyToJail(String jail, String source, String destination) {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		String jailRoot = "/media/data/jails/" + jail;
 		

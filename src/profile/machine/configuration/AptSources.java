@@ -10,9 +10,10 @@ package profile.machine.configuration;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.LinkedHashSet;
 import java.util.Set;
 
 import core.exception.runtime.InvalidServerModelException;
@@ -44,8 +45,8 @@ public class AptSources extends AStructuredProfile {
 	}
 
 	@Override
-	public final Set<IUnit> getInstalled() throws InvalidServerModelException {
-		final Set<IUnit> units = new HashSet<>();
+	public final Collection<IUnit> getInstalled() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("dirmngr", "proceed", "dirmngr",
 				"Couldn't install dirmngr.  Anything which requires a PGP key to be downloaded and installed won't work. "
@@ -58,16 +59,16 @@ public class AptSources extends AStructuredProfile {
 	}
 
 	@Override
-	public final Set<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+	public final Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
 		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName(this.debianRepo.getHost()));
 		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName("security.debian.org"));
 
-		return new LinkedHashSet<>();
+		return new ArrayList<>();
 	}
 
 	@Override
-	public final Set<IUnit> getPersistentConfig() {
-		final Set<IUnit> units = new HashSet<>();
+	public final Collection<IUnit> getPersistentConfig() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// Give apt 3 seconds before timing out
 		final FileUnit aptTimeout = new FileUnit("decrease_apt_timeout", "proceed", "/etc/apt/apt.conf.d/99timeout",
@@ -89,8 +90,8 @@ public class AptSources extends AStructuredProfile {
 	}
 
 	@Override
-	public final Set<IUnit> getLiveConfig() {
-		final Set<IUnit> units = new HashSet<>();
+	public final Collection<IUnit> getLiveConfig() {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		// First import all of the keys
 		for (final String keyserver : this.pgpKeys.keySet()) {

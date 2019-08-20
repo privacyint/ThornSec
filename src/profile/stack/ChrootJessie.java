@@ -1,7 +1,7 @@
 package profile.stack;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
@@ -22,8 +22,8 @@ public class ChrootJessie extends AStructuredProfile {
 	}
 
 	@Override
-	protected Set<IUnit> getInstalled() {
-		Set<IUnit> units = new HashSet<IUnit>();
+	protected Collection<IUnit> getInstalled() {
+		final Collection<IUnit> units = new ArrayList<>();
 		
 		units.add(new InstalledUnit("debootstrap", "proceed", "debootstrap"));
 		
@@ -57,10 +57,9 @@ public class ChrootJessie extends AStructuredProfile {
 	}
 	
 	@Override
-	public Set<IUnit> getPersistentFirewall()
-	throws InvalidServerModelException {
-		Set<IUnit> units = new HashSet<IUnit>();
-		
+	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+		final Collection<IUnit> units = new ArrayList<>();
+
 		getNetworkModel().getServerModel(getLabel()).addEgress("deb.debian.org:80,443");
 
 		return units;
@@ -70,8 +69,8 @@ public class ChrootJessie extends AStructuredProfile {
 		return CHROOT_DIR;
 	}
 	
-	public Set<IUnit> installPackage(String name, String precondition, String pkg) {
-		Set<IUnit> units = new HashSet<IUnit>();
+	public Collection<IUnit> installPackage(String name, String precondition, String pkg) {
+		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new SimpleUnit(name + "_installed", precondition,
 			"export DEBIAN_FRONTEND=noninteractive; "
