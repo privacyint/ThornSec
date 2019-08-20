@@ -50,6 +50,7 @@ import core.data.machine.ServerData;
 import core.data.machine.ServiceData;
 import core.data.machine.UserDeviceData;
 import core.data.machine.configuration.NetworkInterfaceData;
+import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.exception.data.ADataException;
 import core.exception.data.InvalidIPAddressException;
 import core.exception.data.NoValidUsersException;
@@ -495,9 +496,12 @@ public class NetworkData extends AData {
 
 				final JsonObjectBuilder defaultNetworkInterfaceData = Json.createObjectBuilder();
 				defaultNetworkInterfaceData.add("iface", NetworkData.MACHINE_NETWORK_INTERFACE);
+				defaultNetworkInterfaceData.add("inet", Inet.STATIC.toString());
+				defaultNetworkInterfaceData.add("comment", "This NIC was automagically built using default values.");
 
 				defaultIface.read(defaultNetworkInterfaceData.build());
 
+				interfaces.add(defaultIface);
 			}
 		}
 
