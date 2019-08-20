@@ -17,9 +17,7 @@ import core.iface.IUnit;
 import core.model.machine.AMachineModel;
 import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
-import inet.ipaddr.AddressStringException;
 import inet.ipaddr.IPAddress;
-import inet.ipaddr.IncompatibleAddressException;
 
 /**
  * This is a DHCP server of some type.
@@ -113,10 +111,29 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 	 * You must implement this method, and it must distribute IP addresses across
 	 * your various {@code AMachineModel}s.
 	 *
-	 * @return
 	 * @throws AThornSecException
-	 * @throws IncompatibleAddressException
-	 * @throws AddressStringException
 	 */
-	protected abstract Set<IUnit> distributeIPs() throws AThornSecException;
+	protected abstract void distributeIPs() throws AThornSecException;
+
+	/**
+	 * DHCP shouldn't *really* give out MAC addresses, given that it uses them to
+	 * distribute its conception of IPs.
+	 *
+	 * Originally, I used to do all this the other way 'round - i.e. the machines
+	 * themselves would decide what they thought their MAC address should be (if it
+	 * wasn't set).
+	 *
+	 * This ended up being highly restrictive on the modelling, and involved turning
+	 * the networking into a pile of hacks, held together with hopes and dreams.
+	 *
+	 * If some machines (and therefore their NICs) are 100% virtual, it doesn't
+	 * matter an inch what their MAC addresses are, so long as they a) Have a MAC
+	 * address b) The DHCP server knows what that MAC address is we're all good!
+	 *
+	 * Let's use this method, therefore, to ensure that there are MAC addresses
+	 * pushed out across our network where otherwise they'd be null...
+	 *
+	 * @throws AThornSecException
+	 */
+	protected abstract void distributeMACs() throws AThornSecException;
 }

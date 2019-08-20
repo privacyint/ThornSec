@@ -14,8 +14,10 @@ import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
 import core.exception.data.InvalidIPAddressException;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
+import core.model.machine.ADeviceModel;
 import core.model.machine.AMachineModel;
 import core.model.machine.ServerModel;
 import core.model.machine.configuration.NetworkInterfaceModel;
@@ -26,8 +28,10 @@ import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 import inet.ipaddr.AddressStringException;
 import inet.ipaddr.IPAddress;
-import inet.ipaddr.IPAddress.IPVersion;
 import inet.ipaddr.IPAddressString;
+import inet.ipaddr.MACAddressString;
+import inet.ipaddr.mac.MACAddress;
+import profile.type.Router;
 
 /**
  * Configure and set up our various different networks, and offer IP addresses
@@ -40,7 +44,9 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	}
 
 	@Override
-	protected Set<IUnit> distributeIPs() throws AThornSecException {
+	protected void distributeIPs() throws AThornSecException {
+		// TODO: Refactor this method, as it's a bit loopy
+
 		// Start by iterating through our hypervisors, as we use them as a base for our
 		// IP addressing
 		int secondOctet = 0;
@@ -53,13 +59,19 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 
 			int fourthOctet = 0;
 			for (final NetworkInterfaceModel nic : hv.getNetworkInterfaces()) {
+				// DHCP servers distribute IP addresses, correct? :)
 				if (nic.getAddress() == null) {
 					try {
 						nic.setAddress(new IPAddressString(hv.getFirstOctet() + "." + hv.getSecondOctet() + "."
-								+ hv.getThirdOctet() + "." + (++fourthOctet)).toAddress(IPVersion.IPV4));
+								+ hv.getThirdOctet() + "." + (++fourthOctet)).toAddress());
 					} catch (final AddressStringException e) {
 						throw new InvalidIPAddressException(e.getMessage() + " is an invalid IP address");
 					}
+				}
+
+				if (nic.getMac() == null) {
+					throw new InvalidNetworkInterfaceException("Network interface " + nic.getIface() + " on "
+							+ getLabel() + " requires a MAC address to be set.");
 				}
 			}
 
@@ -73,10 +85,11 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 				service.setThirdOctet(thirdOctet++);
 
 				for (final NetworkInterfaceModel nic : service.getNetworkInterfaces()) {
+					// DHCP continues to give out addresses
 					if (nic.getAddress() == null) {
 						try {
 							nic.setAddress(new IPAddressString(service.getFirstOctet() + "." + service.getSecondOctet()
-									+ "." + service.getThirdOctet() + "." + (++fourthOctet)).toAddress(IPVersion.IPV4));
+									+ "." + service.getThirdOctet() + "." + (++fourthOctet)).toAddress());
 						} catch (final AddressStringException e) {
 							throw new InvalidIPAddressException(e.getMessage() + " is an invalid IP address");
 						}
@@ -84,10 +97,124 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 				}
 			}
 
+			// Dedicated servers
+			for (final ServerModel dedi : getNetworkModel().getServers(MachineType.DEDICATED).values()) {
+				dedi.setSecondOctet(++secondOctet);
+				dedi.setThirdOctet(0);
+				fourthOctet = 0;
+
+				for (final NetworkInterfaceModel nic : dedi.getNetworkInterfaces()) {
+					// DHCP continues to give out addresses
+					if (nic.getAddress() == null) {
+						try {
+							nic.setAddress(new IPAddressString(dedi.getFirstOctet() + "." + dedi.getSecondOctet() + "."
+									+ dedi.getThirdOctet() + "." + (++fourthOctet)).toAddress());
+						} catch (final AddressStringException e) {
+							throw new InvalidIPAddressException(e.getMessage() + " is an invalid IP address");
+						}
+					}
+				}
+			}
+
+			/*
+			 * public final static String USERS_NETWORK = "172.16.0.1/16"; public final
+			 * static String ADMINS_NETWORK = "172.20.0.1/16"; public final static String
+			 * INTERNALS_NETWORK = "172.24.0.1/16"; public final static String
+			 * EXTERNALS_NETWORK = "172.28.0.1/16"; public final static String
+			 * AUTOGUEST_NETWORK = "172.31.0.1/16";
+			 */
 			// Now let's loop through the devices
+			for (final ADeviceModel device : getNetworkModel().getDevices(MachineType.USER).values()) {
+				IPAddress ip = new IPAddressString(Router.USERS_NETWORK).getAddress();
+
+				for (final NetworkInterfaceModel nic : device.getNetworkInterfaces()) {
+					if (nic.getAddress() == null) {
+						ip = ip.increment(1);
+
+						nic.setAddress(ip);
+					}
+				}
+			}
+			for (final ADeviceModel device : getNetworkModel().getDevices(MachineType.ADMIN).values()) {
+				IPAddress ip = new IPAddressString(Router.ADMINS_NETWORK).getAddress();
+
+				for (final NetworkInterfaceModel nic : device.getNetworkInterfaces()) {
+					if (nic.getAddress() == null) {
+						ip = ip.increment(1);
+
+						nic.setAddress(ip);
+					}
+				}
+			}
+			for (final ADeviceModel device : getNetworkModel().getDevices(MachineType.INTERNAL_ONLY).values()) {
+				IPAddress ip = new IPAddressString(Router.INTERNALS_NETWORK).getAddress();
+
+				for (final NetworkInterfaceModel nic : device.getNetworkInterfaces()) {
+					if (nic.getAddress() == null) {
+						ip = ip.increment(1);
+
+						nic.setAddress(ip);
+					}
+				}
+			}
+			for (final ADeviceModel device : getNetworkModel().getDevices(MachineType.EXTERNAL_ONLY).values()) {
+				IPAddress ip = new IPAddressString(Router.EXTERNALS_NETWORK).getAddress();
+
+				for (final NetworkInterfaceModel nic : device.getNetworkInterfaces()) {
+					if (nic.getAddress() == null) {
+						ip = ip.increment(1);
+
+						nic.setAddress(ip);
+					}
+				}
+			}
+
+		}
+	}
+
+	@Override
+	protected void distributeMACs() throws AThornSecException {
+		for (final ServerModel dedi : getNetworkModel().getServers(MachineType.DEDICATED).values()) {
+			for (final NetworkInterfaceModel nic : dedi.getNetworkInterfaces()) {
+				if (nic.getMac() == null) {
+					throw new InvalidNetworkInterfaceException("Network interface " + nic.getIface() + " on "
+							+ getLabel() + " requires a MAC address to be set.");
+				}
+			}
 		}
 
-		return null;
+		// Start by iterating through our hypervisors, as we use them as a base for our
+		// Services' MAC addressing
+		for (final ServerModel hv : getNetworkModel().getServers(MachineType.HYPERVISOR).values()) {
+
+			// If we're also a router, it doesn't matter, because it doesn't matter what
+			// Routers' MAC addresses are.
+			if (hv.isRouter()) {
+				continue;
+			}
+
+			// This is a physical machine, we need to know what its physical MAC addresses
+			// are...
+			for (final NetworkInterfaceModel nic : hv.getNetworkInterfaces()) {
+				if (nic.getMac() == null) {
+					throw new InvalidNetworkInterfaceException("Network interface " + nic.getIface() + " on "
+							+ getLabel() + " requires a MAC address to be set.");
+				}
+			}
+
+			// Quickly iterate its services - these ones may be null...
+			for (final String serviceLabel : getNetworkModel().getServicesOnHyperVisor(hv.getLabel())) {
+				final ServerModel service = getNetworkModel().getServerModel(serviceLabel);
+
+				for (final NetworkInterfaceModel nic : service.getNetworkInterfaces()) {
+					if (nic.getMac() == null) {
+						final String macString = "080027".concat(nic.getAddress().toHexString(false).substring(2));
+						final MACAddress mac = new MACAddressString(macString).getAddress();
+						nic.setMac(mac);
+					}
+				}
+			}
+		}
 	}
 
 	@Override
@@ -146,6 +273,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		distributeIPs();
+		distributeMACs();
 
 		for (final String subnetName : getSubnets().keySet()) {
 			final FileUnit subnetConfig = new FileUnit(subnetName + "_dhcpd_live_config", "dhcp_installed",
@@ -167,6 +295,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 					+ getNetworkModel().getData().getDomain() + "\\\";");
 			subnetConfig.appendLine("\toption routers " + subnet.toCompressedString() + ";");
 			subnetConfig.appendLine("\toption domain-name-servers " + subnet.toCompressedString() + ";");
+			subnetConfig.appendCarriageReturn();
 
 			for (final AMachineModel machine : getMachines(subnetName)) {
 
@@ -183,10 +312,12 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 					}
 
 					subnetConfig.appendLine(
-							"\thost " + machine.getLabel() + "-" + iface.getMac().toNormalizedString() + " {");
+							"\thost " + machine.getLabel() + "-" + iface.getMac().toHexString(false) + " {");
 					subnetConfig.appendLine("\t\thardware ethernet " + iface.getMac().toColonDelimitedString() + ";");
-					subnetConfig.appendLine("\t\tfixed-address " + iface.getAddress().toCompressedString() + ";");
+					subnetConfig
+							.appendLine("\t\tfixed-address " + iface.getAddress().toCompressedWildcardString() + ";");
 					subnetConfig.appendLine("\t}");
+					subnetConfig.appendCarriageReturn();
 
 				}
 			}
