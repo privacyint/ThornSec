@@ -72,14 +72,14 @@ public class ShorewallFirewall extends AFirewallProfile {
 		// single iface...(!)
 		// interfaces.appendLine("- " + getNetworkModel().getServerModel(getLabel()));
 		// // TODO
-		interfaces.appendLine("-           servers        detect tcpflags,nosmurfs,routefiulter,logmartians");
-		interfaces.appendLine("-           users          detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
+		interfaces.appendLine("-           servers        detect tcpflags,nosmurfs,routefilter,logmartians");
+		interfaces.appendLine("-           users          detect dhcp,tcpflags,nosmurfs,routefilter,logmartians");
 		// TODO: Do we need this admin VLAN?
-		interfaces.appendLine("-           admins         detect tcpflags,nosmurfs,routefiulter,logmartians");
-		interfaces.appendLine("-           internalOnlys  detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
-		interfaces.appendLine("-           externalOnlys  detect dhcp,tcpflags,nosmurfs,routefiulter,logmartians");
+		interfaces.appendLine("-           admins         detect tcpflags,nosmurfs,routefilter,logmartians");
+		interfaces.appendLine("-           internalOnlys  detect dhcp,tcpflags,nosmurfs,routefilter,logmartians");
+		interfaces.appendLine("-           externalOnlys  detect dhcp,tcpflags,nosmurfs,routefilter,logmartians");
 		if (getNetworkModel().getData().buildAutoGuest()) {
-			interfaces.appendLine("autoguest   autoguest      detect tcpflags,nosmurfs,routefiulter,logmartians");
+			interfaces.appendLine("autoguest   autoguest      detect tcpflags,nosmurfs,routefilter,logmartians");
 		}
 		units.add(interfaces);
 
