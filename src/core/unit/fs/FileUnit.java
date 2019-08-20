@@ -53,7 +53,7 @@ public class FileUnit extends SimpleUnit {
 		String body = String.join("", this.lines);
 
 		// Remove any trailing newline when echoing out...
-		if (body.endsWith("\n")) {
+		while (body.endsWith("\n")) {
 			body = body.substring(0, body.length() - 1);
 		}
 
