@@ -1,8 +1,8 @@
 /*
  * This code is part of the ThornSec project.
- * 
+ *
  * To learn more, please head to its GitHub repo: @privacyint
- * 
+ *
  * Pull requests encouraged.
  */
 package profile.machine.configuration;
@@ -31,20 +31,18 @@ public class ConfigFiles extends AProfile {
 	public Collection<IUnit> getUnits() {
 		String grepString = "sudo dpkg -V";
 		final Collection<IUnit> units = new ArrayList<>();
-				
-		for (File file : configFiles) {
+
+		for (final File file : this.configFiles) {
 			grepString += " | egrep -v \"" + file.getPath() + "\"";
 		}
 
-		units.add(new SimpleUnit("no_config_file_tampering", "proceed",
-				"",
-				grepString, "", "pass",
+		units.add(new SimpleUnit("no_config_file_tampering", "proceed", "", grepString, "", "pass",
 				"There are unexpected config file edits on this machine.  This is a sign that someone has been configuring this machine by hand..."));
-		
+
 		return units;
 	}
 
 	public void addConfigFilePath(String path) {
-		configFiles.add(new File(path));
+		this.configFiles.add(new File(path));
 	}
 }

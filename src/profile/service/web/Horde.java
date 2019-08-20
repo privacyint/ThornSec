@@ -25,7 +25,7 @@ import profile.stack.Nginx;
 
 /**
  * This profile installs and configures a Horde installation
- * 
+ *
  * @TODO: either fix or kill
  */
 public class Horde extends AStructuredProfile {

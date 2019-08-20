@@ -162,27 +162,27 @@ public class NetworkInterfaceModel extends AModel {
 
 		network.appendLine("[Network]");
 		switch (getInet()) {
-			case DHCP:
-				network.appendLine("DHCP=yes");
-				break;
-			case MACVLAN:
-			case STATIC:
-				network.appendLine("IPForward=yes");
-				if (getAddress() != null) {
-					network.appendLine("Address=" + getAddress().toFullString());
-				}
-				if (getNetmask() != null) {
-					network.appendLine("Netmask=" + getNetmask().toFullString());
-				}
-				if (getBroadcast() != null) {
-					network.appendLine("Broadcast=" + getBroadcast().toFullString());
-				}
-				if (getGateway() != null) {
-					network.appendLine("Gateway=" + getGateway().toFullString());
-				}
-				break;
-			default:
-				break;
+		case DHCP:
+			network.appendLine("DHCP=yes");
+			break;
+		case MACVLAN:
+		case STATIC:
+			network.appendLine("IPForward=yes");
+			if (getAddress() != null) {
+				network.appendLine("Address=" + getAddress().toFullString());
+			}
+			if (getNetmask() != null) {
+				network.appendLine("Netmask=" + getNetmask().toFullString());
+			}
+			if (getBroadcast() != null) {
+				network.appendLine("Broadcast=" + getBroadcast().toFullString());
+			}
+			if (getGateway() != null) {
+				network.appendLine("Gateway=" + getGateway().toFullString());
+			}
+			break;
+		default:
+			break;
 		}
 
 		return network;

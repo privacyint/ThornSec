@@ -251,8 +251,8 @@ public class CSFFirewall extends AFirewallProfile {
 	 *
 	 * return units; }
 	 *
-	 * private Set<IUnit> machineEgressRules(MachineModel machine) { Set<IUnit>
-	 * units = new HashSet<IUnit>();
+	 * private Collection<IUnit> machineEgressRules(MachineModel machine) {
+	 * Collection<IUnit> units = new ArrayList<>();
 	 *
 	 * HashMap<String, HashMap<Integer, Set<Integer>>> egress =
 	 * machine.getRequiredEgress();
@@ -278,8 +278,8 @@ public class CSFFirewall extends AFirewallProfile {
 	 *
 	 * return units; }
 	 *
-	 * private Set<IUnit> serverForwardRules(ServerModel server) { Set<IUnit> units
-	 * = new HashSet<IUnit>();
+	 * private Collection<IUnit> serverForwardRules(ServerModel server) {
+	 * Collection<IUnit> units = new ArrayList<>();
 	 *
 	 * HashMap<String, Set<Integer>> forward = server.getRequiredForward();
 	 *
@@ -314,8 +314,8 @@ public class CSFFirewall extends AFirewallProfile {
 	 *
 	 * return units; }
 	 *
-	 * private Set<IUnit> machineDnatRules(MachineModel machine) { Set<IUnit> units
-	 * = new HashSet<IUnit>();
+	 * private Collection<IUnit> machineDnatRules(MachineModel machine) {
+	 * Collection<IUnit> units = new ArrayList<>();
 	 *
 	 * HashMap<String, Set<Integer>> dnat = machine.getRequiredDnat();
 	 *
@@ -357,8 +357,8 @@ public class CSFFirewall extends AFirewallProfile {
 	 *
 	 * return units; }
 	 *
-	 * private Set<IUnit> machineAllowUserForwardRules(MachineModel machine) {
-	 * Set<IUnit> units = new HashSet<IUnit>();
+	 * private Collection<IUnit> machineAllowUserForwardRules(MachineModel machine)
+	 * { Collection<IUnit> units = new ArrayList<>();
 	 *
 	 * Vector<Integer> listen = machine.getRequiredListenTCP(); String machineName=
 	 * machine.getLabel();
@@ -405,8 +405,8 @@ public class CSFFirewall extends AFirewallProfile {
 	 *
 	 * return units; }
 	 *
-	 * private Set<IUnit> machineIngressEgressForwardRules(MachineModel machine) {
-	 * Set<IUnit> units = new HashSet<IUnit>();
+	 * private Collection<IUnit> machineIngressEgressForwardRules(MachineModel
+	 * machine) { Collection<IUnit> units = new ArrayList<>();
 	 *
 	 * String wanIfaces =
 	 * collection2String(networkModel.getData().getWanIfaces(getLabel()));
@@ -429,8 +429,8 @@ public class CSFFirewall extends AFirewallProfile {
 	 *
 	 * return units; }
 	 *
-	 * private Set<IUnit> userAllowServerForwardRules(DeviceModel user) { Set<IUnit>
-	 * units = new HashSet<IUnit>();
+	 * private Collection<IUnit> userAllowServerForwardRules(DeviceModel user) {
+	 * Collection<IUnit> units = new ArrayList<>();
 	 *
 	 * if (!networkModel.getAllServers().isEmpty()) { String rule = ""; rule +=
 	 * "-m set"; rule += " --match-set servers dst"; rule += " -j ACCEPT";
@@ -441,8 +441,8 @@ public class CSFFirewall extends AFirewallProfile {
 	 *
 	 * return units; }
 	 *
-	 * private Set<IUnit> userAllowInternalOnlyForwardRules(DeviceModel user) {
-	 * Set<IUnit> units = new HashSet<IUnit>();
+	 * private Collection<IUnit> userAllowInternalOnlyForwardRules(DeviceModel user)
+	 * { Collection<IUnit> units = new ArrayList<>();
 	 *
 	 * if (!networkModel.getInternalOnlyDevices().isEmpty()) { String rule = "";
 	 * rule += "-m set"; rule += " --match-set internalonly dst"; rule +=
@@ -455,8 +455,8 @@ public class CSFFirewall extends AFirewallProfile {
 	 *
 	 * return units; }
 	 *
-	 * private Set<IUnit> serverAdminRules(MachineModel machine) { Set<IUnit> units
-	 * = new HashSet<IUnit>();
+	 * private Collection<IUnit> serverAdminRules(MachineModel machine) {
+	 * Collection<IUnit> units = new ArrayList<>();
 	 *
 	 * String machineName= machine.getLabel();
 	 *
@@ -482,8 +482,8 @@ public class CSFFirewall extends AFirewallProfile {
 	 *
 	 * return units; }
 	 *
-	 * private Set<IUnit> networkIptUnits() { Set<IUnit> units = new
-	 * HashSet<IUnit>();
+	 * private Collection<IUnit> networkIptUnits() { Collection<IUnit> units = new
+	 * ArrayList<>();
 	 *
 	 * for (ServerModel server : networkModel.getAllServers()) {
 	 * machineIngressRules(server); machineEgressRules(server);
@@ -542,8 +542,8 @@ public class CSFFirewall extends AFirewallProfile {
 	 *
 	 * return units; }
 	 *
-	 * private Set<IUnit> baseIptConfig(MachineModel machine) { Set<IUnit> units =
-	 * new HashSet<IUnit>();
+	 * private Collection<IUnit> baseIptConfig(MachineModel machine) {
+	 * Collection<IUnit> units = new ArrayList<>();
 	 *
 	 * //Do we want to be logging drops? Boolean debugMode =
 	 * Boolean.parseBoolean(networkModel.getData().getProperty(getLabel(), "debug",
@@ -660,7 +660,8 @@ public class CSFFirewall extends AFirewallProfile {
 	 *
 	 * return units; }
 	 *
-	 * private Set<IUnit> routerScript() { Set<IUnit> units = new HashSet<IUnit>();
+	 * private Collection<IUnit> routerScript() { Collection<IUnit> units = new
+	 * ArrayList<>();
 	 *
 	 * String admin = ""; admin += "#!/bin/bash\n"; admin += "\n"; admin +=
 	 * "RED='\\\\033[0;31m'\n"; admin += "GREEN='\\\\033[0;32m'\n"; admin +=

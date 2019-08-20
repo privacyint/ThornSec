@@ -1,8 +1,8 @@
 /*
  * This code is part of the ThornSec project.
- * 
+ *
  * To learn more, please head to its GitHub repo: @privacyint
- * 
+ *
  * Pull requests encouraged.
  */
 package profile.stack;
@@ -277,7 +277,7 @@ public class MariaDB extends AStructuredProfile {
 	 * "sudo kill -SIGTERM $(sudo cat /var/run/mysqld/mysqld.pid);" +
 	 * "while sudo test -f /var/run/mysqld/mysqld.pid;" //Sleep until the pid file
 	 * has gone (i.e. MySQL service has been killed) + "do sleep 2;" + "done;"; }
-	 * 
+	 *
 	 * private String startMariaDbWithInit(String query) { return stopMariaDb() +
 	 * "echo \"" + query + "\" | sudo tee /etc/mysql/query.sql > /dev/null;" //Echo
 	 * our user creation query out +
@@ -286,7 +286,7 @@ public class MariaDB extends AStructuredProfile {
 	 * has started again + "while sudo test ! -f /var/run/mysqld/mysqld.pid;" +
 	 * "do sleep 2;" + "done;" + "sudo rm /etc/mysql/query.sql"; //Then delete the
 	 * query }
-	 * 
+	 *
 	 * private String startMariaDbUser() { //Forcibly restart the service and sleep
 	 * until it's actually restarted return
 	 * "sudo service mysql stop && sudo service mysql start;" +

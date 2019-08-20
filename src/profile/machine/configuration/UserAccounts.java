@@ -1,3 +1,10 @@
+/*
+ * This code is part of the ThornSec project.
+ *
+ * To learn more, please head to its GitHub repo: @privacyint
+ *
+ * Pull requests encouraged.
+ */
 package profile.machine.configuration;
 
 import java.util.ArrayList;
@@ -13,16 +20,15 @@ public class UserAccounts extends AProfile {
 
 	private final Collection<String> usernames;
 
-	public UserAccounts(String label, NetworkModel networkModel)
-	throws InvalidServerException {
+	public UserAccounts(String label, NetworkModel networkModel) throws InvalidServerException {
 		super(label, networkModel);
-		
-		this.usernames = new HashSet<String>();
-		
-		for (String admin : getNetworkModel().getData().getAdmins(getLabel())) {
+
+		this.usernames = new ArrayList<>();
+
+		for (final String admin : getNetworkModel().getData().getAdmins(getLabel())) {
 			this.usernames.add(admin);
 		}
-		
+
 		this.usernames.add("root");
 		this.usernames.add("daemon");
 		this.usernames.add("bin");
@@ -55,20 +61,18 @@ public class UserAccounts extends AProfile {
 	public Collection<IUnit> getUnits() {
 		String grepString = "awk -F':' '{ print $1 }' /etc/passwd";
 		final Collection<IUnit> units = new ArrayList<>();
-				
-		for (String username : usernames) {
+
+		for (final String username : this.usernames) {
 			grepString += " | egrep -v \"^" + username + "\\$\"";
 		}
 
-		//We want to be able to see what users are there if the audit fails!
+		// We want to be able to see what users are there if the audit fails!
 		grepString += " | tee /dev/stderr | grep -v 'tee /dev/stderr'";
-		
-		units.add(new SimpleUnit("no_unexpected_users", "proceed",
-				"",
-				grepString, "", "pass",
+
+		units.add(new SimpleUnit("no_unexpected_users", "proceed", "", grepString, "", "pass",
 				"There are unexpected user accounts on this machine.  This could be a sign that the machine is compromised, or it could be "
-				+ "entirely innocent.  Please check the usernames carefully to see if there's any cause for concern."));
-		
+						+ "entirely innocent.  Please check the usernames carefully to see if there's any cause for concern."));
+
 		return units;
 	}
 

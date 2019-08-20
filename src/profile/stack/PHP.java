@@ -1,8 +1,8 @@
 /*
  * This code is part of the ThornSec project.
- * 
+ *
  * To learn more, please head to its GitHub repo: @privacyint
- * 
+ *
  * Pull requests encouraged.
  */
 package profile.stack;
@@ -11,27 +11,22 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import core.exception.data.machine.InvalidServerException;
+import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-
-import core.profile.AStructuredProfile;
-
 import core.model.network.NetworkModel;
-
+import core.profile.AStructuredProfile;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
-
-import core.exception.data.machine.InvalidServerException;
-
-import core.exception.runtime.InvalidServerModelException;
 
 /**
  * Create and configure PHP7.0-FPM for a given server
  */
 public class PHP extends AStructuredProfile {
-	public static final File SOCK_PATH   = new File("/var/run/php/php7.0-fpm.sock");
+	public static final File SOCK_PATH = new File("/var/run/php/php7.0-fpm.sock");
 	public static final File CONFIG_ROOT = new File("/etc/php/7.0/fpm/");
-	
+
 	public PHP(String label, NetworkModel networkModel) {
 		super(label, networkModel);
 	}
@@ -43,20 +38,20 @@ public class PHP extends AStructuredProfile {
 		units.add(new InstalledUnit("php_fpm", "proceed", "php-fpm"));
 		units.add(new InstalledUnit("php_base", "proceed", "php"));
 		units.add(new InstalledUnit("php_apcu", "proceed", "php-apcu"));
-		
+
 		return units;
 	}
-	
+
 	@Override
 	public Collection<IUnit> getPersistentConfig() throws InvalidServerException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		FileUnit iniConf  = new FileUnit("php_ini", "php_fpm_installed", CONFIG_ROOT + "php.ini");
-		FileUnit poolConf = new FileUnit("php_pool", "php_fpm_installed", CONFIG_ROOT + "pool.d/www.conf");
-		
+		final FileUnit iniConf = new FileUnit("php_ini", "php_fpm_installed", CONFIG_ROOT + "php.ini");
+		final FileUnit poolConf = new FileUnit("php_pool", "php_fpm_installed", CONFIG_ROOT + "pool.d/www.conf");
+
 		units.add(iniConf);
 		units.add(poolConf);
-		
+
 		iniConf.appendLine("[PHP]");
 		iniConf.appendLine("engine = On");
 		iniConf.appendLine("short_open_tag = Off");
@@ -66,7 +61,8 @@ public class PHP extends AStructuredProfile {
 		iniConf.appendLine("implicit_flush = Off");
 		iniConf.appendLine("unserialize_callback_func =");
 		iniConf.appendLine("serialize_precision = 17");
-		iniConf.appendLine("disable_functions = pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wifcontinued,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_exec,pcntl_getpriority,pcntl_setpriority,");
+		iniConf.appendLine(
+				"disable_functions = pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wifcontinued,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_exec,pcntl_getpriority,pcntl_setpriority,");
 		iniConf.appendLine("disable_classes =");
 		iniConf.appendLine("zend.enable_gc = On");
 		iniConf.appendLine("expose_php = Off");
@@ -101,9 +97,9 @@ public class PHP extends AStructuredProfile {
 		iniConf.appendLine("allow_url_fopen = On");
 		iniConf.appendLine("allow_url_include = Off");
 		iniConf.appendLine("default_socket_timeout = 60");
-		iniConf.appendLine("emergency_restart_threshold 10"); //If 10 child processes exit...
-		iniConf.appendLine("emergency_restart_interval 1m"); //...within a minute, restart PHP-FPM. 
-		iniConf.appendLine("process_control_timeout 10s"); //Allow 10 seconds for our child procs to get a response
+		iniConf.appendLine("emergency_restart_threshold 10"); // If 10 child processes exit...
+		iniConf.appendLine("emergency_restart_interval 1m"); // ...within a minute, restart PHP-FPM.
+		iniConf.appendLine("process_control_timeout 10s"); // Allow 10 seconds for our child procs to get a response
 		iniConf.appendCarriageReturn();
 		iniConf.appendLine("[CLI Server]");
 		iniConf.appendLine("cli_server.color = On");
@@ -202,16 +198,17 @@ public class PHP extends AStructuredProfile {
 		iniConf.appendLine("opcache.save_comments=1");
 		iniConf.appendLine("opcache.revalidate_freq=1");
 
-		//This is approximate, and very(!!!) generous(!!!) to give the box some breathing room.
-		//On most VMs I have configured, it's usually below 40M.
-		int mbRamPerProcess = 75;
-		int serverTotalRam  = getNetworkModel().getData().getRAM(getLabel());
-		
-		int maxChildren     = serverTotalRam / mbRamPerProcess; 
-		int minSpareServers = maxChildren / 3;
-		int maxSpareServers = minSpareServers * 2;
-		int startServers    = (minSpareServers + (maxSpareServers - minSpareServers)) / 2;
-		
+		// This is approximate, and very(!!!) generous(!!!) to give the box some
+		// breathing room.
+		// On most VMs I have configured, it's usually below 40M.
+		final int mbRamPerProcess = 75;
+		final int serverTotalRam = getNetworkModel().getData().getRAM(getLabel());
+
+		final int maxChildren = serverTotalRam / mbRamPerProcess;
+		final int minSpareServers = maxChildren / 3;
+		final int maxSpareServers = minSpareServers * 2;
+		final int startServers = (minSpareServers + (maxSpareServers - minSpareServers)) / 2;
+
 		poolConf.appendLine("[www]");
 		poolConf.appendLine("user = nginx");
 		poolConf.appendLine("group = nginx");
@@ -235,10 +232,11 @@ public class PHP extends AStructuredProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new RunningUnit("php_fpm", "php7.0-fpm", "php7.0-fpm"));
-		
-		getNetworkModel().getServerModel(getLabel()).addProcessString("php-fpm: master process \\(/etc/php/7.0/fpm/php-fpm\\.conf\\) *$");
+
+		getNetworkModel().getServerModel(getLabel())
+				.addProcessString("php-fpm: master process \\(/etc/php/7.0/fpm/php-fpm\\.conf\\) *$");
 		getNetworkModel().getServerModel(getLabel()).addProcessString("php-fpm: pool www *$");
-		
+
 		return units;
 	}
 

@@ -1,3 +1,10 @@
+/*
+ * This code is part of the ThornSec project.
+ *
+ * To learn more, please head to its GitHub repo: @privacyint
+ *
+ * Pull requests encouraged.
+ */
 package core.profile;
 
 import java.util.ArrayList;
@@ -11,8 +18,8 @@ import core.unit.ComplexUnit;
 
 public abstract class ACompoundProfile extends AProfile {
 
-	private String precondition;
-	private String config;
+	private final String precondition;
+	private final String config;
 
 	public ACompoundProfile(String name, NetworkModel model, String precondition, String config) {
 		super(name, model);
@@ -23,9 +30,10 @@ public abstract class ACompoundProfile extends AProfile {
 	@Override
 	public Collection<IUnit> getUnits() {
 		final Collection<IUnit> rules = new ArrayList<>();
+		rules.add(new ComplexUnit(getLabel() + "_compound", this.precondition, "",
 				getLabel() + "_unchanged=1;\n" + getLabel() + "_compound=1;\n"));
-		rules.addAll(this.getChildren());
-		rules.add(new ComplexUnit(getLabel(), precondition, config + "\n" + getLabel() + "_unchanged=1;\n",
+		rules.addAll(getChildren());
+		rules.add(new ComplexUnit(getLabel(), this.precondition, this.config + "\n" + getLabel() + "_unchanged=1;\n",
 				getLabel() + "=$" + getLabel() + "_unchanged;\n"));
 		return rules;
 	}
