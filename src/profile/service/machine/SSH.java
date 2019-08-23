@@ -61,7 +61,7 @@ public class SSH extends AStructuredProfile {
 		// sshdConf.appendLine((((ServerModel)me).isRouter()) ? "ListenAddress " +
 		// networkModel.getData().getIP().getHostAddress() + "\n" : "";
 		sshdConf.appendLine("Protocol 2");
-		sshdConf.appendLine("HostKey /etc/ssh/ssh_host_rsa_key");
+		// sshdConf.appendLine("HostKey /etc/ssh/ssh_host_rsa_key");
 		sshdConf.appendLine("HostKey /etc/ssh/ssh_host_ed25519_key");
 		sshdConf.appendLine("UsePrivilegeSeparation yes");
 		sshdConf.appendLine("KeyRegenerationInterval 3600");
@@ -151,10 +151,13 @@ public class SSH extends AStructuredProfile {
 		// this.networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFilePath("/etc/update-motd.d/00-motd");
 		units.add(new FilePermsUnit("sshd_motd_perms", "sshd_motd_config", "/etc/update-motd.d/00-motd", "755"));
 
-		units.add(new SimpleUnit("sshd_rsa", "sshd_config",
-				"echo -e \"y\\n\" | sudo ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N \"\" -t rsa -b 4096",
-				"sudo ssh-keygen -lf /etc/ssh/ssh_host_rsa_key | awk '{print $1}'", "4096", "pass",
-				"Couldn't generate you a new SSH key.  This isn't too bad, but try re-running the script to get it to work."));
+		// units.add(new SimpleUnit("sshd_rsa", "sshd_config",
+		// "echo -e \"y\\n\" | sudo ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N \"\" -t
+		// rsa -b 4096",
+		// "sudo ssh-keygen -lf /etc/ssh/ssh_host_rsa_key | awk '{print $1}'", "4096",
+		// "pass",
+		// "Couldn't generate you a new SSH key. This isn't too bad, but try re-running
+		// the script to get it to work."));
 
 		// Secure sshd as per
 		// https://stribika.github.io/2015/01/04/secure-secure-shell.html
