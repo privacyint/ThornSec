@@ -7,7 +7,6 @@
  */
 package core.unit.fs;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -20,7 +19,7 @@ import core.unit.SimpleUnit;
  */
 public class FileUnit extends SimpleUnit {
 
-	private final File path;
+	private final String path;
 	private final Collection<String> lines;
 
 	/**
@@ -35,7 +34,7 @@ public class FileUnit extends SimpleUnit {
 		super(name, precondition, null, "sudo cat " + path + " 2>&1;", "", "pass", message);
 
 		this.lines = new ArrayList<>();
-		this.path = new File(path);
+		this.path = path;
 	}
 
 	/**
