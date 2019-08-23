@@ -206,8 +206,13 @@ public class SSH extends AStructuredProfile {
 
 			// Create the authorized_keys file, with root permissions (we don't want users
 			// to be able to add arbitrary keys)
-			units.add(new FileUnit("ssh_key_" + admin, "ssh_dir_" + admin + "_created",
-					getNetworkModel().getData().getSSHKey(admin), keys));
+			final FileUnit authorised = new FileUnit("ssh_key_" + admin, "ssh_dir_" + admin + "_created", keys,
+					"I couldn't add SSH keys for " + admin + " on " + getLabel() + "."
+							+ " This user will not be able to SSH into " + getLabel());
+			units.add(authorised);
+
+			authorised.appendLine(getNetworkModel().getData().getSSHKey(admin));
+
 			units.add(new FileOwnUnit("ssh_key_" + admin, "ssh_key_" + admin, keys, "root"));
 			units.add(new FilePermsUnit("ssh_key_" + admin, "ssh_key_" + admin + "_chowned", keys, "644"));
 		}
