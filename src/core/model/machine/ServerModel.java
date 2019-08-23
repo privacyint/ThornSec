@@ -172,7 +172,7 @@ public class ServerModel extends AMachineModel {
 	public Collection<IUnit> getUnits() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		units.add(new SimpleUnit("host", "proceed", "printf \"ERROR: Configuring with hostname mismatch\";",
+		units.add(new SimpleUnit("host", "proceed", "echo \"ERROR: Configuring with hostname mismatch\";",
 				"sudo -S hostname;", getLabel(), "pass"));
 
 		// Should we be autoupdating?
