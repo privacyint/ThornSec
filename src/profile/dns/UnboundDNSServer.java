@@ -147,6 +147,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 		if (getNetworkModel().getData().adBlocking()) {
 			units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
+			units.add(new InstalledUnit("wget", "proceed", "wget"));
 		}
 
 		return units;
