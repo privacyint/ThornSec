@@ -51,6 +51,7 @@ public class UserAccounts extends AProfile {
 		this.usernames.add("systemd-network");
 		this.usernames.add("systemd-resolve");
 		this.usernames.add("systemd-bus-proxy");
+		this.usernames.add("systemd-coredump");
 		this.usernames.add("_apt");
 		this.usernames.add("messagebus");
 		this.usernames.add("sshd");
