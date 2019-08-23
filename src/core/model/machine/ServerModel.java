@@ -26,6 +26,7 @@ import core.exception.data.machine.InvalidMachineException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidProfileException;
 import core.iface.IUnit;
+import core.model.machine.configuration.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.profile.AProfile;
 import core.profile.AStructuredProfile;
@@ -197,6 +198,19 @@ public class ServerModel extends AMachineModel {
 		units.add(new InstalledUnit("lsof", "proceed", "lsof"));
 		units.add(new InstalledUnit("net_tools", "proceed", "net-tools"));
 		units.add(new InstalledUnit("htop", "proceed", "htop"));
+
+		// Before we go any further... now the machine is at least up to date, and has a
+		// couple of useful diagnostics packages installed...
+		for (final NetworkInterfaceModel nic : getNetworkInterfaces()) {
+			units.add(nic.getNetworkFile());
+		}
+
+		/*
+		 * TODO: is there some sort of fail-safe we can add here? If the network doesn't
+		 * come back up, can we roll back? I'd like it to at least keep a 'net
+		 * connection, even if everything else goes wrong - we don't want to lock
+		 * ourselves out of a box!
+		 */
 
 		for (final AStructuredProfile type : this.types) {
 			units.addAll(type.getUnits());
