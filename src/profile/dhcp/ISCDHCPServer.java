@@ -77,12 +77,12 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 
 			// While we're here - HyperVisors have services - let's iterate through those
 			// too!
-			fourthOctet = 0;
 			for (final String serviceLabel : getNetworkModel().getServicesOnHyperVisor(hvLabel)) {
 				final ServerModel service = getNetworkModel().getServerModel(serviceLabel);
 
 				service.setSecondOctet(secondOctet);
 				service.setThirdOctet(thirdOctet++);
+				fourthOctet = 0;
 
 				for (final NetworkInterfaceModel nic : service.getNetworkInterfaces()) {
 					// DHCP continues to give out addresses
@@ -124,9 +124,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 			 * AUTOGUEST_NETWORK = "172.31.0.1/16";
 			 */
 			// Now let's loop through the devices
+			IPAddress ip = new IPAddressString(Router.USERS_NETWORK).getAddress();
 			for (final ADeviceModel device : getNetworkModel().getDevices(MachineType.USER).values()) {
-				IPAddress ip = new IPAddressString(Router.USERS_NETWORK).getAddress();
-
 				for (final NetworkInterfaceModel nic : device.getNetworkInterfaces()) {
 					if (nic.getAddress() == null) {
 						ip = ip.increment(1);
@@ -135,9 +134,9 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 					}
 				}
 			}
+
+			ip = new IPAddressString(Router.ADMINS_NETWORK).getAddress();
 			for (final ADeviceModel device : getNetworkModel().getDevices(MachineType.ADMIN).values()) {
-				IPAddress ip = new IPAddressString(Router.ADMINS_NETWORK).getAddress();
-
 				for (final NetworkInterfaceModel nic : device.getNetworkInterfaces()) {
 					if (nic.getAddress() == null) {
 						ip = ip.increment(1);
@@ -146,9 +145,9 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 					}
 				}
 			}
+
+			ip = new IPAddressString(Router.INTERNALS_NETWORK).getAddress();
 			for (final ADeviceModel device : getNetworkModel().getDevices(MachineType.INTERNAL_ONLY).values()) {
-				IPAddress ip = new IPAddressString(Router.INTERNALS_NETWORK).getAddress();
-
 				for (final NetworkInterfaceModel nic : device.getNetworkInterfaces()) {
 					if (nic.getAddress() == null) {
 						ip = ip.increment(1);
@@ -157,9 +156,9 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 					}
 				}
 			}
+
+			ip = new IPAddressString(Router.EXTERNALS_NETWORK).getAddress();
 			for (final ADeviceModel device : getNetworkModel().getDevices(MachineType.EXTERNAL_ONLY).values()) {
-				IPAddress ip = new IPAddressString(Router.EXTERNALS_NETWORK).getAddress();
-
 				for (final NetworkInterfaceModel nic : device.getNetworkInterfaces()) {
 					if (nic.getAddress() == null) {
 						ip = ip.increment(1);
@@ -169,6 +168,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 				}
 			}
 
+			// TODO: Guest network pool
 		}
 	}
 
