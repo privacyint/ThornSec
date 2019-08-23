@@ -76,10 +76,6 @@ public abstract class AMachineModel extends AModel {
 			}
 		}
 
-		this.firstOctet = 10;
-		this.secondOctet = null;
-		this.thirdOctet = null;
-
 		this.throttled = getNetworkModel().getData().isThrottled(getLabel());
 
 		this.listens = getNetworkModel().getData().getListens(getLabel());
