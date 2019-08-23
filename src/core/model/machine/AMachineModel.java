@@ -88,6 +88,7 @@ public abstract class AMachineModel extends AModel {
 	final private NetworkInterfaceModel ifaceDataToModel(NetworkInterfaceData ifaceData) {
 		final NetworkInterfaceModel ifaceModel = new NetworkInterfaceModel(getLabel(), getNetworkModel());
 
+		ifaceModel.setIface(ifaceData.getIface());
 		ifaceModel.setAddress(ifaceData.getAddress());
 		ifaceModel.setBridgePorts(ifaceData.getBridgePorts());
 		ifaceModel.setBroadcast(ifaceData.getBroadcast());
