@@ -191,11 +191,6 @@ public class ServerModel extends AMachineModel {
 				"0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.", "pass",
 				"There are $(sudo apt-get upgrade -s | grep -P '^\\d+ upgraded'| cut -d' ' -f1) updates available, of which $(sudo apt-get upgrade -s | grep ^Inst | grep Security | wc -l) are security updates\""));
 
-		// Remove rdnssd (problematic as hell...)
-		units.add(new SimpleUnit("rdnssd_uninstalled", "proceed", "sudo apt remove rdnssd --purge -y;",
-				"dpkg-query --status rdnssd 2>&1 | grep \"Status:\";", "Status: install ok installed", "fail",
-				"Couldn't uninstall rdnssd.  This is a package which attempts to be \"clever\" in DNS configuration and just breaks everything instead."));
-
 		final SSH ssh = new SSH(getLabel(), getNetworkModel());
 		units.addAll(ssh.getUnits());
 

@@ -13,7 +13,6 @@ import java.util.Collection;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
-import core.unit.SimpleUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import profile.firewall.AFirewallProfile;
@@ -30,10 +29,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 	public Collection<IUnit> getInstalled() throws ARuntimeException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		units.add(new SimpleUnit("iptables_disabled", "proceed", "sudo systemctl disable iptables",
-				"systemctl is-enabled iptables", "disabled", "pass"));
-
-		units.add(new InstalledUnit("shorewall", "iptables_disabled", "shorewall"));
+		units.add(new InstalledUnit("shorewall", "proceed", "shorewall"));
 
 		return units;
 	}
