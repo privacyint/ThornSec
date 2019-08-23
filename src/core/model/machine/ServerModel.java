@@ -175,6 +175,10 @@ public class ServerModel extends AMachineModel {
 		units.add(new SimpleUnit("host", "proceed", "echo \"ERROR: Configuring with hostname mismatch\";",
 				"sudo -S hostname;", getLabel(), "pass"));
 
+		units.add(new FileAppendUnit("auto_logout", "proceed", "TMOUT=" + ((2 * 60) * 60) + "\n" + // two hour timeout
+				"readonly TMOUT\n" + "export TMOUT", "/etc/profile",
+				"Couldn't set the serial timeout. This means users who forget to log out won't be auto logged out after two hours."));
+
 		// Should we be autoupdating?
 		String aptCommand = "";
 		if (getNetworkModel().getData().getAutoUpdate(getLabel())) {
@@ -229,10 +233,6 @@ public class ServerModel extends AMachineModel {
 		units.addAll(this.aptSources.getUnits());
 		units.addAll(this.runningProcesses.getUnits());
 		units.addAll(this.users.getUnits());
-
-		units.add(new FileAppendUnit("auto_logout", "proceed", "TMOUT=" + ((2 * 60) * 60) + "\n" + // two hour timeout
-				"readonly TMOUT\n" + "export TMOUT", "/etc/profile",
-				"Couldn't set the serial timeout. This means users who forget to log out won't be auto logged out after two hours."));
 
 		units.add(new SimpleUnit("apt_autoremove", "proceed", "sudo apt-get autoremove --purge --assume-yes",
 				"sudo apt-get autoremove --purge --assume-no | grep \"0 to remove\"", "", "fail"));
