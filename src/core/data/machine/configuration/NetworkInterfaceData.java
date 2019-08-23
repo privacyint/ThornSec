@@ -79,7 +79,10 @@ public class NetworkInterfaceData extends AData {
 
 		if (data.containsKey("inet")) {
 			setInet(Inet.valueOf(data.getString("inet").toUpperCase()));
+		} else {
+			setInet(Inet.STATIC);
 		}
+
 		try {
 			if (data.containsKey("address")) {
 				setAddress(new IPAddressString(data.getString("address")).toAddress(IPVersion.IPV4));
