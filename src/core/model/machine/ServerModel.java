@@ -143,7 +143,7 @@ public class ServerModel extends AMachineModel {
 					.scan("profile");
 
 			if (classes.isEmpty()) {
-				// throw new InvalidProfileException();
+				throw new InvalidProfileException("I can't find profile " + profile);
 			}
 
 			for (final Class<?> profileClass : classes) {
