@@ -149,7 +149,7 @@ public class SSH extends AStructuredProfile {
 		motd.appendCarriageReturn();
 
 		// this.networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFilePath("/etc/update-motd.d/00-motd");
-		units.add(new FilePermsUnit("sshd_motd_perms", "sshd_motd_config", "/etc/update-motd.d/00-motd", "755"));
+		units.add(new FilePermsUnit("sshd_motd_perms", "sshd_motd", "/etc/update-motd.d/00-motd", "755"));
 
 		// units.add(new SimpleUnit("sshd_rsa", "sshd_config",
 		// "echo -e \"y\\n\" | sudo ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N \"\" -t
