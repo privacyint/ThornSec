@@ -116,13 +116,6 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 				}
 			}
 
-			/*
-			 * public final static String USERS_NETWORK = "172.16.0.1/16"; public final
-			 * static String ADMINS_NETWORK = "172.20.0.1/16"; public final static String
-			 * INTERNALS_NETWORK = "172.24.0.1/16"; public final static String
-			 * EXTERNALS_NETWORK = "172.28.0.1/16"; public final static String
-			 * AUTOGUEST_NETWORK = "172.31.0.1/16";
-			 */
 			// Now let's loop through the devices
 			IPAddress ip = new IPAddressString(Router.USERS_NETWORK).getAddress();
 			for (final ADeviceModel device : getNetworkModel().getDevices(MachineType.USER).values()) {

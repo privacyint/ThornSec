@@ -46,6 +46,10 @@ import profile.type.HyperVisor;
 import profile.type.Router;
 import profile.type.Service;
 
+/**
+ * This Class represents a Server. It is either used directly, or is called via
+ * one of its children.
+ */
 public class ServerModel extends AMachineModel {
 	private final Collection<AStructuredProfile> types;
 	private Collection<AProfile> profiles;
@@ -89,29 +93,29 @@ public class ServerModel extends AMachineModel {
 		this.types = new HashSet<>();
 		for (final MachineType type : getNetworkModel().getData().getTypes(getLabel())) {
 			switch (type) {
-			case ROUTER:
-				if (this.firewall == null) {
-					this.firewall = new ShorewallFirewall(getLabel(), networkModel);
-				}
-				this.types.add(new Router(getLabel(), networkModel));
-				break;
-			case HYPERVISOR:
-				if (this.firewall == null) {
-					this.firewall = new CSFFirewall(getLabel(), networkModel);
-				}
-				this.types.add(new HyperVisor(getLabel(), networkModel));
-				break;
-			case SERVICE:
-				if (this.firewall == null) {
-					this.firewall = new CSFFirewall(getLabel(), networkModel);
-				}
-				this.types.add(new Service(getLabel(), networkModel));
-				break;
-			case DEDICATED:
-				this.types.add(new Dedicated(getLabel(), networkModel));
-				break;
-			default:
-				break;
+				case ROUTER:
+					if (this.firewall == null) {
+						this.firewall = new ShorewallFirewall(getLabel(), networkModel);
+					}
+					this.types.add(new Router(getLabel(), networkModel));
+					break;
+				case HYPERVISOR:
+					if (this.firewall == null) {
+						this.firewall = new CSFFirewall(getLabel(), networkModel);
+					}
+					this.types.add(new HyperVisor(getLabel(), networkModel));
+					break;
+				case SERVICE:
+					if (this.firewall == null) {
+						this.firewall = new CSFFirewall(getLabel(), networkModel);
+					}
+					this.types.add(new Service(getLabel(), networkModel));
+					break;
+				case DEDICATED:
+					this.types.add(new Dedicated(getLabel(), networkModel));
+					break;
+				default:
+					break;
 			}
 		}
 
