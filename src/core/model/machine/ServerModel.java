@@ -83,6 +83,8 @@ public class ServerModel extends AMachineModel {
 					.getDeclaredConstructor(String.class, NetworkModel.class).newInstance(getLabel(), networkModel);
 		}
 
+		setFirstOctet(10);
+
 		// TODO: Probably a cleaner way of doing the below
 		this.types = new HashSet<>();
 		for (final MachineType type : getNetworkModel().getData().getTypes(getLabel())) {
