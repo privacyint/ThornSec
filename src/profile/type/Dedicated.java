@@ -23,12 +23,6 @@ public class Dedicated extends AStructuredProfile {
 
 	public Dedicated(String label, NetworkModel networkModel) throws InvalidServerModelException {
 		super(label, networkModel);
-
-		getNetworkModel().getServerModel(label).setFirstOctet(10);
-		getNetworkModel().getServerModel(label).setSecondOctet(0);
-		// TODO: fixme
-		// setThirdOctet(getNetworkModel().getDediServers().indexOf(getNetworkModel().getServerModel(label))
-		// + 1);
 	}
 
 	@Override

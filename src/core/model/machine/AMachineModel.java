@@ -44,10 +44,6 @@ public abstract class AMachineModel extends AModel {
 
 	private InternetAddress emailAddress;
 
-	// Networking stuff
-	private Integer firstOctet;
-	private Integer secondOctet;
-	private Integer thirdOctet;
 	private Integer cidr;
 
 	private Boolean throttled;
@@ -106,30 +102,6 @@ public abstract class AMachineModel extends AModel {
 		ifaceModel.setSubnet(ifaceData.getSubnet());
 
 		return ifaceModel;
-	}
-
-	public final Integer getFirstOctet() {
-		return this.firstOctet;
-	}
-
-	public final Integer getSecondOctet() {
-		return this.secondOctet;
-	}
-
-	public final Integer getThirdOctet() {
-		return this.thirdOctet;
-	}
-
-	public final void setFirstOctet(Integer firstOctet) {
-		this.firstOctet = firstOctet;
-	}
-
-	public final void setSecondOctet(Integer secondOctet) {
-		this.secondOctet = secondOctet;
-	}
-
-	public final void setThirdOctet(Integer thirdOctet) {
-		this.thirdOctet = thirdOctet;
 	}
 
 	public final Integer getCIDR() {
