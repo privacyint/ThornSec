@@ -30,6 +30,10 @@ import inet.ipaddr.mac.MACAddress;
  * can allow our admins to have fine-grained control over their ifaces!
  */
 public class NetworkInterfaceData extends AData {
+	public enum Direction {
+		LAN, WAN;
+	}
+
 	public enum Inet {
 		MANUAL("manual"), STATIC("static"), DHCP("dhcp"), MACVLAN("macvlan");
 
