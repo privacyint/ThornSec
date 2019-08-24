@@ -63,11 +63,7 @@ public class SSH extends AStructuredProfile {
 		sshdConf.appendLine("Protocol 2");
 		// sshdConf.appendLine("HostKey /etc/ssh/ssh_host_rsa_key");
 		sshdConf.appendLine("HostKey /etc/ssh/ssh_host_ed25519_key");
-		sshdConf.appendLine("UsePrivilegeSeparation yes");
-		sshdConf.appendLine("KeyRegenerationInterval 3600");
-		sshdConf.appendLine("ServerKeyBits 1024");
-		sshdConf.appendLine(
-				"MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-ripemd160-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,hmac-ripemd160,umac-128@openssh.com");
+		sshdConf.appendLine("MACs hmac-sha2-512-etm@openssh.com");
 		sshdConf.appendLine(
 				"Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr");
 		sshdConf.appendLine("KexAlgorithms curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256");
@@ -76,11 +72,9 @@ public class SSH extends AStructuredProfile {
 		sshdConf.appendLine("LoginGraceTime 120");
 		sshdConf.appendLine("PermitRootLogin no");
 		sshdConf.appendLine("StrictModes yes");
-		sshdConf.appendLine("RSAAuthentication yes");
 		sshdConf.appendLine("PubkeyAuthentication yes");
 		sshdConf.appendLine("AuthorizedKeysFile %h/.ssh/authorized_keys");
 		sshdConf.appendLine("IgnoreRhosts yes");
-		sshdConf.appendLine("RhostsRSAAuthentication no");
 		sshdConf.appendLine("HostbasedAuthentication no");
 		sshdConf.appendLine("PermitEmptyPasswords no");
 		sshdConf.appendLine("PasswordAuthentication no");
