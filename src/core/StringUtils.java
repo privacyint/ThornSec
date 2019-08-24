@@ -34,6 +34,18 @@ public class StringUtils {
 	}
 
 	/**
+	 * Removes all non-alphanumeric characters from a given string
+	 *
+	 * @param toClean the dirty string
+	 * @return the cleaned string
+	 */
+	public static String stringToAlphaNumeric(String toClean) {
+		final String invalidChars = "[^a-zA-Z0-9]";
+
+		return toClean.replaceAll(invalidChars, "");
+	}
+
+	/**
 	 * Loosely based on https://stackoverflow.com/a/12090634
 	 *
 	 * @param freeformValue String representation of the value

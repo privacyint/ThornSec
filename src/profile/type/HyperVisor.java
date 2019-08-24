@@ -79,14 +79,6 @@ public class HyperVisor extends AStructuredProfile {
 	protected Collection<IUnit> getPersistentConfig() throws InvalidServerModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).setFirstOctet(10);
-
-		// TODO: fixme
-		// getNetworkModel().getServerModel(label)
-//				.setSecondOctet(getNetworkModel().getMetalServers().indexOf(getNetworkModel().getServerModel(label)) + 1);
-
-		getNetworkModel().getServerModel(getLabel()).setThirdOctet(0);
-
 		final FileUnit fuseConf = new FileUnit("fuse", "proceed", "/etc/fuse.conf");
 		units.add(fuseConf);
 		fuseConf.appendLine("#user_allow_other");

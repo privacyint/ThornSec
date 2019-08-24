@@ -10,14 +10,13 @@ package profile.dhcp;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import core.StringUtils;
 import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
-import core.exception.data.InvalidIPAddressException;
 import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.machine.ADeviceModel;
 import core.model.machine.AMachineModel;
 import core.model.machine.ServerModel;
 import core.model.machine.configuration.NetworkInterfaceModel;
@@ -26,7 +25,6 @@ import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
-import inet.ipaddr.AddressStringException;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
 import inet.ipaddr.MACAddressString;
@@ -43,126 +41,35 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		super(label, networkModel);
 	}
 
-	@Override
-	protected void distributeIPs() throws AThornSecException {
-		// TODO: Refactor this method, as it's a bit loopy
+	private void buildNet(IPAddress subnet, Collection<AMachineModel> machines) {
+		// First IP belongs to this net's router, so skip over
+		IPAddress ip = subnet.getLowerNonZeroHost().increment(1);
 
-		// Start by iterating through our hypervisors, as we use them as a base for our
-		// IP addressing
-		int secondOctet = 0;
-		for (final String hvLabel : getNetworkModel().getServers(MachineType.HYPERVISOR).keySet()) {
-			final ServerModel hv = getNetworkModel().getServerModel(hvLabel);
-			int thirdOctet = 0;
-
-			hv.setSecondOctet(++secondOctet);
-			hv.setThirdOctet(thirdOctet++);
-
-			int fourthOctet = 0;
-			for (final NetworkInterfaceModel nic : hv.getNetworkInterfaces()) {
+		for (final AMachineModel machine : machines) {
+			for (final NetworkInterfaceModel nic : machine.getNetworkInterfaces()) {
 				// DHCP servers distribute IP addresses, correct? :)
 				if (nic.getAddress() == null) {
-					try {
-						nic.setAddress(new IPAddressString(hv.getFirstOctet() + "." + hv.getSecondOctet() + "."
-								+ hv.getThirdOctet() + "." + (++fourthOctet)).toAddress());
-					} catch (final AddressStringException e) {
-						throw new InvalidIPAddressException(e.getMessage() + " is an invalid IP address");
-					}
-				}
-
-				if (nic.getMac() == null) {
-					throw new InvalidNetworkInterfaceException("Network interface " + nic.getIface() + " on "
-							+ getLabel() + " requires a MAC address to be set.");
+					ip = ip.increment(1);
+					nic.setAddress(ip);
 				}
 			}
-
-			// While we're here - HyperVisors have services - let's iterate through those
-			// too!
-			for (final String serviceLabel : getNetworkModel().getServicesOnHyperVisor(hvLabel)) {
-				final ServerModel service = getNetworkModel().getServerModel(serviceLabel);
-
-				service.setSecondOctet(secondOctet);
-				service.setThirdOctet(thirdOctet++);
-				fourthOctet = 0;
-
-				for (final NetworkInterfaceModel nic : service.getNetworkInterfaces()) {
-					// DHCP continues to give out addresses
-					if (nic.getAddress() == null) {
-						try {
-							nic.setAddress(new IPAddressString(service.getFirstOctet() + "." + service.getSecondOctet()
-									+ "." + service.getThirdOctet() + "." + (++fourthOctet)).toAddress());
-						} catch (final AddressStringException e) {
-							throw new InvalidIPAddressException(e.getMessage() + " is an invalid IP address");
-						}
-					}
-				}
-			}
-
-			// Dedicated servers
-			for (final ServerModel dedi : getNetworkModel().getServers(MachineType.DEDICATED).values()) {
-				dedi.setSecondOctet(++secondOctet);
-				dedi.setThirdOctet(0);
-				fourthOctet = 0;
-
-				for (final NetworkInterfaceModel nic : dedi.getNetworkInterfaces()) {
-					// DHCP continues to give out addresses
-					if (nic.getAddress() == null) {
-						try {
-							nic.setAddress(new IPAddressString(dedi.getFirstOctet() + "." + dedi.getSecondOctet() + "."
-									+ dedi.getThirdOctet() + "." + (++fourthOctet)).toAddress());
-						} catch (final AddressStringException e) {
-							throw new InvalidIPAddressException(e.getMessage() + " is an invalid IP address");
-						}
-					}
-				}
-			}
-
-			// Now let's loop through the devices
-			IPAddress ip = new IPAddressString(Router.USERS_NETWORK).getAddress();
-			for (final ADeviceModel device : getNetworkModel().getDevices(MachineType.USER).values()) {
-				for (final NetworkInterfaceModel nic : device.getNetworkInterfaces()) {
-					if (nic.getAddress() == null) {
-						ip = ip.increment(1);
-
-						nic.setAddress(ip);
-					}
-				}
-			}
-
-			ip = new IPAddressString(Router.ADMINS_NETWORK).getAddress();
-			for (final ADeviceModel device : getNetworkModel().getDevices(MachineType.ADMIN).values()) {
-				for (final NetworkInterfaceModel nic : device.getNetworkInterfaces()) {
-					if (nic.getAddress() == null) {
-						ip = ip.increment(1);
-
-						nic.setAddress(ip);
-					}
-				}
-			}
-
-			ip = new IPAddressString(Router.INTERNALS_NETWORK).getAddress();
-			for (final ADeviceModel device : getNetworkModel().getDevices(MachineType.INTERNAL_ONLY).values()) {
-				for (final NetworkInterfaceModel nic : device.getNetworkInterfaces()) {
-					if (nic.getAddress() == null) {
-						ip = ip.increment(1);
-
-						nic.setAddress(ip);
-					}
-				}
-			}
-
-			ip = new IPAddressString(Router.EXTERNALS_NETWORK).getAddress();
-			for (final ADeviceModel device : getNetworkModel().getDevices(MachineType.EXTERNAL_ONLY).values()) {
-				for (final NetworkInterfaceModel nic : device.getNetworkInterfaces()) {
-					if (nic.getAddress() == null) {
-						ip = ip.increment(1);
-
-						nic.setAddress(ip);
-					}
-				}
-			}
-
-			// TODO: Guest network pool
 		}
+	}
+
+	@Override
+	protected void distributeIPs() throws AThornSecException {
+
+		buildNet(new IPAddressString(Router.SERVERS_NETWORK).getAddress(),
+				getNetworkModel().getMachines(MachineType.SERVER).values());
+		buildNet(new IPAddressString(Router.USERS_NETWORK).getAddress(),
+				getNetworkModel().getMachines(MachineType.USER).values());
+		buildNet(new IPAddressString(Router.ADMINS_NETWORK).getAddress(),
+				getNetworkModel().getMachines(MachineType.ADMIN).values());
+		buildNet(new IPAddressString(Router.INTERNALS_NETWORK).getAddress(),
+				getNetworkModel().getMachines(MachineType.INTERNAL_ONLY).values());
+		buildNet(new IPAddressString(Router.EXTERNALS_NETWORK).getAddress(),
+				getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).values());
+		// TODO: Guest network pool
 	}
 
 	@Override
@@ -234,7 +141,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 				.appendLine("#Please see https://www.systutorials.com/docs/linux/man/5-dhcpd.conf/\n#for more details");
 		dhcpdConf.appendLine("ddns-update-style none;");
 		dhcpdConf.appendLine("option domain-name \\\"" + getNetworkModel().getData().getDomain() + "\\\";");
-		dhcpdConf.appendLine("option domain-name-servers " + getLabel() + " "
+		dhcpdConf.appendLine("option domain-name-servers " + getLabel() + "."
 				+ getNetworkModel().getServerModel(getLabel()).getDomain() + ";");
 		dhcpdConf.appendLine("default-lease-time 600;");
 		dhcpdConf.appendLine("max-lease-time 1800;");
@@ -304,8 +211,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 						continue;
 					}
 
-					subnetConfig.appendLine(
-							"\thost " + machine.getLabel() + "-" + iface.getMac().toHexString(false) + " {");
+					subnetConfig.appendLine("\thost " + StringUtils.stringToAlphaNumeric(machine.getLabel()) + "-"
+							+ iface.getMac().toHexString(false) + " {");
 					subnetConfig.appendLine("\t\thardware ethernet " + iface.getMac().toColonDelimitedString() + ";");
 					subnetConfig
 							.appendLine("\t\tfixed-address " + iface.getAddress().toCompressedWildcardString() + ";");
