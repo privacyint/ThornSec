@@ -21,6 +21,7 @@ import javax.mail.internet.InternetAddress;
 import core.StringUtils;
 import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.configuration.NetworkInterfaceData;
+import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.AThornSecException;
 import core.exception.data.ADataException;
 import core.exception.data.InvalidPortException;
@@ -70,9 +71,14 @@ public abstract class AMachineModel extends AModel {
 
 		this.networkInterfaces = new LinkedHashSet<>();
 		if (getNetworkModel().getData().getNetworkInterfaces(getLabel()) != null) {
-			for (final NetworkInterfaceData ifaceData : getNetworkModel().getData().getNetworkInterfaces(getLabel())) {
-				final NetworkInterfaceModel iface = ifaceDataToModel(ifaceData);
-				addNetworkInterface(iface);
+			final Map<Direction, Collection<NetworkInterfaceData>> ifaces = getNetworkModel().getData()
+					.getNetworkInterfaces(getLabel());
+
+			for (final Direction dir : ifaces.keySet()) {
+				for (final NetworkInterfaceData ifaceData : ifaces.get(dir)) {
+					final NetworkInterfaceModel iface = ifaceDataToModel(ifaceData);
+					addNetworkInterface(iface);
+				}
 			}
 		}
 

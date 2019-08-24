@@ -12,7 +12,6 @@ import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.LinkedHashSet;
 import java.util.Map;
 
 import javax.json.JsonArray;
@@ -25,15 +24,16 @@ import javax.mail.internet.InternetAddress;
 
 import core.data.AData;
 import core.data.machine.configuration.NetworkInterfaceData;
+import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.data.ADataException;
-import core.exception.data.InvalidDestinationException;
+import core.exception.data.InvalidIPAddressException;
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidEmailAddressException;
 import inet.ipaddr.AddressStringException;
 import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
-import inet.ipaddr.IncompatibleAddressException;
+import inet.ipaddr.MACAddressString;
 
 /**
  * Abstract class for something representing a "Machine" on our network.
@@ -72,8 +72,8 @@ public abstract class AMachineData extends AData {
 
 	public static Boolean DEFAULT_IS_THROTTLED = true;
 
-	private Collection<NetworkInterfaceData> networkInterfaces;
-	private Collection<IPAddress> externalIPAddresses;
+	private Map<Direction, Collection<NetworkInterfaceData>> networkInterfaces;
+	private final Collection<IPAddress> externalIPAddresses;
 	private Collection<String> cnames;
 	// Alerting
 	private InternetAddress emailAddress;
@@ -115,17 +115,12 @@ public abstract class AMachineData extends AData {
 	protected void read(JsonObject data) throws ADataException, JsonParsingException, IOException, URISyntaxException {
 		setData(data);
 
-		// External IP addresses
-		if (data.containsKey("externalips")) {
-			final JsonArray ips = data.getJsonArray("externalips");
-			for (final JsonValue ip : ips) {
-				IPAddress address;
-				try {
-					address = new IPAddressString(ip.toString()).toAddress();
-				} catch (final AddressStringException | IncompatibleAddressException e) {
-					throw new InvalidDestinationException(ip.toString() + " is an invalid IP address");
-				}
-				putExternalIPAddress(address);
+		if (data.containsKey("email")) {
+			try {
+				this.emailAddress = new InternetAddress(data.getString("email"));
+
+			} catch (final AddressException e) {
+				throw new InvalidEmailAddressException(data.getString("email") + " is an invalid email address");
 			}
 		}
 
@@ -140,56 +135,102 @@ public abstract class AMachineData extends AData {
 			}
 		}
 
+		// Build network interfaces
+		if (data.containsKey("network_interfaces")) {
+			final JsonObject networkInterfaces = data.getJsonObject("network_interfaces");
+
+			if (networkInterfaces.containsKey("wan")) {
+				final JsonArray wanIfaces = networkInterfaces.getJsonArray("wan");
+				for (int i = 0; i < wanIfaces.size(); ++i) {
+					final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
+
+					iface.read(wanIfaces.getJsonObject(i));
+					putWANNetworkInterface(iface);
+				}
+			}
+
+			if (networkInterfaces.containsKey("lan")) {
+				final JsonArray lanIfaces = networkInterfaces.getJsonArray("lan");
+				for (int i = 0; i < lanIfaces.size(); ++i) {
+					final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
+
+					iface.read(lanIfaces.getJsonObject(i));
+					putLANNetworkInterface(iface);
+				}
+			}
+		} else if (data.containsKey("macs")) {
+			final JsonArray macs = data.getJsonArray("macs");
+			for (int i = 0; i < macs.size(); ++i) {
+				final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
+
+				iface.setMAC(new MACAddressString(macs.getString(i)).getAddress());
+				putLANNetworkInterface(iface);
+			}
+		}
+
 		// Firewall...
-		this.firewallProfile = data.getString("firewall", null);
-		if (data.containsKey("throttled")) {
-			this.throttled = data.getBoolean("throttle");
-		}
-		if (data.containsKey("listen")) {
-			final JsonObject listens = data.getJsonObject("listen");
+		if (data.containsKey("firewall")) {
+			final JsonObject firewallConf = data.getJsonObject("firewall");
 
-			if (listens.containsKey("tcp")) {
-				final JsonArray tcp = listens.getJsonArray("tcp");
+			// Custom profile? You're brave!
+			if (firewallConf.containsKey("profile")) {
+				this.firewallProfile = data.getString("profile");
+			}
 
-				for (final JsonValue port : tcp) {
-					putPort(Encapsulation.TCP, Integer.parseInt(port.toString()));
+			if (data.containsKey("throttle")) {
+				this.throttled = data.getBoolean("throttle");
+			}
+
+			if (data.containsKey("listen")) {
+				final JsonObject listens = data.getJsonObject("listen");
+
+				if (listens.containsKey("tcp")) {
+					final JsonArray tcp = listens.getJsonArray("tcp");
+
+					for (final JsonValue port : tcp) {
+						putPort(Encapsulation.TCP, Integer.parseInt(port.toString()));
+					}
 				}
-			}
-			if (listens.containsKey("udp")) {
-				final JsonArray udp = listens.getJsonArray("udp");
+				if (listens.containsKey("udp")) {
+					final JsonArray udp = listens.getJsonArray("udp");
 
-				for (final JsonValue port : udp) {
-					putPort(Encapsulation.UDP, Integer.parseInt(port.toString()));
+					for (final JsonValue port : udp) {
+						putPort(Encapsulation.UDP, Integer.parseInt(port.toString()));
+					}
 				}
-			}
-		}
-		if (data.containsKey("allowforwardto")) {
-			final JsonArray forwards = data.getJsonArray("allowforwardto");
 
-			for (final JsonValue forward : forwards) {
-				addFoward(((JsonString) forward).getString());
-			}
-		}
-		if (data.containsKey("allowingressfrom")) {
-			final JsonArray sources = data.getJsonArray("allowingressfrom");
+				if (data.containsKey("allow_forward_to")) {
+					final JsonArray forwards = data.getJsonArray("allow_forward_to");
 
-			for (final JsonValue source : sources) {
-				addIngress(new HostName(((JsonString) source).getString()));
-			}
-		}
-		if (data.containsKey("allowegressto")) {
-			final JsonArray destinations = data.getJsonArray("allowingressfrom");
+					for (final JsonValue forward : forwards) {
+						addFoward(((JsonString) forward).getString());
+					}
+				}
+				if (data.containsKey("allow_ingress_from")) {
+					final JsonArray sources = data.getJsonArray("allow_ingress_from");
 
-			for (final JsonValue destination : destinations) {
-				addEgress(new HostName(((JsonString) destination).getString()));
-			}
-		}
-		if (data.containsKey("email")) {
-			try {
-				this.emailAddress = new InternetAddress(data.getString("email"));
+					for (final JsonValue source : sources) {
+						addIngress(new HostName(((JsonString) source).getString()));
+					}
+				}
+				if (data.containsKey("allow_egress_to")) {
+					final JsonArray destinations = data.getJsonArray("allow_egress_to");
 
-			} catch (final AddressException e) {
-				throw new InvalidEmailAddressException(data.getString("email") + " is an invalid email address");
+					for (final JsonValue destination : destinations) {
+						addEgress(new HostName(((JsonString) destination).getString()));
+					}
+				}
+
+				// External IP address?
+				if (data.containsKey("external_ip")) {
+					try {
+						this.externalIPAddresses.add(new IPAddressString(data.getString("external_ip")).toAddress());
+
+					} catch (final AddressStringException e) {
+						throw new InvalidIPAddressException(data.getString("external_ip") + " on machine " + getLabel()
+								+ " is not a valid IP Address");
+					}
+				}
 			}
 		}
 	}
@@ -251,23 +292,34 @@ public abstract class AMachineData extends AData {
 		this.cnames.add(cname);
 	}
 
-	private void putExternalIPAddress(IPAddress address) {
-		if (this.externalIPAddresses == null) {
-			this.externalIPAddresses = new LinkedHashSet<>();
-		}
-
-		this.externalIPAddresses.add(address);
-	}
-
-	protected void putNetworkInterface(NetworkInterfaceData iface) {
+	protected void putNetworkInterface(Direction dir, NetworkInterfaceData... ifaces) {
 		if (this.networkInterfaces == null) {
-			this.networkInterfaces = new LinkedHashSet<>();
+			this.networkInterfaces = new Hashtable<>();
 		}
 
-		this.networkInterfaces.add(iface);
+		Collection<NetworkInterfaceData> currentIfaces = this.networkInterfaces.get(dir);
+
+		if (currentIfaces == null) {
+			currentIfaces = new HashSet<>();
+		}
+
+		for (final NetworkInterfaceData iface : ifaces) {
+			currentIfaces.add(iface);
+		}
+
+		this.networkInterfaces.put(dir, currentIfaces);
+
 	}
 
-	public final Collection<NetworkInterfaceData> getNetworkInterfaces() {
+	public void putWANNetworkInterface(NetworkInterfaceData... ifaces) {
+		putNetworkInterface(Direction.WAN, ifaces);
+	}
+
+	public void putLANNetworkInterface(NetworkInterfaceData... ifaces) {
+		putNetworkInterface(Direction.LAN, ifaces);
+	}
+
+	public final Map<Direction, Collection<NetworkInterfaceData>> getNetworkInterfaces() {
 		return this.networkInterfaces;
 	}
 
@@ -310,4 +362,5 @@ public abstract class AMachineData extends AData {
 	public HostName getDomain() {
 		return this.domain;
 	}
+
 }

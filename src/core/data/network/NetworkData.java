@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,6 +49,7 @@ import core.data.machine.ServerData;
 import core.data.machine.ServiceData;
 import core.data.machine.UserDeviceData;
 import core.data.machine.configuration.NetworkInterfaceData;
+import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.exception.data.ADataException;
 import core.exception.data.InvalidIPAddressException;
@@ -483,15 +483,16 @@ public class NetworkData extends AData {
 	 * @throws ADataException
 	 * @throws IOException
 	 */
-	final public Collection<NetworkInterfaceData> getNetworkInterfaces(String machine)
+	final public Map<Direction, Collection<NetworkInterfaceData>> getNetworkInterfaces(String machine)
 			throws JsonParsingException, ADataException, IOException {
-		Collection<NetworkInterfaceData> interfaces = getMachine(machine).getNetworkInterfaces();
+		Map<Direction, Collection<NetworkInterfaceData>> interfaces = getMachine(machine).getNetworkInterfaces();
 
 		if (interfaces == null) {
 			interfaces = this.defaultServiceData.getNetworkInterfaces();
 			if (interfaces == null) {
-				interfaces = new LinkedHashSet<>();
+				interfaces = new Hashtable<>();
 
+				final HashSet<NetworkInterfaceData> automagic = new HashSet<>();
 				final NetworkInterfaceData defaultIface = new NetworkInterfaceData(machine);
 
 				final JsonObjectBuilder defaultNetworkInterfaceData = Json.createObjectBuilder();
@@ -500,8 +501,9 @@ public class NetworkData extends AData {
 				defaultNetworkInterfaceData.add("comment", "This NIC was automagically built using default values.");
 
 				defaultIface.read(defaultNetworkInterfaceData.build());
+				automagic.add(defaultIface);
 
-				interfaces.add(defaultIface);
+				interfaces.put(Direction.LAN, automagic);
 			}
 		}
 
