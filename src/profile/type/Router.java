@@ -42,12 +42,12 @@ import profile.dns.UnboundDNSServer;
  * If you want to make changes in here, you'll have a lot of reading to do :)!
  */
 public class Router extends AStructuredProfile {
-	public final static String SERVERS_NETWORK = "10.0.0.1/8";
-	public final static String USERS_NETWORK = "172.16.0.1/16";
-	public final static String ADMINS_NETWORK = "172.20.0.1/16";
-	public final static String INTERNALS_NETWORK = "172.24.0.1/16";
-	public final static String EXTERNALS_NETWORK = "172.28.0.1/16";
-	public final static String AUTOGUEST_NETWORK = "172.31.0.1/16";
+	public final static String SERVERS_NETWORK = "10.0.0.0/8";
+	public final static String USERS_NETWORK = "172.16.0.0/16";
+	public final static String ADMINS_NETWORK = "172.20.0.0/16";
+	public final static String INTERNALS_NETWORK = "172.24.0.0/16";
+	public final static String EXTERNALS_NETWORK = "172.28.0.0/16";
+	public final static String AUTOGUEST_NETWORK = "172.31.0.0/16";
 
 	private final ADNSServerProfile dnsServer;
 	private final ADHCPServerProfile dhcpServer;
