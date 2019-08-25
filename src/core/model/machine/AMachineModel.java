@@ -8,6 +8,8 @@
 package core.model.machine;
 
 import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -29,7 +31,11 @@ import core.iface.IUnit;
 import core.model.AModel;
 import core.model.machine.configuration.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
+import inet.ipaddr.AddressStringException;
 import inet.ipaddr.HostName;
+import inet.ipaddr.IncompatibleAddressException;
+import inet.ipaddr.MACAddressString;
+import inet.ipaddr.mac.MACAddress;
 
 /**
  * This class represents a Machine on our network.
@@ -258,4 +264,40 @@ public abstract class AMachineModel extends AModel {
 		// TODO Auto-generated method stub
 
 	}
+
+	public MACAddress generateMAC() {
+		MessageDigest md = null;
+		try {
+			md = MessageDigest.getInstance("SHA-512");
+		} catch (final NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		md.update(getLabel().getBytes());
+		final byte byteData[] = md.digest();
+
+		// convert the byte to hex format method 1
+		final StringBuffer hashCodeBuffer = new StringBuffer();
+		for (final byte element : byteData) {
+			hashCodeBuffer.append(Integer.toString((element & 0xff) + 0x100, 16).substring(1));
+
+			if (hashCodeBuffer.length() == 6) {
+				break;
+			}
+		}
+
+		final String address = "080027" + hashCodeBuffer.toString();
+
+		try {
+			return new MACAddressString(address).toAddress();
+		} catch (final AddressStringException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (final IncompatibleAddressException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 }

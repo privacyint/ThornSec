@@ -27,8 +27,6 @@ import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
-import inet.ipaddr.MACAddressString;
-import inet.ipaddr.mac.MACAddress;
 import profile.type.Router;
 
 /**
@@ -108,9 +106,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 
 				for (final NetworkInterfaceModel nic : service.getNetworkInterfaces()) {
 					if (nic.getMac() == null) {
-						final String macString = "080027".concat(nic.getAddress().toHexString(false).substring(2));
-						final MACAddress mac = new MACAddressString(macString).getAddress();
-						nic.setMac(mac);
+						nic.setMac(service.generateMAC());
 					}
 				}
 			}
