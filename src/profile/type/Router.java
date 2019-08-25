@@ -15,6 +15,7 @@ import java.util.Map;
 import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
 import core.exception.data.InvalidIPAddressException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
 import core.model.machine.configuration.NetworkInterfaceModel;
@@ -85,8 +86,10 @@ public class Router extends AStructuredProfile {
 	 * @param type
 	 * @param vlanNetwork
 	 * @throws InvalidIPAddressException
+	 * @throws InvalidMachineModelException
 	 */
-	public final void addMACVLAN(MachineType type, String vlanNetwork) throws InvalidIPAddressException {
+	public final void addMACVLAN(MachineType type, String vlanNetwork)
+			throws InvalidIPAddressException, InvalidMachineModelException {
 		IPAddress ip = null;
 
 		try {
@@ -100,6 +103,7 @@ public class Router extends AStructuredProfile {
 		}
 
 		this.macVLANs.put(type, ip);
+		// TODO: how do I add to an interface?
 	}
 
 	public Map<MachineType, IPAddress> getMACVLANs() {
