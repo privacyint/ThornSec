@@ -168,8 +168,8 @@ public class SSH extends AStructuredProfile {
 				"Couldn't generate new moduli for your SSH daemon.  This is undesirable, please try re-running the script."));
 
 		units.add(new SimpleUnit("sshd_moduli_not_weak", "sshd_moduli_exists",
-				"awk '$5 > 2000' /etc/ssh/moduli > /tmp/moduli;" + "sudo mv /tmp/moduli /etc/ssh/moduli;",
-				"awk '$5 <= 2000' /etc/ssh/moduli", "", "pass",
+				"awk '$5 > 3071' /etc/ssh/moduli > /tmp/moduli;" + "sudo mv /tmp/moduli /etc/ssh/moduli;",
+				"awk '$5 <= 3071' /etc/ssh/moduli", "", "pass",
 				"Couldn't remove weak moduli from your SSH daemon.  This is undesirable, as it weakens your security.  Please re-run the script to try and get this to work."));
 
 		return units;
