@@ -63,10 +63,12 @@ public class SSH extends AStructuredProfile {
 		sshdConf.appendLine("Protocol 2");
 		// sshdConf.appendLine("HostKey /etc/ssh/ssh_host_rsa_key");
 		sshdConf.appendLine("HostKey /etc/ssh/ssh_host_ed25519_key");
-		sshdConf.appendLine("MACs hmac-sha2-512-etm@openssh.com");
+		sshdConf.appendLine(
+				"MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com");
 		sshdConf.appendLine(
 				"Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr");
-		sshdConf.appendLine("KexAlgorithms curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256");
+		sshdConf.appendLine(
+				"KexAlgorithms curve25519-sha256@libssh.org,ecdh-sha2-nistp521,ecdh-sha2-nistp384,ecdh-sha2-nistp256,diffie-hellman-group-exchange-sha256");
 		sshdConf.appendLine("SyslogFacility AUTH");
 		sshdConf.appendLine("LogLevel INFO");
 		sshdConf.appendLine("LoginGraceTime 120");
