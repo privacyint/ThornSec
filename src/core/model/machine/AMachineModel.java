@@ -98,7 +98,7 @@ public abstract class AMachineModel extends AModel {
 
 		ifaceModel.setIface(ifaceData.getIface());
 		ifaceModel.setAddress(ifaceData.getAddress());
-		ifaceModel.setBridgePorts(ifaceData.getBridgePorts());
+		ifaceModel.setMACVLANs(ifaceData.getMACVLANs());
 		ifaceModel.setBroadcast(ifaceData.getBroadcast());
 		ifaceModel.setComment(ifaceData.getComment());
 		ifaceModel.setGateway(ifaceData.getGateway());

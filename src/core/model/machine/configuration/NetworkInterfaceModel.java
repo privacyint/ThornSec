@@ -9,6 +9,7 @@ package core.model.machine.configuration;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 
 import core.data.machine.AMachineData.MachineType;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
@@ -45,7 +46,7 @@ public class NetworkInterfaceModel extends AModel {
 	private Inet inet;
 	private MACAddress mac;
 
-	private Collection<String> bridgePorts;
+	private Collection<String> macVLANS;
 
 	private IPAddress subnet;
 	private IPAddress address;
@@ -59,7 +60,7 @@ public class NetworkInterfaceModel extends AModel {
 		this.name = null;
 		this.subnet = null;
 		this.inet = null;
-		this.bridgePorts = null;
+		this.macVLANS = null;
 		this.address = null;
 		this.netmask = null;
 		this.broadcast = null;
@@ -100,12 +101,24 @@ public class NetworkInterfaceModel extends AModel {
 		this.mac = mac;
 	}
 
-	public final Collection<String> getBridgePorts() {
-		return this.bridgePorts;
+	public final Collection<String> getMACVLANs() {
+		return this.macVLANS;
 	}
 
-	public final void setBridgePorts(Collection<String> collection) {
-		this.bridgePorts = collection;
+	public final void setMACVLANs(Collection<String> collection) {
+		this.macVLANS = collection;
+	}
+
+	public final void addMACVLAN(String name) {
+		Collection<String> vlans = getMACVLANs();
+
+		if (vlans == null) {
+			vlans = new HashSet<>();
+		}
+
+		vlans.add(name);
+
+		setMACVLANs(vlans);
 	}
 
 	public final IPAddress getSubnet() {
@@ -162,27 +175,33 @@ public class NetworkInterfaceModel extends AModel {
 
 		network.appendLine("[Network]");
 		switch (getInet()) {
-		case DHCP:
-			network.appendLine("DHCP=yes");
-			break;
-		case MACVLAN:
-		case STATIC:
-			network.appendLine("IPForward=yes");
-			if (getAddress() != null) {
-				network.appendLine("Address=" + getAddress().toFullString());
+			case DHCP:
+				network.appendLine("DHCP=yes");
+				break;
+			case MACVLAN:
+			case STATIC:
+				network.appendLine("IPForward=yes");
+				if (getAddress() != null) {
+					network.appendLine("Address=" + getAddress().toCanonicalString());
+				}
+				if (getNetmask() != null) {
+					network.appendLine("Netmask=" + getNetmask().toCanonicalString());
+				}
+				if (getBroadcast() != null) {
+					network.appendLine("Broadcast=" + getBroadcast().toCanonicalString());
+				}
+				if (getGateway() != null) {
+					network.appendLine("Gateway=" + getGateway().toCanonicalString());
+				}
+				break;
+			default:
+				break;
+		}
+
+		if (getMACVLANs() != null) {
+			for (final String vlan : getMACVLANs()) {
+				network.appendLine("MACVLAN=" + vlan);
 			}
-			if (getNetmask() != null) {
-				network.appendLine("Netmask=" + getNetmask().toFullString());
-			}
-			if (getBroadcast() != null) {
-				network.appendLine("Broadcast=" + getBroadcast().toFullString());
-			}
-			if (getGateway() != null) {
-				network.appendLine("Gateway=" + getGateway().toFullString());
-			}
-			break;
-		default:
-			break;
 		}
 
 		return network;
@@ -218,7 +237,7 @@ public class NetworkInterfaceModel extends AModel {
 		netDev.appendLine("Kind=macvlan");
 		netDev.appendCarriageReturn();
 		netDev.appendLine("[MACVLAN]");
-		netDev.appendLine("Mode=vepa"); // TODO: what mode should this be in?
+		netDev.appendLine("Mode=bridge"); // TODO: what mode should this be in?
 		units.add(netDev);
 
 		final FileUnit network = new FileUnit(vlanName + "_network", "proceed",
@@ -228,7 +247,7 @@ public class NetworkInterfaceModel extends AModel {
 		network.appendCarriageReturn();
 		network.appendLine("[Network]");
 		network.appendLine("IPForward=yes");
-		network.appendLine("Address=" + gatewayAddress.toCompressedString());
+		network.appendLine("Address=" + gatewayAddress.toCanonicalString());
 		units.add(network);
 
 		return units;

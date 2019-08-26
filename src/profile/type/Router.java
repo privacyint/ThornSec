@@ -7,13 +7,19 @@
  */
 package profile.type;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import javax.json.stream.JsonParsingException;
+
 import core.data.machine.AMachineData.MachineType;
+import core.data.machine.configuration.NetworkInterfaceData;
+import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.AThornSecException;
+import core.exception.data.ADataException;
 import core.exception.data.InvalidIPAddressException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
@@ -103,7 +109,23 @@ public class Router extends AStructuredProfile {
 		}
 
 		this.macVLANs.put(type, ip);
-		// TODO: how do I add to an interface?
+		try {
+			final Collection<NetworkInterfaceData> nicsData = getNetworkModel().getData()
+					.getNetworkInterfaces(getLabel()).get(Direction.LAN);
+			for (final NetworkInterfaceData nicData : nicsData) {
+				final String nicName = nicData.getIface();
+
+				for (final NetworkInterfaceModel nicModel : getNetworkModel().getNetworkInterfaces(getLabel())) {
+					if (nicModel.getIface().equals(nicName)) {
+						nicModel.addMACVLAN(type.toString());
+					}
+				}
+
+			}
+		} catch (JsonParsingException | ADataException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public Map<MachineType, IPAddress> getMACVLANs() {
@@ -146,11 +168,9 @@ public class Router extends AStructuredProfile {
 		units.add(new EnabledServiceUnit("systemd_networkd", "proceed", "systemd-networkd",
 				"I was unable to enable the networking service. This is bad!"));
 
-		// Create our VLANs for our various networks, and tell our DHCP Server about
-		// them
+		// Create VLANs for our various networks, and tell our DHCP Server about them
 		for (final MachineType vlan : getMACVLANs().keySet()) {
 			units.addAll(NetworkInterfaceModel.buildMACVLAN(vlan, getMACVLANs().get(vlan)));
-
 			getDHCPServer().addSubnet(vlan.toString(), getMACVLANs().get(vlan));
 		}
 

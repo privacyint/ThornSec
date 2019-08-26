@@ -54,7 +54,7 @@ public class NetworkInterfaceData extends AData {
 	private String postDown;
 	private Inet inet;
 	private MACAddress mac;
-	private Collection<String> bridgePorts;
+	private Collection<String> macVLANs;
 	private IPAddress address;
 	private IPAddress gateway;
 	private IPAddress subnet;
@@ -68,7 +68,7 @@ public class NetworkInterfaceData extends AData {
 		this.preUp = null;
 		this.postDown = null;
 		this.inet = null;
-		this.bridgePorts = null;
+		this.macVLANs = null;
 		this.address = null;
 		this.gateway = null;
 		this.subnet = null;
@@ -106,11 +106,11 @@ public class NetworkInterfaceData extends AData {
 		if (data.containsKey("mac")) {
 			setMAC(new MACAddressString(data.getString("mac")).getAddress());
 		}
-		if (data.containsKey("bridgeports")) {
-			final String[] bridgePorts = data.getString("bridgeports", null).split("[^a-z0-9]");
+		if (data.containsKey("vlans")) {
+			final String[] macVLANs = data.getString("vlans", null).split("[^a-z0-9]");
 
-			for (final String bridgePort : bridgePorts) {
-				putBridgePort(bridgePort);
+			for (final String macVLAN : macVLANs) {
+				putMACVLAN(macVLAN);
 			}
 		}
 		if (data.containsKey("comment")) {
@@ -118,16 +118,16 @@ public class NetworkInterfaceData extends AData {
 		}
 	}
 
-	protected final void putBridgePort(String bridgePort) {
-		Collection<String> bridgePorts = this.bridgePorts;
+	protected final void putMACVLAN(String vlan) {
+		Collection<String> macVLANs = this.macVLANs;
 
-		if (bridgePorts == null) {
-			bridgePorts = new HashSet<>();
+		if (macVLANs == null) {
+			macVLANs = new HashSet<>();
 		}
 
-		bridgePorts.add(bridgePort);
+		macVLANs.add(vlan);
 
-		this.bridgePorts = bridgePorts;
+		this.macVLANs = macVLANs;
 	}
 
 	protected final void setComment(String comment) {
@@ -198,8 +198,8 @@ public class NetworkInterfaceData extends AData {
 		return this.broadcast;
 	}
 
-	final public Collection<String> getBridgePorts() {
-		return this.bridgePorts;
+	final public Collection<String> getMACVLANs() {
+		return this.macVLANs;
 	}
 
 	final public Inet getInet() {
