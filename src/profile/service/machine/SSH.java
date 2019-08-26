@@ -70,11 +70,14 @@ public class SSH extends AStructuredProfile {
 		sshdConf.appendLine(
 				"KexAlgorithms curve25519-sha256@libssh.org,ecdh-sha2-nistp521,ecdh-sha2-nistp384,ecdh-sha2-nistp256,diffie-hellman-group-exchange-sha256");
 		sshdConf.appendLine("SyslogFacility AUTH");
-		sshdConf.appendLine("LogLevel INFO");
+		sshdConf.appendLine("# LogLevel VERBOSE logs the key fingerprint - useul for auditing");
+		sshdConf.appendLine("LogLevel VERBOSE");
 		sshdConf.appendLine("LoginGraceTime 120");
 		sshdConf.appendLine("PermitRootLogin no");
 		sshdConf.appendLine("StrictModes yes");
+		sshdConf.appendLine("AuthenticationMethods publickey");
 		sshdConf.appendLine("PubkeyAuthentication yes");
+		sshdConf.appendLine("PasswordAuthentication no");
 		sshdConf.appendLine("AuthorizedKeysFile %h/.ssh/authorized_keys");
 		sshdConf.appendLine("IgnoreRhosts yes");
 		sshdConf.appendLine("HostbasedAuthentication no");
@@ -87,7 +90,9 @@ public class SSH extends AStructuredProfile {
 		sshdConf.appendLine("PrintLastLog yes");
 		sshdConf.appendLine("TCPKeepAlive yes");
 		sshdConf.appendLine("AcceptEnv LANG LC_*");
-		sshdConf.appendLine("Subsystem sftp /usr/lib/openssh/sftp-server");
+		sshdConf.appendLine(
+				"# Log sftp level file access (read/write/etc.) that would not be easily logged otherwise.");
+		sshdConf.appendLine("Subsystem sftp /usr/lib/ssh/sftp-server -f AUTHPRIV -l INFO");
 		sshdConf.appendLine("UsePAM yes");
 		sshdConf.appendLine("Banner /etc/ssh/sshd_banner");
 		sshdConf.appendLine("MaxSessions 1");
