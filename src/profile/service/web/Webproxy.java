@@ -81,7 +81,7 @@ public class Webproxy extends AStructuredProfile {
 		units.add(new DirUnit("nginx_ssl_include_dir", "proceed", "/etc/nginx/includes"));
 		final FileUnit sslConf = new FileUnit("nginx_ssl", "proceed", "/etc/nginx/includes/ssl_params");
 		units.add(sslConf);
-		sslConf.appendLine("    ssl_session_timeout 1d;");
+		sslConf.appendLine("    ssl_session_timeout 5m;");
 		sslConf.appendLine("    ssl_session_cache shared:SSL:10m;");
 		sslConf.appendLine("    ssl_session_tickets off;");
 		sslConf.appendCarriageReturn();
