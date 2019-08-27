@@ -121,6 +121,9 @@ public class Webproxy extends AStructuredProfile {
 			headersConf.appendLine("    proxy_set_header X-Forwarded-For    \\$proxy_add_x_forwarded_for;");
 			headersConf.appendLine("    proxy_set_header X-Real-IP          \\$remote_addr;");
 		}
+		headersConf.appendCarriageReturn();
+		// Just in case, hide any extraneous "powered by" headers
+		headersConf.appendLine("    proxy_hide_header X-Powered-By;");
 
 		// And our forced (301) SSL upgrade
 		final FileUnit sslConfig = new FileUnit("nginx_ssl_config", "nginx_installed",
