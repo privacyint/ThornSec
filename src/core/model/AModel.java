@@ -7,7 +7,7 @@
  */
 package core.model;
 
-import core.exception.runtime.ARuntimeException;
+import core.exception.AThornSecException;
 import core.model.network.NetworkModel;
 
 /**
@@ -33,6 +33,8 @@ public abstract class AModel {
 		return this.networkModel;
 	}
 
-	public void init() throws ARuntimeException { /* stub */ }
+	public void init() throws AThornSecException {
+		/* stub */
+	}
 
 }
