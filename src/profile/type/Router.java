@@ -27,6 +27,7 @@ import core.model.machine.AMachineModel;
 import core.model.machine.configuration.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
+import core.unit.fs.DirUnit;
 import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.EnabledServiceUnit;
@@ -198,7 +199,33 @@ public class Router extends AStructuredProfile {
 	protected Collection<IUnit> getLiveConfig() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
+		Collection<NetworkInterfaceData> lanIfaces = null;
+		try {
+			lanIfaces = getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.LAN);
+		} catch (JsonParsingException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		if ((lanIfaces == null) || (lanIfaces.size() > 1)) {
+			System.out.println(
+					"I've found more than one LAN interface. We don't handle this (yet). Binding to the first.");
+		}
+
+		final NetworkInterfaceData nic = lanIfaces.iterator().next();
+
+		final DirUnit dropIn = new DirUnit("macvlan_dir", "proceed", "/etc/systemd/network/" + nic + ".network.d");
+		units.add(dropIn);
+
+		final FileUnit macVLANs = new FileUnit("macvlan_assign", "macvlan_dir_created",
+				"/etc/systemd/network/" + nic + "/vlans.conf");
+		units.add(macVLANs);
+		macVLANs.appendLine("[Network]");
+
 		for (final MachineType vlan : getMACVLANs().keySet()) {
+
+			macVLANs.appendLine("MACVLAN=" + vlan);
+
 			for (final AMachineModel machine : getNetworkModel().getMachines(vlan).values()) {
 				getDHCPServer().addToSubnet(vlan.toString(), machine);
 			}
