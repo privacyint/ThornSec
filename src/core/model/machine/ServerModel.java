@@ -51,7 +51,7 @@ import profile.type.Service;
  * one of its children.
  */
 public class ServerModel extends AMachineModel {
-	private final Collection<AStructuredProfile> types;
+	private Collection<AStructuredProfile> types;
 	private Collection<AProfile> profiles;
 
 	// Server-specific
@@ -63,9 +63,7 @@ public class ServerModel extends AMachineModel {
 	private final UserAccounts users;
 
 	public ServerModel(String label, NetworkModel networkModel)
-			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
-			NoSuchMethodException, SecurityException, ClassNotFoundException, URISyntaxException, AddressException,
-			IOException, JsonParsingException, AThornSecException {
+			throws AThornSecException, AddressException, JsonParsingException, IOException, URISyntaxException {
 		super(label, networkModel);
 
 		final String firewall = getNetworkModel().getData().getFirewallProfile(getLabel());
@@ -73,59 +71,77 @@ public class ServerModel extends AMachineModel {
 		// It's going to be *exceedingly* rare that this is set, but it should be
 		// customisable tbf
 		if (firewall != null) {
-			final Collection<Class<?>> firewallClasses = new ClassesInPackageScanner()
-					.setResourceNameFilter((packageName, fileName) -> fileName.equals(firewall + ".class"))
-					.scan("profile.firewall");
+			Collection<Class<?>> firewallClasses = null;
+			try {
+				firewallClasses = new ClassesInPackageScanner()
+						.setResourceNameFilter((packageName, fileName) -> fileName.equals(firewall + ".class"))
+						.scan("profile.firewall");
 
-			if (firewallClasses.isEmpty()) {
-				throw new InvalidProfileException(firewall + " is not a valid firewall profile");
+				if (firewallClasses.isEmpty()) {
+					throw new InvalidProfileException(firewall + " is not a valid firewall profile");
+				}
+
+				final String firewallClass = firewallClasses.iterator().next().getPackageName();
+
+				this.firewall = (AFirewallProfile) Class.forName(firewallClass)
+						.getDeclaredConstructor(String.class, NetworkModel.class).newInstance(getLabel(), networkModel);
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException | NoSuchMethodException | SecurityException
+					| ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-
-			final String firewallClass = firewallClasses.iterator().next().getPackageName();
-
-			this.firewall = (AFirewallProfile) Class.forName(firewallClass)
-					.getDeclaredConstructor(String.class, NetworkModel.class).newInstance(getLabel(), networkModel);
 		}
 
+		this.runningProcesses = new Processes(getLabel(), this.networkModel);
+		this.bindMounts = new BindFS(getLabel(), this.networkModel);
+		this.aptSources = new AptSources(getLabel(), this.networkModel);
+		this.users = new UserAccounts(getLabel(), this.networkModel);
+	}
+
+	@Override
+	public void init() throws AThornSecException {
 		// TODO: Probably a cleaner way of doing the below
 		this.types = new HashSet<>();
 		for (final MachineType type : getNetworkModel().getData().getTypes(getLabel())) {
 			switch (type) {
-				case ROUTER:
-					if (this.firewall == null) {
-						this.firewall = new ShorewallFirewall(getLabel(), networkModel);
-					}
-					this.types.add(new Router(getLabel(), networkModel));
-					break;
-				case HYPERVISOR:
-					if (this.firewall == null) {
-						this.firewall = new CSFFirewall(getLabel(), networkModel);
-					}
-					this.types.add(new HyperVisor(getLabel(), networkModel));
-					break;
-				case SERVICE:
-					if (this.firewall == null) {
-						this.firewall = new CSFFirewall(getLabel(), networkModel);
-					}
-					this.types.add(new Service(getLabel(), networkModel));
-					break;
-				case DEDICATED:
-					this.types.add(new Dedicated(getLabel(), networkModel));
-					break;
-				default:
-					break;
+			case ROUTER:
+				if (this.firewall == null) {
+					this.firewall = new ShorewallFirewall(getLabel(), this.networkModel);
+				}
+				this.types.add(new Router(getLabel(), this.networkModel));
+				break;
+			case HYPERVISOR:
+				if (this.firewall == null) {
+					this.firewall = new CSFFirewall(getLabel(), this.networkModel);
+				}
+				this.types.add(new HyperVisor(getLabel(), this.networkModel));
+				break;
+			case SERVICE:
+				if (this.firewall == null) {
+					this.firewall = new CSFFirewall(getLabel(), this.networkModel);
+				}
+				this.types.add(new Service(getLabel(), this.networkModel));
+				break;
+			case DEDICATED:
+				this.types.add(new Dedicated(getLabel(), this.networkModel));
+				break;
+			default:
+				break;
 			}
 		}
 
 		this.profiles = new HashSet<>();
 		for (final String profile : getNetworkModel().getData().getProfiles(getLabel())) {
-			addProfile(profile);
+			try {
+				addProfile(profile);
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException | NoSuchMethodException | SecurityException | ClassNotFoundException
+					| IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-
-		this.runningProcesses = new Processes(getLabel(), networkModel);
-		this.bindMounts = new BindFS(getLabel(), networkModel);
-		this.aptSources = new AptSources(getLabel(), networkModel);
-		this.users = new UserAccounts(getLabel(), networkModel);
 	}
 
 	private void addProfile(String... profiles) throws IOException, InvalidProfileException, InstantiationException,
