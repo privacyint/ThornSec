@@ -19,12 +19,12 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -366,15 +366,15 @@ public class NetworkData extends AData {
 		return getMachines().get(type);
 	}
 
-	private Set<HostName> getHostNameArray(String key) throws UnknownHostException {
-		Set<HostName> hosts = null;
+	private Collection<HostName> getHostNameArray(String key) throws UnknownHostException {
+		Collection<HostName> hosts = null;
 
 		if (getData().containsKey(key)) {
-			hosts = new HashSet<>();
+			hosts = new ArrayList<>();
 			final JsonArray jsonHosts = getData().getJsonArray(key);
 
 			for (final JsonValue host : jsonHosts) {
-				hosts.add(new HostName(host.toString()));
+				hosts.add((new HostName(((JsonString) host).getString())));
 			}
 		}
 
