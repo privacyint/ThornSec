@@ -19,8 +19,10 @@ import core.unit.fs.DirUnit;
 import core.unit.fs.FileAppendUnit;
 import core.unit.pkg.InstalledUnit;
 
+@Deprecated
 public class BindFS extends AModel {
 
+	@Deprecated
 	public BindFS(String label, NetworkModel networkModel) {
 		super(label, networkModel);
 	}
