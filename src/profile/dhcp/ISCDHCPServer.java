@@ -17,6 +17,7 @@ import core.exception.AThornSecException;
 import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
+import core.model.machine.ADeviceModel;
 import core.model.machine.AMachineModel;
 import core.model.machine.ServerModel;
 import core.model.machine.configuration.NetworkInterfaceModel;
@@ -70,45 +71,57 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		// TODO: Guest network pool
 	}
 
-	@Override
-	protected void distributeMACs() throws AThornSecException {
-		for (final ServerModel dedi : getNetworkModel().getServers(MachineType.DEDICATED).values()) {
-			for (final NetworkInterfaceModel nic : dedi.getNetworkInterfaces()) {
-				if (nic.getMac() == null) {
+	/**
+	 * Check whether a given machine has a MAC address set for each of its
+	 * interfaces.
+	 *
+	 * @param machine
+	 * @param isRequired true if you want it to throw an Exception
+	 * @return true if all interfaces have MAC adddresses, false otherwise.
+	 * @throws InvalidNetworkInterfaceException
+	 */
+	private Boolean checkMACs(AMachineModel machine, Boolean isRequired) throws InvalidNetworkInterfaceException {
+		for (final NetworkInterfaceModel nic : machine.getNetworkInterfaces()) {
+			if (nic.getMac() == null) {
+				if (isRequired) {
 					throw new InvalidNetworkInterfaceException("Network interface " + nic.getIface() + " on "
 							+ getLabel() + " requires a MAC address to be set.");
+				} else {
+					return false;
 				}
 			}
 		}
 
-		// Start by iterating through our hypervisors, as we use them as a base for our
-		// Services' MAC addressing
-		for (final ServerModel hv : getNetworkModel().getServers(MachineType.HYPERVISOR).values()) {
+		return true;
+	}
 
-			// If we're also a router, it doesn't matter, because it doesn't matter what
-			// Routers' MAC addresses are.
-			if (hv.isRouter()) {
-				continue;
+	@Override
+	protected void distributeMACs() throws AThornSecException {
+
+		// Start by checking all of the devices have a MAC address provided, as these
+		// are physical devices!
+		for (final ADeviceModel device : getNetworkModel().getDevices().values()) {
+			checkMACs(device, true);
+		}
+
+		// Iterate through our dedi machines, these are also physical machines
+		for (final ServerModel server : getNetworkModel().getServers(MachineType.DEDICATED).values()) {
+			checkMACs(server, true);
+		}
+
+		// Iterate through our HyperVisor machines, these are also physical machines
+		for (final ServerModel server : getNetworkModel().getServers(MachineType.HYPERVISOR).values()) {
+			if (server.isRouter()) {
+				continue; // We don't care
+			} else {
+				checkMACs(server, true);
 			}
+		}
 
-			// This is a physical machine, we need to know what its physical MAC addresses
-			// are...
-			for (final NetworkInterfaceModel nic : hv.getNetworkInterfaces()) {
-				if (nic.getMac() == null) {
-					throw new InvalidNetworkInterfaceException("Network interface " + nic.getIface() + " on "
-							+ getLabel() + " requires a MAC address to be set.");
-				}
-			}
-
-			// Quickly iterate its services - these ones may be null...
-			for (final String serviceLabel : getNetworkModel().getServicesOnHyperVisor(hv.getLabel())) {
-				final ServerModel service = getNetworkModel().getServerModel(serviceLabel);
-
-				for (final NetworkInterfaceModel nic : service.getNetworkInterfaces()) {
-					if (nic.getMac() == null) {
-						nic.setMac(service.generateMAC());
-					}
-				}
+		// Finally, iterate through our services.
+		for (final ServerModel server : getNetworkModel().getServers(MachineType.SERVICE).values()) {
+			if (checkMACs(server, false) == false) {
+				server.generateMAC();
 			}
 		}
 	}
@@ -133,8 +146,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		units.add(dhcpdConf);
 
 		dhcpdConf.appendLine("#Options here are set globally across your whole network(s)");
-		dhcpdConf
-				.appendLine("#Please see https://www.systutorials.com/docs/linux/man/5-dhcpd.conf/\n#for more details");
+		dhcpdConf.appendLine("#Please see https://www.systutorials.com/docs/linux/man/5-dhcpd.conf/");
+		dhcpdConf.appendLine("#for more details");
 		dhcpdConf.appendLine("ddns-update-style none;");
 		dhcpdConf.appendLine("option domain-name \\\"" + getNetworkModel().getData().getDomain() + "\\\";");
 		dhcpdConf.appendLine("option domain-name-servers " + getLabel() + "."
@@ -202,10 +215,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 
 				for (final NetworkInterfaceModel iface : machine.getNetworkInterfaces()) {
 
-					// If I don't know its MAC address, I shouldn't attempt to route it.
-					if (iface.getMac() == null) {
-						continue;
-					}
+					assert (iface.getMac() != null);
 
 					subnetConfig.appendLine("\thost " + StringUtils.stringToAlphaNumeric(machine.getLabel()) + "-"
 							+ iface.getMac().toHexString(false) + " {");
