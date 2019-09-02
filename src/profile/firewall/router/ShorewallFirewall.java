@@ -97,13 +97,13 @@ public class ShorewallFirewall extends AFirewallProfile {
 		// Build a sub-zone per server
 		zones.appendLine("servers ipv4");
 		for (final String serverLabel : getNetworkModel().getServers().keySet()) {
-			zones.appendLine("servers:" + serverLabel + " ipv4");
+			zones.appendLine(serverLabel + ":servers ipv4");
 		}
 
 		// Build a sub-zone per user
 		zones.appendLine("users ipv4");
 		for (final String userLabel : getNetworkModel().getUserDevices().keySet()) {
-			zones.appendLine("users:" + userLabel + " ipv4");
+			zones.appendLine(userLabel + ":users ipv4");
 		}
 
 		// TODO: Do we need an admin zone? Should it be sub-zoned too?
@@ -112,18 +112,18 @@ public class ShorewallFirewall extends AFirewallProfile {
 		// Build a sub-zone per internal only device
 		zones.appendLine("internalOnlys ipv4");
 		for (final String deviceLabel : getNetworkModel().getInternalOnlyDevices().keySet()) {
-			zones.appendLine("internalOnlys:" + deviceLabel + " ipv4");
+			zones.appendLine(deviceLabel + ":internalOnlys ipv4");
 		}
 
 		// Build a sub-zone per external only device
 		zones.appendLine("externalOnlys ipv4");
 		for (final String deviceLabel : getNetworkModel().getExternalOnlyDevices().keySet()) {
-			zones.appendLine("externalOnlys:" + deviceLabel + " ipv4");
+			zones.appendLine(deviceLabel + ":externalOnlys ipv4");
 		}
 
 		// Do we want an autoguest network? Build its zone if so
 		if (getNetworkModel().getData().buildAutoGuest()) {
-			zones.appendLine("externalOnlys:autoguest ipv4");
+			zones.appendLine("autoguest:externalOnlys ipv4");
 		}
 
 		units.add(zones);
