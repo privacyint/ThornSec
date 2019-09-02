@@ -189,13 +189,13 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 					"/etc/dhcp/dhcpd.conf.d/" + subnetName + ".conf");
 			units.add(subnetConfig);
 
-			final IPAddress subnet = getGateway(subnetName).withoutPrefixLength();
+			final IPAddress subnet = getGateway(subnetName);
 			final Integer prefix = getGateway(subnetName).getNetworkPrefixLength();
 			final IPAddress netmask = subnet.getNetwork().getNetworkMask(prefix, false);
 
 			// Start by telling our DHCP Server about this subnet.
 			subnetConfig.appendLine(
-					"subnet " + subnet.withoutPrefixLength().toCompressedString() + " netmask " + netmask + " {}");
+					"subnet " + subnet.getLowerNonZeroHost().withoutPrefixLength() + " netmask " + netmask + " {}");
 
 			// Now let's create our subnet/groups!
 			subnetConfig.appendCarriageReturn();
