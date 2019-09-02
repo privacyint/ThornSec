@@ -265,7 +265,9 @@ public abstract class AMachineModel extends AModel {
 
 	}
 
-	public MACAddress generateMAC() {
+	public MACAddress generateMAC(String iface) {
+		final String name = getLabel() + iface;
+
 		MessageDigest md = null;
 		try {
 			md = MessageDigest.getInstance("SHA-512");
@@ -273,10 +275,9 @@ public abstract class AMachineModel extends AModel {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		md.update(getLabel().getBytes());
-		final byte byteData[] = md.digest();
+		md.update(name.getBytes());
 
-		// convert the byte to hex format method 1
+		final byte byteData[] = md.digest();
 		final StringBuffer hashCodeBuffer = new StringBuffer();
 		for (final byte element : byteData) {
 			hashCodeBuffer.append(Integer.toString((element & 0xff) + 0x100, 16).substring(1));
@@ -290,13 +291,11 @@ public abstract class AMachineModel extends AModel {
 
 		try {
 			return new MACAddressString(address).toAddress();
-		} catch (final AddressStringException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (final IncompatibleAddressException e) {
+		} catch (final AddressStringException | IncompatibleAddressException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
 		return null;
 	}
 
