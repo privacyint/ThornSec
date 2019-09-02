@@ -160,7 +160,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		dhcpdConf.appendCarriageReturn();
 
 		for (final String subnet : getSubnets().keySet()) {
-			dhcpdConf.appendLine("include \\\"/etc/dhcp/dhcpd.conf.d/" + subnet + ".conf\\\"");
+			dhcpdConf.appendLine("include \\\"/etc/dhcp/dhcpd.conf.d/" + subnet + ".conf\\\";");
 		}
 
 		final FileUnit dhcpdListen = new FileUnit("dhcpd_defiface", "dhcp_installed", "/etc/default/isc-dhcp-server");
