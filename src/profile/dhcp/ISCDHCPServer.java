@@ -40,11 +40,22 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		super(label, networkModel);
 	}
 
-	private void buildNet(IPAddress subnet, Collection<AMachineModel> machines) {
-		// First IP belongs to this net's router, so skip over
-		IPAddress ip = subnet.getLowerNonZeroHost().increment(1);
+	private void buildNet(String network, IPAddress subnet, Collection<AMachineModel> machines) {
+		// First IP belongs to this net's router, so start from there (as it's assigned)
+		IPAddress ip = subnet.getLowerNonZeroHost();
+
+		addToSubnet(network, machines);
 
 		for (final AMachineModel machine : machines) {
+
+			try {
+				if (machine.equals(getNetworkModel().getServerModel(getLabel()))) {
+					continue;
+				}
+			} catch (final InvalidServerModelException e) {
+				e.printStackTrace();
+			}
+
 			for (final NetworkInterfaceModel nic : machine.getNetworkInterfaces()) {
 				// DHCP servers distribute IP addresses, correct? :)
 				if (nic.getAddress() == null) {
@@ -58,15 +69,15 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	@Override
 	protected void distributeIPs() throws AThornSecException {
 
-		buildNet(new IPAddressString(Router.SERVERS_NETWORK).getAddress(),
+		buildNet(MachineType.SERVER.toString(), new IPAddressString(Router.SERVERS_NETWORK).getAddress(),
 				getNetworkModel().getMachines(MachineType.SERVER).values());
-		buildNet(new IPAddressString(Router.USERS_NETWORK).getAddress(),
+		buildNet(MachineType.USER.toString(), new IPAddressString(Router.USERS_NETWORK).getAddress(),
 				getNetworkModel().getMachines(MachineType.USER).values());
-		buildNet(new IPAddressString(Router.ADMINS_NETWORK).getAddress(),
+		buildNet(MachineType.ADMIN.toString(), new IPAddressString(Router.ADMINS_NETWORK).getAddress(),
 				getNetworkModel().getMachines(MachineType.ADMIN).values());
-		buildNet(new IPAddressString(Router.INTERNALS_NETWORK).getAddress(),
+		buildNet(MachineType.INTERNAL_ONLY.toString(), new IPAddressString(Router.INTERNALS_NETWORK).getAddress(),
 				getNetworkModel().getMachines(MachineType.INTERNAL_ONLY).values());
-		buildNet(new IPAddressString(Router.EXTERNALS_NETWORK).getAddress(),
+		buildNet(MachineType.EXTERNAL_ONLY.toString(), new IPAddressString(Router.EXTERNALS_NETWORK).getAddress(),
 				getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).values());
 		// TODO: Guest network pool
 	}
@@ -118,10 +129,15 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 			}
 		}
 
-		// Finally, iterate through our services.
+		// Finally, iterate through our services, filling in any gaps.
+		// TODO: tidy up this loopy mess?
 		for (final ServerModel server : getNetworkModel().getServers(MachineType.SERVICE).values()) {
 			if (checkMACs(server, false) == false) {
-				server.generateMAC();
+				for (final NetworkInterfaceModel nic : server.getNetworkInterfaces()) {
+					if (nic.getMac() == null) {
+						nic.setMac(server.generateMAC(nic.getIface()));
+					}
+				}
 			}
 		}
 	}
@@ -221,7 +237,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 					subnetConfig.appendLine("\thost " + StringUtils.stringToAlphaNumeric(machine.getLabel()) + "-"
 							+ iface.getMac().toHexString(false) + " {");
 					subnetConfig.appendLine("\t\thardware ethernet " + iface.getMac().toColonDelimitedString() + ";");
-					subnetConfig.appendLine("\t\tfixed-address " + iface.getAddress().toCompressedString() + ";");
+					subnetConfig.appendLine(
+							"\t\tfixed-address " + iface.getAddress().withoutPrefixLength().toCompressedString() + ";");
 					subnetConfig.appendLine("\t}");
 					subnetConfig.appendCarriageReturn();
 

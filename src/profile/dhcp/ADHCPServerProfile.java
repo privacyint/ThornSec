@@ -78,11 +78,13 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 	 * @param machine
 	 * @return false if machine already added, true otherwise
 	 */
-	public final void addToSubnet(String subnetName, AMachineModel... machines) {
-		final Collection<AMachineModel> currentMachines = getMachines(subnetName);
+	public final void addToSubnet(String subnetName, Collection<AMachineModel> machines) {
+		Collection<AMachineModel> currentMachines = getMachines(subnetName);
 
-		for (final AMachineModel machine : machines) {
-			currentMachines.add(machine);
+		if (currentMachines == null) {
+			currentMachines = machines;
+		} else {
+			currentMachines.addAll(machines);
 		}
 
 		putMachines(subnetName, currentMachines);
