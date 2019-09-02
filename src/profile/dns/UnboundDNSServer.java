@@ -52,86 +52,102 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		final Integer cpus = getNetworkModel().getData().getCPUs(getLabel());
 		final Collection<IUnit> units = new ArrayList<>();
 
+		final Collection<IPAddress> ips = new ArrayList<>();
+
+		try {
+			ips.add(new IPAddressString(Router.SERVERS_NETWORK).toAddress());
+
+			ips.add(new IPAddressString(Router.USERS_NETWORK).toAddress());
+			ips.add(new IPAddressString(Router.INTERNALS_NETWORK).toAddress());
+			ips.add(new IPAddressString(Router.EXTERNALS_NETWORK).toAddress());
+			ips.add(new IPAddressString(Router.AUTOGUEST_NETWORK).toAddress());
+		} catch (AddressStringException | IncompatibleAddressException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 		// Config originally based on https://calomel.org/unbound_dns.html
 		// See https://linux.die.net/man/5/unbound.conf for full config file
 		final FileUnit unboundConf = new FileUnit("unbound_conf", "dns_installed", UNBOUND_CONFIG_FILE_PATH);
+		units.add(unboundConf);
 		unboundConf.appendLine("server:");
 		// Force dropping user post-invocation
-		unboundConf.appendLine("    username: unbound");
-		unboundConf.appendLine("    verbosity: 1");
-		unboundConf.appendLine("    directory: \\\"/etc/unbound\\\"");
+		unboundConf.appendLine("\tusername: unbound");
+		unboundConf.appendLine("\tverbosity: 1");
+		unboundConf.appendLine("\tdirectory: \\\"/etc/unbound\\\"");
 		// Stick it in a chroot. DNS is dangerous.
-		unboundConf.appendLine("    chroot: \\\"/etc/unbound\\\"");
-		unboundConf.appendLine("    pidfile: \\\"/etc/unbound/unbound.pid\\\"");
-		// Only listen to lan/loopback traffic
-		unboundConf.appendLine("    interface: 127.0.0.1");
-		unboundConf.appendLine("    interface: 10.0.0.1");
-		unboundConf.appendLine("    access-control: 127.0.0.0/8 allow");
-		unboundConf.appendLine("    access-control: 10.0.0.0/8 allow");
-		// Upstream DNS isn't allowed to point somewhere internal
-		// Also stops DNS Rebinding attacks.
-		unboundConf.appendLine("    private-address: 10.0.0.0/8");
-		unboundConf.appendLine("    private-address: 176.16.0.0/12");
-		unboundConf.appendLine("    private-address: 192.168.0.0/16");
+		unboundConf.appendLine("\tchroot: \\\"/etc/unbound\\\"");
+		unboundConf.appendLine("\tpidfile: \\\"/etc/unbound/unbound.pid\\\"");
+		// Listen to lan/loopback traffic
+		unboundConf.appendLine("\tinterface: 127.0.0.1");
+		unboundConf.appendLine("\taccess-control: 127.0.0.1/32 allow");
+		for (final IPAddress ip : ips) {
+			// Listen on this LAN interface
+			unboundConf.appendLine("\tinterface: " + ip.getLowerNonZeroHost().withoutPrefixLength());
+			// Allow it to receive traffic
+			unboundConf.appendLine("\taccess-control: " + ip.toCompressedString() + " allow");
+			// Stop DNS Rebinding attacks, and upstream DNS must be WAN
+			unboundConf.appendLine("\tprivate-address: " + ip.toCompressedString());
+		}
 		// Don't listen to anything else.
-		unboundConf.appendLine("    access-control: 0.0.0.0/0 refuse");
+		unboundConf.appendLine("\taccess-control: 0.0.0.0/0 refuse");
 		// Listen on :53
-		unboundConf.appendLine("    port: 53");
+		unboundConf.appendLine("\tport: 53");
 		// Do TCP/UDP, IPv4 only
-		unboundConf.appendLine("    do-tcp: yes");
-		unboundConf.appendLine("    do-udp: yes");
-		unboundConf.appendLine("    do-ip4: yes");
+		unboundConf.appendLine("\tdo-tcp: yes");
+		unboundConf.appendLine("\tdo-udp: yes");
+		unboundConf.appendLine("\tdo-ip4: yes");
 		// No IPv6, please.
-		unboundConf.appendLine("    do-ip6: no");
+		unboundConf.appendLine("\tdo-ip6: no");
 		// Add some DNS hardening
-		unboundConf.appendLine("    hide-identity: yes");
-		unboundConf.appendLine("    hide-version: yes");
-		unboundConf.appendLine("    harden-glue: yes");
-		unboundConf.appendLine("    harden-dnssec-stripped: yes");
-		unboundConf.appendLine("    use-caps-for-id: yes");
+		unboundConf.appendLine("\thide-identity: yes");
+		unboundConf.appendLine("\thide-version: yes");
+		unboundConf.appendLine("\tharden-glue: yes");
+		unboundConf.appendLine("\tharden-dnssec-stripped: yes");
+		unboundConf.appendLine("\tuse-caps-for-id: yes");
 		// Add some response hardening
-		unboundConf.appendLine("    unwanted-reply-threshold: 10000");
-		unboundConf.appendLine("    do-not-query-localhost: no");
-		unboundConf.appendLine("    val-clean-additional: yes");
+		unboundConf.appendLine("\tunwanted-reply-threshold: 10000");
+		unboundConf.appendLine("\tdo-not-query-localhost: no");
+		unboundConf.appendLine("\tval-clean-additional: yes");
 		// Add some performance enhancements
-		unboundConf.appendLine("    cache-min-ttl: 3600");
-		unboundConf.appendLine("    cache-max-ttl: 86400");
-		unboundConf.appendLine("    prefetch: yes");
+		unboundConf.appendLine("\tcache-min-ttl: 3600");
+		unboundConf.appendLine("\tcache-max-ttl: 86400");
+		unboundConf.appendLine("\tprefetch: yes");
 		// Add sensible values based on the number of CPUs in your machine
-		unboundConf.appendLine("    num-threads: " + cpus);
-		unboundConf.appendLine("    msg-cache-slabs: " + (cpus * 2));
-		unboundConf.appendLine("    rrset-cache-slabs: " + (cpus * 2));
-		unboundConf.appendLine("    infra-cache-slabs: " + (cpus * 2));
-		unboundConf.appendLine("    key-cache-slabs: " + (cpus * 2));
-		unboundConf.appendLine("    rrset-cache-size: " + (cpus / 4) + "m");
-		unboundConf.appendLine("    msg-cache-size: " + (cpus / 8) + "m");
-		unboundConf.appendLine("    so-rcvbuf: 1m");
+		unboundConf.appendLine("\tnum-threads: " + cpus);
+		unboundConf.appendLine("\tmsg-cache-slabs: " + (cpus * 2));
+		unboundConf.appendLine("\trrset-cache-slabs: " + (cpus * 2));
+		unboundConf.appendLine("\tinfra-cache-slabs: " + (cpus * 2));
+		unboundConf.appendLine("\tkey-cache-slabs: " + (cpus * 2));
+		unboundConf.appendLine("\trrset-cache-size: " + (cpus / 4) + "m");
+		unboundConf.appendLine("\tmsg-cache-size: " + (cpus / 8) + "m");
+		unboundConf.appendLine("\tso-rcvbuf: 1m");
 		// Only switch on blocking if the user actually wants it...
 		if (getNetworkModel().getData().adBlocking()) {
-			unboundConf.appendLine("    include: \\\"/etc/unbound/unbound.conf.d/adblock.zone\\\"");
+			unboundConf.appendLine("\tinclude: \\\"/etc/unbound/unbound.conf.d/adblock.zone\\\"");
 		}
 		// rDNS
-		unboundConf.appendLine("    local-zone: \\\"10.in-addr.arpa.\\\" nodefault");
-		unboundConf.appendLine("    stub-zone:");
-		unboundConf.appendLine("        name: \\\"10.in-addr.arpa.\\\"");
-		unboundConf.appendLine("        stub-addr: 10.0.0.1");
+		unboundConf.appendLine("\tlocal-zone: \\\"10.in-addr.arpa.\\\" nodefault");
+		unboundConf.appendLine("\tstub-zone:");
+		unboundConf.appendLine("\t\tname: \\\"10.in-addr.arpa.\\\"");
+		unboundConf.appendLine("\t\tstub-addr: 10.0.0.1");
 		// Zone related stuff
 		for (final String zone : this.zones.keySet()) {
-			unboundConf.appendLine("    private-domain: \\\"" + zone + "\\\"");
-			unboundConf.appendLine("    include: \\\"/etc/unbound/unbound.conf.d/" + zone + ".zone\\\"");
+			unboundConf.appendLine("\tprivate-domain: \\\"" + zone + "\\\"");
+			unboundConf.appendLine("\tinclude: \\\"/etc/unbound/unbound.conf.d/" + zone + ".zone\\\"");
 		}
 		// Upstream DNS servers
-		unboundConf.appendLine("    forward-zone:");
-		unboundConf.appendLine("        name: \\\".\\\"");
+		unboundConf.appendLine("\tforward-zone:");
+		unboundConf.appendLine("\t\tname: \\\".\\\"");
 		for (final HostName upstream : getNetworkModel().getData().getUpstreamDNSServers()) {
 			Integer port = upstream.getPort();
 			if (port == null) {
 				port = DEFAULT_UPSTREAM_DNS_PORT;
 			}
 			if (port == 853) {
-				unboundConf.appendLine("        forward-ssl-upstream: yes");
+				unboundConf.appendLine("\t\tforward-ssl-upstream: yes");
 			}
-			unboundConf.appendLine("        forward-addr: " + upstream.getHost() + "@" + port);
+			unboundConf.appendLine("\t\tforward-addr: " + upstream.getHost() + "@" + port);
 		}
 
 		return units;
@@ -173,7 +189,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		for (final String domain : this.zones.keySet()) {
 			final FileUnit zoneFile = new FileUnit(domain + "_dns_internal_zone", "dns_installed",
 					"/etc/unbound/unbound.conf.d/" + domain + ".zone");
-			zoneFile.appendLine("    local-zone: \\\"" + domain + ".\\\" typetransparent"); // Typetransparent passes
+			units.add(zoneFile);
+			zoneFile.appendLine("\tlocal-zone: \\\"" + domain + ".\\\" typetransparent"); // Typetransparent passes
 																							// resolution upwards if not
 																							// found locally
 
@@ -187,26 +204,23 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 					for (final NetworkInterfaceModel iface : hostMachine.getNetworkInterfaces()) {
 						// @TODO: Double-check logic here
-						zoneFile.appendLine("    local-data-ptr: \\\"" + iface.getAddress() + " "
-								+ hostMachine.getLabel() + "\\\"");
-						zoneFile.appendLine("    local-data-ptr: \\\"" + iface.getGateway() + " router."
+						zoneFile.appendLine(
+								"\tlocal-data-ptr: \\\"" + iface.getAddress() + " " + hostMachine.getLabel() + "\\\"");
+						zoneFile.appendLine("\tlocal-data-ptr: \\\"" + iface.getGateway() + " router."
 								+ hostMachine.getLabel() + "\\\"");
 
 						for (final String cname : hostMachine.getCNAMEs()) {
-							zoneFile.appendLine("    local-data: \\\"" + cname + " A " + iface.getAddress() + "\\\"");
-							zoneFile.appendLine("    local-data: \\\"" + cname + " A " + iface.getAddress() + "\\\"");
+							zoneFile.appendLine("\tlocal-data: \\\"" + cname + " A " + iface.getAddress() + "\\\"");
+							zoneFile.appendLine("\tlocal-data: \\\"" + cname + " A " + iface.getAddress() + "\\\"");
 						}
 					}
 
 				} catch (final InvalidMachineModelException e) {
 					for (final HostName externalIP : zone.get(hostName)) {
-						zoneFile.appendLine(
-								"    local-data: \\\"" + hostName + " A " + externalIP.getAddress() + "\\\"");
+						zoneFile.appendLine("\tlocal-data: \\\"" + hostName + " A " + externalIP.getAddress() + "\\\"");
 					}
 				}
 			}
-
-			units.add(zoneFile);
 		}
 
 		units.add(new RunningUnit("dns", "unbound", "unbound"));
@@ -215,7 +229,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 				"Unable to change your DNS to point at the local one.  This will probably cause VM building to fail, amongst other problems");
 		units.add(resolvConf);
 		resolvConf.appendLine("search " + getNetworkModel().getData().getDomain(getLabel()));
-		resolvConf.appendLine("nameserver 10.0.0.1");
+		resolvConf.appendLine("nameserver 127.0.0.1");
 
 		return units;
 	}
