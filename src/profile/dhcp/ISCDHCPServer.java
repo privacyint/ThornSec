@@ -24,6 +24,7 @@ import core.model.machine.configuration.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
+import core.unit.pkg.EnabledServiceUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 import inet.ipaddr.IPAddress;
@@ -247,6 +248,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 			subnetConfig.appendLine("}");
 		}
 
+		units.add(new EnabledServiceUnit("dhcp", "isc-dhcp-server",
+				"I couldn't enable your DHCP server to start at boot"));
 		units.add(new RunningUnit("dhcp_running", "isc-dhcp-server", "dhcpd"));
 
 		return units;
