@@ -190,20 +190,21 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 			units.add(subnetConfig);
 
 			final IPAddress subnet = getGateway(subnetName);
-			final Integer prefix = getGateway(subnetName).getNetworkPrefixLength();
+			final IPAddress gateway = subnet.getLowerNonZeroHost().withoutPrefixLength();
+			final Integer prefix = subnet.getNetworkPrefixLength();
 			final IPAddress netmask = subnet.getNetwork().getNetworkMask(prefix, false);
 
 			// Start by telling our DHCP Server about this subnet.
-			subnetConfig.appendLine(
-					"subnet " + subnet.getLowerNonZeroHost().withoutPrefixLength() + " netmask " + netmask + " {}");
+			subnetConfig.appendLine("subnet " + subnet.getLower().withoutPrefixLength().toCompressedString()
+					+ " netmask " + netmask + " {}");
 
 			// Now let's create our subnet/groups!
 			subnetConfig.appendCarriageReturn();
 			subnetConfig.appendLine("group " + subnetName + " {");
 			subnetConfig.appendLine("\tserver-name \\\"" + subnetName + "." + getLabel() + "."
 					+ getNetworkModel().getData().getDomain() + "\\\";");
-			subnetConfig.appendLine("\toption routers " + subnet.toCompressedString() + ";");
-			subnetConfig.appendLine("\toption domain-name-servers " + subnet.toCompressedString() + ";");
+			subnetConfig.appendLine("\toption routers " + gateway.toCompressedString() + ";");
+			subnetConfig.appendLine("\toption domain-name-servers " + gateway.toCompressedString() + ";");
 			subnetConfig.appendCarriageReturn();
 
 			for (final AMachineModel machine : getMachines(subnetName)) {
@@ -220,8 +221,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 					subnetConfig.appendLine("\thost " + StringUtils.stringToAlphaNumeric(machine.getLabel()) + "-"
 							+ iface.getMac().toHexString(false) + " {");
 					subnetConfig.appendLine("\t\thardware ethernet " + iface.getMac().toColonDelimitedString() + ";");
-					subnetConfig
-							.appendLine("\t\tfixed-address " + iface.getAddress().toCompressedWildcardString() + ";");
+					subnetConfig.appendLine("\t\tfixed-address " + iface.getAddress().toCompressedString() + ";");
 					subnetConfig.appendLine("\t}");
 					subnetConfig.appendCarriageReturn();
 
