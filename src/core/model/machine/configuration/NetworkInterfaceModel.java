@@ -227,7 +227,7 @@ public class NetworkInterfaceModel extends AModel {
 
 	}
 
-	public static final Collection<IUnit> buildMACVLAN(MachineType vlanName, IPAddress gatewayAddress) {
+	public static final Collection<IUnit> buildMACVLAN(MachineType vlanName, IPAddress subnet) {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		final FileUnit netDev = new FileUnit(vlanName + "_netdev", "proceed",
@@ -247,7 +247,7 @@ public class NetworkInterfaceModel extends AModel {
 		network.appendCarriageReturn();
 		network.appendLine("[Network]");
 		network.appendLine("IPForward=yes");
-		network.appendLine("Address=" + gatewayAddress.toCanonicalString());
+		network.appendLine("Address=" + subnet.getLowerNonZeroHost().withoutPrefixLength());
 		units.add(network);
 
 		return units;
