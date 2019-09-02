@@ -27,7 +27,12 @@ import core.unit.SimpleUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
+import inet.ipaddr.AddressStringException;
 import inet.ipaddr.HostName;
+import inet.ipaddr.IPAddress;
+import inet.ipaddr.IPAddressString;
+import inet.ipaddr.IncompatibleAddressException;
+import profile.type.Router;
 
 /**
  * Creates and configures an internal, recursive DNS server for your network.
