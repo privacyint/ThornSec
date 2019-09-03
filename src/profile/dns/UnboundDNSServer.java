@@ -81,7 +81,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		unboundConf.appendLine("\tverbosity: 1");
 		unboundConf.appendLine("\tdirectory: \\\"/etc/unbound\\\"");
 		// Stick it in a chroot. DNS is dangerous.
-		unboundConf.appendLine("\tchroot: \\\"/etc/unbound\\\"");
+		// unboundConf.appendLine("\tchroot: \\\"/etc/unbound\\\"");
 		unboundConf.appendLine("\tpidfile: \\\"/etc/unbound/unbound.pid\\\"");
 		// Listen to lan/loopback traffic
 		unboundConf.appendLine("\tinterface: 127.0.0.1");
