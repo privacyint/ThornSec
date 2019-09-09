@@ -183,7 +183,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		final FileUnit dhcpdListen = new FileUnit("dhcpd_defiface", "dhcp_installed", "/etc/default/isc-dhcp-server");
 		units.add(dhcpdListen);
 
-		dhcpdListen.appendLine("INTERFACES=\\\"", false);
+		dhcpdListen.appendLine("INTERFACESv4=\\\"", false);
 		for (final String subnet : getSubnets().keySet()) {
 			dhcpdListen.appendLine(" " + subnet, false);
 		}
