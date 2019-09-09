@@ -45,13 +45,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 		policies.appendLine("#For specific rules, please look at " + CONFIG_BASEDIR + "/rules");
 		policies.appendLine("#Please see http://shorewall.net/manpages/shorewall-policy.html for more details");
 		policies.appendLine("#source       destination action");
-		policies.appendLine("wan           all         DROP"); // DROP all ingress traffic
-		policies.appendLine("fw            all         REJECT"); // REJECT all traffic
-		policies.appendLine("servers       all         REJECT"); // REJECT all traffic
-		policies.appendLine("users         all         REJECT"); // REJECT all traffic
-		policies.appendLine("admins        all         REJECT"); // REJECT all traffic
-		policies.appendLine("internal      all         REJECT"); // REJECT all traffic
-		policies.appendLine("external      all         REJECT"); // REJECT all traffic
+		policies.appendLine("wan           all+        DROP"); // DROP all ingress traffic
+		policies.appendLine("all+          all+        REJECT"); // REJECT all other traffic
 		units.add(policies);
 
 		// Dedicate interfaces to zones - we'll just do it generically here (i.e. an
