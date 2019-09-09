@@ -8,16 +8,16 @@
 package profile.dns;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Map;
 import java.util.Set;
 
+import core.data.machine.AMachineData.MachineType;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
-import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
@@ -44,12 +44,18 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	private static String UNBOUND_CONFIG_FILE_PATH = "/etc/unbound/unbound.conf";
 	private static Integer DEFAULT_UPSTREAM_DNS_PORT = 853;
 
-	private final Hashtable<String, Hashtable<String, Set<HostName>>> zones;
+	private final Map<HostName, Set<AMachineModel>> zones;
 
 	public UnboundDNSServer(String label, NetworkModel networkModel) {
 		super(label, networkModel);
 
 		this.zones = new Hashtable<>();
+
+		for (final MachineType type : getNetworkModel().getMachines().keySet()) {
+			for (final AMachineModel machine : getNetworkModel().getMachines(type).values()) {
+				addRecords(machine);
+			}
+		}
 	}
 
 	@Override
@@ -61,7 +67,6 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 		try {
 			ips.add(new IPAddressString(Router.SERVERS_NETWORK).toAddress());
-
 			ips.add(new IPAddressString(Router.USERS_NETWORK).toAddress());
 			ips.add(new IPAddressString(Router.INTERNALS_NETWORK).toAddress());
 			ips.add(new IPAddressString(Router.EXTERNALS_NETWORK).toAddress());
@@ -132,14 +137,15 @@ public class UnboundDNSServer extends ADNSServerProfile {
 			unboundConf.appendLine("\tinclude: \\\"/etc/unbound/unbound.conf.d/adblock.zone\\\"");
 		}
 		// rDNS
+		// TODO: no hardcoded IP address
 		unboundConf.appendLine("\tlocal-zone: \\\"10.in-addr.arpa.\\\" nodefault");
 		unboundConf.appendLine("\tstub-zone:");
 		unboundConf.appendLine("\t\tname: \\\"10.in-addr.arpa.\\\"");
 		unboundConf.appendLine("\t\tstub-addr: 10.0.0.1");
 		// Zone related stuff
-		for (final String zone : this.zones.keySet()) {
-			unboundConf.appendLine("\tprivate-domain: \\\"" + zone + "\\\"");
-			unboundConf.appendLine("\tinclude: \\\"/etc/unbound/unbound.conf.d/" + zone + ".zone\\\"");
+		for (final HostName zone : this.zones.keySet()) {
+			unboundConf.appendLine("\tprivate-domain: \\\"" + zone.getHost() + "\\\"");
+			unboundConf.appendLine("\tinclude: \\\"/etc/unbound/unbound.conf.d/" + zone.getHost() + ".zone\\\"");
 		}
 		// Upstream DNS servers
 		unboundConf.appendLine("\tforward-zone:");
@@ -191,41 +197,51 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		}
 
 		// Now make sure all of the various zones are there & up to date
-		for (final String domain : this.zones.keySet()) {
-			final FileUnit zoneFile = new FileUnit(domain + "_dns_internal_zone", "dns_installed",
-					"/etc/unbound/unbound.conf.d/" + domain + ".zone");
+		for (final HostName domain : this.zones.keySet()) {
+			final FileUnit zoneFile = new FileUnit(domain.getHost() + "_dns_internal_zone", "dns_installed",
+					"/etc/unbound/unbound.conf.d/" + domain.getHost() + ".zone");
 			units.add(zoneFile);
-			zoneFile.appendLine("\tlocal-zone: \\\"" + domain + ".\\\" typetransparent"); // Typetransparent passes
-																							// resolution upwards if not
-																							// found locally
+			// Typetransparent passes resolution upwards if not found locally
+			zoneFile.appendLine("\tlocal-zone: \\\"" + domain.getHost() + ".\\\" typetransparent");
 
-			final Hashtable<String, Set<HostName>> zone = this.zones.get(domain);
-			AMachineModel hostMachine = null;
+			for (final AMachineModel machine : this.zones.get(domain)) {
+				for (final NetworkInterfaceModel iface : machine.getNetworkInterfaces()) {
 
-			for (final String hostName : zone.keySet()) {
-				// It may not be a real machine. It might be a poison. Deal with it.
-				try {
-					hostMachine = getNetworkModel().getMachineModel(hostName);
-
-					for (final NetworkInterfaceModel iface : hostMachine.getNetworkInterfaces()) {
-						// @TODO: Double-check logic here
-						zoneFile.appendLine(
-								"\tlocal-data-ptr: \\\"" + iface.getAddress() + " " + hostMachine.getLabel() + "\\\"");
-						zoneFile.appendLine("\tlocal-data-ptr: \\\"" + iface.getGateway() + " router."
-								+ hostMachine.getLabel() + "\\\"");
-
-						for (final String cname : hostMachine.getCNAMEs()) {
-							zoneFile.appendLine("\tlocal-data: \\\"" + cname + " A " + iface.getAddress() + "\\\"");
-							zoneFile.appendLine("\tlocal-data: \\\"" + cname + " A " + iface.getAddress() + "\\\"");
-						}
+					if (iface.getAddress() != null) {
+						zoneFile.appendLine("\tlocal-data-ptr: \\\"" + iface.getAddress().withoutPrefixLength() + " "
+								+ machine.getLabel() + "\\\"");
 					}
 
-				} catch (final InvalidMachineModelException e) {
-					for (final HostName externalIP : zone.get(hostName)) {
-						zoneFile.appendLine("\tlocal-data: \\\"" + hostName + " A " + externalIP.getAddress() + "\\\"");
+					if (machine.getCNAMEs() != null) {
+						for (final String cname : machine.getCNAMEs()) {
+							zoneFile.appendLine("\tlocal-data: \\\"" + cname + " A "
+									+ iface.getAddress().withoutPrefixLength() + "\\\"");
+							if (cname.equals(".")) {
+								zoneFile.appendLine("\tlocal-data: \\\"" + domain.getHost() + " A "
+										+ iface.getAddress().withoutPrefixLength() + "\\\"");
+							} else {
+								zoneFile.appendLine("\tlocal-data: \\\"" + cname + "." + domain.getHost() + " A "
+										+ iface.getAddress().withoutPrefixLength() + "\\\"");
+							}
+						}
 					}
 				}
 			}
+
+			/*
+			 * final Hashtable<String, Set<HostName>> zone = this.zones.get(domain);
+			 * AMachineModel hostMachine = null;
+			 *
+			 * for (final String hostName : zone.keySet()) { // It may not be a real
+			 * machine. It might be a poison. Deal with it. try { hostMachine =
+			 * getNetworkModel().getMachineModel(hostName);
+			 *
+			 *
+			 *
+			 * } catch (final InvalidMachineModelException e) { for (final HostName
+			 * externalIP : zone.get(hostName)) { zoneFile.appendLine("\tlocal-data: \\\"" +
+			 * hostName + " A " + externalIP.getAddress() + "\\\""); } } }
+			 */
 		}
 
 		units.add(new RunningUnit("dns", "unbound", "unbound"));
@@ -254,20 +270,19 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	}
 
 	@Override
-	public void addRecord(String domain, String host, HostName... records) {
-		Hashtable<String, Set<HostName>> zone = this.zones.get(domain);
-		if (zone == null) {
-			zone = new Hashtable<>();
+	public void addRecords(AMachineModel machine) {
+		Map<HostName, Set<AMachineModel>> zones = this.zones;
+		if (zones == null) {
+			zones = new Hashtable<>();
 		}
 
-		Set<HostName> hosts = zone.get(host);
-		if (hosts == null) {
-			hosts = new HashSet<>();
+		Set<AMachineModel> machines = zones.get(machine.getDomain());
+		if (machines == null) {
+			machines = new HashSet<>();
 		}
 
-		hosts.addAll(new HashSet<>(Arrays.asList(records)));
-		zone.put(host, hosts);
-		this.zones.put(domain, zone);
+		machines.add(machine);
+		this.zones.put(machine.getDomain(), machines);
 	}
 
 }
