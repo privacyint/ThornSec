@@ -13,6 +13,12 @@ import java.util.Collection;
 import core.StringUtils;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
+import core.model.machine.AMachineModel;
+import core.model.machine.ExternalOnlyDeviceModel;
+import core.model.machine.InternalOnlyDeviceModel;
+import core.model.machine.ServerModel;
+import core.model.machine.UserDeviceModel;
+import core.model.machine.configuration.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
@@ -31,6 +37,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("shorewall", "proceed", "shorewall"));
+		// units.add(new DirUnit("shorewall_policies", "shorewall_installed",
+		// CONFIG_BASEDIR + "/policy.d"));
 
 		return units;
 	}
@@ -52,26 +60,26 @@ public class ShorewallFirewall extends AFirewallProfile {
 		// Dedicate interfaces to zones - we'll just do it generically here (i.e. an
 		// iface can be more than one zone), so we can be a bit more explicit in its
 		// hosts file
-		final FileUnit interfaces = new FileUnit("shorewall_interfaces", "shorewall_installed",
+		final FileUnit interfaces = new FileUnit("shorewall_interfaces", "shorewall_policies",
 				CONFIG_BASEDIR + "/interfaces");
 		interfaces.appendLine("#Dedicate interfaces to zones");
 		interfaces.appendLine("#Please see http://shorewall.net/manpages/shorewall-interfaces.html for more details");
 		interfaces.appendLine(
-				"#If you're looking for how we are assigning zones, please see " + CONFIG_BASEDIR + "/hosts");
+				"#If you're looking for how we assign zones to interfaces, please see " + CONFIG_BASEDIR + "/hosts");
 		interfaces.appendLine("?FORMAT 2");
-		interfaces.appendLine("#zone             interface      options");
+		interfaces.appendLine("#zone      interface      options");
 		// The below zone is currently a catch-all so we can create Routers with a
 		// single iface...(!)
 		// interfaces.appendLine("- " + getNetworkModel().getServerModel(getLabel()));
 		// // TODO
-		interfaces.appendLine("servers           servers        detect,tcpflags,nosmurfs,routefilter,logmartians");
-		interfaces.appendLine("users             users          detect,dhcp,tcpflags,nosmurfs,routefilter,logmartians");
+		interfaces.appendLine("-          servers        tcpflags,nosmurfs,routefilter,logmartians");
+		interfaces.appendLine("-          users          dhcp,tcpflags,nosmurfs,routefilter,logmartians");
 		// TODO: Do we need this admin VLAN?
-		interfaces.appendLine("admins            admins         detect,tcpflags,nosmurfs,routefilter,logmartians");
-		interfaces.appendLine("internal          internal       detect,dhcp,tcpflags,nosmurfs,routefilter,logmartians");
-		interfaces.appendLine("external          external       detect,dhcp,tcpflags,nosmurfs,routefilter,logmartians");
+		interfaces.appendLine("-          admins         tcpflags,nosmurfs,routefilter,logmartians");
+		interfaces.appendLine("-          internal       dhcp,tcpflags,nosmurfs,routefilter,logmartians");
+		interfaces.appendLine("-          external       dhcp,tcpflags,nosmurfs,routefilter,logmartians");
 		if (getNetworkModel().getData().buildAutoGuest()) {
-			interfaces.appendLine("autoguest   autoguest      detect,tcpflags,nosmurfs,routefilter,logmartians");
+			interfaces.appendLine("-          autoguest      tcpflags,nosmurfs,routefilter,logmartians");
 		}
 		units.add(interfaces);
 
@@ -100,13 +108,13 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zones.appendLine("fw    firewall");
 		zones.appendLine("wan   ipv4");
 
-		// Build a sub-zone per server
+		zones.appendLine("#Here, we build our server zone, and give each server its own subzone");
 		zones.appendLine("servers ipv4");
 		for (final String serverLabel : getNetworkModel().getServers().keySet()) {
 			zones.appendLine(cleanZone(serverLabel) + ":servers ipv4");
 		}
 
-		// Build a sub-zone per user
+		zones.appendLine("#Here, we build our user zone, and give each user their own subzone");
 		zones.appendLine("users ipv4");
 		for (final String userLabel : getNetworkModel().getUserDevices().keySet()) {
 			zones.appendLine(cleanZone(userLabel) + ":users ipv4");
@@ -115,13 +123,13 @@ public class ShorewallFirewall extends AFirewallProfile {
 		// TODO: Do we need an admin zone? Should it be sub-zoned too?
 		zones.appendLine("admins:users ipv4");
 
-		// Build a sub-zone per internal only device
+		zones.appendLine("#Here, we build our internal only zone, and give each device its own subzone");
 		zones.appendLine("internal ipv4");
 		for (final String deviceLabel : getNetworkModel().getInternalOnlyDevices().keySet()) {
 			zones.appendLine(cleanZone(deviceLabel) + ":internal ipv4");
 		}
 
-		// Build a sub-zone per external only device
+		zones.appendLine("#Here, we build our external only zone, and give each device its own subzone");
 		zones.appendLine("external ipv4");
 		for (final String deviceLabel : getNetworkModel().getExternalOnlyDevices().keySet()) {
 			zones.appendLine(cleanZone(deviceLabel) + ":external ipv4");
@@ -134,7 +142,47 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		units.add(zones);
 
+		// Now assign machines their (sub)zone
+		final FileUnit hosts = new FileUnit("shorewall_hosts", "shorewall_interfaces", CONFIG_BASEDIR + "/hosts");
+		hosts.appendLine("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
+		hosts.appendLine("#zone      hosts          options");
+
+		for (final ServerModel server : getNetworkModel().getServers().values()) {
+			try {
+				// We're a router, so we're a special case!
+				if (server.isRouter()) {
+					continue;
+				}
+			} catch (final Exception e) {
+				continue;
+			}
+
+			hosts.appendLine(machine2Host(server, "servers"));
+		}
+
+		for (final UserDeviceModel user : getNetworkModel().getUserDevices().values()) {
+			hosts.appendLine(machine2Host(user, "users"));
+		}
+
+		for (final InternalOnlyDeviceModel device : getNetworkModel().getInternalOnlyDevices().values()) {
+			hosts.appendLine(machine2Host(device, "internal"));
+		}
+
+		for (final ExternalOnlyDeviceModel device : getNetworkModel().getExternalOnlyDevices().values()) {
+			hosts.appendLine(machine2Host(device, "external"));
+		}
+		units.add(hosts);
 		return units;
+	}
+
+	private String machine2Host(AMachineModel machine, String zone) {
+		String nics = "";
+		for (final NetworkInterfaceModel nic : machine.getNetworkInterfaces()) {
+			nics += nic.getAddress().withoutPrefixLength().toCompressedString() + "/32,";
+		}
+		nics = nics.replaceAll(",$", ""); // Get rid of any trailing comma
+
+		return cleanZone(machine.getLabel()) + " " + zone + ":" + nics;
 	}
 
 	@Override
