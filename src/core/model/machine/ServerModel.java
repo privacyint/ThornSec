@@ -241,7 +241,9 @@ public class ServerModel extends AMachineModel {
 
 		units.addAll(serverConfig());
 
-		units.addAll(this.firewall.getUnits());
+		if (getFirewall() != null) { // Some machines don't have firewalls for me to configure
+			units.addAll(getFirewall().getUnits());
+		}
 		units.addAll(this.bindMounts.getUnits());
 		units.addAll(this.aptSources.getUnits());
 		units.addAll(this.runningProcesses.getUnits());
