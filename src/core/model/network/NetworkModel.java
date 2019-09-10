@@ -130,8 +130,10 @@ public class NetworkModel {
 						final HypervisorData hvData = (HypervisorData) getData().getMachine(MachineType.HYPERVISOR,
 								label);
 
-						for (final ServerData vm : hvData.getVMs()) {
-							registerServiceOnHyperVisor(label, vm.getLabel());
+						if (hvData.getVMs() != null) {
+							for (final ServerData vm : hvData.getVMs()) {
+								registerServiceOnHyperVisor(label, vm.getLabel());
+							}
 						}
 					}
 				}
