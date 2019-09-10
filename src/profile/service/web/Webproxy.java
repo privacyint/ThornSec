@@ -171,7 +171,7 @@ public class Webproxy extends AStructuredProfile {
 				final AMachineModel backendObj = getNetworkModel().getMachineModel(backend);
 
 				final Collection<String> cnames = getNetworkModel().getData().getCNAMEs(backend);
-				final HostName domain = getNetworkModel().getServerModel(backend).getDomain();
+				final HostName domain = backendObj.getDomain();
 				final String logDir = "/var/log/nginx/" + backend + "." + domain + "/";
 
 				units.add(new DirUnit(backend + "_log_dir", "proceed", logDir,
