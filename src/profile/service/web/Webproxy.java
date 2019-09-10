@@ -167,24 +167,24 @@ public class Webproxy extends AStructuredProfile {
 		if (this.liveConfig == null) {
 			Boolean isDefault = true;
 
-			for (final String backend : this.backends) {
-				final AMachineModel backendObj = getNetworkModel().getMachineModel(backend);
+			for (final String backendLabel : this.backends) {
+				final AMachineModel backendObj = getNetworkModel().getMachineModel(backendLabel);
 
-				final Collection<String> cnames = getNetworkModel().getData().getCNAMEs(backend);
+				final Collection<String> cnames = getNetworkModel().getData().getCNAMEs(backendLabel);
 				final HostName domain = backendObj.getDomain();
-				final String logDir = "/var/log/nginx/" + backend + "." + domain + "/";
+				final String logDir = "/var/log/nginx/" + backendLabel + "." + domain + "/";
 
-				units.add(new DirUnit(backend + "_log_dir", "proceed", logDir,
-						"Could not create the directory for " + backend + "'s logs. Nginx will refuse to start."));
+				units.add(new DirUnit(backendLabel + "_log_dir", "proceed", logDir,
+						"Could not create the directory for " + backendLabel + "'s logs. Nginx will refuse to start."));
 				units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addBindPoint(
-						backend + "_tls_certs", "proceed", "/media/metaldata/tls/" + backend,
-						"/media/data/tls/" + backend, "root", "root", "600", "/media/metaldata", false));
+						backendLabel + "_tls_certs", "proceed", "/media/metaldata/tls/" + backendLabel,
+						"/media/data/tls/" + backendLabel, "root", "root", "600", "/media/metaldata", false));
 
 				// Generated from
 				// https://mozilla.github.io/server-side-tls/ssl-config-generator/
 				// (Nginx/Modern) & https://cipherli.st/
-				final FileUnit nginxConf = new FileUnit(backend + "_nginx_conf", "nginx_installed",
-						Nginx.CONF_D_DIRECTORY + "/" + backend + ".conf");
+				final FileUnit nginxConf = new FileUnit(backendLabel + "_nginx_conf", "nginx_installed",
+						Nginx.CONF_D_DIRECTORY + "/" + backendLabel + ".conf");
 				nginxConf.appendLine("server {");
 				nginxConf.appendLine("    listen 443 ssl http2");
 				if (isDefault) {
@@ -193,7 +193,7 @@ public class Webproxy extends AStructuredProfile {
 				}
 				nginxConf.appendLine(";");
 
-				nginxConf.appendLine("    server_name " + backend + "." + domain);
+				nginxConf.appendLine("    server_name " + backendLabel + "." + domain);
 
 				if (cnames != null) {
 					for (final String cname : cnames) {
@@ -212,9 +212,9 @@ public class Webproxy extends AStructuredProfile {
 				// it later
 				nginxConf.appendLine("    include /etc/nginx/includes/ssl_params;");
 				nginxConf.appendLine("    include /etc/nginx/includes/header_params;");
-				nginxConf.appendLine("    ssl_certificate /media/data/tls/" + backend + "/fullchain.pem;");
-				nginxConf.appendLine("    ssl_certificate_key /media/data/tls/" + backend + "/privkey.pem;");
-				nginxConf.appendLine("    ssl_trusted_certificate /media/data/tls/" + backend + "/stapling.pem;");
+				nginxConf.appendLine("    ssl_certificate /media/data/tls/" + backendLabel + "/fullchain.pem;");
+				nginxConf.appendLine("    ssl_certificate_key /media/data/tls/" + backendLabel + "/privkey.pem;");
+				nginxConf.appendLine("    ssl_trusted_certificate /media/data/tls/" + backendLabel + "/stapling.pem;");
 				nginxConf.appendCarriageReturn();
 				nginxConf.appendLine("    location / {");
 				// for (final JsonValue source :
@@ -233,14 +233,14 @@ public class Webproxy extends AStructuredProfile {
 				nginxConf.appendLine("        send_timeout            3000;");
 				nginxConf.appendLine("    }");
 				nginxConf.appendCarriageReturn();
-				nginxConf.appendLine("    include /media/data/nginx_custom_blocks/" + backend + ".conf;");
+				nginxConf.appendLine("    include /media/data/nginx_custom_blocks/" + backendLabel + ".conf;");
 				nginxConf.appendLine("}");
 
 				this.webserver.addLiveConfig(nginxConf);
 
-				units.add(new CustomFileUnit("nginx_custom_block_" + backend,
+				units.add(new CustomFileUnit("nginx_custom_block_" + backendLabel,
 						"nginx_custom_blocks_data_bindpoint_created",
-						"/media/data/nginx_custom_blocks/" + backend + ".conf"));
+						"/media/data/nginx_custom_blocks/" + backendLabel + ".conf"));
 			}
 		} else {
 			this.webserver.addLiveConfig(this.liveConfig);
