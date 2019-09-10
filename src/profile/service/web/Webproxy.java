@@ -195,9 +195,11 @@ public class Webproxy extends AStructuredProfile {
 
 				nginxConf.appendLine("    server_name " + backend + "." + domain);
 
-				for (final String cname : cnames) {
-					nginxConf.appendLine((cname.equals("")) ? " " : " " + cname + ".");
-					nginxConf.appendLine(domain.toNormalizedString());
+				if (cnames != null) {
+					for (final String cname : cnames) {
+						nginxConf.appendLine((cname.equals("")) ? " " : " " + cname + ".");
+						nginxConf.appendLine(domain.toNormalizedString());
+					}
 				}
 
 				nginxConf.appendLine(";");
