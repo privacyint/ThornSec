@@ -95,6 +95,9 @@ public class DiskData extends AData {
 		}
 		if (data.containsKey("size")) {
 			final Integer sizeInMB = StringUtils.stringToMegaBytes(data.getString("size"));
+			if (sizeInMB == null) {
+				throw new InvalidDiskSizeException(data.getString("size"));
+			}
 			setSize(sizeInMB);
 		}
 	}

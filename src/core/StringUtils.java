@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import core.exception.data.InvalidPropertyException;
+
 /**
  * This is a collection of helper methods I've built for doing string operations
  *
@@ -51,12 +53,12 @@ public class StringUtils {
 	 * @param freeformValue String representation of the value
 	 * @return the value in megabytes, (rounded to the nearest whole number)
 	 */
-	public static Integer stringToMegaBytes(String freeformValue) {
+	public static Integer stringToMegaBytes(String freeformValue) throws InvalidPropertyException {
 		Integer returnValue = null;
 
-		final Pattern patt = Pattern.compile("([\\d,]+)([GMK])", Pattern.CASE_INSENSITIVE);
+		final Pattern patt = Pattern.compile("([\\d,]+)([TGMK])", Pattern.CASE_INSENSITIVE);
 		final Matcher matcher = patt.matcher(freeformValue.trim());
-		final Map<String, Integer> powers = Map.of("G", 3, "M", 2, "K", 1);
+		final Map<String, Integer> powers = Map.of("T", 4, "G", 3, "M", 2, "K", 1);
 
 		if (matcher.find()) {
 			final String number = matcher.group(1);
@@ -64,6 +66,12 @@ public class StringUtils {
 			final BigInteger bytes = new BigInteger(number).multiply(BigInteger.valueOf(1024).pow(power));
 
 			returnValue = bytes.divide(BigInteger.valueOf(1024).pow(2)).intValueExact();
+		} else { // At this point it's either just a number, or totally invalid
+			try {
+				return Integer.parseInt(freeformValue);
+			} catch (final NumberFormatException e) {
+				throw new InvalidPropertyException(freeformValue + " cannot be parsed to megabytes");
+			}
 		}
 
 		assert (stringToMegaBytes("1.2g") == 1229);
@@ -73,6 +81,7 @@ public class StringUtils {
 		assert (stringToMegaBytes("10g") == 10240);
 		assert (stringToMegaBytes("abc") == null);
 		assert (stringToMegaBytes("10G") == 10240);
+		assert (stringToMegaBytes("1T") == 1048576);
 
 		return returnValue;
 	}
