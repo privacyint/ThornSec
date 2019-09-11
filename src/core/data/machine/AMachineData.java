@@ -199,28 +199,28 @@ public abstract class AMachineData extends AData {
 						putListenPort(Encapsulation.UDP, Integer.parseInt(port.toString()));
 					}
 				}
+			}
+			if (data.containsKey("allow_forward_to")) {
+				final JsonArray forwards = data.getJsonArray("allow_forward_to");
 
-				if (data.containsKey("allow_forward_to")) {
-					final JsonArray forwards = data.getJsonArray("allow_forward_to");
-
-					for (final JsonValue forward : forwards) {
-						addFoward(((JsonString) forward).getString());
-					}
+				for (final JsonValue forward : forwards) {
+					addFoward(((JsonString) forward).getString());
 				}
-				if (data.containsKey("allow_ingress_from")) {
-					final JsonArray sources = data.getJsonArray("allow_ingress_from");
+			}
+			if (data.containsKey("allow_ingress_from")) {
+				final JsonArray sources = data.getJsonArray("allow_ingress_from");
 
-					for (final JsonValue source : sources) {
-						addIngress(new HostName(((JsonString) source).getString()));
-					}
+				for (final JsonValue source : sources) {
+					addIngress(new HostName(((JsonString) source).getString()));
 				}
-				if (data.containsKey("allow_egress_to")) {
-					final JsonArray destinations = data.getJsonArray("allow_egress_to");
+			}
+			if (data.containsKey("allow_egress_to")) {
+				final JsonArray destinations = data.getJsonArray("allow_egress_to");
 
-					for (final JsonValue destination : destinations) {
-						addEgress(new HostName(((JsonString) destination).getString()));
-					}
+				for (final JsonValue destination : destinations) {
+					addEgress(new HostName(((JsonString) destination).getString()));
 				}
+			}
 			if (data.containsKey("dnat_to")) {
 				final JsonArray destinations = data.getJsonArray("dnat_to");
 
@@ -228,15 +228,19 @@ public abstract class AMachineData extends AData {
 					addDNAT(((JsonString) destination).getString());
 				}
 			}
-				// External IP address?
-				if (data.containsKey("external_ip")) {
-					try {
-						this.externalIPAddresses.add(new IPAddressString(data.getString("external_ip")).toAddress());
+			// External IP address?
+			if (data.containsKey("external_ip")) {
+				try {
+					this.externalIPAddresses.add(new IPAddressString(data.getString("external_ip")).toAddress());
 
-					} catch (final AddressStringException e) {
-						throw new InvalidIPAddressException(data.getString("external_ip") + " on machine " + getLabel()
-								+ " is not a valid IP Address");
-					}
+				} catch (final AddressStringException e) {
+					throw new InvalidIPAddressException(
+							data.getString("external_ip") + " on machine " + getLabel() + " is not a valid IP Address");
+				}
+			}
+		}
+	}
+
 	private void addDNAT(String destination, Integer... ports) throws InvalidPortException {
 		if (this.dnats == null) {
 			this.dnats = new Hashtable<>();
