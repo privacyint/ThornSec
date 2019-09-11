@@ -172,7 +172,38 @@ public class ShorewallFirewall extends AFirewallProfile {
 			hosts.appendLine(machine2Host(device, "external"));
 		}
 		units.add(hosts);
+
+		// Finally, build our FW rules...
+		final FileUnit rules = new FileUnit("shorewall_rules", "shorewall_hosts", CONFIG_BASEDIR + "/rules");
+		rules.appendLine("#This is where we do our specific machine-based rules");
+		rules.appendLine("#Please see http://shorewall.net/manpages/shorewall-rules.html for more details");
+		rules.appendLine("#ACTION       SOURCE       DEST       PROTO       DPORT       SPORT       ORIGINAL_DEST");
+
+		// Let's start with our DNAT
+		for (final MachineType type : getNetworkModel().getMachines().keySet()) {
+			for (final AMachineModel machine : getNetworkModel().getMachines(type).values()) {
+				final Map<String, Collection<Integer>> dnat = machine.getDNAT();
+
+				for (final String destination : dnat.keySet()) {
+					rules.appendLine(makeRule("DNAT", "users", cleanZone(machine.getLabel()), Encapsulation.TCP,
+							dnat.get(destination), "any", destination));
+				}
+
+			}
+		}
+
+		units.add(rules);
+
 		return units;
+	}
+
+	private String makeRule(String action, String source, String destination, Encapsulation protocol,
+			Collection<Integer> dports, String sport, String originalDestination) {
+
+		final String dportsString = dports.stream().map(Object::toString).collect(Collectors.joining(","));
+
+		return action + "    " + source + "    " + destination + "    " + protocol.toString() + "    " + dportsString
+				+ "    " + sport + "    " + originalDestination;
 	}
 
 	private String machine2Host(AMachineModel machine, String zone) {

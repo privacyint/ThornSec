@@ -83,7 +83,7 @@ public abstract class AMachineData extends AData {
 	private Boolean throttled;
 
 	private Map<Encapsulation, Collection<Integer>> listens;
-
+	private Map<String, Collection<Integer>> dnats;
 	private Collection<String> forwards;
 	private Collection<HostName> ingresses;
 	private Collection<HostName> egresses;
@@ -106,6 +106,7 @@ public abstract class AMachineData extends AData {
 
 		this.listens = null;
 
+		this.dnats = null;
 		this.forwards = null;
 		this.ingresses = null;
 		this.egresses = null;
@@ -220,7 +221,13 @@ public abstract class AMachineData extends AData {
 						addEgress(new HostName(((JsonString) destination).getString()));
 					}
 				}
+			if (data.containsKey("dnat_to")) {
+				final JsonArray destinations = data.getJsonArray("dnat_to");
 
+				for (final JsonValue destination : destinations) {
+					addDNAT(((JsonString) destination).getString());
+				}
+			}
 				// External IP address?
 				if (data.containsKey("external_ip")) {
 					try {
@@ -230,9 +237,25 @@ public abstract class AMachineData extends AData {
 						throw new InvalidIPAddressException(data.getString("external_ip") + " on machine " + getLabel()
 								+ " is not a valid IP Address");
 					}
-				}
-			}
+	private void addDNAT(String destination, Integer... ports) throws InvalidPortException {
+		if (this.dnats == null) {
+			this.dnats = new Hashtable<>();
 		}
+
+		Collection<Integer> currentPorts = this.dnats.get(destination);
+
+		if (currentPorts == null) {
+			currentPorts = new HashSet<>();
+		}
+
+		for (final Integer port : ports) {
+			if (((port < 0)) || ((port > 65535))) {
+				throw new InvalidPortException(port);
+			}
+			currentPorts.add(port);
+		}
+
+		this.dnats.put(destination, currentPorts);
 	}
 
 	private void addEgress(HostName destination) {
@@ -337,6 +360,10 @@ public abstract class AMachineData extends AData {
 
 	public final Collection<HostName> getEgresses() {
 		return this.egresses;
+	}
+
+	public Map<String, Collection<Integer>> getDNATs() {
+		return this.dnats;
 	}
 
 	public final Boolean isThrottled() {

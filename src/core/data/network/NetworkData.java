@@ -790,6 +790,16 @@ public class NetworkData extends AData {
 		return forwards;
 	}
 
+	public Map<String, Collection<Integer>> getDNATs(String label) {
+		final Map<String, Collection<Integer>> dnats = getMachine(label).getDNATs();
+
+		if (dnats == null) {
+			return new LinkedHashMap<>();
+		}
+
+		return dnats;
+	}
+
 	public String getFirewallProfile(String label) {
 		// TODO Auto-generated method stub
 		return null;

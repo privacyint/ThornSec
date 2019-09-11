@@ -12,7 +12,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
@@ -60,7 +59,7 @@ public abstract class AMachineModel extends AModel {
 	private Collection<HostName> ingresses;
 	private Collection<HostName> egresses;
 
-	private final Map<String, Collection<Integer>> dnat;
+	private final Map<String, Collection<Integer>> dnats;
 
 	AMachineModel(String label, NetworkModel networkModel)
 			throws AddressException, JsonParsingException, ADataException, IOException {
@@ -90,7 +89,7 @@ public abstract class AMachineModel extends AModel {
 		this.ingresses = getNetworkModel().getData().getIngresses(getLabel());
 		this.egresses = getNetworkModel().getData().getEgresses(getLabel());
 		this.forwards = getNetworkModel().getData().getForwards(getLabel());
-		this.dnat = new Hashtable<>();
+		this.dnats = getNetworkModel().getData().getDNATs(getLabel());
 	}
 
 	final private NetworkInterfaceModel ifaceDataToModel(NetworkInterfaceData ifaceData) {
@@ -162,6 +161,28 @@ public abstract class AMachineModel extends AModel {
 		return this.ingresses;
 	}
 
+	public final void addDNAT(String destination, Integer... ports) throws InvalidPortException {
+		Collection<Integer> dnats = this.dnats.get(destination);
+
+		if (dnats == null) {
+			dnats = new HashSet<>();
+		}
+
+		for (final Integer port : ports) {
+			if ((port < 1) || (port > 65535)) {
+				throw new InvalidPortException(port);
+			}
+
+			dnats.add(port);
+		}
+
+		this.dnats.put(destination, dnats);
+	}
+
+	public final Map<String, Collection<Integer>> getDNAT() {
+		return this.dnats;
+	}
+
 	public final void addListen(Encapsulation enc, Integer... ports) throws InvalidPortException {
 		Collection<Integer> listening = this.listens.get(enc);
 
@@ -206,7 +227,7 @@ public abstract class AMachineModel extends AModel {
 	}
 
 	public final Map<String, Collection<Integer>> getRequiredDnat() {
-		return this.dnat;
+		return this.dnats;
 	}
 
 	public final void addForward(String... destinations) {
@@ -258,11 +279,6 @@ public abstract class AMachineModel extends AModel {
 	public String getIP() {
 		// TODO Auto-generated method stub
 		return null;
-	}
-
-	public void addDnat(String backend) {
-		// TODO Auto-generated method stub
-
 	}
 
 	public MACAddress generateMAC(String iface) {

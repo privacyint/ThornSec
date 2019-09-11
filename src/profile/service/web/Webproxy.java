@@ -263,7 +263,7 @@ public class Webproxy extends AStructuredProfile {
 
 		for (final String backend : getBackends()) {
 			getNetworkModel().getMachineModel(getLabel()).addForward(backend);
-			getNetworkModel().getMachineModel(getLabel()).addDnat(backend);
+			getNetworkModel().getMachineModel(getLabel()).addDNAT(backend, 80, 443);
 		}
 
 		return units;
