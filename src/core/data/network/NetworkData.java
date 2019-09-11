@@ -801,8 +801,12 @@ public class NetworkData extends AData {
 	}
 
 	public String getFirewallProfile(String label) {
-		// TODO Auto-generated method stub
-		return null;
+		String profile = ((ServerData) getMachine(MachineType.SERVER, label)).getFirewallProfile();
+
+		if (profile == null) {
+			profile = this.defaultServiceData.getFirewallProfile();
+		}
+		return profile;
 	}
 
 	public Collection<String> getProfiles(String label) {
