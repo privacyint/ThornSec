@@ -189,14 +189,14 @@ public abstract class AMachineData extends AData {
 					final JsonArray tcp = listens.getJsonArray("tcp");
 
 					for (final JsonValue port : tcp) {
-						putPort(Encapsulation.TCP, Integer.parseInt(port.toString()));
+						putListenPort(Encapsulation.TCP, Integer.parseInt(port.toString()));
 					}
 				}
 				if (listens.containsKey("udp")) {
 					final JsonArray udp = listens.getJsonArray("udp");
 
 					for (final JsonValue port : udp) {
-						putPort(Encapsulation.UDP, Integer.parseInt(port.toString()));
+						putListenPort(Encapsulation.UDP, Integer.parseInt(port.toString()));
 					}
 				}
 
@@ -282,7 +282,7 @@ public abstract class AMachineData extends AData {
 		this.forwards.add(label);
 	}
 
-	private void putPort(Encapsulation encapsulation, Integer... ports) throws InvalidPortException {
+	private void putListenPort(Encapsulation encapsulation, Integer... ports) throws InvalidPortException {
 		if (this.listens == null) {
 			this.listens = new Hashtable<>();
 		}
@@ -389,5 +389,4 @@ public abstract class AMachineData extends AData {
 	public HostName getDomain() {
 		return this.domain;
 	}
-
 }
