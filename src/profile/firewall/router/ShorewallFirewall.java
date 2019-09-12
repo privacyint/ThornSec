@@ -76,14 +76,20 @@ public class ShorewallFirewall extends AFirewallProfile {
 				"#If you're looking for how we assign zones to interfaces, please see " + CONFIG_BASEDIR + "/hosts");
 		interfaces.appendLine("?FORMAT 2");
 		interfaces.appendLine("#zone      interface      options");
-		interfaces.appendLine("-          servers        dhcp,tcpflags,nosmurfs,routefilter,logmartians");
-		interfaces.appendLine("-          users          dhcp,tcpflags,nosmurfs,routefilter,logmartians");
+		interfaces.appendLine("-          " + MachineType.SERVER.toString()
+				+ "        dhcp,tcpflags,nosmurfs,routefilter,logmartians");
+		interfaces.appendLine("-          " + MachineType.USER.toString()
+				+ "          dhcp,tcpflags,nosmurfs,routefilter,logmartians");
 		// TODO: Do we need this admin VLAN?
-		interfaces.appendLine("-          admins         dhcp,tcpflags,nosmurfs,routefilter,logmartians");
-		interfaces.appendLine("-          internal       dhcp,tcpflags,nosmurfs,routefilter,logmartians");
-		interfaces.appendLine("-          external       dhcp,tcpflags,nosmurfs,routefilter,logmartians");
+		interfaces.appendLine("-          " + MachineType.ADMIN.toString()
+				+ "         dhcp,tcpflags,nosmurfs,routefilter,logmartians");
+		interfaces.appendLine("-          " + MachineType.INTERNAL_ONLY.toString()
+				+ "       dhcp,tcpflags,nosmurfs,routefilter,logmartians");
+		interfaces.appendLine("-          " + MachineType.EXTERNAL_ONLY.toString()
+				+ "       dhcp,tcpflags,nosmurfs,routefilter,logmartians");
 		if (getNetworkModel().getData().buildAutoGuest()) {
-			interfaces.appendLine("-          autoguest      dhcp,tcpflags,nosmurfs,routefilter,logmartians");
+			interfaces.appendLine("-          " + MachineType.GUEST.toString()
+					+ "      dhcp,tcpflags,nosmurfs,routefilter,logmartians");
 		}
 		units.add(interfaces);
 
@@ -114,38 +120,38 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our server zone, and give each server its own subzone");
-		zones.appendLine("servers ipv4");
+		zones.appendLine(MachineType.SERVER.toString() + " ipv4");
 		for (final String serverLabel : getNetworkModel().getServers().keySet()) {
-			zones.appendLine(cleanZone(serverLabel) + ":servers ipv4");
+			zones.appendLine(cleanZone(serverLabel) + ":" + MachineType.SERVER.toString() + " ipv4");
 		}
 		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our user zone, and give each user their own subzone");
-		zones.appendLine("users ipv4");
+		zones.appendLine(MachineType.USER.toString() + " ipv4");
 		for (final String userLabel : getNetworkModel().getUserDevices().keySet()) {
-			zones.appendLine(cleanZone(userLabel) + ":users ipv4");
+			zones.appendLine(cleanZone(userLabel) + ":" + MachineType.USER.toString() + " ipv4");
 		}
 
 		// TODO: Do we need an admin zone? Should it be sub-zoned too?
-		zones.appendLine("admins:users ipv4");
+		zones.appendLine(MachineType.ADMIN.toString() + ":" + MachineType.USER.toString() + " ipv4");
 		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our internal only zone, and give each device its own subzone");
-		zones.appendLine("internal ipv4");
+		zones.appendLine(MachineType.INTERNAL_ONLY.toString() + " ipv4");
 		for (final String deviceLabel : getNetworkModel().getInternalOnlyDevices().keySet()) {
-			zones.appendLine(cleanZone(deviceLabel) + ":internal ipv4");
+			zones.appendLine(cleanZone(deviceLabel) + ":" + MachineType.INTERNAL_ONLY.toString() + " ipv4");
 		}
 		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our external only zone, and give each device its own subzone");
-		zones.appendLine("external ipv4");
+		zones.appendLine(MachineType.EXTERNAL_ONLY.toString() + " ipv4");
 		for (final String deviceLabel : getNetworkModel().getExternalOnlyDevices().keySet()) {
-			zones.appendLine(cleanZone(deviceLabel) + ":external ipv4");
+			zones.appendLine(cleanZone(deviceLabel) + ":" + MachineType.EXTERNAL_ONLY.toString() + " ipv4");
 		}
 
 		// Do we want an autoguest network? Build its zone if so
 		if (getNetworkModel().getData().buildAutoGuest()) {
-			zones.appendLine("autoguest:external ipv4");
+			zones.appendLine(MachineType.GUEST.toString() + ":" + MachineType.EXTERNAL_ONLY.toString() + " ipv4");
 		}
 
 		units.add(zones);
@@ -165,19 +171,19 @@ public class ShorewallFirewall extends AFirewallProfile {
 				continue;
 			}
 
-			hosts.appendLine(machine2Host(server, "servers"));
+			hosts.appendLine(machine2Host(server, MachineType.SERVER));
 		}
 
 		for (final UserDeviceModel user : getNetworkModel().getUserDevices().values()) {
-			hosts.appendLine(machine2Host(user, "users"));
+			hosts.appendLine(machine2Host(user, MachineType.USER));
 		}
 
 		for (final InternalOnlyDeviceModel device : getNetworkModel().getInternalOnlyDevices().values()) {
-			hosts.appendLine(machine2Host(device, "internal"));
+			hosts.appendLine(machine2Host(device, MachineType.INTERNAL_ONLY));
 		}
 
 		for (final ExternalOnlyDeviceModel device : getNetworkModel().getExternalOnlyDevices().values()) {
-			hosts.appendLine(machine2Host(device, "external"));
+			hosts.appendLine(machine2Host(device, MachineType.EXTERNAL_ONLY));
 		}
 		units.add(hosts);
 
@@ -205,7 +211,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return units;
 	}
 
-	private String makeRule(String action, String source, String destination, Encapsulation protocol,
+	private String machine2Host(AMachineModel machine, MachineType zone) {
 			Collection<Integer> dports, String sport, String originalDestination) {
 
 		final String dportsString = dports.stream().map(Object::toString).collect(Collectors.joining(","));
@@ -221,7 +227,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		}
 		nics = nics.replaceAll(",$", ""); // Get rid of any trailing comma
 
-		return cleanZone(machine.getLabel()) + " " + zone + ":" + nics;
+		return cleanZone(machine.getLabel()) + " " + zone.toString() + ":" + nics;
 	}
 
 	@Override
