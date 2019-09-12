@@ -9,11 +9,10 @@ package profile.firewall.router;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import core.StringUtils;
-import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
@@ -26,6 +25,7 @@ import core.model.machine.configuration.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 import profile.firewall.AFirewallProfile;
 
 /**
@@ -33,6 +33,9 @@ import profile.firewall.AFirewallProfile;
  * http://shorewall.org/configuration_file_basics.htm
  */
 public class ShorewallFirewall extends AFirewallProfile {
+	public enum Action {
+		ACCEPT, DNAT, DROP, REJECT, REDIRECT;
+	}
 
 	private static String CONFIG_BASEDIR = "/etc/shorewall";
 
@@ -45,8 +48,6 @@ public class ShorewallFirewall extends AFirewallProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("shorewall", "proceed", "shorewall"));
-		// units.add(new DirUnit("shorewall_policies", "shorewall_installed",
-		// CONFIG_BASEDIR + "/policy.d"));
 
 		return units;
 	}
@@ -96,6 +97,12 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return units;
 	}
 
+	/**
+	 * Zones must be a maximum of 10 alpha-numeric chars long
+	 *
+	 * @param zone
+	 * @return valid zone name
+	 */
 	private String cleanZone(String zone) {
 		zone = StringUtils.stringToAlphaNumeric(zone);
 
@@ -120,38 +127,40 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our server zone, and give each server its own subzone");
-		zones.appendLine(MachineType.SERVER.toString() + " ipv4");
+		zones.appendLine(cleanZone(MachineType.SERVER.toString()) + " ipv4");
 		for (final String serverLabel : getNetworkModel().getServers().keySet()) {
-			zones.appendLine(cleanZone(serverLabel) + ":" + MachineType.SERVER.toString() + " ipv4");
+			zones.appendLine(cleanZone(serverLabel) + ":" + cleanZone(MachineType.SERVER.toString()) + " ipv4");
 		}
 		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our user zone, and give each user their own subzone");
-		zones.appendLine(MachineType.USER.toString() + " ipv4");
+		zones.appendLine(cleanZone(MachineType.USER.toString()) + " ipv4");
 		for (final String userLabel : getNetworkModel().getUserDevices().keySet()) {
-			zones.appendLine(cleanZone(userLabel) + ":" + MachineType.USER.toString() + " ipv4");
+			zones.appendLine(cleanZone(userLabel) + ":" + cleanZone(MachineType.USER.toString()) + " ipv4");
 		}
 
 		// TODO: Do we need an admin zone? Should it be sub-zoned too?
-		zones.appendLine(MachineType.ADMIN.toString() + ":" + MachineType.USER.toString() + " ipv4");
+		zones.appendLine(
+				cleanZone(MachineType.ADMIN.toString()) + ":" + cleanZone(MachineType.USER.toString()) + " ipv4");
 		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our internal only zone, and give each device its own subzone");
-		zones.appendLine(MachineType.INTERNAL_ONLY.toString() + " ipv4");
+		zones.appendLine(cleanZone(MachineType.INTERNAL_ONLY.toString()) + " ipv4");
 		for (final String deviceLabel : getNetworkModel().getInternalOnlyDevices().keySet()) {
-			zones.appendLine(cleanZone(deviceLabel) + ":" + MachineType.INTERNAL_ONLY.toString() + " ipv4");
+			zones.appendLine(cleanZone(deviceLabel) + ":" + cleanZone(MachineType.INTERNAL_ONLY.toString()) + " ipv4");
 		}
 		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our external only zone, and give each device its own subzone");
-		zones.appendLine(MachineType.EXTERNAL_ONLY.toString() + " ipv4");
+		zones.appendLine(cleanZone(MachineType.EXTERNAL_ONLY.toString()) + " ipv4");
 		for (final String deviceLabel : getNetworkModel().getExternalOnlyDevices().keySet()) {
-			zones.appendLine(cleanZone(deviceLabel) + ":" + MachineType.EXTERNAL_ONLY.toString() + " ipv4");
+			zones.appendLine(cleanZone(deviceLabel) + ":" + cleanZone(MachineType.EXTERNAL_ONLY.toString()) + " ipv4");
 		}
 
 		// Do we want an autoguest network? Build its zone if so
 		if (getNetworkModel().getData().buildAutoGuest()) {
-			zones.appendLine(MachineType.GUEST.toString() + ":" + MachineType.EXTERNAL_ONLY.toString() + " ipv4");
+			zones.appendLine(cleanZone(MachineType.GUEST.toString()) + ":"
+					+ cleanZone(MachineType.EXTERNAL_ONLY.toString()) + " ipv4");
 		}
 
 		units.add(zones);
@@ -189,38 +198,124 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		// Finally, build our FW rules...
 		final FileUnit rules = new FileUnit("shorewall_rules", "shorewall_hosts", CONFIG_BASEDIR + "/rules");
-		rules.appendLine("#This is where we do our specific machine-based rules");
-		rules.appendLine("#Please see http://shorewall.net/manpages/shorewall-rules.html for more details");
-		rules.appendLine("#ACTION       SOURCE       DEST       PROTO       DPORT       SPORT       ORIGINAL_DEST");
+		rules.appendLine("#This file is just a list of includes, please see the rules_* files");
+		rules.appendLine("#for per-subnet rules");
+		units.add(rules);
 
-		// Let's start with our DNAT
-		for (final MachineType type : getNetworkModel().getMachines().keySet()) {
-			for (final AMachineModel machine : getNetworkModel().getMachines(type).values()) {
-				final Map<String, Collection<Integer>> dnat = machine.getDNAT();
+		// Now iterate through our various zones and build them
+		for (final MachineType zone : List.of(MachineType.ADMIN, MachineType.USER, MachineType.GUEST,
+				MachineType.SERVER, MachineType.INTERNAL_ONLY, MachineType.EXTERNAL_ONLY)) {
+			rules.appendLine("INCLUDE rules_" + zone.toString());
 
-				for (final String destination : dnat.keySet()) {
-					rules.appendLine(makeRule("DNAT", "users", cleanZone(machine.getLabel()), Encapsulation.TCP,
-							dnat.get(destination), "any", destination));
+			final Collection<AMachineModel> machinesInZone = getNetworkModel().getMachines(zone).values();
+
+			final FileUnit zoneRules = new FileUnit(zone.toString() + "_shorewall_rules", "shorewall_rules",
+					CONFIG_BASEDIR + "/rules_" + zone.toString());
+			zoneRules.appendLine("#This file lists our firewall rules for the " + zone.toString() + " zone");
+			zoneRules.appendLine(
+					"#ACTION       SOURCE       DEST       PROTO       DPORT       SPORT       ORIGINAL_DEST");
+
+			for (final AMachineModel machine : machinesInZone) {
+				for (final String label : machine.getDNAT().keySet()) {
+					String source = null;
+					String newDestination = null;
+					String originalDestination = null;
+
+					final String allIPs = machine.getNetworkInterfaces().stream()
+							.map(i -> i.getAddress().withoutPrefixLength().toCompressedString())
+							.collect(Collectors.joining(","));
+
+					originalDestination = cleanZone(label) + ":" + allIPs;
+
+					// If it's *this* machine, needs to be changed to the reserved $FW keyword.
+					if (getNetworkModel().getServerModel(getLabel()).equals(machine)) {
+						source = "all!$FW";
+						newDestination = "$FW";
+					} else {
+						source = "all!" + cleanZone(machine.getLabel());
+						newDestination = cleanZone(machine.getLabel()) + ":" + allIPs;
+					}
+
+					final String proto = "any";
+					final String sport = "-";
+					final String dport = machine.getDNAT().get(label).stream().map(i -> i.toString())
+							.collect(Collectors.joining(","));
+
+					zoneRules.appendLine(
+							makeRule(Action.DNAT, source, newDestination, proto, dport, sport, originalDestination));
+				}
+			}
+
+			zoneRules.appendCarriageReturn();
+			zoneRules.appendLine("#Now let's move onto per-machine rules");
+
+			for (final AMachineModel machine : machinesInZone) {
+				zoneRules.appendLine("?COMMENT " + machine.getLabel());
+
+				for (final HostName source : machine.getIngresses()) {
+					zoneRules.appendLine(makeRule(Action.ACCEPT, "wan:" + source.getHost(),
+							cleanZone(machine.getLabel()), "-", source.getPort().toString(), "-", "-"));
 				}
 
-			}
-		}
+				for (final HostName destination : machine.getEgresses()) {
+					final Integer dport = destination.getPort();
+					String dportString = null;
+					if (dport == null) {
+						dportString = "-";
+					} else {
+						dportString = dport.toString();
+					}
+					zoneRules.appendLine(makeRule(Action.ACCEPT, cleanZone(machine.getLabel()),
+							"wan:" + destination.getHost(), "-", dportString, "-", "-"));
+				}
 
-		units.add(rules);
+				for (final String destination : machine.getForwards()) {
+					zoneRules.appendLine(makeRule(Action.ACCEPT, cleanZone(machine.getLabel()),
+							"wan:" + cleanZone(destination), "-", "-", "-", "-"));
+				}
+
+				zoneRules.appendLine("?COMMENT");
+			}
+
+			units.add(zoneRules);
+		}
 
 		return units;
 	}
 
-	private String machine2Host(AMachineModel machine, MachineType zone) {
-			Collection<Integer> dports, String sport, String originalDestination) {
+	private String makeRule(Action action, String source, String dest, String proto, String dport, String sport,
+			String origDest) {
+		String lines = "";
 
-		final String dportsString = dports.stream().map(Object::toString).collect(Collectors.joining(","));
+		if (origDest == null) {
+			origDest = "-";
+		}
+		if (dport == null) {
+			dport = "-";
+		}
+		if (sport == null) {
+			sport = "-";
+		}
 
-		return action + "    " + source + "    " + destination + "    " + protocol.toString() + "    " + dportsString
-				+ "    " + sport + "    " + originalDestination;
+		// Generate a descriptive comment
+		lines += "?COMMENT " + action.toString() + " traffic from " + source + " to " + dest + ":" + dport;
+		lines += (origDest != "-") ? " instead of " + origDest + "\n" : "\n";
+
+		lines += action.toString() + " " + source + " " + dest + " " + proto + " " + dport + " " + sport + " "
+				+ origDest + "\n";
+		lines += "?COMMENT";
+
+		return lines;
 	}
 
-	private String machine2Host(AMachineModel machine, String zone) {
+	/**
+	 * Parses a Machine into a shorewall host file
+	 *
+	 * @param machine
+	 * @param zone
+	 * @return
+	 */
+	private String machine2Host(AMachineModel machine, MachineType zone) {
 		String nics = "";
 		for (final NetworkInterfaceModel nic : machine.getNetworkInterfaces()) {
 			nics += nic.getAddress().withoutPrefixLength().toCompressedString() + "/32,";
