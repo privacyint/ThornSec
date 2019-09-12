@@ -29,7 +29,6 @@ import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
-import profile.type.Router;
 
 /**
  * Configure and set up our various different networks, and offer IP addresses
@@ -70,15 +69,20 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	@Override
 	protected void distributeIPs() throws AThornSecException {
 
-		buildNet(MachineType.SERVER.toString(), new IPAddressString(Router.SERVERS_NETWORK).getAddress(),
+		buildNet(MachineType.SERVER.toString(),
+				new IPAddressString(getNetworkModel().getData().getServerSubnet()).getAddress(),
 				getNetworkModel().getMachines(MachineType.SERVER).values());
-		buildNet(MachineType.USER.toString(), new IPAddressString(Router.USERS_NETWORK).getAddress(),
+		buildNet(MachineType.USER.toString(),
+				new IPAddressString(getNetworkModel().getData().getUserSubnet()).getAddress(),
 				getNetworkModel().getMachines(MachineType.USER).values());
-		buildNet(MachineType.ADMIN.toString(), new IPAddressString(Router.ADMINS_NETWORK).getAddress(),
+		buildNet(MachineType.ADMIN.toString(),
+				new IPAddressString(getNetworkModel().getData().getAdminSubnet()).getAddress(),
 				getNetworkModel().getMachines(MachineType.ADMIN).values());
-		buildNet(MachineType.INTERNAL_ONLY.toString(), new IPAddressString(Router.INTERNALS_NETWORK).getAddress(),
+		buildNet(MachineType.INTERNAL_ONLY.toString(),
+				new IPAddressString(getNetworkModel().getData().getInternalSubnet()).getAddress(),
 				getNetworkModel().getMachines(MachineType.INTERNAL_ONLY).values());
-		buildNet(MachineType.EXTERNAL_ONLY.toString(), new IPAddressString(Router.EXTERNALS_NETWORK).getAddress(),
+		buildNet(MachineType.EXTERNAL_ONLY.toString(),
+				new IPAddressString(getNetworkModel().getData().getExternalSubnet()).getAddress(),
 				getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).values());
 		// TODO: Guest network pool
 	}

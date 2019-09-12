@@ -32,7 +32,6 @@ import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
 import inet.ipaddr.IncompatibleAddressException;
-import profile.type.Router;
 
 /**
  * Creates and configures an internal, recursive DNS server for your network.
@@ -66,11 +65,11 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		final Collection<IPAddress> ips = new ArrayList<>();
 
 		try {
-			ips.add(new IPAddressString(Router.SERVERS_NETWORK).toAddress());
-			ips.add(new IPAddressString(Router.USERS_NETWORK).toAddress());
-			ips.add(new IPAddressString(Router.INTERNALS_NETWORK).toAddress());
-			ips.add(new IPAddressString(Router.EXTERNALS_NETWORK).toAddress());
-			ips.add(new IPAddressString(Router.AUTOGUEST_NETWORK).toAddress());
+			ips.add(new IPAddressString(getNetworkModel().getData().getAdminSubnet()).toAddress());
+			ips.add(new IPAddressString(getNetworkModel().getData().getUserSubnet()).toAddress());
+			ips.add(new IPAddressString(getNetworkModel().getData().getGuestSubnet()).toAddress());
+			ips.add(new IPAddressString(getNetworkModel().getData().getInternalSubnet()).toAddress());
+			ips.add(new IPAddressString(getNetworkModel().getData().getExternalSubnet()).toAddress());
 		} catch (AddressStringException | IncompatibleAddressException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

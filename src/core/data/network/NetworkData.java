@@ -73,6 +73,13 @@ public class NetworkData extends AData {
 	 * To make this easier to read, please use a prefix which shows how far down the
 	 * inheritance chain we can override this
 	 */
+	private static final String NETWORK_SERVER_SUBNET = "10.0.0.0/8";
+	private static final String NETWORK_USER_SUBNET = "172.16.0.0/16";
+	private static final String NETWORK_ADMIN_SUBNET = "172.20.0.0/16";
+	private static final String NETWORK_INTERNAL_SUBNET = "172.24.0.0/16";
+	private static final String NETWORK_EXTERNAL_SUBNET = "172.28.0.0/16";
+	private static final String NETWORK_GUEST_SUBNET = "172.31.0.0/16";
+
 	private static final Boolean NETWORK_ADBLOCKING = false;
 	private static final Boolean NETWORK_AUTOGENPASSWDS = false;
 	private static final Boolean NETWORK_VPNONLY = false;
@@ -110,6 +117,8 @@ public class NetworkData extends AData {
 
 	private Collection<HostName> upstreamDNS;
 
+	private final Map<String, String> subnets;
+
 	private final ServiceData defaultServiceData;
 	private final HypervisorData defaultHypervisorData;
 
@@ -134,6 +143,8 @@ public class NetworkData extends AData {
 		this.autoGuest = null;
 
 		this.upstreamDNS = null;
+
+		this.subnets = new Hashtable<>();
 
 		this.defaultServiceData = new ServiceData("");
 		this.defaultHypervisorData = new HypervisorData("");
@@ -244,6 +255,15 @@ public class NetworkData extends AData {
 		this.autoGenPassphrases = networkJSONData.getBoolean("autogen_passwds", NETWORK_AUTOGENPASSWDS);
 		this.vpnOnly = networkJSONData.getBoolean("vpn_only", NETWORK_VPNONLY);
 		this.autoGuest = networkJSONData.getBoolean("guest_network", NETWORK_AUTOGUEST);
+
+		// Set subnets as required
+		if (networkJSONData.containsKey("subnets")) {
+			final JsonObject jsonSubnets = networkJSONData.getJsonObject("subnets");
+
+			for (final String subnet : jsonSubnets.keySet()) {
+				this.subnets.put(subnet, jsonSubnets.getJsonString(subnet).toString());
+			}
+		}
 
 		// Look for "servers" first
 		if (networkJSONData.containsKey("servers")) {
@@ -539,6 +559,38 @@ public class NetworkData extends AData {
 		}
 
 		return port;
+	}
+
+	public Map<String, String> getSubnets() {
+		return this.subnets;
+	}
+
+	public String getSubnet(MachineType subnet, String defaultSubnet) {
+		return this.subnets.getOrDefault(subnet.toString(), defaultSubnet);
+	}
+
+	public String getUserSubnet() {
+		return getSubnet(MachineType.USER, NETWORK_USER_SUBNET);
+	}
+
+	public String getAdminSubnet() {
+		return getSubnet(MachineType.ADMIN, NETWORK_ADMIN_SUBNET);
+	}
+
+	public String getGuestSubnet() {
+		return getSubnet(MachineType.GUEST, NETWORK_GUEST_SUBNET);
+	}
+
+	public String getServerSubnet() {
+		return getSubnet(MachineType.SERVER, NETWORK_SERVER_SUBNET);
+	}
+
+	public String getInternalSubnet() {
+		return getSubnet(MachineType.INTERNAL_ONLY, NETWORK_INTERNAL_SUBNET);
+	}
+
+	public String getExternalSubnet() {
+		return getSubnet(MachineType.EXTERNAL_ONLY, NETWORK_EXTERNAL_SUBNET);
 	}
 
 	public Integer getSSHPort(String server) {
