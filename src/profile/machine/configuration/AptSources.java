@@ -82,9 +82,9 @@ public class AptSources extends AStructuredProfile {
 		final FileUnit aptSources = new FileUnit("apt_debian_sources", "proceed", "/etc/apt/sources.list");
 		units.add(aptSources);
 
-		aptSources.appendLine("deb http://" + this.debianRepo + this.debianDir + " buster main");
+		aptSources.appendLine("deb " + this.debianRepo + this.debianDir + " buster main");
 		aptSources.appendLine("deb http://security.debian.org/ buster/updates main");
-		aptSources.appendLine("deb http://" + this.debianRepo + this.debianDir + " buster-updates main");
+		aptSources.appendLine("deb " + this.debianRepo + this.debianDir + " buster-updates main");
 
 		return units;
 	}
