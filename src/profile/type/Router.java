@@ -48,13 +48,6 @@ import profile.dns.UnboundDNSServer;
  * If you want to make changes in here, you'll have a lot of reading to do :)!
  */
 public class Router extends AStructuredProfile {
-	public final static String SERVERS_NETWORK = "10.0.0.0/8";
-	public final static String USERS_NETWORK = "172.16.0.0/16";
-	public final static String ADMINS_NETWORK = "172.20.0.0/16";
-	public final static String INTERNALS_NETWORK = "172.24.0.0/16";
-	public final static String EXTERNALS_NETWORK = "172.28.0.0/16";
-	public final static String AUTOGUEST_NETWORK = "172.31.0.0/16";
-
 	private final ADNSServerProfile dnsServer;
 	private final ADHCPServerProfile dhcpServer;
 
@@ -65,13 +58,13 @@ public class Router extends AStructuredProfile {
 
 		// Start by building the VLANs we'll be hanging all of our networking off
 		this.macVLANs = new LinkedHashMap<>();
-		addMACVLAN(MachineType.SERVER, SERVERS_NETWORK);
-		addMACVLAN(MachineType.USER, USERS_NETWORK);
-		addMACVLAN(MachineType.ADMIN, ADMINS_NETWORK);
-		addMACVLAN(MachineType.INTERNAL_ONLY, INTERNALS_NETWORK);
-		addMACVLAN(MachineType.EXTERNAL_ONLY, EXTERNALS_NETWORK);
+		addMACVLAN(MachineType.SERVER, getNetworkModel().getData().getServerSubnet());
+		addMACVLAN(MachineType.USER, getNetworkModel().getData().getUserSubnet());
+		addMACVLAN(MachineType.ADMIN, getNetworkModel().getData().getAdminSubnet());
+		addMACVLAN(MachineType.INTERNAL_ONLY, getNetworkModel().getData().getInternalSubnet());
+		addMACVLAN(MachineType.EXTERNAL_ONLY, getNetworkModel().getData().getExternalSubnet());
 		if (networkModel.getData().buildAutoGuest()) {
-			addMACVLAN(MachineType.GUEST, AUTOGUEST_NETWORK);
+			addMACVLAN(MachineType.GUEST, getNetworkModel().getData().getGuestSubnet());
 		}
 
 		// Now create our DHCP Server.
