@@ -9,8 +9,12 @@ package profile.firewall.router;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import core.StringUtils;
+import core.data.machine.AMachineData.Encapsulation;
+import core.data.machine.AMachineData.MachineType;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
@@ -24,6 +28,10 @@ import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import profile.firewall.AFirewallProfile;
 
+/**
+ * For more information on this Firewall, please see
+ * http://shorewall.org/configuration_file_basics.htm
+ */
 public class ShorewallFirewall extends AFirewallProfile {
 
 	private static String CONFIG_BASEDIR = "/etc/shorewall";
@@ -69,9 +77,6 @@ public class ShorewallFirewall extends AFirewallProfile {
 		interfaces.appendLine("?FORMAT 2");
 		interfaces.appendLine("#zone      interface      options");
 		interfaces.appendLine("-          servers        dhcp,tcpflags,nosmurfs,routefilter,logmartians");
-		// single iface...(!)
-		// interfaces.appendLine("- " + getNetworkModel().getServerModel(getLabel()));
-		// // TODO
 		interfaces.appendLine("-          users          dhcp,tcpflags,nosmurfs,routefilter,logmartians");
 		// TODO: Do we need this admin VLAN?
 		interfaces.appendLine("-          admins         dhcp,tcpflags,nosmurfs,routefilter,logmartians");
@@ -106,12 +111,14 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zones.appendLine("#zone type");
 		zones.appendLine("fw    firewall");
 		zones.appendLine("wan   ipv4");
+		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our server zone, and give each server its own subzone");
 		zones.appendLine("servers ipv4");
 		for (final String serverLabel : getNetworkModel().getServers().keySet()) {
 			zones.appendLine(cleanZone(serverLabel) + ":servers ipv4");
 		}
+		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our user zone, and give each user their own subzone");
 		zones.appendLine("users ipv4");
@@ -121,12 +128,14 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		// TODO: Do we need an admin zone? Should it be sub-zoned too?
 		zones.appendLine("admins:users ipv4");
+		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our internal only zone, and give each device its own subzone");
 		zones.appendLine("internal ipv4");
 		for (final String deviceLabel : getNetworkModel().getInternalOnlyDevices().keySet()) {
 			zones.appendLine(cleanZone(deviceLabel) + ":internal ipv4");
 		}
+		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our external only zone, and give each device its own subzone");
 		zones.appendLine("external ipv4");
