@@ -261,7 +261,7 @@ public class NetworkData extends AData {
 			final JsonObject jsonSubnets = networkJSONData.getJsonObject("subnets");
 
 			for (final String subnet : jsonSubnets.keySet()) {
-				this.subnets.put(subnet, jsonSubnets.getJsonString(subnet).toString());
+				this.subnets.put(subnet, jsonSubnets.getJsonString(subnet).getString());
 			}
 		}
 
