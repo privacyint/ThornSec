@@ -68,18 +68,17 @@ public class ShorewallFirewall extends AFirewallProfile {
 				"#If you're looking for how we assign zones to interfaces, please see " + CONFIG_BASEDIR + "/hosts");
 		interfaces.appendLine("?FORMAT 2");
 		interfaces.appendLine("#zone      interface      options");
-		// The below zone is currently a catch-all so we can create Routers with a
+		interfaces.appendLine("-          servers        dhcp,tcpflags,nosmurfs,routefilter,logmartians");
 		// single iface...(!)
 		// interfaces.appendLine("- " + getNetworkModel().getServerModel(getLabel()));
 		// // TODO
-		interfaces.appendLine("-          servers        tcpflags,nosmurfs,routefilter,logmartians");
 		interfaces.appendLine("-          users          dhcp,tcpflags,nosmurfs,routefilter,logmartians");
 		// TODO: Do we need this admin VLAN?
-		interfaces.appendLine("-          admins         tcpflags,nosmurfs,routefilter,logmartians");
+		interfaces.appendLine("-          admins         dhcp,tcpflags,nosmurfs,routefilter,logmartians");
 		interfaces.appendLine("-          internal       dhcp,tcpflags,nosmurfs,routefilter,logmartians");
 		interfaces.appendLine("-          external       dhcp,tcpflags,nosmurfs,routefilter,logmartians");
 		if (getNetworkModel().getData().buildAutoGuest()) {
-			interfaces.appendLine("-          autoguest      tcpflags,nosmurfs,routefilter,logmartians");
+			interfaces.appendLine("-          autoguest      dhcp,tcpflags,nosmurfs,routefilter,logmartians");
 		}
 		units.add(interfaces);
 
