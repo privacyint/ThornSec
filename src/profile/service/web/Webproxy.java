@@ -186,12 +186,12 @@ public class Webproxy extends AStructuredProfile {
 				final FileUnit nginxConf = new FileUnit(backendLabel + "_nginx_conf", "nginx_installed",
 						Nginx.CONF_D_DIRECTORY + "/" + backendLabel + ".conf");
 				nginxConf.appendLine("server {");
-				nginxConf.appendLine("    listen 443 ssl http2");
+				nginxConf.appendText("\tlisten 443 ssl http2");
 				if (isDefault) {
-					nginxConf.appendLine(" default"); // We need this to be here, or it'll crap out :'(
+					nginxConf.appendText(" default"); // We need this to be here, or it'll crap out :'(
 					isDefault = false;
 				}
-				nginxConf.appendLine(";");
+				nginxConf.appendText(";");
 
 				nginxConf.appendLine("    server_name " + backendLabel + "." + domain);
 

@@ -63,6 +63,15 @@ public class FileUnit extends SimpleUnit {
 	}
 
 	/**
+	 * Append text to this FileUnit, without a trailing carriage return
+	 * 
+	 * @param text
+	 */
+	public final void appendText(String text) {
+		this.appendLine(text, false);
+	}
+
+	/**
 	 * Append a line of text to this FileUnit.
 	 *
 	 * @param line
