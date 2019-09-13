@@ -135,17 +135,16 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		if (getNetworkModel().getData().adBlocking()) {
 			unboundConf.appendLine("\tinclude: \\\"/etc/unbound/unbound.conf.d/adblock.zone\\\"");
 		}
-		// rDNS
-		// TODO: no hardcoded IP address
-		unboundConf.appendLine("\tlocal-zone: \\\"10.in-addr.arpa.\\\" nodefault");
-		unboundConf.appendLine("\tstub-zone:");
-		unboundConf.appendLine("\t\tname: \\\"10.in-addr.arpa.\\\"");
-		unboundConf.appendLine("\t\tstub-addr: 10.0.0.1");
 		// Zone related stuff
 		for (final HostName zone : this.zones.keySet()) {
 			unboundConf.appendLine("\tprivate-domain: \\\"" + zone.getHost() + "\\\"");
 			unboundConf.appendLine("\tinclude: \\\"/etc/unbound/unbound.conf.d/" + zone.getHost() + ".zone\\\"");
 		}
+		// rDNS
+		// unboundConf.appendLine("\tlocal-zone: \\\"10.in-addr.arpa.\\\" nodefault");
+		// unboundConf.appendLine("\tstub-zone:");
+		// unboundConf.appendLine("\t\tname: \\\"10.in-addr.arpa.\\\"");
+		// unboundConf.appendLine("\t\tstub-addr: 10.0.0.1");
 		// Upstream DNS servers
 		unboundConf.appendLine("\tforward-zone:");
 		unboundConf.appendLine("\t\tname: \\\".\\\"");
