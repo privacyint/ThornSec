@@ -289,8 +289,13 @@ public class ShorewallFirewall extends AFirewallProfile {
 			String origDest) {
 		String lines = "";
 
+		if (dest.equals(getLabel())) {
+			dest = "\\\\$FW";
+		}
 		if (origDest == null) {
 			origDest = "-";
+		} else if (origDest.equals(getLabel())) {
+			origDest = "\\\\$FW";
 		}
 		if (dport == null) {
 			dport = "-";
