@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import core.StringUtils;
+import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
@@ -213,36 +214,35 @@ public class ShorewallFirewall extends AFirewallProfile {
 					CONFIG_BASEDIR + "/rules_" + zone.toString());
 			zoneRules.appendLine("#This file lists our firewall rules for the " + zone.toString() + " zone");
 			zoneRules.appendLine(
-					"#ACTION       SOURCE       DEST       PROTO       DPORT       SPORT       ORIGINAL_DEST");
+					"#ACTION       SOURCE       DEST[zone:ip]       PROTO       DPORT       SPORT       ORIGINAL_DEST[ip]");
 
 			for (final AMachineModel machine : machinesInZone) {
 				for (final String label : machine.getDNAT().keySet()) {
 					String source = null;
-					String newDestination = null;
-					String originalDestination = null;
+					String dest = null;
+					String origDest = null;
 
-					final String allIPs = machine.getNetworkInterfaces().stream()
+					final String allIPs = getNetworkModel().getMachineModel(label).getNetworkInterfaces().stream()
 							.map(i -> i.getAddress().withoutPrefixLength().toCompressedString())
 							.collect(Collectors.joining(","));
 
-					originalDestination = cleanZone(label) + ":" + allIPs;
+					origDest = allIPs;
 
 					// If it's *this* machine, needs to be changed to the reserved $FW keyword.
 					if (getNetworkModel().getServerModel(getLabel()).equals(machine)) {
 						source = "all!$FW";
-						newDestination = "$FW";
+						dest = "$FW";
 					} else {
 						source = "all!" + cleanZone(machine.getLabel());
-						newDestination = cleanZone(machine.getLabel()) + ":" + allIPs;
+						dest = cleanZone(machine.getLabel()) + ":" + allIPs;
 					}
 
-					final String proto = "any";
+					final String proto = Encapsulation.TCP.toString().toLowerCase();
 					final String sport = "-";
 					final String dport = machine.getDNAT().get(label).stream().map(i -> i.toString())
 							.collect(Collectors.joining(","));
 
-					zoneRules.appendLine(
-							makeRule(Action.DNAT, source, newDestination, proto, dport, sport, originalDestination));
+					zoneRules.appendLine(makeRule(Action.DNAT, source, dest, proto, dport, sport, origDest));
 				}
 			}
 
@@ -253,8 +253,9 @@ public class ShorewallFirewall extends AFirewallProfile {
 				zoneRules.appendLine("?COMMENT " + machine.getLabel());
 
 				for (final HostName source : machine.getIngresses()) {
-					zoneRules.appendLine(makeRule(Action.ACCEPT, "wan:" + source.getHost(),
-							cleanZone(machine.getLabel()), "-", source.getPort().toString(), "-", "-"));
+					zoneRules.appendLine(
+							makeRule(Action.ACCEPT, "wan:" + source.getHost(), cleanZone(machine.getLabel()),
+									Encapsulation.TCP.toString().toLowerCase(), source.getPort().toString(), "-", "-"));
 				}
 
 				for (final HostName destination : machine.getEgresses()) {
@@ -265,13 +266,14 @@ public class ShorewallFirewall extends AFirewallProfile {
 					} else {
 						dportString = dport.toString();
 					}
-					zoneRules.appendLine(makeRule(Action.ACCEPT, cleanZone(machine.getLabel()),
-							"wan:" + destination.getHost(), "-", dportString, "-", "-"));
+					zoneRules.appendLine(
+							makeRule(Action.ACCEPT, cleanZone(machine.getLabel()), "wan:" + destination.getHost(),
+									Encapsulation.TCP.toString().toLowerCase(), dportString, "-", "-"));
 				}
 
 				for (final String destination : machine.getForwards()) {
-					zoneRules.appendLine(makeRule(Action.ACCEPT, cleanZone(machine.getLabel()),
-							"wan:" + cleanZone(destination), "-", "-", "-", "-"));
+					zoneRules.appendLine(makeRule(Action.ACCEPT, cleanZone(machine.getLabel()), cleanZone(destination),
+							Encapsulation.TCP.toString().toLowerCase(), "-", "-", "-"));
 				}
 
 				zoneRules.appendLine("?COMMENT");
