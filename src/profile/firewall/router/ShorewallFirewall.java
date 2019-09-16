@@ -230,8 +230,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 					// If it's *this* machine, needs to be changed to the reserved $FW keyword.
 					if (getNetworkModel().getServerModel(getLabel()).equals(machine)) {
-						source = "all!$FW";
-						dest = "$FW";
+						source = "all!\\\\$FW";
+						dest = "\\\\$FW";
 					} else {
 						source = "all!" + cleanZone(machine.getLabel());
 						dest = cleanZone(machine.getLabel()) + ":" + allIPs;
