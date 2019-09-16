@@ -340,6 +340,11 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 	@Override
 	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
+		for (final HostName upstreamDNSServer : getNetworkModel().getData().getUpstreamDNSServers()) {
+			getNetworkModel().getServerModel(getLabel()).addEgress(upstreamDNSServer);
+
+		}
+
 		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 53);
 		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.UDP, 53);
 
