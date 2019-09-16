@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import core.StringUtils;
 import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
+import core.exception.AThornSecException;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
@@ -252,12 +253,14 @@ public class ShorewallFirewall extends AFirewallProfile {
 			for (final AMachineModel machine : machinesInZone) {
 				zoneRules.appendLine("?COMMENT " + machine.getLabel());
 
+				// Ingresses
 				for (final HostName source : machine.getIngresses()) {
 					zoneRules.appendLine(
 							makeRule(Action.ACCEPT, "wan:" + source.getHost(), cleanZone(machine.getLabel()),
 									Encapsulation.TCP.toString().toLowerCase(), source.getPort().toString(), "-", "-"));
 				}
 
+				// Egresses
 				for (final HostName destination : machine.getEgresses()) {
 					final Integer dport = destination.getPort();
 					String dportString = null;
@@ -271,10 +274,13 @@ public class ShorewallFirewall extends AFirewallProfile {
 									Encapsulation.TCP.toString().toLowerCase(), dportString, "-", "-"));
 				}
 
+				// Forwards
 				for (final String destination : machine.getForwards()) {
 					zoneRules.appendLine(makeRule(Action.ACCEPT, cleanZone(machine.getLabel()), cleanZone(destination),
 							Encapsulation.TCP.toString().toLowerCase(), "-", "-", "-"));
 				}
+
+				// TODO: listen rules
 
 				zoneRules.appendLine("?COMMENT");
 			}
