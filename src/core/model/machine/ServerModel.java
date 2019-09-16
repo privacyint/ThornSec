@@ -178,9 +178,12 @@ public class ServerModel extends AMachineModel {
 			addIngress("*");
 		}
 
-		addEgress("cdn.debian.net:80,443");
-		addEgress("security-cdn.debian.org:80,443");
-		addEgress("prod.debian.map.fastly.net:80,443");
+		addEgress("cdn.debian.net:80");
+		addEgress("security-cdn.debian.org:80");
+		addEgress("prod.debian.map.fastly.net:80");
+		addEgress("cdn.debian.net:443");
+		addEgress("security-cdn.debian.org:443");
+		addEgress("prod.debian.map.fastly.net:443");
 		addEgress("*:25");
 
 		return null;

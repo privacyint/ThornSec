@@ -71,7 +71,8 @@ public class ChrootJessie extends AStructuredProfile {
 	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("deb.debian.org:80,443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("deb.debian.org:80");
+		getNetworkModel().getServerModel(getLabel()).addEgress("deb.debian.org:443");
 
 		return units;
 	}

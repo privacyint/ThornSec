@@ -223,10 +223,13 @@ public class Etherpad extends AStructuredProfile {
 		units.addAll(this.db.getPersistentFirewall());
 
 		// Let's open this box up to most of the internet.
-		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
-		getNetworkModel().getServerModel(getLabel()).addEgress("etherpad.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("beta.etherpad.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("code.jquery.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.github.com:443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.etherpad.org:80");
+		getNetworkModel().getServerModel(getLabel()).addEgress("beta.etherpad.org:80");
+		getNetworkModel().getServerModel(getLabel()).addEgress("code.jquery.com:80");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.etherpad.org:443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("beta.etherpad.org:443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("code.jquery.com:443");
 
 		return units;
 	}

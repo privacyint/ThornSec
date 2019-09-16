@@ -107,7 +107,7 @@ public class CiviCRM extends AStructuredProfile {
 
 		getNetworkModel().getServerModel(getLabel()).addEgress("download.civicrm.org");
 		getNetworkModel().getServerModel(getLabel()).addEgress("latest.civicrm.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("civicrm.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.civicrm.org");
 		getNetworkModel().getServerModel(getLabel()).addEgress("storage.googleapis.com");
 
 		units.addAll(this.db.getPersistentFirewall());

@@ -160,10 +160,10 @@ public class Drupal8 extends AStructuredProfile {
 	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("drupal.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("packagist.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.drupal.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.packagist.org");
 		getNetworkModel().getServerModel(getLabel()).addEgress("api.github.com");
-		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.github.com");
 		getNetworkModel().getServerModel(getLabel()).addEgress("codeload.github.com");
 
 		units.addAll(this.lempStack.getPersistentFirewall());

@@ -227,7 +227,7 @@ public class Redmine extends AStructuredProfile {
 		units.addAll(this.webserver.getPersistentFirewall());
 		units.addAll(this.db.getPersistentFirewall());
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("rubygems.org:443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.rubygems.org:443");
 
 		return units;
 	}
