@@ -333,7 +333,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws ARuntimeException {
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
+		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 53);
+		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.UDP, 53);
+
 		return new ArrayList<>();
 	}
 
