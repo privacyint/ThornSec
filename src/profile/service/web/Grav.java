@@ -142,7 +142,8 @@ public class Grav extends AStructuredProfile {
 	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("getgrav.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.getgrav.com:443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.getgrav.com:80");
 
 		units.addAll(this.webserver.getPersistentFirewall());
 

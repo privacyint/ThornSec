@@ -190,7 +190,8 @@ public class Nginx extends AStructuredProfile {
 
 		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 80);
 		// Allow the server to call out to nginx.org to download mainline
-		getNetworkModel().getServerModel(getLabel()).addEgress("nginx.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.nginx.org:80");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.nginx.org:443");
 
 		return units;
 	}

@@ -192,10 +192,10 @@ public class OpenSocial extends AStructuredProfile {
 	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("packagist.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.packagist.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.github.com");
 		getNetworkModel().getServerModel(getLabel()).addEgress("packages.drupal.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("asset-packagist.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.asset-packagist.org");
 		getNetworkModel().getServerModel(getLabel()).addEgress("api.github.com");
 		getNetworkModel().getServerModel(getLabel()).addEgress("codeload.github.com");
 		getNetworkModel().getServerModel(getLabel()).addEgress("git.drupal.org");

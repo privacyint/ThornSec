@@ -258,7 +258,8 @@ public class Webproxy extends AStructuredProfile {
 
 		units.addAll(this.webserver.getPersistentFirewall());
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("check.torproject.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("check.torproject.org:443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("check.torproject.org:80");
 		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 443);
 
 		for (final String backend : getBackends()) {

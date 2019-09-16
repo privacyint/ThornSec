@@ -145,7 +145,7 @@ public class Yourls extends AStructuredProfile {
 
 		units.addAll(this.lempStack.getPersistentFirewall());
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.github.com");
 
 		return units;
 	}

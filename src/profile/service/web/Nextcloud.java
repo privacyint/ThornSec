@@ -237,12 +237,12 @@ public class Nextcloud extends AStructuredProfile {
 	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("nextcloud.com");
-		getNetworkModel().getServerModel(getLabel()).addEgress("apps.nextcloud.com");
-		getNetworkModel().getServerModel(getLabel()).addEgress("download.nextcloud.com");
-		getNetworkModel().getServerModel(getLabel()).addEgress("updates.nextcloud.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.nextcloud.com:443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("apps.nextcloud.com:443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("download.nextcloud.com:443");
+		getNetworkModel().getServerModel(getLabel()).addEgress("updates.nextcloud.com:443");
 		// It requires opening to the wider web anyway :(
-		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.github.com:443");
 
 		units.addAll(this.lempStack.getPersistentFirewall());
 

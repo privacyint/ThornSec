@@ -91,7 +91,7 @@ public class HyperVisor extends AStructuredProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addEgress("gensho.ftp.acc.umu.se");
-		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("www.github.com");
 
 		return units;
 	}

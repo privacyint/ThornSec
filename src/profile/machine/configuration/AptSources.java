@@ -117,7 +117,7 @@ public class AptSources extends AStructuredProfile {
 
 	public final void addAptSource(String name, String sourceLine, String keyserver, String fingerprint)
 			throws InvalidServerModelException {
-		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName(keyserver + "11371"));
+		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName(keyserver + ":11371"));
 
 		this.addAptSource(name, sourceLine);
 		addPGPKey(keyserver, fingerprint);
