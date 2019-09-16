@@ -92,7 +92,7 @@ public class SSH extends AStructuredProfile {
 		sshdConf.appendLine("AcceptEnv LANG LC_*");
 		sshdConf.appendLine(
 				"# Log sftp level file access (read/write/etc.) that would not be easily logged otherwise.");
-		sshdConf.appendLine("Subsystem sftp /usr/lib/ssh/sftp-server -f AUTHPRIV -l INFO");
+		sshdConf.appendLine("Subsystem sftp /usr/lib/openssh/sftp-server -f AUTHPRIV -l INFO");
 		sshdConf.appendLine("UsePAM yes");
 		sshdConf.appendLine("Banner /etc/ssh/sshd_banner");
 		sshdConf.appendLine("MaxSessions 1");
