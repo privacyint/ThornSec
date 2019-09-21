@@ -9,6 +9,7 @@ package profile.firewall;
 
 import java.util.Collection;
 
+import core.exception.AThornSecException;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
@@ -35,7 +36,7 @@ public abstract class AFirewallProfile extends AStructuredProfile {
 	public abstract Collection<IUnit> getLiveConfig() throws ARuntimeException;
 
 	@Override
-	public abstract Collection<IUnit> getPersistentFirewall() throws ARuntimeException;
+	public abstract Collection<IUnit> getPersistentFirewall() throws AThornSecException;
 
 	@Override
 	public abstract Collection<IUnit> getLiveFirewall() throws ARuntimeException;

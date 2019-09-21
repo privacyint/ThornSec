@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import core.StringUtils;
 import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
+import core.exception.AThornSecException;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
@@ -230,8 +231,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 					// If it's *this* machine, needs to be changed to the reserved $FW keyword.
 					if (getNetworkModel().getServerModel(getLabel()).equals(machine)) {
-						source = "all!$FW";
-						dest = "$FW";
+						source = "all!\\\\$FW";
+						dest = "\\\\$FW";
 					} else {
 						source = "all!" + cleanZone(machine.getLabel());
 						dest = cleanZone(machine.getLabel()) + ":" + allIPs;
@@ -252,12 +253,14 @@ public class ShorewallFirewall extends AFirewallProfile {
 			for (final AMachineModel machine : machinesInZone) {
 				zoneRules.appendLine("?COMMENT " + machine.getLabel());
 
+				// Ingresses
 				for (final HostName source : machine.getIngresses()) {
 					zoneRules.appendLine(
 							makeRule(Action.ACCEPT, "wan:" + source.getHost(), cleanZone(machine.getLabel()),
 									Encapsulation.TCP.toString().toLowerCase(), source.getPort().toString(), "-", "-"));
 				}
 
+				// Egresses
 				for (final HostName destination : machine.getEgresses()) {
 					final Integer dport = destination.getPort();
 					String dportString = null;
@@ -271,10 +274,13 @@ public class ShorewallFirewall extends AFirewallProfile {
 									Encapsulation.TCP.toString().toLowerCase(), dportString, "-", "-"));
 				}
 
+				// Forwards
 				for (final String destination : machine.getForwards()) {
 					zoneRules.appendLine(makeRule(Action.ACCEPT, cleanZone(machine.getLabel()), cleanZone(destination),
 							Encapsulation.TCP.toString().toLowerCase(), "-", "-", "-"));
 				}
+
+				// TODO: listen rules
 
 				zoneRules.appendLine("?COMMENT");
 			}
@@ -289,8 +295,13 @@ public class ShorewallFirewall extends AFirewallProfile {
 			String origDest) {
 		String lines = "";
 
+		if (dest.equals(getLabel())) {
+			dest = "\\\\$FW";
+		}
 		if (origDest == null) {
 			origDest = "-";
+		} else if (origDest.equals(getLabel())) {
+			origDest = "\\\\$FW";
 		}
 		if (dport == null) {
 			dport = "-";
@@ -328,7 +339,15 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws ARuntimeException {
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
+		for (final HostName upstreamDNSServer : getNetworkModel().getData().getUpstreamDNSServers()) {
+			getNetworkModel().getServerModel(getLabel()).addEgress(upstreamDNSServer);
+
+		}
+
+		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 53);
+		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.UDP, 53);
+
 		return new ArrayList<>();
 	}
 
