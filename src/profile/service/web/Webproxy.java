@@ -86,9 +86,9 @@ public class Webproxy extends AStructuredProfile {
 		sslConf.appendLine("    ssl_session_tickets off;");
 		sslConf.appendCarriageReturn();
 		sslConf.appendLine("    ssl_protocols TLSv1.2 TLSv1.3;");
-		sslConf.appendLine("    ssl_ciphers 'EECDH+CHACHA20:EECDH+AESGCM:EECDH+AES256';");
+		sslConf.appendLine("    ssl_ciphers 'TLS13-CHACHA20-POLY1305-SHA256:TLS13-AES-256-GCM-SHA384:EECDH+CHACHA20:EECDH+AESGCM';");
 		sslConf.appendLine("    ssl_prefer_server_ciphers on;");
-		sslConf.appendLine("    ssl_ecdh_curve auto;");
+		sslConf.appendLine("    ssl_ecdh_curve X25519:secp521r1:secp384r1;");
 		sslConf.appendCarriageReturn();
 		sslConf.appendLine("    add_header Strict-Transport-Security 'max-age=63072000; includeSubDomains; preload';");
 		sslConf.appendCarriageReturn();
