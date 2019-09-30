@@ -81,7 +81,7 @@ public class EmailServer extends AStructuredProfile {
 
 		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 25, 465, 993);
 		getNetworkModel().getServerModel(getLabel()).addEgress("spamassassin.apache.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("www.sa-update.pccc.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("sa-update.pccc.com");
 
 		return units;
 	}

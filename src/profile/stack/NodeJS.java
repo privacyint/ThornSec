@@ -80,9 +80,9 @@ public class NodeJS extends AStructuredProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		// Let's open this box up to most of the internet. Thanks, node!
-		getNetworkModel().getServerModel(getLabel()).addEgress("www.github.com");
+		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
 		getNetworkModel().getServerModel(getLabel()).addEgress("deb.nodesource.com");
-		getNetworkModel().getServerModel(getLabel()).addEgress("www.npmjs.org");
+		getNetworkModel().getServerModel(getLabel()).addEgress("npmjs.org");
 		getNetworkModel().getServerModel(getLabel()).addEgress("registry.npmjs.org");
 
 		return units;
