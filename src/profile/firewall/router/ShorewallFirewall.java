@@ -264,13 +264,20 @@ public class ShorewallFirewall extends AFirewallProfile {
 				for (final HostName destination : machine.getEgresses()) {
 					final Integer dport = destination.getPort();
 					String dportString = null;
+					//TODO: this is hacky.
+					String dest = destination.getHost();
+					long count = dest.chars().filter(ch -> ch == '.').count();
+					if (count == 1) {
+						dest += ".";
+					}
+					
 					if (dport == null) {
 						dportString = "-";
 					} else {
 						dportString = dport.toString();
 					}
 					zoneRules.appendLine(
-							makeRule(Action.ACCEPT, cleanZone(machine.getLabel()), "wan:" + destination.getHost(),
+							makeRule(Action.ACCEPT, cleanZone(machine.getLabel()), "wan:" + dest,
 									Encapsulation.TCP.toString().toLowerCase(), dportString, "-", "-"));
 				}
 
