@@ -159,6 +159,10 @@ public class Router extends AStructuredProfile {
 		//See https://git.kernel.org/pub/scm/linux/kernel/git/davem/net.git/tree/Documentation/networking/ip-sysctl.txt#n1247
 		sysctl.appendLine("net.ipv4.conf.all.arp_filter=1");
 		sysctl.appendLine("net.ipv4.conf.default.arp_filter=1");
+		//Set Reverse Path filtering to "strict"
+		// See https://git.kernel.org/pub/scm/linux/kernel/git/davem/net.git/tree/Documentation/networking/ip-sysctl.txt#n1226
+		sysctl.appendLine("net.ipv4.conf.all.rp_filter=1");
+		sysctl.appendLine("net.ipv4.conf.default.rp_filter=1");
 
 		// Switch systemd-networkd on...
 		units.add(new EnabledServiceUnit("systemd_networkd", "proceed", "systemd-networkd",
