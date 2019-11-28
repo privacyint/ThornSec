@@ -66,6 +66,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 		try {
 			ips.add(new IPAddressString(getNetworkModel().getData().getAdminSubnet()).toAddress());
+			ips.add(new IPAddressString(getNetworkModel().getData().getServerSubnet()).toAddress());
 			ips.add(new IPAddressString(getNetworkModel().getData().getUserSubnet()).toAddress());
 			ips.add(new IPAddressString(getNetworkModel().getData().getGuestSubnet()).toAddress());
 			ips.add(new IPAddressString(getNetworkModel().getData().getInternalSubnet()).toAddress());
