@@ -155,6 +155,10 @@ public class Router extends AStructuredProfile {
 		sysctl.appendLine("net.ipv6.conf.all.disable_ipv6=1");
 		sysctl.appendLine("net.ipv6.conf.default.disable_ipv6=1");
 		sysctl.appendLine("net.ipv6.conf.lo.disable_ipv6=1");
+		//Stop our machine from spamming internal ARP requests on our external interface
+		//See https://git.kernel.org/pub/scm/linux/kernel/git/davem/net.git/tree/Documentation/networking/ip-sysctl.txt#n1247
+		sysctl.appendLine("net.ipv4.conf.all.arp_filter=1");
+		sysctl.appendLine("net.ipv4.conf.default.arp_filter=1");
 
 		// Switch systemd-networkd on...
 		units.add(new EnabledServiceUnit("systemd_networkd", "proceed", "systemd-networkd",
