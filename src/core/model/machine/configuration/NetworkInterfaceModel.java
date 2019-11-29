@@ -190,7 +190,7 @@ public class NetworkInterfaceModel extends AModel {
 	 */
 	public FileUnit getNetworkFile() {
 		final FileUnit network = new FileUnit(getIface() + "_network", "proceed",
-				"/etc/systemd/network/" + getIface() + ".network");
+				"/etc/systemd/network/" + ((getInet() != Inet.MACVLAN) ? "10-":"20-") + getIface() + ".network");
 		network.appendLine("[Match]");
 		network.appendLine("Name=" + getIface());
 		network.appendCarriageReturn();
@@ -268,7 +268,7 @@ public class NetworkInterfaceModel extends AModel {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		final FileUnit netDev = new FileUnit(vlanName + "_netdev", "proceed",
-				"/etc/systemd/network/" + vlanName + ".netdev");
+				"/etc/systemd/network/20-" + vlanName + ".netdev");
 		netDev.appendLine("[NetDev]");
 		netDev.appendLine("Name=" + vlanName);
 		netDev.appendLine("Kind=macvlan");
@@ -278,7 +278,7 @@ public class NetworkInterfaceModel extends AModel {
 		units.add(netDev);
 
 		final FileUnit network = new FileUnit(vlanName + "_network", "proceed",
-				"/etc/systemd/network/" + vlanName + ".network");
+				"/etc/systemd/network/20-" + vlanName + ".network");
 		network.appendLine("[Match]");
 		network.appendLine("Name=" + vlanName);
 		network.appendCarriageReturn();
