@@ -175,6 +175,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 				+ getNetworkModel().getServerModel(getLabel()).getDomain() + ";");
 		dhcpdConf.appendLine("default-lease-time 600;");
 		dhcpdConf.appendLine("max-lease-time 1800;");
+		dhcpdConf.appendLine("get-lease-hostnames true;");
 		dhcpdConf.appendLine("authoritative;");
 		dhcpdConf.appendLine("log-facility local7;");
 		// dhcpdConf.appendLine("use-host-decl-names on;");
