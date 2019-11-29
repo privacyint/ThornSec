@@ -274,7 +274,7 @@ public class NetworkInterfaceModel extends AModel {
 		netDev.appendLine("Kind=macvlan");
 		netDev.appendCarriageReturn();
 		netDev.appendLine("[MACVLAN]");
-		netDev.appendLine("Mode=bridge"); // TODO: what mode should this be in?
+		netDev.appendLine("Mode=bridge");
 		units.add(netDev);
 
 		final FileUnit network = new FileUnit(vlanName + "_network", "proceed",
