@@ -227,13 +227,6 @@ public class ServerModel extends AMachineModel {
 			units.add(nic.getNetworkFile());
 		}
 
-		/*
-		 * TODO: is there some sort of fail-safe we can add here? If the network doesn't
-		 * come back up, can we roll back? I'd like it to at least keep a 'net
-		 * connection, even if everything else goes wrong - we don't want to lock
-		 * ourselves out of a box!
-		 */
-
 		for (final AStructuredProfile type : this.types) {
 			units.addAll(type.getUnits());
 		}
