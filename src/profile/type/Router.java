@@ -119,6 +119,24 @@ public class Router extends AStructuredProfile {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+		try {
+			final Collection<NetworkInterfaceData> nicsData = getNetworkModel().getData()
+					.getNetworkInterfaces(getLabel()).get(Direction.WAN);
+			for (final NetworkInterfaceData nicData : nicsData) {
+				final String nicName = nicData.getIface();
+
+				for (final NetworkInterfaceModel nicModel : getNetworkModel().getNetworkInterfaces(getLabel())) {
+					if (nicModel.getIface().equals(nicName)) {
+						nicModel.setIsIPMasquerading(true);
+					}
+				}
+
+			}
+		} catch (JsonParsingException | ADataException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public Map<MachineType, IPAddress> getMACVLANs() {
