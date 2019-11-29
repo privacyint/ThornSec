@@ -206,27 +206,27 @@ public class NetworkInterfaceModel extends AModel {
 
 		return network;
 	}
-
-	public static final Collection<IUnit> buildVXVLAN(String vlanName, String physical, IPAddress localAddress,
-			IPAddress remoteAddress) {
-		final Collection<IUnit> units = new ArrayList<>();
-
-		final FileUnit netDev = new FileUnit(vlanName + "_netdev", "proceed",
-				"/etc/systemd/network/" + vlanName + ".netdev");
-		netDev.appendLine("[NetDev]");
-		netDev.appendLine("Name=" + vlanName);
-		netDev.appendLine("Kind=vxvlan");
-		netDev.appendCarriageReturn();
-		netDev.appendLine("[VXVLAN]");
-		netDev.appendLine("Id=" + remoteAddress.toFullString().replaceAll("\\.", ""));
-		netDev.appendLine("Remote=" + remoteAddress.toFullString());
-		netDev.appendLine("Local=" + localAddress.toFullString());
-		units.add(netDev);
-
-		return units;
-
-	}
-
+	
+	/*
+	 * public static final Collection<IUnit> buildVXVLAN(String vlanName, String
+	 * physical, IPAddress localAddress, IPAddress remoteAddress) { final
+	 * Collection<IUnit> units = new ArrayList<>();
+	 * 
+	 * final FileUnit netDev = new FileUnit(vlanName + "_netdev", "proceed",
+	 * "/etc/systemd/network/" + vlanName + ".netdev");
+	 * netDev.appendLine("[NetDev]"); netDev.appendLine("Name=" + vlanName);
+	 * netDev.appendLine("Kind=vxvlan"); netDev.appendCarriageReturn();
+	 * netDev.appendLine("[VXVLAN]"); netDev.appendLine("Id=" +
+	 * remoteAddress.toFullString().replaceAll("\\.", ""));
+	 * netDev.appendLine("Remote=" + remoteAddress.toFullString());
+	 * netDev.appendLine("Local=" + localAddress.toFullString()); units.add(netDev);
+	 * 
+	 * return units;
+	 * 
+	 * }
+	 */
+	
+	
 	public static final Collection<IUnit> buildMACVLAN(MachineType vlanName, IPAddress subnet) {
 		final Collection<IUnit> units = new ArrayList<>();
 
