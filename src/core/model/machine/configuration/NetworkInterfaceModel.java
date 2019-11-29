@@ -283,7 +283,7 @@ public class NetworkInterfaceModel extends AModel {
 		network.appendLine("Name=" + vlanName);
 		network.appendCarriageReturn();
 		network.appendLine("[Network]");
-		network.appendLine("IPForward=yes");
+		network.appendLine("Address=" + subnet.getLowerNonZeroHost());
 		network.appendLine("Address=" + subnet.getLowerNonZeroHost().withoutPrefixLength());
 		units.add(network);
 
