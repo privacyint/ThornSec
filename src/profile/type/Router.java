@@ -109,6 +109,7 @@ public class Router extends AStructuredProfile {
 
 				for (final NetworkInterfaceModel nicModel : getNetworkModel().getNetworkInterfaces(getLabel())) {
 					if (nicModel.getIface().equals(nicName)) {
+						nicModel.setIsIPForwarding(true);
 						nicModel.addMACVLAN(type.toString());
 					}
 				}
