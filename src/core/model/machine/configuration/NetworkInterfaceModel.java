@@ -284,7 +284,13 @@ public class NetworkInterfaceModel extends AModel {
 		network.appendCarriageReturn();
 		network.appendLine("[Network]");
 		network.appendLine("Address=" + subnet.getLowerNonZeroHost());
-		network.appendLine("Address=" + subnet.getLowerNonZeroHost().withoutPrefixLength());
+		network.appendCarriageReturn();
+		network.appendLine("[Route]");
+		network.appendLine("GatewayOnLink=yes");
+		network.appendCarriageReturn();
+		network.appendLine("[RoutingPolicyRule]");
+		network.appendLine("From=" + subnet.getLower());
+		network.appendLine("To=" + subnet.getLower());
 		units.add(network);
 
 		return units;
