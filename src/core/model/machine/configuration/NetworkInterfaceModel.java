@@ -55,6 +55,7 @@ public class NetworkInterfaceModel extends AModel {
 	private IPAddress gateway;
 	
 	private Boolean ipForwarding;
+	private Boolean ipMasquerading;
 
 	public NetworkInterfaceModel(String label, NetworkModel networkModel) {
 		super(label, networkModel);
@@ -71,6 +72,7 @@ public class NetworkInterfaceModel extends AModel {
 		this.comment = null;
 		
 		this.ipForwarding = false;
+		this.ipMasquerading = false;
 	}
 
 	public final String getComment() {
@@ -88,7 +90,15 @@ public class NetworkInterfaceModel extends AModel {
 	public final Boolean getIsIPForwarding() {
 		return this.ipForwarding;
 	}
-
+	
+	public final void setIsIPMasquerading(Boolean value) {
+		this.ipMasquerading = value;
+	}
+	
+	public final Boolean getIsIPMasquerading() {
+		return this.ipMasquerading;
+	}
+	
 	public final String getIface() {
 		return this.name;
 	}
@@ -185,10 +195,21 @@ public class NetworkInterfaceModel extends AModel {
 		network.appendLine("Name=" + getIface());
 		network.appendCarriageReturn();
 
+		//If this is a VLAN trunk, treat it a little differently
+		if (getMACVLANs() != null) {
+			network.appendLine("RequiredForOnline=yes");
+			network.appendLine("ARP=no");
+			network.appendCarriageReturn();
+		}
+		
 		network.appendLine("[Network]");
 		
 		if (this.getIsIPForwarding()) {
 			network.appendLine("IPForward=yes");
+		}
+		
+		if (this.getIsIPMasquerading()) {
+			network.appendLine("IPMasquerade=yes");
 		}
 		
 		switch (getInet()) {
