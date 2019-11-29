@@ -53,6 +53,8 @@ public class NetworkInterfaceModel extends AModel {
 	private IPAddress netmask;
 	private IPAddress broadcast;
 	private IPAddress gateway;
+	
+	private Boolean ipForwarding;
 
 	public NetworkInterfaceModel(String label, NetworkModel networkModel) {
 		super(label, networkModel);
@@ -67,6 +69,8 @@ public class NetworkInterfaceModel extends AModel {
 		this.gateway = null;
 		this.mac = null;
 		this.comment = null;
+		
+		this.ipForwarding = false;
 	}
 
 	public final String getComment() {
@@ -75,6 +79,14 @@ public class NetworkInterfaceModel extends AModel {
 
 	public final void setComment(String comment) {
 		this.comment = comment;
+	}
+	
+	public final void setIsIPForwarding(Boolean value) {
+		this.ipForwarding = value;
+	}
+	
+	public final Boolean getIsIPForwarding() {
+		return this.ipForwarding;
 	}
 
 	public final String getIface() {
@@ -174,13 +186,17 @@ public class NetworkInterfaceModel extends AModel {
 		network.appendCarriageReturn();
 
 		network.appendLine("[Network]");
+		
+		if (this.getIsIPForwarding()) {
+			network.appendLine("IPForward=yes");
+		}
+		
 		switch (getInet()) {
 			case DHCP:
 				network.appendLine("DHCP=yes");
 				break;
 			case MACVLAN:
 			case STATIC:
-				network.appendLine("IPForward=yes");
 				if (getAddress() != null) {
 					network.appendLine("Address=" + getAddress().toCanonicalString());
 				}
