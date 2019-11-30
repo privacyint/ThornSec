@@ -168,8 +168,18 @@ public class NetworkInterfaceModel extends AModel {
 	 * @return FileUnit in /etc/systemd/network/
 	 */
 	public FileUnit getNetworkFile() {
-		final FileUnit network = new FileUnit(getIface() + "_network", "proceed",
-				"/etc/systemd/network/" + ((getInet() != Inet.MACVLAN) ? "10-":"20-") + getIface() + ".network");
+		String lex = null;
+
+		switch (getInet()) {
+		case MACVLAN:
+			lex = "20-";
+			break;
+		default:
+			lex = "00-";
+			break;
+		}
+
+		final FileUnit network = new FileUnit(getIface() + "_network", "proceed", "/etc/systemd/network/" + lex + getIface() + ".network");
 		network.appendLine("[Match]");
 		network.appendLine("Name=" + getIface());
 		network.appendCarriageReturn();
