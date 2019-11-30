@@ -40,7 +40,6 @@ import inet.ipaddr.mac.MACAddress;
  * For more information, see https://wiki.debian.org/Debate/initsystem/sysvinit
  */
 public class NetworkInterfaceModel extends AModel {
-
 	private String comment;
 	private String name;
 	private Inet inet;
@@ -72,65 +71,39 @@ public class NetworkInterfaceModel extends AModel {
 		this.gateway = null;
 		this.mac = null;
 		this.comment = null;
-		
+
 		this.ipForwarding = false;
 		this.ipMasquerading = false;
 	}
 
-	public final String getComment() {
-		return this.comment;
-	}
+	public static final Collection<IUnit> buildMACVLAN(MachineType vlanName, IPAddress subnet) {
+		final Collection<IUnit> units = new ArrayList<>();
 
-	public final void setComment(String comment) {
-		this.comment = comment;
-	}
-	
-	public final void setIsIPForwarding(Boolean value) {
-		this.ipForwarding = value;
-	}
-	
-	public final Boolean getIsIPForwarding() {
-		return this.ipForwarding;
-	}
-	
-	public final void setIsIPMasquerading(Boolean value) {
-		this.ipMasquerading = value;
-	}
-	
-	public final Boolean getIsIPMasquerading() {
-		return this.ipMasquerading;
-	}
-	
-	public final String getIface() {
-		return this.name;
-	}
+		final FileUnit netDev = new FileUnit(vlanName + "_netdev", "proceed", "/etc/systemd/network/20-" + vlanName + ".netdev");
+		netDev.appendLine("[NetDev]");
+		netDev.appendLine("Name=" + vlanName);
+		netDev.appendLine("Kind=macvlan");
+		netDev.appendCarriageReturn();
+		netDev.appendLine("[MACVLAN]");
+		netDev.appendLine("Mode=bridge");
+		units.add(netDev);
 
-	public final void setIface(String iface) {
-		this.name = iface;
-	}
+		final FileUnit network = new FileUnit(vlanName + "_network", "proceed", "/etc/systemd/network/20-" + vlanName + ".network");
+		network.appendLine("[Match]");
+		network.appendLine("Name=" + vlanName);
+		network.appendCarriageReturn();
+		network.appendLine("[Network]");
+		network.appendLine("Address=" + subnet.getLowerNonZeroHost());
+		network.appendCarriageReturn();
+		network.appendLine("[Route]");
+		network.appendLine("GatewayOnLink=yes");
+		network.appendCarriageReturn();
+		network.appendLine("[RoutingPolicyRule]");
+		network.appendLine("From=" + subnet.getLower());
+		network.appendLine("To=" + subnet.getLower());
+		units.add(network);
 
-	public final Inet getInet() {
-		return this.inet;
-	}
-
-	public final void setInet(Inet inet) {
-		this.inet = inet;
-	}
-
-	public final MACAddress getMac() {
-		return this.mac;
-	}
-
-	public final void setMac(MACAddress mac) {
-		this.mac = mac;
-	}
-
-	public final Collection<String> getMACVLANs() {
-		return this.macVLANS;
-	}
-
-	public final void setMACVLANs(Collection<String> collection) {
-		this.macVLANS = collection;
+		return units;
 	}
 
 	public final void addMACVLAN(String name) {
@@ -145,44 +118,48 @@ public class NetworkInterfaceModel extends AModel {
 		setMACVLANs(vlans);
 	}
 
-	public final IPAddress getSubnet() {
-		return this.subnet;
-	}
-
-	public final void setSubnet(IPAddress subnet) {
-		this.subnet = subnet;
-	}
-
 	public final IPAddress getAddress() {
 		return this.address;
-	}
-
-	public final void setAddress(IPAddress address) {
-		this.address = address;
-	}
-
-	public final IPAddress getNetmask() {
-		return this.netmask;
-	}
-
-	public final void setNetmask(IPAddress netmask) {
-		this.netmask = netmask;
 	}
 
 	public final IPAddress getBroadcast() {
 		return this.broadcast;
 	}
 
-	public final void setBroadcast(IPAddress broadcast) {
-		this.broadcast = broadcast;
+	public final String getComment() {
+		return this.comment;
 	}
 
 	public final IPAddress getGateway() {
 		return this.gateway;
 	}
 
-	public final void setGateway(IPAddress gateway) {
-		this.gateway = gateway;
+	public final String getIface() {
+		return this.name;
+	}
+
+	public final Inet getInet() {
+		return this.inet;
+	}
+
+	public final Boolean getIsIPForwarding() {
+		return this.ipForwarding;
+	}
+
+	public final Boolean getIsIPMasquerading() {
+		return this.ipMasquerading;
+	}
+
+	public final MACAddress getMac() {
+		return this.mac;
+	}
+
+	public final Collection<String> getMACVLANs() {
+		return this.macVLANS;
+	}
+
+	public final IPAddress getNetmask() {
+		return this.netmask;
 	}
 
 	/**
@@ -203,38 +180,38 @@ public class NetworkInterfaceModel extends AModel {
 			network.appendLine("ARP=no");
 			network.appendCarriageReturn();
 		}
-		
+
 		network.appendLine("[Network]");
-		
-		if (this.getIsIPForwarding()) {
+
+		if (getIsIPForwarding()) {
 			network.appendLine("IPForward=yes");
 		}
-		
-		if (this.getIsIPMasquerading()) {
+
+		if (getIsIPMasquerading()) {
 			network.appendLine("IPMasquerade=yes");
 		}
-		
+
 		switch (getInet()) {
-			case DHCP:
-				network.appendLine("DHCP=yes");
-				break;
-			case MACVLAN:
-			case STATIC:
-				if (getAddress() != null) {
-					network.appendLine("Address=" + getAddress().toCanonicalString());
-				}
-				if (getNetmask() != null) {
-					network.appendLine("Netmask=" + getNetmask().toCanonicalString());
-				}
-				if (getBroadcast() != null) {
-					network.appendLine("Broadcast=" + getBroadcast().toCanonicalString());
-				}
-				if (getGateway() != null) {
-					network.appendLine("Gateway=" + getGateway().toCanonicalString());
-				}
-				break;
-			default:
-				break;
+		case DHCP:
+			network.appendLine("DHCP=yes");
+			break;
+		case MACVLAN:
+		case STATIC:
+			if (getAddress() != null) {
+				network.appendLine("Address=" + getAddress().toCanonicalString());
+			}
+			if (getNetmask() != null) {
+				network.appendLine("Netmask=" + getNetmask().toCanonicalString());
+			}
+			if (getBroadcast() != null) {
+				network.appendLine("Broadcast=" + getBroadcast().toCanonicalString());
+			}
+			if (getGateway() != null) {
+				network.appendLine("Gateway=" + getGateway().toCanonicalString());
+			}
+			break;
+		default:
+			break;
 		}
 
 		if (getMACVLANs() != null) {
@@ -294,8 +271,8 @@ public class NetworkInterfaceModel extends AModel {
 		this.netmask = netmask;
 	}
 
-	/*
-	 * public static final Collection<IUnit> buildVXVLAN(String vlanName, String
+	public final void setSubnet(IPAddress subnet) {
+		this.subnet = subnet;
 	 * physical, IPAddress localAddress, IPAddress remoteAddress) { final
 	 * Collection<IUnit> units = new ArrayList<>();
 	 *
@@ -314,36 +291,6 @@ public class NetworkInterfaceModel extends AModel {
 	 */
 	
 	
-	public static final Collection<IUnit> buildMACVLAN(MachineType vlanName, IPAddress subnet) {
-		final Collection<IUnit> units = new ArrayList<>();
-
-		final FileUnit netDev = new FileUnit(vlanName + "_netdev", "proceed",
-				"/etc/systemd/network/20-" + vlanName + ".netdev");
-		netDev.appendLine("[NetDev]");
-		netDev.appendLine("Name=" + vlanName);
-		netDev.appendLine("Kind=macvlan");
-		netDev.appendCarriageReturn();
-		netDev.appendLine("[MACVLAN]");
-		netDev.appendLine("Mode=bridge");
-		units.add(netDev);
-
-		final FileUnit network = new FileUnit(vlanName + "_network", "proceed",
-				"/etc/systemd/network/20-" + vlanName + ".network");
-		network.appendLine("[Match]");
-		network.appendLine("Name=" + vlanName);
-		network.appendCarriageReturn();
-		network.appendLine("[Network]");
-		network.appendLine("Address=" + subnet.getLowerNonZeroHost());
-		network.appendCarriageReturn();
-		network.appendLine("[Route]");
-		network.appendLine("GatewayOnLink=yes");
-		network.appendCarriageReturn();
-		network.appendLine("[RoutingPolicyRule]");
-		network.appendLine("From=" + subnet.getLower());
-		network.appendLine("To=" + subnet.getLower());
-		units.add(network);
-
-		return units;
 	}
 
 //	private Hashtable<String, InterfaceData> interfaces;
