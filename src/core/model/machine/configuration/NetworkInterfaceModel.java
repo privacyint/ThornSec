@@ -44,6 +44,7 @@ public class NetworkInterfaceModel extends AModel {
 	private String comment;
 	private String name;
 	private Inet inet;
+
 	private MACAddress mac;
 
 	private Collection<String> macVLANS;
@@ -52,9 +53,10 @@ public class NetworkInterfaceModel extends AModel {
 	private IPAddress address;
 	private IPAddress netmask;
 	private IPAddress broadcast;
+
 	private IPAddress gateway;
-	
 	private Boolean ipForwarding;
+
 	private Boolean ipMasquerading;
 
 	public NetworkInterfaceModel(String label, NetworkModel networkModel) {
@@ -243,12 +245,60 @@ public class NetworkInterfaceModel extends AModel {
 
 		return network;
 	}
-	
+
+	public final IPAddress getSubnet() {
+		return this.subnet;
+	}
+
+	public final void setAddress(IPAddress address) {
+		this.address = address;
+	}
+
+	public final void setBroadcast(IPAddress broadcast) {
+		this.broadcast = broadcast;
+	}
+
+	public final void setComment(String comment) {
+		this.comment = comment;
+	}
+
+	public final void setGateway(IPAddress gateway) {
+		this.gateway = gateway;
+	}
+
+	public final void setIface(String iface) {
+		this.name = iface;
+	}
+
+	public final void setInet(Inet inet) {
+		this.inet = inet;
+	}
+
+	public final void setIsIPForwarding(Boolean value) {
+		this.ipForwarding = value;
+	}
+
+	public final void setIsIPMasquerading(Boolean value) {
+		this.ipMasquerading = value;
+	}
+
+	public final void setMac(MACAddress mac) {
+		this.mac = mac;
+	}
+
+	public final void setMACVLANs(Collection<String> collection) {
+		this.macVLANS = collection;
+	}
+
+	public final void setNetmask(IPAddress netmask) {
+		this.netmask = netmask;
+	}
+
 	/*
 	 * public static final Collection<IUnit> buildVXVLAN(String vlanName, String
 	 * physical, IPAddress localAddress, IPAddress remoteAddress) { final
 	 * Collection<IUnit> units = new ArrayList<>();
-	 * 
+	 *
 	 * final FileUnit netDev = new FileUnit(vlanName + "_netdev", "proceed",
 	 * "/etc/systemd/network/" + vlanName + ".netdev");
 	 * netDev.appendLine("[NetDev]"); netDev.appendLine("Name=" + vlanName);

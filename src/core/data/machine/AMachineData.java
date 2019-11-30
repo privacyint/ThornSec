@@ -46,6 +46,11 @@ import inet.ipaddr.MACAddressString;
  * doing error checking! :)
  */
 public abstract class AMachineData extends AData {
+	// Networking
+	public enum Encapsulation {
+		UDP, TCP
+	}
+
 	// These are the only types of machine I'll recognise until I'm told
 	// otherwise...
 	public enum MachineType {
@@ -63,11 +68,6 @@ public abstract class AMachineData extends AData {
 		public String toString() {
 			return this.machineType;
 		}
-	}
-
-	// Networking
-	public enum Encapsulation {
-		UDP, TCP
 	}
 
 	public static Boolean DEFAULT_IS_THROTTLED = true;
@@ -110,6 +110,155 @@ public abstract class AMachineData extends AData {
 		this.forwards = null;
 		this.ingresses = null;
 		this.egresses = null;
+	}
+
+	private void addDNAT(String destination, Integer... ports) throws InvalidPortException {
+		if (this.dnats == null) {
+			this.dnats = new Hashtable<>();
+		}
+
+		Collection<Integer> currentPorts = this.dnats.get(destination);
+
+		if (currentPorts == null) {
+			currentPorts = new HashSet<>();
+		}
+
+		for (final Integer port : ports) {
+			if (((port < 0)) || ((port > 65535))) {
+				throw new InvalidPortException(port);
+			}
+			currentPorts.add(port);
+		}
+
+		this.dnats.put(destination, currentPorts);
+	}
+
+	private void addEgress(HostName destination) {
+		if (this.egresses == null) {
+			this.egresses = new HashSet<>();
+		}
+
+		this.egresses.add(destination);
+	}
+
+	private void addFoward(String label) {
+		if (this.forwards == null) {
+			this.forwards = new HashSet<>();
+		}
+
+		this.forwards.add(label);
+	}
+
+	private void addIngress(HostName source) {
+		if (this.ingresses == null) {
+			this.ingresses = new HashSet<>();
+		}
+
+		this.ingresses.add(source);
+	}
+
+	public final Collection<String> getCNAMEs() {
+		return this.cnames;
+	}
+
+	public Map<String, Collection<Integer>> getDNATs() {
+		return this.dnats;
+	}
+
+	public HostName getDomain() {
+		return this.domain;
+	}
+
+	public final Collection<HostName> getEgresses() {
+		return this.egresses;
+	}
+
+	public final InternetAddress getEmailAddress() {
+		return this.emailAddress;
+	}
+
+	public final Collection<IPAddress> getExternalIPs() {
+		return this.externalIPAddresses;
+	}
+
+	public final String getFirewallProfile() {
+		return this.firewallProfile;
+	}
+
+	public final Collection<String> getForwards() {
+		return this.forwards;
+	}
+
+	public final Collection<HostName> getIngresses() {
+		return this.ingresses;
+	}
+
+	public final Map<Encapsulation, Collection<Integer>> getListens() {
+		return this.listens;
+	}
+
+	public final Map<Direction, Collection<NetworkInterfaceData>> getNetworkInterfaces() {
+		return this.networkInterfaces;
+	}
+
+	public final Boolean isThrottled() {
+		return this.throttled;
+	}
+
+	private void putCNAME(String cname) {
+		if (this.cnames == null) {
+			this.cnames = new HashSet<>();
+		}
+
+		this.cnames.add(cname);
+	}
+
+	public void putLANNetworkInterface(NetworkInterfaceData... ifaces) {
+		putNetworkInterface(Direction.LAN, ifaces);
+	}
+
+	private void putListenPort(Encapsulation encapsulation, Integer... ports) throws InvalidPortException {
+		if (this.listens == null) {
+			this.listens = new Hashtable<>();
+		}
+
+		Collection<Integer> currentPorts = this.listens.get(encapsulation);
+
+		if (currentPorts == null) {
+			currentPorts = new HashSet<>();
+		}
+
+		for (final Integer port : ports) {
+			if (((port < 0)) || ((port > 65535))) {
+				throw new InvalidPortException(port);
+			}
+			currentPorts.add(port);
+		}
+
+		this.listens.put(encapsulation, currentPorts);
+	}
+
+	protected void putNetworkInterface(Direction dir, NetworkInterfaceData... ifaces) {
+		if (this.networkInterfaces == null) {
+			this.networkInterfaces = new Hashtable<>();
+		}
+
+		Collection<NetworkInterfaceData> currentIfaces = this.networkInterfaces.get(dir);
+
+		if (currentIfaces == null) {
+			currentIfaces = new HashSet<>();
+		}
+
+		for (final NetworkInterfaceData iface : ifaces) {
+			currentIfaces.add(iface);
+		}
+
+		this.networkInterfaces.put(dir, currentIfaces);
+
+	}
+
+	public void putWANNetworkInterface(NetworkInterfaceData... ifaces) {
+		putNetworkInterface(Direction.WAN, ifaces);
 	}
 
 	@Override
@@ -234,163 +383,13 @@ public abstract class AMachineData extends AData {
 					this.externalIPAddresses.add(new IPAddressString(data.getString("external_ip")).toAddress());
 
 				} catch (final AddressStringException e) {
-					throw new InvalidIPAddressException(
-							data.getString("external_ip") + " on machine " + getLabel() + " is not a valid IP Address");
+					throw new InvalidIPAddressException(data.getString("external_ip") + " on machine " + getLabel() + " is not a valid IP Address");
 				}
 			}
 		}
 	}
 
-	private void addDNAT(String destination, Integer... ports) throws InvalidPortException {
-		if (this.dnats == null) {
-			this.dnats = new Hashtable<>();
-		}
-
-		Collection<Integer> currentPorts = this.dnats.get(destination);
-
-		if (currentPorts == null) {
-			currentPorts = new HashSet<>();
-		}
-
-		for (final Integer port : ports) {
-			if (((port < 0)) || ((port > 65535))) {
-				throw new InvalidPortException(port);
-			}
-			currentPorts.add(port);
-		}
-
-		this.dnats.put(destination, currentPorts);
-	}
-
-	private void addEgress(HostName destination) {
-		if (this.egresses == null) {
-			this.egresses = new HashSet<>();
-		}
-
-		this.egresses.add(destination);
-	}
-
-	private void addIngress(HostName source) {
-		if (this.ingresses == null) {
-			this.ingresses = new HashSet<>();
-		}
-
-		this.ingresses.add(source);
-	}
-
-	private void addFoward(String label) {
-		if (this.forwards == null) {
-			this.forwards = new HashSet<>();
-		}
-
-		this.forwards.add(label);
-	}
-
-	private void putListenPort(Encapsulation encapsulation, Integer... ports) throws InvalidPortException {
-		if (this.listens == null) {
-			this.listens = new Hashtable<>();
-		}
-
-		Collection<Integer> currentPorts = this.listens.get(encapsulation);
-
-		if (currentPorts == null) {
-			currentPorts = new HashSet<>();
-		}
-
-		for (final Integer port : ports) {
-			if (((port < 0)) || ((port > 65535))) {
-				throw new InvalidPortException(port);
-			}
-			currentPorts.add(port);
-		}
-
-		this.listens.put(encapsulation, currentPorts);
-	}
-
 	private void setDomain(HostName domain) {
 		this.domain = domain;
-	}
-
-	private void putCNAME(String cname) {
-		if (this.cnames == null) {
-			this.cnames = new HashSet<>();
-		}
-
-		this.cnames.add(cname);
-	}
-
-	protected void putNetworkInterface(Direction dir, NetworkInterfaceData... ifaces) {
-		if (this.networkInterfaces == null) {
-			this.networkInterfaces = new Hashtable<>();
-		}
-
-		Collection<NetworkInterfaceData> currentIfaces = this.networkInterfaces.get(dir);
-
-		if (currentIfaces == null) {
-			currentIfaces = new HashSet<>();
-		}
-
-		for (final NetworkInterfaceData iface : ifaces) {
-			currentIfaces.add(iface);
-		}
-
-		this.networkInterfaces.put(dir, currentIfaces);
-
-	}
-
-	public void putWANNetworkInterface(NetworkInterfaceData... ifaces) {
-		putNetworkInterface(Direction.WAN, ifaces);
-	}
-
-	public void putLANNetworkInterface(NetworkInterfaceData... ifaces) {
-		putNetworkInterface(Direction.LAN, ifaces);
-	}
-
-	public final Map<Direction, Collection<NetworkInterfaceData>> getNetworkInterfaces() {
-		return this.networkInterfaces;
-	}
-
-	public final Map<Encapsulation, Collection<Integer>> getListens() {
-		return this.listens;
-	}
-
-	public final Collection<String> getForwards() {
-		return this.forwards;
-	}
-
-	public final Collection<HostName> getIngresses() {
-		return this.ingresses;
-	}
-
-	public final Collection<HostName> getEgresses() {
-		return this.egresses;
-	}
-
-	public Map<String, Collection<Integer>> getDNATs() {
-		return this.dnats;
-	}
-
-	public final Boolean isThrottled() {
-		return this.throttled;
-	}
-
-	public final Collection<String> getCNAMEs() {
-		return this.cnames;
-	}
-
-	public final InternetAddress getEmailAddress() {
-		return this.emailAddress;
-	}
-
-	public final Collection<IPAddress> getExternalIPs() {
-		return this.externalIPAddresses;
-	}
-
-	public final String getFirewallProfile() {
-		return this.firewallProfile;
-	}
-
-	public HostName getDomain() {
-		return this.domain;
 	}
 }

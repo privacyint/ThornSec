@@ -77,6 +77,66 @@ public class NetworkInterfaceData extends AData {
 		this.comment = null;
 	}
 
+	final public IPAddress getAddress() {
+		return this.address;
+	}
+
+	final public IPAddress getBroadcast() {
+		return this.broadcast;
+	}
+
+	final public String getComment() {
+		return this.comment;
+	}
+
+	final public IPAddress getGateway() {
+		return this.gateway;
+	}
+
+	final public String getIface() {
+		return this.iface;
+	}
+
+	final public Inet getInet() {
+		return this.inet;
+	}
+
+	final public MACAddress getMAC() {
+		return this.mac;
+	}
+
+	final public Collection<String> getMACVLANs() {
+		return this.macVLANs;
+	}
+
+	final public IPAddress getNetmask() {
+		return this.netmask;
+	}
+
+	final public String getPostDown() {
+		return this.postDown;
+	}
+
+	final public String getPreUp() {
+		return this.preUp;
+	}
+
+	final public IPAddress getSubnet() {
+		return this.subnet;
+	}
+
+	protected final void putMACVLAN(String vlan) {
+		Collection<String> macVLANs = this.macVLANs;
+
+		if (macVLANs == null) {
+			macVLANs = new HashSet<>();
+		}
+
+		macVLANs.add(vlan);
+
+		this.macVLANs = macVLANs;
+	}
+
 	@Override
 	public void read(JsonObject data) throws ADataException, JsonParsingException, IOException {
 		this.iface = data.getString("iface", null);
@@ -118,32 +178,24 @@ public class NetworkInterfaceData extends AData {
 		}
 	}
 
-	protected final void putMACVLAN(String vlan) {
-		Collection<String> macVLANs = this.macVLANs;
+	protected final void setAddress(IPAddress address) {
+		this.address = address;
+	}
 
-		if (macVLANs == null) {
-			macVLANs = new HashSet<>();
-		}
-
-		macVLANs.add(vlan);
-
-		this.macVLANs = macVLANs;
+	protected final void setBroadcast(IPAddress broadcast) {
+		this.broadcast = broadcast;
 	}
 
 	protected final void setComment(String comment) {
 		this.comment = comment;
 	}
 
+	protected final void setGateway(IPAddress gateway) {
+		this.gateway = gateway;
+	}
+
 	protected final void setIface(String iface) {
 		this.iface = iface;
-	}
-
-	protected final void setPreUp(String preUp) {
-		this.preUp = preUp;
-	}
-
-	protected final void setPostDown(String postDown) {
-		this.postDown = postDown;
 	}
 
 	protected final void setInet(Inet inet) {
@@ -154,71 +206,19 @@ public class NetworkInterfaceData extends AData {
 		this.mac = mac;
 	}
 
-	protected final void setAddress(IPAddress address) {
-		this.address = address;
-	}
-
-	protected final void setGateway(IPAddress gateway) {
-		this.gateway = gateway;
-	}
-
-	protected final void setSubnet(IPAddress subnet) {
-		this.subnet = subnet;
-	}
-
 	protected final void setNetmask(IPAddress netmask) {
 		this.netmask = netmask;
 	}
 
-	protected final void setBroadcast(IPAddress broadcast) {
-		this.broadcast = broadcast;
+	protected final void setPostDown(String postDown) {
+		this.postDown = postDown;
 	}
 
-	final public String getIface() {
-		return this.iface;
+	protected final void setPreUp(String preUp) {
+		this.preUp = preUp;
 	}
 
-	final public String getComment() {
-		return this.comment;
-	}
-
-	final public IPAddress getAddress() {
-		return this.address;
-	}
-
-	final public IPAddress getGateway() {
-		return this.gateway;
-	}
-
-	final public IPAddress getSubnet() {
-		return this.subnet;
-	}
-
-	final public IPAddress getBroadcast() {
-		return this.broadcast;
-	}
-
-	final public Collection<String> getMACVLANs() {
-		return this.macVLANs;
-	}
-
-	final public Inet getInet() {
-		return this.inet;
-	}
-
-	final public MACAddress getMAC() {
-		return this.mac;
-	}
-
-	final public String getPreUp() {
-		return this.preUp;
-	}
-
-	final public String getPostDown() {
-		return this.postDown;
-	}
-
-	final public IPAddress getNetmask() {
-		return this.netmask;
+	protected final void setSubnet(IPAddress subnet) {
+		this.subnet = subnet;
 	}
 }
