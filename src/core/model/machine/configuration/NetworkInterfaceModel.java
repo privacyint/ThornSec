@@ -186,6 +186,7 @@ public class NetworkInterfaceModel extends AModel {
 
 		//If this is a VLAN trunk, treat it a little differently
 		if (getMACVLANs() != null) {
+			network.appendLine("[Link]");
 			network.appendLine("RequiredForOnline=yes");
 			network.appendLine("ARP=no");
 			network.appendCarriageReturn();
