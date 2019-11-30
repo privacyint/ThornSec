@@ -54,9 +54,8 @@ public abstract class AMachineData extends AData {
 	// These are the only types of machine I'll recognise until I'm told
 	// otherwise...
 	public enum MachineType {
-		ROUTER("router"), SERVER("server"), HYPERVISOR("hypervisor"), DEDICATED("dedicated"), SERVICE("service"),
-		DEVICE("device"), USER("user"), INTERNAL_ONLY("internalonly"), EXTERNAL_ONLY("externalonly"),
-		ADMIN("administrator"), GUEST("guest");
+		ROUTER("Router"), SERVER("Servers"), HYPERVISOR("Hypervisors"), DEDICATED("Dedicateds"), SERVICE("Services"), DEVICE("Devices"), USER("Users"),
+		INTERNAL_ONLY("InternalOnlys"), EXTERNAL_ONLY("ExternalOnlys"), ADMIN("Administrators"), GUEST("Guests");
 
 		private String machineType;
 
