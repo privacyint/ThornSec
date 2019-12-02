@@ -28,7 +28,7 @@ import core.exception.data.ADataException;
 import core.exception.data.InvalidPortException;
 import core.iface.IUnit;
 import core.model.AModel;
-import core.model.machine.configuration.NetworkInterfaceModel;
+import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import inet.ipaddr.AddressStringException;
 import inet.ipaddr.HostName;

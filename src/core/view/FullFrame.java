@@ -30,7 +30,7 @@ import javax.swing.tree.TreeSelectionModel;
 import core.exception.runtime.InvalidDeviceModelException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
-import core.model.machine.configuration.NetworkInterfaceModel;
+import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.model.network.ThornsecModel;
 import inet.ipaddr.IPAddress;

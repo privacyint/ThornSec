@@ -26,7 +26,7 @@ import core.exception.data.machine.InvalidMachineException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidProfileException;
 import core.iface.IUnit;
-import core.model.machine.configuration.NetworkInterfaceModel;
+import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.profile.AProfile;
 import core.profile.AStructuredProfile;

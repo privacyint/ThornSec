@@ -21,7 +21,7 @@ import core.exception.runtime.ARuntimeException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
-import core.model.machine.configuration.NetworkInterfaceModel;
+import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileUnit;

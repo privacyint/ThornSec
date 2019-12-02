@@ -5,7 +5,7 @@
  *
  * Pull requests encouraged.
  */
-package core.model.machine.configuration;
+package core.model.machine.configuration.networking;
 
 import java.util.ArrayList;
 import java.util.Collection;

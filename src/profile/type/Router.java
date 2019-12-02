@@ -23,7 +23,7 @@ import core.exception.data.ADataException;
 import core.exception.data.InvalidIPAddressException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
-import core.model.machine.configuration.NetworkInterfaceModel;
+import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.fs.FilePermsUnit;

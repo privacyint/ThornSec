@@ -44,7 +44,7 @@ import core.model.machine.ExternalOnlyDeviceModel;
 import core.model.machine.InternalOnlyDeviceModel;
 import core.model.machine.ServerModel;
 import core.model.machine.UserDeviceModel;
-import core.model.machine.configuration.NetworkInterfaceModel;
+import core.model.machine.configuration.networking.NetworkInterfaceModel;
 
 /**
  * Below the ThornsecModel comes the getNetworkModel().

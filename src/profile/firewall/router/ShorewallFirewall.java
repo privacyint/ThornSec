@@ -23,7 +23,7 @@ import core.model.machine.ExternalOnlyDeviceModel;
 import core.model.machine.InternalOnlyDeviceModel;
 import core.model.machine.ServerModel;
 import core.model.machine.UserDeviceModel;
-import core.model.machine.configuration.NetworkInterfaceModel;
+import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;

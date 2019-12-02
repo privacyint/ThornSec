@@ -20,7 +20,7 @@ import core.iface.IUnit;
 import core.model.machine.ADeviceModel;
 import core.model.machine.AMachineModel;
 import core.model.machine.ServerModel;
-import core.model.machine.configuration.NetworkInterfaceModel;
+import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
