@@ -242,7 +242,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		}
 
 		units.add(new EnabledServiceUnit("dhcp", "isc-dhcp-server", "I couldn't enable your DHCP server to start at boot"));
-		units.add(new RunningUnit("dhcp_running", "isc-dhcp-server", "dhcpd"));
+		units.add(new RunningUnit("dhcp", "isc-dhcp-server", "dhcpd"));
 
 		return units;
 	}
