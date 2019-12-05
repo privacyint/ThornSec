@@ -46,7 +46,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		// First IP belongs to this net's router, so start from there (as it's assigned)
 		IPAddress ip = subnet.getLowerNonZeroHost();
 
-		addSubnet(network, ip);
+		addSubnet(network, subnet);
 		addToSubnet(network, machines);
 
 		for (final AMachineModel machine : machines) {
@@ -200,10 +200,9 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 			final FileUnit subnetConfig = new FileUnit(subnetName + "_dhcpd_live_config", "dhcp_installed", "/etc/dhcp/dhcpd.conf.d/" + subnetName + ".conf");
 			units.add(subnetConfig);
 
-			final IPAddress subnet = getGateway(subnetName);
-			final IPAddress gateway = subnet.getLowerNonZeroHost().withoutPrefixLength();
-			final Integer prefix = subnet.getNetworkPrefixLength();
-			final IPAddress netmask = subnet.getNetwork().getNetworkMask(prefix, false);
+			final IPAddress subnet = getSubnet(subnetName);
+			final Integer prefix = getSubnet(subnetName).getNetworkPrefixLength();
+			final IPAddress netmask = getSubnet(subnetName).getNetwork().getNetworkMask(prefix, false);
 
 			// Start by telling our DHCP Server about this subnet.
 			subnetConfig.appendLine("subnet " + subnet.getLower().withoutPrefixLength().toCompressedString() + " netmask " + netmask + " {}");
@@ -212,8 +211,9 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 			subnetConfig.appendCarriageReturn();
 			subnetConfig.appendLine("group " + subnetName + " {");
 			subnetConfig.appendLine("\tserver-name \\\"" + subnetName + "." + getLabel() + "." + getNetworkModel().getData().getDomain() + "\\\";");
-			subnetConfig.appendLine("\toption routers " + gateway.toCompressedString() + ";");
-			subnetConfig.appendLine("\toption domain-name-servers " + gateway.toCompressedString() + ";");
+			// wait, wut?
+			subnetConfig.appendLine("\toption routers " + subnet.getLowerNonZeroHost().withoutPrefixLength() + ";");
+			subnetConfig.appendLine("\toption domain-name-servers " + subnet.getLowerNonZeroHost().withoutPrefixLength() + ";");
 			subnetConfig.appendCarriageReturn();
 
 			for (final AMachineModel machine : getMachines(subnetName)) {
