@@ -26,7 +26,7 @@ import inet.ipaddr.IPAddress;
  */
 public abstract class ADHCPServerProfile extends AStructuredProfile {
 
-	private final Map<String, IPAddress> subnetsGateways;
+	private final Map<String, IPAddress> subnets;
 	private final Map<String, Collection<AMachineModel>> subnetsMachines;
 
 	/**
@@ -38,7 +38,7 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 	public ADHCPServerProfile(String label, NetworkModel networkModel) {
 		super(label, networkModel);
 
-		this.subnetsGateways = new LinkedHashMap<>();
+		this.subnets = new LinkedHashMap<>();
 		this.subnetsMachines = new LinkedHashMap<>();
 	}
 
@@ -46,13 +46,17 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 	 * @param subnetName
 	 * @return false if subnet already exists, true if subnet was added
 	 */
-	public final void addSubnet(String subnetName, IPAddress gateway) {
+	public final void addSubnet(String subnetName, IPAddress subnet) {
 		this.subnetsMachines.putIfAbsent(subnetName, new LinkedHashSet<>());
-		this.subnetsGateways.putIfAbsent(subnetName, gateway);
+		this.subnets.putIfAbsent(subnetName, subnet);
 	}
 
 	protected final Map<String, IPAddress> getSubnets() {
-		return this.subnetsGateways;
+		return this.subnets;
+	}
+
+	protected final IPAddress getSubnet(String subnet) {
+		return getSubnets().get(subnet);
 	}
 
 	private final void putMachines(String subnetName, Collection<AMachineModel> machines) {
@@ -69,7 +73,7 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 	}
 
 	protected final IPAddress getGateway(String subnetName) {
-		return this.subnetsGateways.get(subnetName);
+		return this.subnets.get(subnetName);
 	}
 
 	/**
