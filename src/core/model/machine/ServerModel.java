@@ -211,13 +211,16 @@ public class ServerModel extends AMachineModel {
 		units.add(new InstalledUnit("net_tools", "proceed", "net-tools"));
 		units.add(new InstalledUnit("htop", "proceed", "htop"));
 
+		final Collection<IUnit> typesAndProfileUnits = new ArrayList<>();
 		for (final AStructuredProfile type : this.types) {
-			units.addAll(type.getUnits());
+			typesAndProfileUnits.addAll(type.getUnits());
 		}
 
 		for (final AProfile profile : this.profiles) {
-			units.addAll(profile.getUnits());
+			typesAndProfileUnits.addAll(profile.getUnits());
 		}
+
+		units.addAll(this.aptSources.getUnits());
 
 		// Before we go any further... now the machine is at least up to date, and has a
 		// couple of useful diagnostics packages installed...
@@ -230,13 +233,13 @@ public class ServerModel extends AMachineModel {
 			}
 		}
 
+		units.addAll(typesAndProfileUnits);
 		units.addAll(serverConfig());
 
 		if (getFirewall() != null) { // Some machines don't have firewalls for me to configure
 			units.addAll(getFirewall().getUnits());
 		}
 		units.addAll(this.bindMounts.getUnits());
-		units.addAll(this.aptSources.getUnits());
 		units.addAll(this.runningProcesses.getUnits());
 		units.addAll(this.users.getUnits());
 
