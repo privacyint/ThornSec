@@ -50,7 +50,8 @@ public class SimpleUnit extends ComplexUnit {
 		this.message = message;
 	}
 
-	protected String getAudit() {
+	@Override
+	protected final String getAudit() {
 		String auditString = "out=$(" + super.getAudit() + ");\n";
 		auditString += "test=\"" + getTest() + "\";\n";
 		
@@ -65,15 +66,16 @@ public class SimpleUnit extends ComplexUnit {
 		return auditString;
 	}
 
-	protected String getTest() {
+	protected final String getTest() {
 		return this.test;
 	}
 
-	protected String getResult() {
+	protected final String getResult() {
 		return this.result;
 	}
 	
-	protected String getMessage() {
+	@Override
+	protected final String getMessage() {
 		String message = this.message;
 		
 		message = Pattern.quote(message); //Turn special characters into literal so they don't get parsed out
