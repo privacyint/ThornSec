@@ -86,12 +86,14 @@ public class FileUnit extends SimpleUnit {
 	}
 
 	/**
-	 * Append a line of text to this FileUnit, ending with a carriage return
+	 * Append line(s) of text to this FileUnit, each ending with a carriage return
 	 *
 	 * @param line
 	 */
-	public final void appendLine(String line) {
-		this.appendLine(line, true);
+	public final void appendLine(String... lines) {
+		for (final String line : lines) {
+			this.appendLine(line, true);
+		}
 	}
 
 	/**
