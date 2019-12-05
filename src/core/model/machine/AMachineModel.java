@@ -10,6 +10,7 @@ package core.model.machine;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -19,10 +20,7 @@ import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
-import core.StringUtils;
 import core.data.machine.AMachineData.Encapsulation;
-import core.data.machine.configuration.NetworkInterfaceData;
-import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.AThornSecException;
 import core.exception.data.ADataException;
 import core.exception.data.InvalidPortException;
@@ -61,8 +59,7 @@ public abstract class AMachineModel extends AModel {
 
 	private final Map<String, Collection<Integer>> dnats;
 
-	AMachineModel(String label, NetworkModel networkModel)
-			throws AddressException, JsonParsingException, ADataException, IOException {
+	AMachineModel(String label, NetworkModel networkModel) throws AddressException, JsonParsingException, ADataException, IOException {
 		super(label, networkModel);
 
 		this.emailAddress = getNetworkModel().getData().getEmailAddress(getLabel());
@@ -70,18 +67,17 @@ public abstract class AMachineModel extends AModel {
 		this.domain = getNetworkModel().getData().getDomain(getLabel());
 		this.cnames = getNetworkModel().getData().getCNAMEs(getLabel());
 
-		this.networkInterfaces = new LinkedHashSet<>();
-		if (getNetworkModel().getData().getNetworkInterfaces(getLabel()) != null) {
-			final Map<Direction, Collection<NetworkInterfaceData>> ifaces = getNetworkModel().getData()
-					.getNetworkInterfaces(getLabel());
+//		this.networkInterfaces = new LinkedHashSet<>();
+//		if (getNetworkModel().getData().getNetworkInterfaces(getLabel()) != null) {
+//			final Map<Direction, Collection<NetworkInterfaceData>> ifaces = getNetworkModel().getData().getNetworkInterfaces(getLabel());
 
-			for (final Direction dir : ifaces.keySet()) {
-				for (final NetworkInterfaceData ifaceData : ifaces.get(dir)) {
-					final NetworkInterfaceModel iface = ifaceDataToModel(ifaceData);
-					addNetworkInterface(iface);
-				}
-			}
-		}
+//			for (final Direction dir : ifaces.keySet()) {
+//				for (final NetworkInterfaceData ifaceData : ifaces.get(dir)) {
+//					final NetworkInterfaceModel iface = ifaceDataToModel(ifaceData);
+//					addNetworkInterface(iface);
+//				}
+//			}
+//		}
 
 		this.throttled = getNetworkModel().getData().isThrottled(getLabel());
 
@@ -92,22 +88,22 @@ public abstract class AMachineModel extends AModel {
 		this.dnats = getNetworkModel().getData().getDNATs(getLabel());
 	}
 
-	final private NetworkInterfaceModel ifaceDataToModel(NetworkInterfaceData ifaceData) {
-		final NetworkInterfaceModel ifaceModel = new NetworkInterfaceModel(getLabel(), getNetworkModel());
-
-		ifaceModel.setIface(ifaceData.getIface());
-		ifaceModel.setAddress(ifaceData.getAddress());
-		ifaceModel.setMACVLANs(ifaceData.getMACVLANs());
-		ifaceModel.setBroadcast(ifaceData.getBroadcast());
-		ifaceModel.setComment(ifaceData.getComment());
-		ifaceModel.setGateway(ifaceData.getGateway());
-		ifaceModel.setInet(ifaceData.getInet());
-		ifaceModel.setMac(ifaceData.getMAC());
-		ifaceModel.setNetmask(ifaceData.getNetmask());
-		ifaceModel.setSubnet(ifaceData.getSubnet());
-
-		return ifaceModel;
-	}
+//	final private NetworkInterfaceModel ifaceDataToModel(NetworkInterfaceData ifaceData) {
+//		final NetworkInterfaceModel ifaceModel = new NetworkInterfaceModel(getLabel(), getNetworkModel());
+//
+//		ifaceModel.setIface(ifaceData.getIface());
+//		ifaceModel.setAddress(ifaceData.getAddress());
+//		// ifaceModel.setMACVLANs(ifaceData.getMACVLANs());
+//		ifaceModel.setBroadcast(ifaceData.getBroadcast());
+//		ifaceModel.setComment(ifaceData.getComment());
+//		ifaceModel.setGateway(ifaceData.getGateway());
+//		ifaceModel.setInet(ifaceData.getInet());
+//		ifaceModel.setMac(ifaceData.getMAC());
+//		ifaceModel.setNetmask(ifaceData.getNetmask());
+//		ifaceModel.setSubnet(ifaceData.getSubnet());
+//
+//		return ifaceModel;
+//	}
 
 	public final Integer getCIDR() {
 		return this.cidr;
@@ -126,19 +122,10 @@ public abstract class AMachineModel extends AModel {
 	}
 
 	public final Collection<NetworkInterfaceModel> getNetworkInterfaces() {
+		if (this.networkInterfaces == null) {
+			return new ArrayList<>();
+		}
 		return this.networkInterfaces;
-	}
-
-	public final String getIngressChain() {
-		return StringUtils.stringToAlphaNumeric(getLabel(), "_") + "_ingress";
-	}
-
-	public final String getForwardChain() {
-		return StringUtils.stringToAlphaNumeric(getLabel(), "_") + "_fwd";
-	}
-
-	public final String getEgressChain() {
-		return StringUtils.stringToAlphaNumeric(getLabel(), "_") + "_egress";
 	}
 
 	public final void addIngress(String... sources) {

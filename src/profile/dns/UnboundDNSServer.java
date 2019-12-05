@@ -21,7 +21,7 @@ import core.exception.runtime.ARuntimeException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
-import core.model.machine.configuration.networking.NetworkInterfaceModel;
+import core.model.machine.configuration.networking.ISystemdNetworkd;
 import core.model.network.NetworkModel;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileUnit;
@@ -186,41 +186,52 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		// Start by updating the ad block list (if req'd)
 		if (getNetworkModel().getData().adBlocking()) {
 			units.add(new SimpleUnit("adblock_up_to_date", "proceed",
-					"sudo wget -O /etc/unbound/rawhosts https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
-							+ " && cat /etc/unbound/rawhosts | grep '^0\\.0\\.0\\.0'"
+					"sudo wget -O /etc/unbound/rawhosts https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts" + " && cat /etc/unbound/rawhosts | grep '^0\\.0\\.0\\.0'"
 							+ " | awk '{print \"local-zone: \\\"\"$2\"\\\" redirect\\nlocal-data: \\\"\"$2\" A 0.0.0.0\\\"\"}'"
-							+ " | sudo tee /etc/unbound/unbound.conf.d/adblock.zone > /dev/null"
-							+ " && sudo service unbound restart",
+							+ " | sudo tee /etc/unbound/unbound.conf.d/adblock.zone > /dev/null" + " && sudo service unbound restart",
 					"[ ! -f /etc/unbound/rawhosts ] && echo fail || wget -O - -o /dev/null https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts | cmp /etc/unbound/rawhosts 2>&1",
 					"", "pass"));
 		}
 
 		// Now make sure all of the various zones are there & up to date
 		for (final HostName domain : this.zones.keySet()) {
-			final FileUnit zoneFile = new FileUnit(domain.getHost() + "_dns_internal_zone", "dns_installed",
-					"/etc/unbound/unbound.conf.d/" + domain.getHost() + ".zone");
+			final FileUnit zoneFile = new FileUnit(domain.getHost() + "_dns_internal_zone", "dns_installed", "/etc/unbound/unbound.conf.d/" + domain.getHost() + ".zone");
 			units.add(zoneFile);
 			// Typetransparent passes resolution upwards if not found locally
 			zoneFile.appendLine("\tlocal-zone: \\\"" + domain.getHost() + ".\\\" typetransparent");
 
 			for (final AMachineModel machine : this.zones.get(domain)) {
-				for (final NetworkInterfaceModel iface : machine.getNetworkInterfaces()) {
+				for (final ISystemdNetworkd iface : machine.getNetworkInterfaces()) {
 
-					if (iface.getAddress() != null) {
-						zoneFile.appendLine("\tlocal-data-ptr: \\\"" + iface.getAddress().withoutPrefixLength() + " "
-								+ machine.getLabel() + "\\\"");
+					if (iface.getAddresses() == null) {
+						continue;
 					}
 
-					if (machine.getCNAMEs() != null) {
+					for (final IPAddress ip : iface.getAddresses()) {
+						if (ip == null) {
+							continue;
+						}
+//
+//						try {
+//						ServerModel server = getNetworkModel().getServerModel(machine.getLabel());
+//							if (server.isRouter()) {
+//						}catch(InvalidServerModelException e) {
+//
+//						}
+//
+						zoneFile.appendLine("\tlocal-data-ptr: \\\"" + ip.getLowerNonZeroHost().withoutPrefixLength() + " " + machine.getLabel() + "\\\"");
+						zoneFile.appendLine(
+								"\tlocal-data-ptr: \\\"" + ip.getLowerNonZeroHost().withoutPrefixLength() + " " + machine.getLabel() + "." + machine.getDomain() + "\\\"");
+
+						if (machine.getCNAMEs() == null) {
+							continue;
+						}
 						for (final String cname : machine.getCNAMEs()) {
-							zoneFile.appendLine("\tlocal-data: \\\"" + cname + " A "
-									+ iface.getAddress().withoutPrefixLength() + "\\\"");
+							zoneFile.appendLine("\tlocal-data: \\\"" + cname + " A " + ip.withoutPrefixLength() + "\\\"");
 							if (cname.equals(".")) {
-								zoneFile.appendLine("\tlocal-data: \\\"" + domain.getHost() + " A "
-										+ iface.getAddress().withoutPrefixLength() + "\\\"");
+								zoneFile.appendLine("\tlocal-data: \\\"" + domain.getHost() + " A " + ip.withoutPrefixLength() + "\\\"");
 							} else {
-								zoneFile.appendLine("\tlocal-data: \\\"" + cname + "." + domain.getHost() + " A "
-										+ iface.getAddress().withoutPrefixLength() + "\\\"");
+								zoneFile.appendLine("\tlocal-data: \\\"" + cname + "." + domain.getHost() + " A " + ip.withoutPrefixLength() + "\\\"");
 							}
 						}
 					}

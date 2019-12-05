@@ -9,8 +9,6 @@ package profile.firewall.router;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import core.StringUtils;
 import core.data.machine.AMachineData.Encapsulation;
@@ -23,11 +21,13 @@ import core.model.machine.ExternalOnlyDeviceModel;
 import core.model.machine.InternalOnlyDeviceModel;
 import core.model.machine.ServerModel;
 import core.model.machine.UserDeviceModel;
+import core.model.machine.configuration.networking.ISystemdNetworkd;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import inet.ipaddr.HostName;
+import inet.ipaddr.IPAddress;
 import profile.firewall.AFirewallProfile;
 
 /**
@@ -156,28 +156,32 @@ public class ShorewallFirewall extends AFirewallProfile {
 			hosts.appendLine(machine2Host(server, ParentZone.SERVERS));
 
 			for (final NetworkInterfaceModel nic : server.getNetworkInterfaces()) {
-				maclist.appendLine("ACCEPT\t" + ParentZone.SERVERS + "\t" + nic.getMac() + "\t" + nic.getAddress() + "\t#" + server.getLabel());
+				// TODO
+				maclist.appendLine("ACCEPT\t" + ParentZone.SERVERS + "\t" + nic.getMac() + "\t" + nic.getAddresses() + "\t#" + server.getLabel());
 			}
 		}
 
 		for (final UserDeviceModel user : getNetworkModel().getUserDevices().values()) {
 			hosts.appendLine(machine2Host(user, ParentZone.USERS));
 			for (final NetworkInterfaceModel nic : user.getNetworkInterfaces()) {
-				maclist.appendLine("ACCEPT\t" + ParentZone.USERS + "\t" + nic.getMac() + "\t" + nic.getAddress() + "\t#" + user.getLabel());
+				// TODO
+				maclist.appendLine("ACCEPT\t" + ParentZone.USERS + "\t" + nic.getMac() + "\t" + nic.getAddresses() + "\t#" + user.getLabel());
 			}
 		}
 
 		for (final InternalOnlyDeviceModel device : getNetworkModel().getInternalOnlyDevices().values()) {
 			hosts.appendLine(machine2Host(device, ParentZone.INTERNAL_ONLY));
 			for (final NetworkInterfaceModel nic : device.getNetworkInterfaces()) {
-				maclist.appendLine("ACCEPT\t" + ParentZone.INTERNAL_ONLY + "\t" + nic.getMac() + "\t" + nic.getAddress() + "\t#" + device.getLabel());
+				// TODO
+				maclist.appendLine("ACCEPT\t" + ParentZone.INTERNAL_ONLY + "\t" + nic.getMac() + "\t" + nic.getAddresses() + "\t#" + device.getLabel());
 			}
 		}
 
 		for (final ExternalOnlyDeviceModel device : getNetworkModel().getExternalOnlyDevices().values()) {
 			hosts.appendLine(machine2Host(device, ParentZone.EXTERNAL_ONLY));
 			for (final NetworkInterfaceModel nic : device.getNetworkInterfaces()) {
-				maclist.appendLine("ACCEPT\t" + ParentZone.EXTERNAL_ONLY + "\t" + nic.getMac() + "\t" + nic.getAddress() + "\t#" + device.getLabel());
+				// TODO
+				maclist.appendLine("ACCEPT\t" + ParentZone.EXTERNAL_ONLY + "\t" + nic.getMac() + "\t" + nic.getAddresses() + "\t#" + device.getLabel());
 			}
 		}
 		units.add(hosts);
@@ -189,87 +193,87 @@ public class ShorewallFirewall extends AFirewallProfile {
 		rules.appendLine("#for per-subnet rules");
 		units.add(rules);
 
-		// Now iterate through our various zones and build them
-		for (final MachineType zone : List.of(MachineType.ADMIN, MachineType.USER, MachineType.GUEST, MachineType.SERVER, MachineType.INTERNAL_ONLY, MachineType.EXTERNAL_ONLY)) {
-			rules.appendLine("INCLUDE rules_" + zone.toString());
-
-			final Collection<AMachineModel> machinesInZone = getNetworkModel().getMachines(zone).values();
-
-			final FileUnit zoneRules = new FileUnit(zone.toString() + "_shorewall_rules", "shorewall_rules", CONFIG_BASEDIR + "/rules_" + zone.toString());
-			zoneRules.appendLine("#This file lists our firewall rules for the " + zone.toString() + " zone");
-			zoneRules.appendLine("#ACTION       SOURCE       DEST[zone:ip]       PROTO       DPORT       SPORT       ORIGINAL_DEST[ip]");
-
-			for (final AMachineModel machine : machinesInZone) {
-				for (final String label : machine.getDNAT().keySet()) {
-					String source = null;
-					String dest = null;
-					String origDest = null;
-
-					final String allIPs = getNetworkModel().getMachineModel(label).getNetworkInterfaces().stream()
-							.map(i -> i.getAddress().withoutPrefixLength().toCompressedString()).collect(Collectors.joining(","));
-
-					origDest = allIPs;
-
-					// If it's *this* machine, needs to be changed to the reserved $FW keyword.
-					if (getNetworkModel().getServerModel(getLabel()).equals(machine)) {
-						source = "all!\\\\$FW";
-						dest = "\\\\$FW";
-					} else {
-						source = "all!" + cleanZone(machine.getLabel());
-						dest = cleanZone(machine.getLabel()) + ":" + allIPs;
-					}
-
-					final String proto = Encapsulation.TCP.toString().toLowerCase();
-					final String sport = "-";
-					final String dport = machine.getDNAT().get(label).stream().map(i -> i.toString()).collect(Collectors.joining(","));
-
-					zoneRules.appendLine(makeRule(Action.DNAT, source, dest, proto, dport, sport, origDest));
-				}
-			}
-
-			zoneRules.appendCarriageReturn();
-			zoneRules.appendLine("#Now let's move onto per-machine rules");
-
-			for (final AMachineModel machine : machinesInZone) {
-				zoneRules.appendLine("?COMMENT " + machine.getLabel());
-
-				// Ingresses
-				for (final HostName source : machine.getIngresses()) {
-					zoneRules.appendLine(makeRule(Action.ACCEPT, "Internet:" + source.getHost(), cleanZone(machine.getLabel()), Encapsulation.TCP.toString().toLowerCase(),
-							source.getPort().toString(), "-", "-"));
-				}
-
-				// Egresses
-				for (final HostName destination : machine.getEgresses()) {
-					final Integer dport = destination.getPort();
-					String dportString = null;
-					// TODO: this is hacky.
-					String dest = destination.getHost();
-					final long count = dest.chars().filter(ch -> ch == '.').count();
-					if (count == 1) {
-						dest += ".";
-					}
-
-					if (dport == null) {
-						dportString = "-";
-					} else {
-						dportString = dport.toString();
-					}
-					zoneRules.appendLine(makeRule(Action.ACCEPT, cleanZone(machine.getLabel()), "wan:" + dest, Encapsulation.TCP.toString().toLowerCase(), dportString, "-", "-"));
-				}
-
-				// Forwards
-				for (final String destination : machine.getForwards()) {
-					zoneRules.appendLine(makeRule(Action.ACCEPT, cleanZone(machine.getLabel()), cleanZone(destination), Encapsulation.TCP.toString().toLowerCase(), "-", "-", "-"));
-				}
-
-				// TODO: listen rules
-
-				zoneRules.appendLine("?COMMENT");
-			}
-
-			units.add(zoneRules);
-		}
+//		// Now iterate through our various zones and build them
+//		for (final MachineType zone : List.of(MachineType.ADMIN, MachineType.USER, MachineType.GUEST, MachineType.SERVER, MachineType.INTERNAL_ONLY, MachineType.EXTERNAL_ONLY)) {
+//			rules.appendLine("INCLUDE rules_" + zone.toString());
+//
+//			final Collection<AMachineModel> machinesInZone = getNetworkModel().getMachines(zone).values();
+//
+//			final FileUnit zoneRules = new FileUnit(zone.toString() + "_shorewall_rules", "shorewall_rules", CONFIG_BASEDIR + "/rules_" + zone.toString());
+//			zoneRules.appendLine("#This file lists our firewall rules for the " + zone.toString() + " zone");
+//			zoneRules.appendLine("#ACTION       SOURCE       DEST[zone:ip]       PROTO       DPORT       SPORT       ORIGINAL_DEST[ip]");
+//
+//			for (final AMachineModel machine : machinesInZone) {
+//				for (final String label : machine.getDNAT().keySet()) {
+//					String source = null;
+//					String dest = null;
+//					String origDest = null;
+//
+//					final String allIPs = getNetworkModel().getMachineModel(label).getNetworkInterfaces().stream()
+//							.map(i -> i.getAddress().withoutPrefixLength().toCompressedString()).collect(Collectors.joining(","));
+//
+//					origDest = allIPs;
+//
+//					// If it's *this* machine, needs to be changed to the reserved $FW keyword.
+//					if (getNetworkModel().getServerModel(getLabel()).equals(machine)) {
+//						source = "all!\\\\$FW";
+//						dest = "\\\\$FW";
+//					} else {
+//						source = "all!" + cleanZone(machine.getLabel());
+//						dest = cleanZone(machine.getLabel()) + ":" + allIPs;
+//					}
+//
+//					final String proto = Encapsulation.TCP.toString().toLowerCase();
+//					final String sport = "-";
+//					final String dport = machine.getDNAT().get(label).stream().map(i -> i.toString()).collect(Collectors.joining(","));
+//
+//					zoneRules.appendLine(makeRule(Action.DNAT, source, dest, proto, dport, sport, origDest));
+//				}
+//			}
+//
+//			zoneRules.appendCarriageReturn();
+//			zoneRules.appendLine("#Now let's move onto per-machine rules");
+//
+//			for (final AMachineModel machine : machinesInZone) {
+//				zoneRules.appendLine("?COMMENT " + machine.getLabel());
+//
+//				// Ingresses
+//				for (final HostName source : machine.getIngresses()) {
+//					zoneRules.appendLine(makeRule(Action.ACCEPT, "Internet:" + source.getHost(), cleanZone(machine.getLabel()), Encapsulation.TCP.toString().toLowerCase(),
+//							source.getPort().toString(), "-", "-"));
+//				}
+//
+//				// Egresses
+//				for (final HostName destination : machine.getEgresses()) {
+//					final Integer dport = destination.getPort();
+//					String dportString = null;
+//					// TODO: this is hacky.
+//					String dest = destination.getHost();
+//					final long count = dest.chars().filter(ch -> ch == '.').count();
+//					if (count == 1) {
+//						dest += ".";
+//					}
+//
+//					if (dport == null) {
+//						dportString = "-";
+//					} else {
+//						dportString = dport.toString();
+//					}
+//					zoneRules.appendLine(makeRule(Action.ACCEPT, cleanZone(machine.getLabel()), "wan:" + dest, Encapsulation.TCP.toString().toLowerCase(), dportString, "-", "-"));
+//				}
+//
+//				// Forwards
+//				for (final String destination : machine.getForwards()) {
+//					zoneRules.appendLine(makeRule(Action.ACCEPT, cleanZone(machine.getLabel()), cleanZone(destination), Encapsulation.TCP.toString().toLowerCase(), "-", "-", "-"));
+//				}
+//
+//				// TODO: listen rules
+//
+//				zoneRules.appendLine("?COMMENT");
+//			}
+//
+//			units.add(zoneRules);
+//		}
 
 		return units;
 	}
@@ -333,8 +337,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 	 */
 	private String machine2Host(AMachineModel machine, ParentZone zone) {
 		String nics = "";
-		for (final NetworkInterfaceModel nic : machine.getNetworkInterfaces()) {
-			nics += nic.getAddress().withoutPrefixLength().toCompressedString() + "/32,";
+		for (final ISystemdNetworkd nic : machine.getNetworkInterfaces()) {
+			for (final IPAddress ip : nic.getAddresses()) {
+				nics += ip.withoutPrefixLength().toCompressedString() + "/32,";
+			}
 		}
 		nics = nics.replaceAll(",$", ""); // Get rid of any trailing comma
 

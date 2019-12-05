@@ -7,6 +7,7 @@
  */
 package profile.type;
 
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -17,8 +18,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import javax.json.stream.JsonParsingException;
 import javax.swing.JOptionPane;
 
+import core.data.machine.configuration.NetworkInterfaceData;
+import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.data.ADataException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
@@ -26,7 +30,11 @@ import core.exception.runtime.InvalidServerModelException;
 import core.exec.network.APassphrase;
 import core.exec.network.OpenKeePassPassphrase;
 import core.iface.IUnit;
+import core.model.machine.ServerModel;
 import core.model.machine.ServiceModel;
+import core.model.machine.configuration.networking.DHCPClientInterfaceModel;
+import core.model.machine.configuration.networking.NetworkInterfaceModel;
+import core.model.machine.configuration.networking.StaticInterfaceModel;
 import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
@@ -44,8 +52,54 @@ public class HyperVisor extends AStructuredProfile {
 	private final Virtualisation hypervisor;
 	private final Map<String, ServiceModel> services;
 
-	public HyperVisor(String label, NetworkModel networkModel) throws InvalidServerModelException {
+	public HyperVisor(String label, NetworkModel networkModel) throws InvalidServerModelException, JsonParsingException, ADataException {
 		super(label, networkModel);
+
+		final ServerModel me = getNetworkModel().getServerModel(getLabel());
+
+		try {
+			if (networkModel.getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
+				for (final NetworkInterfaceData wanNic : networkModel.getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)) {
+					NetworkInterfaceModel link = null;
+
+					switch (wanNic.getInet()) {
+					case STATIC:
+						link = new StaticInterfaceModel(wanNic.getIface());
+						break;
+					case DHCP:
+						link = new DHCPClientInterfaceModel(wanNic.getIface());
+						break;
+					default:
+					}
+					link.addAddress(wanNic.getAddress());
+					link.setGateway(wanNic.getGateway());
+					link.setBroadcast(wanNic.getBroadcast());
+					link.setMac(wanNic.getMAC());
+					link.setIsIPMasquerading(true);
+					me.addNetworkInterface(link);
+				}
+			}
+			for (final NetworkInterfaceData lanNic : networkModel.getData().getNetworkInterfaces(getLabel()).get(Direction.LAN)) {
+				NetworkInterfaceModel link = null;
+
+				switch (lanNic.getInet()) {
+				case STATIC:
+					link = new StaticInterfaceModel(lanNic.getIface());
+					break;
+				case DHCP:
+					link = new DHCPClientInterfaceModel(lanNic.getIface());
+					break;
+				default:
+				}
+				link.addAddress(lanNic.getAddress());
+				link.setGateway(lanNic.getGateway());
+				link.setBroadcast(lanNic.getBroadcast());
+				link.setMac(lanNic.getMAC());
+				me.addNetworkInterface(link);
+			}
+		} catch (final IOException e) {
+			e.printStackTrace();
+		}
 
 		this.hypervisor = new Virtualisation(label, networkModel);
 		this.services = new LinkedHashMap<>();
@@ -65,8 +119,7 @@ public class HyperVisor extends AStructuredProfile {
 
 		units.addAll(this.hypervisor.getInstalled());
 
-		units.add(new DirUnit("media_dir", "proceed",
-				getNetworkModel().getData().getHypervisorThornsecBase(getLabel()).toString()));
+		units.add(new DirUnit("media_dir", "proceed", getNetworkModel().getData().getHypervisorThornsecBase(getLabel()).toString()));
 
 		units.add(new InstalledUnit("whois", "proceed", "whois"));
 		units.add(new InstalledUnit("tmux", "proceed", "tmux"));
@@ -119,18 +172,15 @@ public class HyperVisor extends AStructuredProfile {
 				filename = Paths.get(new URI(url).getPath()).getFileName().toString();
 				cleanedFilename = filename.replaceAll("[^A-Za-z0-9]", "_");
 			} catch (final Exception e) {
-				JOptionPane.showMessageDialog(null, "It doesn't appear that " + url
-						+ " is a valid link to a Debian ISO.\n\nPlease fix this in your JSON");
+				JOptionPane.showMessageDialog(null, "It doesn't appear that " + url + " is a valid link to a Debian ISO.\n\nPlease fix this in your JSON");
 				System.exit(1);
 			}
 
 			units.add(new FileDownloadUnit("debian_netinst_iso_" + cleanedFilename, "metal_genisoimage_installed", url,
 					getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/" + filename,
 					"The Debian net install ISO couldn't be downloaded.  Please check the URI in your config."));
-			units.add(new FileChecksumUnit("debian_netinst_iso",
-					"debian_netinst_iso_" + cleanedFilename + "_downloaded", Checksum.SHA512,
-					getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/" + filename,
-					getNetworkModel().getData().getDebianIsoSha512(getLabel()),
+			units.add(new FileChecksumUnit("debian_netinst_iso", "debian_netinst_iso_" + cleanedFilename + "_downloaded", Checksum.SHA512,
+					getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/" + filename, getNetworkModel().getData().getDebianIsoSha512(getLabel()),
 					"The sha512 sum of the Debian net install in your config doesn't match what has been downloaded.  This could mean your connection is man-in-the-middle'd, or it could just be that the file has been updated on the server. "
 							+ "Please check http://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA512SUMS (64 bit) or http://cdimage.debian.org/debian-cd/current/i386/iso-cd/SHA512SUMS (32 bit) for the correct checksum."));
 		}
@@ -152,10 +202,8 @@ public class HyperVisor extends AStructuredProfile {
 			if (pass.isADefaultPassphrase()) {
 			}
 
-			units.add(new SimpleUnit(service + "_password", "proceed",
-					service.toUpperCase() + "_PASSWORD=`printf \"" + password + "\" | mkpasswd -s -m md5`",
-					"echo $" + service.toUpperCase() + "_PASSWORD", "", "fail",
-					"Couldn't set the passphrase for " + service + ".  You won't be able to configure this service."));
+			units.add(new SimpleUnit(service + "_password", "proceed", service.toUpperCase() + "_PASSWORD=`printf \"" + password + "\" | mkpasswd -s -m md5`",
+					"echo $" + service.toUpperCase() + "_PASSWORD", "", "fail", "Couldn't set the passphrase for " + service + ".  You won't be able to configure this service."));
 
 			// TODO: Networking stuff in here
 //			String bridge = this.networkModel.getData().getMetalIface(serviceLabel);
@@ -173,43 +221,36 @@ public class HyperVisor extends AStructuredProfile {
 			// this.hypervisor.preseed(service.getLabel(), expirePasswords)));
 			// units.addAll(this.hypervisor.buildServiceVm(service.getLabel(), bridge));
 
-			final String bootDiskDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel())
-					+ "/disks/boot/" + service + "/";
-			final String dataDiskDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel())
-					+ "/disks/data/" + service + "/";
+			final String bootDiskDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/disks/boot/" + service + "/";
+			final String dataDiskDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/disks/data/" + service + "/";
 
 			units.add(new SimpleUnit(service + "_boot_disk_formatted", "proceed", "",
-					"sudo bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + "virt-filesystems -a " + bootDiskDir
-							+ service + "_boot.v*'",
-					"", "fail",
+					"sudo bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + "virt-filesystems -a " + bootDiskDir + service + "_boot.v*'", "", "fail",
 					"Boot disk is unformatted (therefore has no OS on it), please configure the service and try mounting again."));
 
 			// For now, do this as root. We probably want to move to another user, idk
 			units.add(new SimpleUnit(service + "_boot_disk_loopback_mounted", service + "_boot_disk_formatted",
-					"sudo bash -c '" + " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + " guestmount -a "
-							+ bootDiskDir + service + "_boot.v*" + " -i" // Inspect the disk for the relevant
-																			// partition
+					"sudo bash -c '" + " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + " guestmount -a " + bootDiskDir + service + "_boot.v*" + " -i" // Inspect the disk for the
+																																							// relevant
+																																							// partition
 							+ " -o direct_io" // All read operations must be done against live, not cache
 							+ " --ro" // _MOUNT THE DISK READ ONLY_
 							+ " " + bootDiskDir + "live/" + "'",
-					"sudo mount | grep " + bootDiskDir, "", "fail",
-					"I was unable to loopback mount the boot disk for " + service + " in " + getLabel() + "."));
+					"sudo mount | grep " + bootDiskDir, "", "fail", "I was unable to loopback mount the boot disk for " + service + " in " + getLabel() + "."));
 
 			units.add(new SimpleUnit(service + "_data_disk_formatted", "proceed", "",
-					"sudo bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + "virt-filesystems -a " + dataDiskDir
-							+ service + "_data.v*'",
-					"", "fail",
+					"sudo bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + "virt-filesystems -a " + dataDiskDir + service + "_data.v*'", "", "fail",
 					"Data disk is unformatted (therefore hasn't been configured), please configure the service and try mounting again."));
 
 			units.add(new SimpleUnit(service + "_data_disk_loopback_mounted", service + "_data_disk_formatted",
-					"sudo bash -c '" + " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + " guestmount -a "
-							+ dataDiskDir + service + "_data.v*" + " -m /dev/sda1" // Mount the first
-																					// partition
+					"sudo bash -c '" + " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + " guestmount -a " + dataDiskDir + service + "_data.v*" + " -m /dev/sda1" // Mount the
+																																									// first
+																																									// partition
 							+ " -o direct_io" // All read operations must be done against live, not cache
 							+ " --ro" // _MOUNT THE DISK READ ONLY_
 							+ " " + dataDiskDir + "live/" + "'",
-					"sudo mount | grep " + dataDiskDir, "", "fail", "I was unable to loopback mount the data disk for "
-							+ service + " in " + getLabel() + ".  Backups will not work."));
+					"sudo mount | grep " + dataDiskDir, "", "fail",
+					"I was unable to loopback mount the data disk for " + service + " in " + getLabel() + ".  Backups will not work."));
 		}
 
 		return units;

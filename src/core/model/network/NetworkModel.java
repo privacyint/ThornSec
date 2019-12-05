@@ -58,7 +58,7 @@ public class NetworkModel {
 	private Map<String, Collection<IUnit>> networkUnits;
 	private Map<String, Collection<String>> hypervisorLayout;
 
-	NetworkModel(String label) {
+	NetworkModel(String label) throws AddressException, JsonParsingException, AThornSecException, IOException, URISyntaxException {
 		this.label = label;
 
 		this.machines = null;
@@ -86,53 +86,51 @@ public class NetworkModel {
 	 * @throws JsonParsingException
 	 * @throws AThornSecException
 	 */
-	void init() throws AddressException, InstantiationException, IllegalAccessException, IllegalArgumentException,
-			InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException,
-			URISyntaxException, IOException, JsonParsingException, AThornSecException {
+	void init() throws AddressException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
+			SecurityException, ClassNotFoundException, URISyntaxException, IOException, JsonParsingException, AThornSecException {
 
 		// Start by building our network
 		final Map<String, AMachineData> externals = getData().getExternalOnlyDevices();
 		if (externals != null) {
-			for (final String label : externals.keySet()) {
-				final AMachineModel device = new ExternalOnlyDeviceModel(label, this);
-				addMachineToNetwork(MachineType.EXTERNAL_ONLY, label, device);
-				addMachineToNetwork(MachineType.DEVICE, label, device);
+			for (final String external : externals.keySet()) {
+				final AMachineModel device = new ExternalOnlyDeviceModel(external, this);
+				addMachineToNetwork(MachineType.EXTERNAL_ONLY, external, device);
+				addMachineToNetwork(MachineType.DEVICE, external, device);
 			}
 		}
 
 		final Map<String, AMachineData> internals = getData().getInternalOnlyDevices();
 		if (internals != null) {
-			for (final String label : internals.keySet()) {
-				final AMachineModel device = new InternalOnlyDeviceModel(label, this);
-				addMachineToNetwork(MachineType.INTERNAL_ONLY, label, device);
-				addMachineToNetwork(MachineType.DEVICE, label, device);
+			for (final String internal : internals.keySet()) {
+				final AMachineModel device = new InternalOnlyDeviceModel(internal, this);
+				addMachineToNetwork(MachineType.INTERNAL_ONLY, internal, device);
+				addMachineToNetwork(MachineType.DEVICE, internal, device);
 			}
 		}
 
 		final Map<String, AMachineData> users = getData().getUserDevices();
 		if (users != null) {
-			for (final String label : users.keySet()) {
-				final AMachineModel device = new UserDeviceModel(label, this);
-				addMachineToNetwork(MachineType.USER, label, device);
-				addMachineToNetwork(MachineType.DEVICE, label, device);
+			for (final String user : users.keySet()) {
+				final AMachineModel device = new UserDeviceModel(user, this);
+				addMachineToNetwork(MachineType.USER, user, device);
+				addMachineToNetwork(MachineType.DEVICE, user, device);
 			}
 		}
 
 		final Map<String, AMachineData> servers = getData().getServers();
 		if (servers != null) {
-			for (final String label : servers.keySet()) {
-				final ServerModel server = new ServerModel(label, this);
-				addMachineToNetwork(MachineType.SERVER, label, server);
-				for (final MachineType type : getData().getTypes(label)) {
-					addMachineToNetwork(type, label, server);
+			for (final String serverLabel : servers.keySet()) {
+				final ServerModel server = new ServerModel(serverLabel, this);
+				addMachineToNetwork(MachineType.SERVER, serverLabel, server);
+				for (final MachineType type : getData().getTypes(serverLabel)) {
+					addMachineToNetwork(type, serverLabel, server);
 
 					if (type.equals(MachineType.HYPERVISOR)) {
-						final HypervisorData hvData = (HypervisorData) getData().getMachine(MachineType.HYPERVISOR,
-								label);
+						final HypervisorData hvData = (HypervisorData) getData().getMachine(MachineType.HYPERVISOR, serverLabel);
 
 						if (hvData.getVMs() != null) {
 							for (final ServerData vm : hvData.getVMs()) {
-								registerServiceOnHyperVisor(label, vm.getLabel());
+								registerServiceOnHyperVisor(serverLabel, vm.getLabel());
 							}
 						}
 					}
@@ -365,15 +363,14 @@ public class NetworkModel {
 	 * @return A specific device model.
 	 */
 	public final ADeviceModel getDeviceModel(String device) throws InvalidDeviceModelException {
-		if (getDevices(MachineType.DEVICE).containsKey(this.label)) {
-			return getDevices(MachineType.DEVICE).get(this.label);
+		if (getDevices(MachineType.DEVICE).containsKey(device)) {
+			return getDevices(MachineType.DEVICE).get(device);
 		}
 
 		throw new InvalidDeviceModelException(device + " is not a device on your network");
 	}
 
-	public final void auditNonBlock(String server, OutputStream out, InputStream in, boolean quiet)
-			throws InvalidServerModelException {
+	public final void auditNonBlock(String server, OutputStream out, InputStream in, boolean quiet) throws InvalidServerModelException {
 		final ManageExec exec = getManageExec(server, "audit", out, quiet);
 		if (exec != null) {
 			exec.manage();
@@ -389,24 +386,21 @@ public class NetworkModel {
 		}
 	}
 
-	public final void configNonBlock(String server, OutputStream out, InputStream in)
-			throws InvalidServerModelException {
+	public final void configNonBlock(String server, OutputStream out, InputStream in) throws InvalidServerModelException {
 		final ManageExec exec = getManageExec(server, "config", out, false);
 		if (exec != null) {
 			exec.manage();
 		}
 	}
 
-	public final void dryrunNonBlock(String server, OutputStream out, InputStream in)
-			throws InvalidServerModelException {
+	public final void dryrunNonBlock(String server, OutputStream out, InputStream in) throws InvalidServerModelException {
 		final ManageExec exec = getManageExec(server, "dryrun", out, false);
 		if (exec != null) {
 			exec.manage();
 		}
 	}
 
-	private final ManageExec getManageExec(String server, String action, OutputStream out, boolean quiet)
-			throws InvalidServerModelException {
+	private final ManageExec getManageExec(String server, String action, OutputStream out, boolean quiet) throws InvalidServerModelException {
 		// need to do a series of local checks eg known_hosts or expected
 		// fingerprint
 		final OpenKeePassPassphrase pass = new OpenKeePassPassphrase(server, this);

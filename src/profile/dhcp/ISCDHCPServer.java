@@ -14,6 +14,7 @@ import core.StringUtils;
 import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
+import core.exception.data.machine.InvalidServerException;
 import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
@@ -29,6 +30,7 @@ import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
+import inet.ipaddr.IncompatibleAddressException;
 
 /**
  * Configure and set up our various different networks, and offer IP addresses
@@ -40,51 +42,31 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		super(label, networkModel);
 	}
 
-	private void buildNet(String network, IPAddress subnet, Collection<AMachineModel> machines) {
+	private void buildNet(String network, IPAddress subnet, Collection<AMachineModel> machines) throws InvalidServerException {
 		// First IP belongs to this net's router, so start from there (as it's assigned)
 		IPAddress ip = subnet.getLowerNonZeroHost();
 
+		addSubnet(network, ip);
 		addToSubnet(network, machines);
 
 		for (final AMachineModel machine : machines) {
 
 			try {
-				if (machine.equals(getNetworkModel().getServerModel(getLabel()))) {
+				if (getNetworkModel().getServerModel(machine.getLabel()).isRouter()) {
 					continue;
 				}
 			} catch (final InvalidServerModelException e) {
-				e.printStackTrace();
+				// It's not a server, so can't possibly be a Router
 			}
 
 			for (final NetworkInterfaceModel nic : machine.getNetworkInterfaces()) {
 				// DHCP servers distribute IP addresses, correct? :)
-				if (nic.getAddress() == null) {
+				if (nic.getAddresses() == null) {
 					ip = ip.increment(1);
-					nic.setAddress(ip);
+					nic.addAddress(ip);
 				}
 			}
 		}
-	}
-
-	@Override
-	protected void distributeIPs() throws AThornSecException {
-
-		buildNet(MachineType.SERVER.toString(),
-				new IPAddressString(getNetworkModel().getData().getServerSubnet()).getAddress(),
-				getNetworkModel().getMachines(MachineType.SERVER).values());
-		buildNet(MachineType.USER.toString(),
-				new IPAddressString(getNetworkModel().getData().getUserSubnet()).getAddress(),
-				getNetworkModel().getMachines(MachineType.USER).values());
-		buildNet(MachineType.ADMIN.toString(),
-				new IPAddressString(getNetworkModel().getData().getAdminSubnet()).getAddress(),
-				getNetworkModel().getMachines(MachineType.ADMIN).values());
-		buildNet(MachineType.INTERNAL_ONLY.toString(),
-				new IPAddressString(getNetworkModel().getData().getInternalSubnet()).getAddress(),
-				getNetworkModel().getMachines(MachineType.INTERNAL_ONLY).values());
-		buildNet(MachineType.EXTERNAL_ONLY.toString(),
-				new IPAddressString(getNetworkModel().getData().getExternalSubnet()).getAddress(),
-				getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).values());
-		// TODO: Guest network pool
 	}
 
 	/**
@@ -100,8 +82,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		for (final NetworkInterfaceModel nic : machine.getNetworkInterfaces()) {
 			if (nic.getMac() == null) {
 				if (isRequired) {
-					throw new InvalidNetworkInterfaceException("Network interface " + nic.getIface() + " on "
-							+ getLabel() + " requires a MAC address to be set.");
+					throw new InvalidNetworkInterfaceException("Network interface " + nic.getIface() + " on " + machine.getLabel() + " requires a MAC address to be set.");
 				} else {
 					return false;
 				}
@@ -157,8 +138,21 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getPersistentConfig() throws IncompatibleAddressException, AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
+
+		buildNet(MachineType.SERVER.toString(), new IPAddressString(getNetworkModel().getData().getServerSubnet()).getAddress(),
+				getNetworkModel().getMachines(MachineType.SERVER).values());
+		buildNet(MachineType.USER.toString(), new IPAddressString(getNetworkModel().getData().getUserSubnet()).getAddress(),
+				getNetworkModel().getMachines(MachineType.USER).values());
+		buildNet(MachineType.ADMIN.toString(), new IPAddressString(getNetworkModel().getData().getAdminSubnet()).getAddress(),
+				getNetworkModel().getMachines(MachineType.ADMIN).values());
+		buildNet(MachineType.INTERNAL_ONLY.toString(), new IPAddressString(getNetworkModel().getData().getInternalSubnet()).getAddress(),
+				getNetworkModel().getMachines(MachineType.INTERNAL_ONLY).values());
+		buildNet(MachineType.EXTERNAL_ONLY.toString(), new IPAddressString(getNetworkModel().getData().getExternalSubnet()).getAddress(),
+				getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).values());
+		// TODO: Guest network pool
+		distributeMACs();
 
 		// Create sub-dir
 		final DirUnit dhcpdConfD = new DirUnit("dhcpd_confd_dir", "dhcp_installed", "/etc/dhcp/dhcpd.conf.d");
@@ -171,8 +165,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		dhcpdConf.appendLine("#for more details");
 		dhcpdConf.appendLine("ddns-update-style none;");
 		dhcpdConf.appendLine("option domain-name \\\"" + getNetworkModel().getData().getDomain() + "\\\";");
-		dhcpdConf.appendLine("option domain-name-servers " + getLabel() + "."
-				+ getNetworkModel().getServerModel(getLabel()).getDomain() + ";");
+		dhcpdConf.appendLine("option domain-name-servers " + getLabel() + "." + getNetworkModel().getServerModel(getLabel()).getDomain() + ";");
 		dhcpdConf.appendLine("default-lease-time 600;");
 		dhcpdConf.appendLine("max-lease-time 1800;");
 		dhcpdConf.appendLine("get-lease-hostnames true;");
@@ -203,12 +196,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	public Collection<IUnit> getLiveConfig() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		distributeIPs();
-		distributeMACs();
-
 		for (final String subnetName : getSubnets().keySet()) {
-			final FileUnit subnetConfig = new FileUnit(subnetName + "_dhcpd_live_config", "dhcp_installed",
-					"/etc/dhcp/dhcpd.conf.d/" + subnetName + ".conf");
+			final FileUnit subnetConfig = new FileUnit(subnetName + "_dhcpd_live_config", "dhcp_installed", "/etc/dhcp/dhcpd.conf.d/" + subnetName + ".conf");
 			units.add(subnetConfig);
 
 			final IPAddress subnet = getGateway(subnetName);
@@ -217,14 +206,12 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 			final IPAddress netmask = subnet.getNetwork().getNetworkMask(prefix, false);
 
 			// Start by telling our DHCP Server about this subnet.
-			subnetConfig.appendLine("subnet " + subnet.getLower().withoutPrefixLength().toCompressedString()
-					+ " netmask " + netmask + " {}");
+			subnetConfig.appendLine("subnet " + subnet.getLower().withoutPrefixLength().toCompressedString() + " netmask " + netmask + " {}");
 
 			// Now let's create our subnet/groups!
 			subnetConfig.appendCarriageReturn();
 			subnetConfig.appendLine("group " + subnetName + " {");
-			subnetConfig.appendLine("\tserver-name \\\"" + subnetName + "." + getLabel() + "."
-					+ getNetworkModel().getData().getDomain() + "\\\";");
+			subnetConfig.appendLine("\tserver-name \\\"" + subnetName + "." + getLabel() + "." + getNetworkModel().getData().getDomain() + "\\\";");
 			subnetConfig.appendLine("\toption routers " + gateway.toCompressedString() + ";");
 			subnetConfig.appendLine("\toption domain-name-servers " + gateway.toCompressedString() + ";");
 			subnetConfig.appendCarriageReturn();
@@ -239,12 +226,13 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 				for (final NetworkInterfaceModel iface : machine.getNetworkInterfaces()) {
 
 					assert (iface.getMac() != null);
+					assert (iface.getAddresses().size() == 1);
+					final IPAddress ip = (IPAddress) iface.getAddresses().toArray()[0];
 
-					subnetConfig.appendLine("\thost " + StringUtils.stringToAlphaNumeric(machine.getLabel()) + "-"
-							+ iface.getMac().toHexString(false) + " {");
+					subnetConfig.appendLine("\thost " + StringUtils.stringToAlphaNumeric(machine.getLabel()) + "-" + iface.getMac().toHexString(false) + " {");
 					subnetConfig.appendLine("\t\thardware ethernet " + iface.getMac().toColonDelimitedString() + ";");
-					subnetConfig.appendLine(
-							"\t\tfixed-address " + iface.getAddress().withoutPrefixLength().toCompressedString() + ";");
+
+					subnetConfig.appendLine("\t\tfixed-address " + ip.withoutPrefixLength().toCompressedString() + ";");
 					subnetConfig.appendLine("\t}");
 					subnetConfig.appendCarriageReturn();
 
@@ -253,8 +241,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 			subnetConfig.appendLine("}");
 		}
 
-		units.add(new EnabledServiceUnit("dhcp", "isc-dhcp-server",
-				"I couldn't enable your DHCP server to start at boot"));
+		units.add(new EnabledServiceUnit("dhcp", "isc-dhcp-server", "I couldn't enable your DHCP server to start at boot"));
 		units.add(new RunningUnit("dhcp_running", "isc-dhcp-server", "dhcpd"));
 
 		return units;

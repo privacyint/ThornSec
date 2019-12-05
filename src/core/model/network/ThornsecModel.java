@@ -26,7 +26,6 @@ import javax.mail.internet.AddressException;
 
 import core.data.network.NetworkData;
 import core.exception.AThornSecException;
-import core.exception.data.ADataException;
 
 /**
  * This is the model at the very heart of ThornSec.
@@ -41,13 +40,12 @@ public class ThornsecModel {
 		this.networks = new LinkedHashMap<>();
 	}
 
-	public void read(String filePath) throws JsonParsingException, ADataException, IOException, URISyntaxException {
+	public void read(String filePath) throws JsonParsingException, IOException, URISyntaxException, AddressException, AThornSecException {
 		JsonReader jsonReader = null;
 		JsonObject networks = null;
 
 		// Start by stripping comments out of the JSON
-		final String rawText = new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8)
-				.replaceAll("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)", "");
+		final String rawText = new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8).replaceAll("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)", "");
 
 		jsonReader = Json.createReader(new StringReader(rawText));
 		networks = jsonReader.readObject();
@@ -63,9 +61,8 @@ public class ThornsecModel {
 		}
 	}
 
-	public void init() throws AddressException, InstantiationException, IllegalAccessException,
-			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException,
-			ClassNotFoundException, URISyntaxException, IOException, JsonParsingException, AThornSecException {
+	public void init() throws AddressException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
+			SecurityException, ClassNotFoundException, URISyntaxException, IOException, JsonParsingException, AThornSecException {
 		for (final String networkName : this.networks.keySet()) {
 			this.networks.get(networkName).init();
 		}

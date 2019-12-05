@@ -7,11 +7,22 @@
  */
 package profile.type;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import javax.json.stream.JsonParsingException;
+
+import core.data.machine.configuration.NetworkInterfaceData;
+import core.data.machine.configuration.NetworkInterfaceData.Direction;
+import core.data.machine.configuration.NetworkInterfaceData.Inet;
+import core.exception.data.ADataException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
+import core.model.machine.configuration.networking.DHCPClientInterfaceModel;
+import core.model.machine.configuration.networking.NetworkInterfaceModel;
+import core.model.machine.configuration.networking.StaticInterfaceModel;
 import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
@@ -26,8 +37,93 @@ import core.unit.pkg.RunningUnit;
  */
 public class Service extends AStructuredProfile {
 
-	public Service(String label, NetworkModel networkModel) {
+	public Service(String label, NetworkModel networkModel) throws InvalidMachineModelException {
 		super(label, networkModel);
+
+		try {
+			if (getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
+				for (final NetworkInterfaceData nicData : getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)) {
+					// TODO: This needs some better logic than this
+					// TODO finish implementing
+//					ifaceModel.setIface(ifaceData.getIface());
+//					ifaceModel.setAddress(ifaceData.getAddress());
+//					ifaceModel.setMACVLANs(ifaceData.getMACVLANs());
+//					ifaceModel.setBroadcast(ifaceData.getBroadcast());
+//					ifaceModel.setComment(ifaceData.getComment());
+//					ifaceModel.setGateway(ifaceData.getGateway());
+//					ifaceModel.setInet(ifaceData.getInet());
+//					ifaceModel.setMac(ifaceData.getMAC());
+//					ifaceModel.setNetmask(ifaceData.getNetmask());
+//					ifaceModel.setSubnet(ifaceData.getSubnet());
+					NetworkInterfaceModel nic = null;
+					for (final NetworkInterfaceModel iface : getNetworkModel().getNetworkInterfaces(getLabel())) {
+						if (iface.getIface().equals(nicData.getIface())) {
+							nic = iface;
+							break;
+						}
+					}
+
+					if (nicData.getInet() == Inet.STATIC) {
+
+						if (nic == null) {
+							nic = new StaticInterfaceModel(nicData.getIface());
+							getNetworkModel().getServerModel(getLabel()).addNetworkInterface(nic);
+						}
+
+						nic.addAddress(nicData.getAddress());
+
+						if (nic.getGateway() == null) {
+							nic.setGateway(nicData.getGateway());
+						}
+
+						if (nic.getBroadcast() == null) {
+							nic.setBroadcast(nicData.getBroadcast());
+						}
+					} else if (nicData.getInet() == Inet.DHCP) {
+						nic = new DHCPClientInterfaceModel(nicData.getIface());
+						getNetworkModel().getServerModel(getLabel()).addNetworkInterface(nic);
+					}
+
+					// We're an external iface
+					nic.setIsIPMasquerading(true);
+				}
+			}
+
+			for (final NetworkInterfaceData nicData : getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.LAN)) {
+				// TODO: This needs some better logic than this
+				NetworkInterfaceModel nic = null;
+				for (final NetworkInterfaceModel iface : getNetworkModel().getNetworkInterfaces(getLabel())) {
+					if (iface.getIface().equals(nicData.getIface())) {
+						nic = iface;
+						break;
+					}
+				}
+
+				if (nicData.getInet() == Inet.STATIC) {
+
+					if (nic == null) {
+						nic = new StaticInterfaceModel(nicData.getIface());
+						getNetworkModel().getServerModel(getLabel()).addNetworkInterface(nic);
+					}
+
+					nic.addAddress(nicData.getAddress());
+
+					if (nic.getGateway() == null) {
+						nic.setGateway(nicData.getGateway());
+					}
+
+					if (nic.getBroadcast() == null) {
+						nic.setBroadcast(nicData.getBroadcast());
+					}
+				} else if (nicData.getInet() == Inet.DHCP) {
+					nic = new DHCPClientInterfaceModel(nicData.getIface());
+					getNetworkModel().getServerModel(getLabel()).addNetworkInterface(nic);
+				}
+			}
+		} catch (JsonParsingException | ADataException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -36,21 +132,18 @@ public class Service extends AStructuredProfile {
 
 		// First, we need to be sure we're actually in a VirtualBox guest, or the rest
 		// of this is moot
-		units.add(new SimpleUnit("is_virtualbox_guest", "proceed", "", "sudo dmidecode -s system-product-name",
-				"VirtualBox", "pass", "It seems that " + getLabel()
-						+ " isn't actually a VM.  This will cause a bunch of misconfigurations, please fix your config file."));
+		units.add(new SimpleUnit("is_virtualbox_guest", "proceed", "", "sudo dmidecode -s system-product-name", "VirtualBox", "pass",
+				"It seems that " + getLabel() + " isn't actually a VM.  This will cause a bunch of misconfigurations, please fix your config file."));
 
 		units.add(new InstalledUnit("build_essential", "is_virtualbox_guest", "build-essential"));
 		units.add(new InstalledUnit("linux_headers", "build_essential_installed", "linux-headers-$(uname -r)"));
 
-		units.add(new SimpleUnit("guest_additions_installed", "linux_headers_installed",
-				"sudo bash -c '" + "mount /dev/sr1 /mnt;" + "sh /mnt/VBoxLinuxAdditions.run --nox11;"
+		units.add(new SimpleUnit(
+				"guest_additions_installed", "linux_headers_installed", "sudo bash -c '" + "mount /dev/sr1 /mnt;" + "sh /mnt/VBoxLinuxAdditions.run --nox11;"
 						+ "echo vboxsf >> /etc/initramfs-tools/modules;" + "update-initramfs -u;" + "'",
-				"lsmod | grep vboxsf", "", "fail",
-				"Couldn't get the VirtualBox additions to install/load.  This will stop external logging from working."));
+				"lsmod | grep vboxsf", "", "fail", "Couldn't get the VirtualBox additions to install/load.  This will stop external logging from working."));
 
-		units.add(new SimpleUnit("guest_additions_are_latest", "guest_additions_installed",
-				"sudo mount /dev/sr1 /mnt;" + "sudo /mnt/VBoxLinuxAdditions.run;" + "sudo umount /mnt;",
+		units.add(new SimpleUnit("guest_additions_are_latest", "guest_additions_installed", "sudo mount /dev/sr1 /mnt;" + "sudo /mnt/VBoxLinuxAdditions.run;" + "sudo umount /mnt;",
 				"sudo mount /dev/sr1 /mnt &>/dev/null;grep -a 'INSTALLATION_VER=' /mnt/VBoxLinuxAdditions.run | tr -d \"\\\"[A-Z]\\=_\";sudo umount /mnt &>/dev/null;",
 				// This is the currently running version, which isn't useful if it has already
 				// been updated pending reboot
@@ -61,8 +154,7 @@ public class Service extends AStructuredProfile {
 
 		getNetworkModel().getServerModel(getLabel()).getUserModel().addUsername("vboxadd");
 		getNetworkModel().getServerModel(getLabel()).addProcessString("\\[iprt-VBoxWQueue\\]$");
-		getNetworkModel().getServerModel(getLabel())
-				.addProcessString("/usr/sbin/VBoxService --pidfile /var/run/vboxadd-service.sh$");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/sbin/VBoxService --pidfile /var/run/vboxadd-service.sh$");
 
 		// haveged is not perfect, but according to
 		// https://security.stackexchange.com/questions/34523/is-it-appropriate-to-use-haveged-as-a-source-of-entropy-on-virtual-machines
@@ -72,12 +164,10 @@ public class Service extends AStructuredProfile {
 		units.add(new InstalledUnit("entropy_generator", "proceed", "haveged"));
 		units.add(new RunningUnit("entropy_generator", "haveged", "haveged"));
 		// Block until we have enough entropy to continue
-		units.add(new SimpleUnit("enough_entropy_available", "entropy_generator_installed",
-				"while [ $(cat /proc/sys/kernel/random/entropy_avail) -le 600 ]; do sleep 2; done;",
+		units.add(new SimpleUnit("enough_entropy_available", "entropy_generator_installed", "while [ $(cat /proc/sys/kernel/random/entropy_avail) -le 600 ]; do sleep 2; done;",
 				"(( $(cat /proc/sys/kernel/random/entropy_avail) > 600 )) && echo pass || echo fail", "pass", "pass"));
 
-		getNetworkModel().getServerModel(getLabel())
-				.addProcessString("/usr/sbin/haveged --Foreground --verbose=1 -w 1024$");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/sbin/haveged --Foreground --verbose=1 -w 1024$");
 
 		return units;
 	}
@@ -94,12 +184,10 @@ public class Service extends AStructuredProfile {
 				+ "	echo  \n" // First sector (Accept default: 1)
 				+ "	echo  \n" // Last sector (Accept default: varies)
 				+ "	echo w\n" // Write changes
-				+ ") | sudo fdisk /dev/sdb;" + "sudo mkfs.ext4 /dev/sdb1;", "sudo fdisk -l | grep '/dev/sdb1'", "",
-				"fail",
+				+ ") | sudo fdisk /dev/sdb;" + "sudo mkfs.ext4 /dev/sdb1;", "sudo fdisk -l | grep '/dev/sdb1'", "", "fail",
 				"Couldn't correctly partition the data disk.  This will cause a whole bunch of errors in further config."));
 
-		units.add(new FileAppendUnit("data_drive_fstab", "data_drive_is_partitioned",
-				"/dev/sdb1 /media/metaldata   ext4   defaults 0 0", "/etc/fstab",
+		units.add(new FileAppendUnit("data_drive_fstab", "data_drive_is_partitioned", "/dev/sdb1 /media/metaldata   ext4   defaults 0 0", "/etc/fstab",
 				"Couldn't create the mount for the data disk at /media/metaldata.  This will cause a whole bunch of errors in further config."));
 
 		// Mount /media/metaldata
@@ -114,20 +202,15 @@ public class Service extends AStructuredProfile {
 		units.add(new DirUnit("data_dir_exists", "is_virtualbox_guest", "/media/data/"));
 
 		// Mount /media/backup
-		units.add(new FileAppendUnit("backup_fstab", "is_virtualbox_guest",
-				"backup    /media/backup      vboxsf defaults,_netdev,ro 0 0", "/etc/fstab",
+		units.add(new FileAppendUnit("backup_fstab", "is_virtualbox_guest", "backup    /media/backup      vboxsf defaults,_netdev,ro 0 0", "/etc/fstab",
 				"Couldn't create the mount for the backup at /media/backup.  Meh."));
 		units.add(new DirUnit("backup_bindpoint", "is_virtualbox_guest", "/media/backup"));
-		units.add(new DirMountedUnit("backup", "backup_fstab_appended", "backup",
-				"Couldn't mount the backup directory."));
+		units.add(new DirMountedUnit("backup", "backup_fstab_appended", "backup", "Couldn't mount the backup directory."));
 
 		// Mount /log
-		units.add(new FileAppendUnit("log_fstab", "is_virtualbox_guest",
-				"log       /var/log           vboxsf defaults,dmode=751,_netdev 0 0", "/etc/fstab",
+		units.add(new FileAppendUnit("log_fstab", "is_virtualbox_guest", "log       /var/log           vboxsf defaults,dmode=751,_netdev 0 0", "/etc/fstab",
 				"Couldn't create the mount for /var/log.  Meh."));
-		units.add(new SimpleUnit("log_mounted", "log_fstab_appended",
-				"sudo mkdir /tmp/log;" + "sudo mv /var/log/* /tmp/log;" + "sudo mount log;"
-						+ "sudo mv /tmp/log/* /var/log;",
+		units.add(new SimpleUnit("log_mounted", "log_fstab_appended", "sudo mkdir /tmp/log;" + "sudo mv /var/log/* /tmp/log;" + "sudo mount log;" + "sudo mv /tmp/log/* /var/log;",
 				"mount | grep 'log on /var/log' 2>&1", "", "fail",
 				"Couldn't move & remount the logs.  This is usually caused by logs already being in the hypervisor, on the first config of a service.  This can be fixed by rebooting the service (though you will lose any logs from the installation)"));
 

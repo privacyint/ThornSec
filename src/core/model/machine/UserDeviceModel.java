@@ -14,6 +14,8 @@ import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
 
 import core.exception.data.ADataException;
+import core.exception.runtime.InvalidDeviceModelException;
+import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
 
@@ -25,7 +27,7 @@ import core.model.network.NetworkModel;
  */
 public class UserDeviceModel extends ADeviceModel {
 	public UserDeviceModel(String label, NetworkModel networkModel)
-			throws AddressException, JsonParsingException, ADataException, IOException {
+			throws AddressException, JsonParsingException, ADataException, IOException, InvalidServerModelException, InvalidDeviceModelException {
 		super(label, networkModel);
 	}
 

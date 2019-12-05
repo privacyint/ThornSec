@@ -78,8 +78,7 @@ public class FullFrame {
 	private JPanel getOutputPanel(JTextArea area) {
 		final JPanel panel = getNewPanel();
 
-		final JScrollPane areapane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+		final JScrollPane areapane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 
 		final GridBagConstraints g = new GridBagConstraints();
 
@@ -97,15 +96,13 @@ public class FullFrame {
 
 	private JSplitPane getDevicePanel(final NetworkModel model) {
 		// Right-hand pane
-		final JScrollPane detailsPane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		final JScrollPane detailsPane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		final JPanel detailsPanel = getNewPanel();
 
 		detailsPane.setViewportView(detailsPanel);
 
 		final JPanel devicePanel = getNewPanel();
-		final JScrollPane devicePane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		final JScrollPane devicePane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
 		final DefaultMutableTreeNode root = new DefaultMutableTreeNode(model.getLabel());
 
@@ -222,15 +219,13 @@ public class FullFrame {
 
 	private JSplitPane getServerPanel(final NetworkModel model, final TextAreaOutputStream out) {
 		// Right-hand pane
-		final JScrollPane detailsPane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		final JScrollPane detailsPane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		final JPanel detailsPanel = getNewPanel();
 
 		detailsPane.setViewportView(detailsPanel);
 
 		// Left-hand pane
-		final JScrollPane serverPane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		final JScrollPane serverPane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		final JPanel serverPanel = getNewPanel();
 		final DefaultMutableTreeNode serverRoot = new DefaultMutableTreeNode(model.getLabel());
 
@@ -304,11 +299,14 @@ public class FullFrame {
 				final Collection<NetworkInterfaceModel> ifaces = model.getNetworkInterfaces(serverLabel);
 				if (ifaces.size() > 0) {
 					for (final NetworkInterfaceModel iface : ifaces) {
-						final IPAddress address = iface.getAddress();
-						if (address == null) {
+						final Collection<IPAddress> ipAddresses = iface.getAddresses();
+						if (ipAddresses == null) {
 							continue;
 						}
-						addresses.setText(addresses.getText() + "<li>" + address.toCompressedString() + "</li>");
+
+						for (final IPAddress address : ipAddresses) {
+							addresses.setText(addresses.getText() + "<li>" + address.toCompressedString() + "</li>");
+						}
 					}
 				}
 			} catch (final InvalidMachineModelException e1) {
@@ -489,8 +487,7 @@ class CustomServerIconRenderer extends DefaultTreeCellRenderer {
 	}
 
 	@Override
-	public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf,
-			int row, boolean hasFocus) {
+	public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
 		super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
 		final Object nodeObj = ((DefaultMutableTreeNode) value).getUserObject();
 
@@ -536,8 +533,7 @@ class DeviceIconRenderer extends DefaultTreeCellRenderer {
 	}
 
 	@Override
-	public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf,
-			int row, boolean hasFocus) {
+	public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
 		super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
 		final Object nodeObj = ((DefaultMutableTreeNode) value).getUserObject();
 

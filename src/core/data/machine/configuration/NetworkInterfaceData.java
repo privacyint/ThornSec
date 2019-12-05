@@ -8,8 +8,6 @@
 package core.data.machine.configuration;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
 
 import javax.json.JsonObject;
 import javax.json.stream.JsonParsingException;
@@ -35,7 +33,7 @@ public class NetworkInterfaceData extends AData {
 	}
 
 	public enum Inet {
-		MANUAL("manual"), STATIC("static"), DHCP("dhcp"), MACVLAN("macvlan");
+		MANUAL("manual"), STATIC("static"), DHCP("dhcp"), MACVLAN("macvlan"), BOND("802.3ad"), PPP("PPPoE");
 
 		private String inet;
 
@@ -48,13 +46,12 @@ public class NetworkInterfaceData extends AData {
 		}
 	}
 
-	private String comment;
 	private String iface;
-	private String preUp;
-	private String postDown;
+	private String comment;
+
 	private Inet inet;
 	private MACAddress mac;
-	private Collection<String> macVLANs;
+
 	private IPAddress address;
 	private IPAddress gateway;
 	private IPAddress subnet;
@@ -65,10 +62,7 @@ public class NetworkInterfaceData extends AData {
 		super(label);
 
 		this.iface = null;
-		this.preUp = null;
-		this.postDown = null;
-		this.inet = null;
-		this.macVLANs = null;
+		this.inet = Inet.STATIC;
 		this.address = null;
 		this.gateway = null;
 		this.subnet = null;
@@ -105,36 +99,12 @@ public class NetworkInterfaceData extends AData {
 		return this.mac;
 	}
 
-	final public Collection<String> getMACVLANs() {
-		return this.macVLANs;
-	}
-
 	final public IPAddress getNetmask() {
 		return this.netmask;
 	}
 
-	final public String getPostDown() {
-		return this.postDown;
-	}
-
-	final public String getPreUp() {
-		return this.preUp;
-	}
-
 	final public IPAddress getSubnet() {
 		return this.subnet;
-	}
-
-	protected final void putMACVLAN(String vlan) {
-		Collection<String> macVLANs = this.macVLANs;
-
-		if (macVLANs == null) {
-			macVLANs = new HashSet<>();
-		}
-
-		macVLANs.add(vlan);
-
-		this.macVLANs = macVLANs;
 	}
 
 	@Override
@@ -165,13 +135,6 @@ public class NetworkInterfaceData extends AData {
 		}
 		if (data.containsKey("mac")) {
 			setMAC(new MACAddressString(data.getString("mac")).getAddress());
-		}
-		if (data.containsKey("vlans")) {
-			final String[] macVLANs = data.getString("vlans", null).split("[^a-z0-9]");
-
-			for (final String macVLAN : macVLANs) {
-				putMACVLAN(macVLAN);
-			}
 		}
 		if (data.containsKey("comment")) {
 			setComment(data.getString("comment"));
@@ -208,14 +171,6 @@ public class NetworkInterfaceData extends AData {
 
 	protected final void setNetmask(IPAddress netmask) {
 		this.netmask = netmask;
-	}
-
-	protected final void setPostDown(String postDown) {
-		this.postDown = postDown;
-	}
-
-	protected final void setPreUp(String preUp) {
-		this.preUp = preUp;
 	}
 
 	protected final void setSubnet(IPAddress subnet) {

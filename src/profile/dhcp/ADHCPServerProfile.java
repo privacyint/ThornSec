@@ -79,13 +79,9 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 	 * @return false if machine already added, true otherwise
 	 */
 	public final void addToSubnet(String subnetName, Collection<AMachineModel> machines) {
-		Collection<AMachineModel> currentMachines = getMachines(subnetName);
+		final Collection<AMachineModel> currentMachines = getMachines(subnetName);
 
-		if (currentMachines == null) {
-			currentMachines = machines;
-		} else {
-			currentMachines.addAll(machines);
-		}
+		currentMachines.addAll(machines);
 
 		putMachines(subnetName, currentMachines);
 	}
@@ -115,7 +111,7 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 	 *
 	 * @throws AThornSecException
 	 */
-	protected abstract void distributeIPs() throws AThornSecException;
+	// protected abstract void distributeIPs() throws AThornSecException;
 
 	/**
 	 * DHCP shouldn't *really* give out MAC addresses, given that it uses them to

@@ -62,8 +62,7 @@ public class ServerModel extends AMachineModel {
 	// private final ConfigFiles configFiles;
 	private final UserAccounts users;
 
-	public ServerModel(String label, NetworkModel networkModel)
-			throws AThornSecException, AddressException, JsonParsingException, IOException, URISyntaxException {
+	public ServerModel(String label, NetworkModel networkModel) throws AThornSecException, AddressException, JsonParsingException, IOException, URISyntaxException {
 		super(label, networkModel);
 
 		final String firewall = getNetworkModel().getData().getFirewallProfile(getLabel());
@@ -73,9 +72,7 @@ public class ServerModel extends AMachineModel {
 		if (firewall != null) {
 			Collection<Class<?>> firewallClasses = null;
 			try {
-				firewallClasses = new ClassesInPackageScanner()
-						.setResourceNameFilter((packageName, fileName) -> fileName.equals(firewall + ".class"))
-						.scan("profile.firewall");
+				firewallClasses = new ClassesInPackageScanner().setResourceNameFilter((packageName, fileName) -> fileName.equals(firewall + ".class")).scan("profile.firewall");
 
 				if (firewallClasses.isEmpty()) {
 					throw new InvalidProfileException(firewall + " is not a valid firewall profile");
@@ -83,10 +80,8 @@ public class ServerModel extends AMachineModel {
 
 				final String firewallClass = firewallClasses.iterator().next().getPackageName();
 
-				this.firewall = (AFirewallProfile) Class.forName(firewallClass)
-						.getDeclaredConstructor(String.class, NetworkModel.class).newInstance(getLabel(), networkModel);
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-					| InvocationTargetException | NoSuchMethodException | SecurityException
+				this.firewall = (AFirewallProfile) Class.forName(firewallClass).getDeclaredConstructor(String.class, NetworkModel.class).newInstance(getLabel(), networkModel);
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException
 					| ClassNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -135,18 +130,16 @@ public class ServerModel extends AMachineModel {
 		for (final String profile : getNetworkModel().getData().getProfiles(getLabel())) {
 			try {
 				addProfile(profile);
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-					| InvocationTargetException | NoSuchMethodException | SecurityException | ClassNotFoundException
-					| IOException e) {
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException
+					| ClassNotFoundException | IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 	}
 
-	private void addProfile(String... profiles) throws IOException, InvalidProfileException, InstantiationException,
-			IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
-			SecurityException, ClassNotFoundException {
+	private void addProfile(String... profiles) throws IOException, InvalidProfileException, InstantiationException, IllegalAccessException, IllegalArgumentException,
+			InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
 		if (this.profiles == null) {
 			this.profiles = new LinkedHashSet<>();
 		}
@@ -156,8 +149,7 @@ public class ServerModel extends AMachineModel {
 				continue;
 			}
 
-			final Collection<Class<?>> classes = new ClassesInPackageScanner()
-					.setResourceNameFilter((packageName, fileName) -> fileName.equals(profile + ".class"))
+			final Collection<Class<?>> classes = new ClassesInPackageScanner().setResourceNameFilter((packageName, fileName) -> fileName.equals(profile + ".class"))
 					.scan("profile");
 
 			if (classes.isEmpty()) {
@@ -165,9 +157,8 @@ public class ServerModel extends AMachineModel {
 			}
 
 			for (final Class<?> profileClass : classes) {
-				final AProfile theProfile = (AProfile) Class.forName(profileClass.getName())
-						.getDeclaredConstructor(String.class, NetworkModel.class)
-						.newInstance(getLabel(), getNetworkModel());
+				final AProfile theProfile = (AProfile) Class.forName(profileClass.getName()).getDeclaredConstructor(String.class, NetworkModel.class).newInstance(getLabel(),
+						getNetworkModel());
 				this.profiles.add(theProfile);
 			}
 		}
@@ -193,8 +184,7 @@ public class ServerModel extends AMachineModel {
 	public Collection<IUnit> getUnits() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		units.add(new SimpleUnit("host", "proceed", "echo \"ERROR: Configuring with hostname mismatch\";",
-				"sudo -S hostname;", getLabel(), "pass"));
+		units.add(new SimpleUnit("host", "proceed", "echo \"ERROR: Configuring with hostname mismatch\";", "sudo -S hostname;", getLabel(), "pass"));
 
 		units.add(new FileAppendUnit("auto_logout", "proceed", "TMOUT=" + ((2 * 60) * 60) + "\n" + // two hour timeout
 				"readonly TMOUT\n" + "export TMOUT", "/etc/profile",
@@ -221,18 +211,23 @@ public class ServerModel extends AMachineModel {
 		units.add(new InstalledUnit("net_tools", "proceed", "net-tools"));
 		units.add(new InstalledUnit("htop", "proceed", "htop"));
 
-		// Before we go any further... now the machine is at least up to date, and has a
-		// couple of useful diagnostics packages installed...
-		for (final NetworkInterfaceModel nic : getNetworkInterfaces()) {
-			units.add(nic.getNetworkFile());
-		}
-
 		for (final AStructuredProfile type : this.types) {
 			units.addAll(type.getUnits());
 		}
 
 		for (final AProfile profile : this.profiles) {
 			units.addAll(profile.getUnits());
+		}
+
+		// Before we go any further... now the machine is at least up to date, and has a
+		// couple of useful diagnostics packages installed...
+		for (final NetworkInterfaceModel nic : getNetworkInterfaces()) {
+			if (nic.getNetworkFile() != null) {
+				units.add(nic.getNetworkFile());
+			}
+			if (nic.getNetDevFile() != null) {
+				units.add(nic.getNetDevFile());
+			}
 		}
 
 		units.addAll(serverConfig());
@@ -245,8 +240,8 @@ public class ServerModel extends AMachineModel {
 		units.addAll(this.runningProcesses.getUnits());
 		units.addAll(this.users.getUnits());
 
-		units.add(new SimpleUnit("apt_autoremove", "proceed", "sudo apt-get autoremove --purge --assume-yes",
-				"sudo apt-get autoremove --purge --assume-no | grep \"0 to remove\"", "", "fail"));
+		units.add(new SimpleUnit("apt_autoremove", "proceed", "sudo apt-get autoremove --purge --assume-yes", "sudo apt-get autoremove --purge --assume-no | grep \"0 to remove\"",
+				"", "fail"));
 
 		return units;
 	}
@@ -264,16 +259,13 @@ public class ServerModel extends AMachineModel {
 		// }
 		// }
 
-		units.add(new SimpleUnit("no_raw_sockets", "lsof_installed", "", "sudo lsof | grep RAW" + excludeKnownRaw, "",
-				"pass",
+		units.add(new SimpleUnit("no_raw_sockets", "lsof_installed", "", "sudo lsof | grep RAW" + excludeKnownRaw, "", "pass",
 				"There are raw sockets running on this machine.  This is almost certainly a sign of compromise."));
 
 		// Verify our PAM modules haven't been tampered with
 		// https://www.trustedsec.com/2018/04/malware-linux/
-		units.add(new SimpleUnit("pam_not_tampered", "proceed", "",
-				"find /lib/$(uname -m)-linux-gnu/security/ | xargs dpkg -S | cut -d ':' -f 1 | uniq | xargs sudo dpkg -V",
-				"", "pass",
-				"There are unexpected/tampered PAM modules on this machine.  This is almost certainly an indicator that this machine has been compromised!"));
+		units.add(new SimpleUnit("pam_not_tampered", "proceed", "", "find /lib/$(uname -m)-linux-gnu/security/ | xargs dpkg -S | cut -d ':' -f 1 | uniq | xargs sudo dpkg -V", "",
+				"pass", "There are unexpected/tampered PAM modules on this machine.  This is almost certainly an indicator that this machine has been compromised!"));
 
 		// Check for random SSH keys
 		// https://security.stackexchange.com/a/151581
@@ -284,12 +276,9 @@ public class ServerModel extends AMachineModel {
 		}
 
 		units.add(new SimpleUnit("no_additional_ssh_keys", "proceed", "",
-				"for X in $(cut -f6 -d ':' /etc/passwd |sort |uniq); do" + "   for suffix in \"\" \"2\"; do"
-						+ "       if sudo [ -s \"${X}/.ssh/authorized_keys$suffix\" ]; then"
-						+ "           cat \"${X}/.ssh/authorized_keys$suffix\";" + "       fi;" + "   done;" + "done"
-						+ excludeKnownSSHKeys,
-				"", "pass",
-				"There are unexpected SSH keys on this machine.  This is almost certainly an indicator that this machine has been compromised!"));
+				"for X in $(cut -f6 -d ':' /etc/passwd |sort |uniq); do" + "   for suffix in \"\" \"2\"; do" + "       if sudo [ -s \"${X}/.ssh/authorized_keys$suffix\" ]; then"
+						+ "           cat \"${X}/.ssh/authorized_keys$suffix\";" + "       fi;" + "   done;" + "done" + excludeKnownSSHKeys,
+				"", "pass", "There are unexpected SSH keys on this machine.  This is almost certainly an indicator that this machine has been compromised!"));
 
 		// Check for unexpected executables
 		// if (this.isService()) {

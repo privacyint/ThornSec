@@ -99,6 +99,8 @@ public class NetworkData extends AData {
 	private static final String MACHINE_DOMAIN = "lan";
 	private static final String MACHINE_NETWORK_INTERFACE = "enp0s7"; // TODO: this is from memory
 
+	private static final Inet MACHINE_INET = Inet.STATIC;
+
 	private static final Integer MACHINE_RAM = 2048;
 	private static final Integer MACHINE_CPUS = 1;
 
@@ -152,8 +154,7 @@ public class NetworkData extends AData {
 		this.machines = null;
 	}
 
-	private void readInclude(String include)
-			throws IOException, JsonParsingException, ADataException, URISyntaxException {
+	private void readInclude(String include) throws IOException, JsonParsingException, ADataException, URISyntaxException {
 		String rawIncludeData = null;
 
 		JsonReader jsonReader = null;
@@ -164,8 +165,7 @@ public class NetworkData extends AData {
 		read(jsonReader.readObject());
 	}
 
-	private ServerData readServer(String label, JsonObject dataObject)
-			throws JsonParsingException, ADataException, IOException, URISyntaxException {
+	private ServerData readServer(String label, JsonObject dataObject) throws JsonParsingException, ADataException, IOException, URISyntaxException {
 		// We have to read it in first to find out what it is - we can then replace it
 		// with a specialised version
 		ServerData serverData = new ServerData(label);
@@ -220,8 +220,7 @@ public class NetworkData extends AData {
 	 * This is where we build the objects for our network.
 	 */
 	@Override
-	public void read(JsonObject networkJSONData)
-			throws ADataException, JsonParsingException, IOException, URISyntaxException {
+	public void read(JsonObject networkJSONData) throws ADataException, JsonParsingException, IOException, URISyntaxException {
 		super.setData(networkJSONData);
 
 		// Read in any include files, if we have them.
@@ -238,8 +237,7 @@ public class NetworkData extends AData {
 		}
 
 		if (networkJSONData.containsKey("network_config_ip")) {
-			this.configIP = new IPAddressString(
-					networkJSONData.getString("network_config_ip").replaceAll("[^\\.0-9]", "")).getAddress();
+			this.configIP = new IPAddressString(networkJSONData.getString("network_config_ip").replaceAll("[^\\.0-9]", "")).getAddress();
 		}
 
 		if (networkJSONData.containsKey("my_ssh_user")) {
@@ -503,8 +501,7 @@ public class NetworkData extends AData {
 	 * @throws ADataException
 	 * @throws IOException
 	 */
-	final public Map<Direction, Collection<NetworkInterfaceData>> getNetworkInterfaces(String machine)
-			throws JsonParsingException, ADataException, IOException {
+	final public Map<Direction, Collection<NetworkInterfaceData>> getNetworkInterfaces(String machine) throws JsonParsingException, ADataException, IOException {
 		Map<Direction, Collection<NetworkInterfaceData>> interfaces = getMachine(machine).getNetworkInterfaces();
 
 		if (interfaces == null) {
