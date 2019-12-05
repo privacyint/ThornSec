@@ -101,9 +101,10 @@ public class AptSources extends AStructuredProfile {
 
 		// Then configure the sources
 		for (final String source : this.sources.keySet()) {
-			final String sourceLines = String.join("\n", this.sources.get(source));
-
-			units.add(new FileUnit(source + "_apt_source", "proceed", sourceLines, "/etc/apt/sources.list.d/" + source + ".list"));
+			final FileUnit list = new FileUnit(source + "_apt_source", "proceed", "/etc/apt/sources.list.d/" + source + ".list",
+					"I couldn't add the custom source for " + source + " to apt. Installation will fail.");
+			list.appendLine(this.sources.get(source).toArray(new String[0]));
+			units.add(list);
 		}
 
 		return units;
