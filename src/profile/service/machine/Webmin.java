@@ -32,7 +32,7 @@ public class Webmin extends AStructuredProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("webmin", "deb http://download.webmin.com/download/repository sarge contrib",
-				"keyserver.ubuntu.com", "0xD97A3AE911F63C51");
+				"keyserver.ubuntu.com", "D97A3AE911F63C51");
 
 		return units;
 	}
