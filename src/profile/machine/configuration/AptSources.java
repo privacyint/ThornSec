@@ -93,11 +93,9 @@ public class AptSources extends AStructuredProfile {
 		// First import all of the keys
 		for (final String keyserver : this.pgpKeys.keySet()) {
 			for (final String fingerprint : this.pgpKeys.get(keyserver)) {
-				units.add(new SimpleUnit(fingerprint + "_pgp", "dirmngr_installed",
-						"sudo apt-key adv --recv-keys --keyserver " + keyserver + " " + fingerprint,
-						"sudo apt-key list 2>&1 | grep '" + fingerprint + "'", "", "fail",
-						"Couldn't install the PGP signing cert " + fingerprint
-								+ ". You can probably fix this by re-configuring the service."));
+				units.add(new SimpleUnit(fingerprint + "_pgp", "dirmngr_installed", "sudo apt-key adv --recv-keys --keyserver " + keyserver + " " + fingerprint,
+						"sudo apt-key list keys " + fingerprint + "", "", "fail",
+						"Couldn't install the PGP signing cert " + fingerprint + ". You can probably fix this by re-configuring the service."));
 			}
 		}
 
