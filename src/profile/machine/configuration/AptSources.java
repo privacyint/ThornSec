@@ -33,8 +33,7 @@ public class AptSources extends AStructuredProfile {
 	private final Hashtable<String, Set<String>> sources;
 	private final Hashtable<String, Set<String>> pgpKeys;
 
-	public AptSources(String label, NetworkModel networkModel)
-			throws URISyntaxException, InvalidServerModelException, MalformedURLException {
+	public AptSources(String label, NetworkModel networkModel) throws URISyntaxException, InvalidServerModelException, MalformedURLException {
 		super(label, networkModel);
 
 		this.debianRepo = getNetworkModel().getData().getDebianMirror(getLabel());
@@ -48,12 +47,10 @@ public class AptSources extends AStructuredProfile {
 	public final Collection<IUnit> getInstalled() throws InvalidServerModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		units.add(new InstalledUnit("dirmngr", "proceed", "dirmngr",
-				"Couldn't install dirmngr.  Anything which requires a PGP key to be downloaded and installed won't work. "
-						+ "You can possibly fix this by running a configuration again."));
+		units.add(new InstalledUnit("dirmngr", "proceed", "dirmngr", "Couldn't install dirmngr.  Anything which requires a PGP key to be downloaded and installed won't work. "
+				+ "You can possibly fix this by running a configuration again."));
 
-		getNetworkModel().getServerModel(getLabel())
-				.addProcessString("dirmngr --daemon --homedir /tmp/apt-key-gpghome.[a-zA-Z0-9]*$");
+		getNetworkModel().getServerModel(getLabel()).addProcessString("dirmngr --daemon --homedir /tmp/apt-key-gpghome.[a-zA-Z0-9]*$");
 
 		return units;
 	}
@@ -108,15 +105,13 @@ public class AptSources extends AStructuredProfile {
 		for (final String source : this.sources.keySet()) {
 			final String sourceLines = String.join("\n", this.sources.get(source));
 
-			units.add(new FileUnit(source + "_apt_source", "proceed", sourceLines,
-					"/etc/apt/sources.list.d/" + source + ".list"));
+			units.add(new FileUnit(source + "_apt_source", "proceed", sourceLines, "/etc/apt/sources.list.d/" + source + ".list"));
 		}
 
 		return units;
 	}
 
-	public final void addAptSource(String name, String sourceLine, String keyserver, String fingerprint)
-			throws InvalidServerModelException {
+	public final void addAptSource(String name, String sourceLine, String keyserver, String fingerprint) throws InvalidServerModelException {
 		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName(keyserver + ":11371"));
 
 		this.addAptSource(name, sourceLine);
