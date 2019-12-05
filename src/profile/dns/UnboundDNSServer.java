@@ -201,7 +201,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 			zoneFile.appendLine("\tlocal-zone: \\\"" + domain.getHost() + ".\\\" typetransparent");
 
 			for (final AMachineModel machine : this.zones.get(domain)) {
-				for (final ISystemdNetworkd iface : machine.getNetworkInterfaces()) {
+				for (final ISystemdNetworkd iface : machine.getNetworkInterfaces().values()) {
 
 					if (iface.getAddresses() == null) {
 						continue;

@@ -155,7 +155,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 			hosts.appendLine(machine2Host(server, ParentZone.SERVERS));
 
-			for (final NetworkInterfaceModel nic : server.getNetworkInterfaces()) {
+			for (final NetworkInterfaceModel nic : server.getNetworkInterfaces().values()) {
 				// TODO
 				maclist.appendLine("ACCEPT\t" + ParentZone.SERVERS + "\t" + nic.getMac() + "\t" + nic.getAddresses() + "\t#" + server.getLabel());
 			}
@@ -163,7 +163,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		for (final UserDeviceModel user : getNetworkModel().getUserDevices().values()) {
 			hosts.appendLine(machine2Host(user, ParentZone.USERS));
-			for (final NetworkInterfaceModel nic : user.getNetworkInterfaces()) {
+			for (final NetworkInterfaceModel nic : user.getNetworkInterfaces().values()) {
 				// TODO
 				maclist.appendLine("ACCEPT\t" + ParentZone.USERS + "\t" + nic.getMac() + "\t" + nic.getAddresses() + "\t#" + user.getLabel());
 			}
@@ -171,7 +171,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		for (final InternalOnlyDeviceModel device : getNetworkModel().getInternalOnlyDevices().values()) {
 			hosts.appendLine(machine2Host(device, ParentZone.INTERNAL_ONLY));
-			for (final NetworkInterfaceModel nic : device.getNetworkInterfaces()) {
+			for (final NetworkInterfaceModel nic : device.getNetworkInterfaces().values()) {
 				// TODO
 				maclist.appendLine("ACCEPT\t" + ParentZone.INTERNAL_ONLY + "\t" + nic.getMac() + "\t" + nic.getAddresses() + "\t#" + device.getLabel());
 			}
@@ -179,7 +179,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		for (final ExternalOnlyDeviceModel device : getNetworkModel().getExternalOnlyDevices().values()) {
 			hosts.appendLine(machine2Host(device, ParentZone.EXTERNAL_ONLY));
-			for (final NetworkInterfaceModel nic : device.getNetworkInterfaces()) {
+			for (final NetworkInterfaceModel nic : device.getNetworkInterfaces().values()) {
 				// TODO
 				maclist.appendLine("ACCEPT\t" + ParentZone.EXTERNAL_ONLY + "\t" + nic.getMac() + "\t" + nic.getAddresses() + "\t#" + device.getLabel());
 			}
@@ -337,7 +337,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 	 */
 	private String machine2Host(AMachineModel machine, ParentZone zone) {
 		String nics = "";
-		for (final ISystemdNetworkd nic : machine.getNetworkInterfaces()) {
+		for (final ISystemdNetworkd nic : machine.getNetworkInterfaces().values()) {
 			for (final IPAddress ip : nic.getAddresses()) {
 				nics += ip.withoutPrefixLength().toCompressedString() + "/32,";
 			}

@@ -10,9 +10,9 @@ package core.model.machine;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
@@ -40,7 +40,7 @@ import inet.ipaddr.mac.MACAddress;
  * This is where we stash our various networking rules
  */
 public abstract class AMachineModel extends AModel {
-	private Collection<NetworkInterfaceModel> networkInterfaces;
+	private Map<String, NetworkInterfaceModel> networkInterfaces;
 
 	private final HostName domain;
 	private final Collection<String> cnames;
@@ -113,17 +113,21 @@ public abstract class AMachineModel extends AModel {
 		this.cidr = cidr;
 	}
 
-	public final void addNetworkInterface(NetworkInterfaceModel ifaceModel) {
+	public final void addNetworkInterface(String iface, NetworkInterfaceModel ifaceModel) {
 		if (this.networkInterfaces == null) {
-			this.networkInterfaces = new LinkedHashSet<>();
+			this.networkInterfaces = new Hashtable<>();
 		}
 
-		this.networkInterfaces.add(ifaceModel);
+		this.networkInterfaces.put(iface, ifaceModel);
 	}
 
-	public final Collection<NetworkInterfaceModel> getNetworkInterfaces() {
+	public final void addNetworkInterface(NetworkInterfaceModel ifaceModel) {
+		addNetworkInterface(ifaceModel.getIface(), ifaceModel);
+	}
+
+	public final Map<String, NetworkInterfaceModel> getNetworkInterfaces() {
 		if (this.networkInterfaces == null) {
-			return new ArrayList<>();
+			return new Hashtable<>();
 		}
 		return this.networkInterfaces;
 	}

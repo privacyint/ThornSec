@@ -43,7 +43,6 @@ public class Service extends AStructuredProfile {
 		try {
 			if (getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
 				for (final NetworkInterfaceData nicData : getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)) {
-					// TODO: This needs some better logic than this
 					// TODO finish implementing
 //					ifaceModel.setIface(ifaceData.getIface());
 //					ifaceModel.setAddress(ifaceData.getAddress());
@@ -56,69 +55,32 @@ public class Service extends AStructuredProfile {
 //					ifaceModel.setNetmask(ifaceData.getNetmask());
 //					ifaceModel.setSubnet(ifaceData.getSubnet());
 					NetworkInterfaceModel nic = null;
-					for (final NetworkInterfaceModel iface : getNetworkModel().getNetworkInterfaces(getLabel())) {
-						if (iface.getIface().equals(nicData.getIface())) {
-							nic = iface;
-							break;
-						}
-					}
-
 					if (nicData.getInet() == Inet.STATIC) {
-
-						if (nic == null) {
-							nic = new StaticInterfaceModel(nicData.getIface());
-							getNetworkModel().getServerModel(getLabel()).addNetworkInterface(nic);
-						}
-
+						nic = getNetworkModel().getNetworkInterfaces(getLabel()).getOrDefault(nicData.getIface(), new StaticInterfaceModel(nicData.getIface()));
 						nic.addAddress(nicData.getAddress());
-
-						if (nic.getGateway() == null) {
-							nic.setGateway(nicData.getGateway());
-						}
-
-						if (nic.getBroadcast() == null) {
-							nic.setBroadcast(nicData.getBroadcast());
-						}
+						nic.setGateway(nicData.getGateway());
+						nic.setBroadcast(nicData.getBroadcast());
 					} else if (nicData.getInet() == Inet.DHCP) {
-						nic = new DHCPClientInterfaceModel(nicData.getIface());
-						getNetworkModel().getServerModel(getLabel()).addNetworkInterface(nic);
+						nic = getNetworkModel().getNetworkInterfaces(getLabel()).getOrDefault(nicData.getIface(), new DHCPClientInterfaceModel(nicData.getIface()));
 					}
 
-					// We're an external iface
-					nic.setIsIPMasquerading(true);
+					nic.setIsIPMasquerading(true); // We're an external iface
+					getNetworkModel().getServerModel(getLabel()).addNetworkInterface(nic);
 				}
 			}
 
 			for (final NetworkInterfaceData nicData : getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.LAN)) {
-				// TODO: This needs some better logic than this
 				NetworkInterfaceModel nic = null;
-				for (final NetworkInterfaceModel iface : getNetworkModel().getNetworkInterfaces(getLabel())) {
-					if (iface.getIface().equals(nicData.getIface())) {
-						nic = iface;
-						break;
-					}
-				}
-
 				if (nicData.getInet() == Inet.STATIC) {
-
-					if (nic == null) {
-						nic = new StaticInterfaceModel(nicData.getIface());
-						getNetworkModel().getServerModel(getLabel()).addNetworkInterface(nic);
-					}
-
+					nic = getNetworkModel().getNetworkInterfaces(getLabel()).getOrDefault(nicData.getIface(), new StaticInterfaceModel(nicData.getIface()));
 					nic.addAddress(nicData.getAddress());
-
-					if (nic.getGateway() == null) {
-						nic.setGateway(nicData.getGateway());
-					}
-
-					if (nic.getBroadcast() == null) {
-						nic.setBroadcast(nicData.getBroadcast());
-					}
+					nic.setGateway(nicData.getGateway());
+					nic.setBroadcast(nicData.getBroadcast());
 				} else if (nicData.getInet() == Inet.DHCP) {
-					nic = new DHCPClientInterfaceModel(nicData.getIface());
-					getNetworkModel().getServerModel(getLabel()).addNetworkInterface(nic);
+					nic = getNetworkModel().getNetworkInterfaces(getLabel()).getOrDefault(nicData.getIface(), new DHCPClientInterfaceModel(nicData.getIface()));
 				}
+
+				getNetworkModel().getServerModel(getLabel()).addNetworkInterface(nic);
 			}
 		} catch (JsonParsingException | ADataException | IOException e) {
 			// TODO Auto-generated catch block

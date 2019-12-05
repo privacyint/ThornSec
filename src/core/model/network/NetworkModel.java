@@ -19,6 +19,7 @@ import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -202,11 +203,11 @@ public class NetworkModel {
 		this.machines.put(type, machines);
 	}
 
-	public Collection<NetworkInterfaceModel> getNetworkInterfaces(String machine) throws InvalidMachineModelException {
-		Collection<NetworkInterfaceModel> interfaces = getMachineModel(machine).getNetworkInterfaces();
+	public Map<String, NetworkInterfaceModel> getNetworkInterfaces(String machine) throws InvalidMachineModelException {
+		Map<String, NetworkInterfaceModel> interfaces = getMachineModel(machine).getNetworkInterfaces();
 
 		if (interfaces == null) {
-			interfaces = new LinkedHashSet<>();
+			interfaces = new Hashtable<>();
 		}
 
 		return interfaces;
