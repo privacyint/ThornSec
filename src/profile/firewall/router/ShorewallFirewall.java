@@ -302,13 +302,13 @@ public class ShorewallFirewall extends AFirewallProfile {
 		interfaces.appendLine("#Dedicate interfaces to parent zones");
 		interfaces.appendLine("#Please see http://shorewall.net/manpages/shorewall-interfaces.html for more details");
 		interfaces.appendLine("#zone\tinterface\tbroadcast\toptions");
-		interfaces.appendLine("Servers\t" + MachineType.SERVER.toString() + "\t-\tdhcp,routefilter,arp_filter");
-		interfaces.appendLine("Users\t" + MachineType.USER.toString() + "\t-\tdhcp,routefilter,arp_filter");
-		interfaces.appendLine("Admins\t" + MachineType.ADMIN.toString() + "\t-\tdhcp,routefilter,arp_filter");
-		interfaces.appendLine("InternalOnly\t" + MachineType.INTERNAL_ONLY.toString() + "\t-\tdhcp,routefilter,arp_filter");
-		interfaces.appendLine("ExternalOnly\t" + MachineType.EXTERNAL_ONLY.toString() + "\tdhcp,routefilter,arp_filter");
+		interfaces.appendLine(cleanZone(ParentZone.SERVERS.toString()) + "\t" + MachineType.SERVER.toString() + "\t-\tdhcp,routefilter,arp_filter");
+		interfaces.appendLine(cleanZone(ParentZone.USERS.toString()) + "\t" + MachineType.USER.toString() + "\t-\tdhcp,routefilter,arp_filter");
+		interfaces.appendLine(cleanZone(ParentZone.ADMINS.toString()) + "\t" + MachineType.ADMIN.toString() + "\t-\tdhcp,routefilter,arp_filter");
+		interfaces.appendLine(cleanZone(ParentZone.INTERNAL_ONLY.toString()) + "\t" + MachineType.INTERNAL_ONLY.toString() + "\t-\tdhcp,routefilter,arp_filter");
+		interfaces.appendLine(cleanZone(ParentZone.EXTERNAL_ONLY.toString()) + "\t" + MachineType.EXTERNAL_ONLY.toString() + "\t-\tdhcp,routefilter,arp_filter");
 		if (getNetworkModel().getData().buildAutoGuest()) {
-			interfaces.appendLine("Guests\t" + MachineType.GUEST.toString() + "\t-\tdhcp,routefilter,arp_filter");
+			interfaces.appendLine(cleanZone(ParentZone.GUESTS.toString()) + "\t" + MachineType.GUEST.toString() + "\t-\tdhcp,routefilter,arp_filter");
 		}
 		units.add(interfaces);
 
