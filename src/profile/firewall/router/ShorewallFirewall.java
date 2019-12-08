@@ -22,7 +22,6 @@ import core.model.machine.InternalOnlyDeviceModel;
 import core.model.machine.ServerModel;
 import core.model.machine.UserDeviceModel;
 import core.model.machine.configuration.networking.ISystemdNetworkd;
-import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
@@ -154,36 +153,32 @@ public class ShorewallFirewall extends AFirewallProfile {
 			}
 
 			hosts.appendLine(machine2Host(server, ParentZone.SERVERS));
-
-			for (final NetworkInterfaceModel nic : server.getNetworkInterfaces().values()) {
-				// TODO
-				maclist.appendLine("ACCEPT\t" + ParentZone.SERVERS + "\t" + nic.getMac() + "\t" + nic.getAddresses() + "\t#" + server.getLabel());
+			for (final String line : machine2MaclistEntry(server, MachineType.SERVER)) {
+				maclist.appendLine(line);
 			}
 		}
 
 		for (final UserDeviceModel user : getNetworkModel().getUserDevices().values()) {
 			hosts.appendLine(machine2Host(user, ParentZone.USERS));
-			for (final NetworkInterfaceModel nic : user.getNetworkInterfaces().values()) {
-				// TODO
-				maclist.appendLine("ACCEPT\t" + ParentZone.USERS + "\t" + nic.getMac() + "\t" + nic.getAddresses() + "\t#" + user.getLabel());
+			for (final String line : machine2MaclistEntry(user, MachineType.USER)) {
+				maclist.appendLine(line);
 			}
 		}
 
 		for (final InternalOnlyDeviceModel device : getNetworkModel().getInternalOnlyDevices().values()) {
 			hosts.appendLine(machine2Host(device, ParentZone.INTERNAL_ONLY));
-			for (final NetworkInterfaceModel nic : device.getNetworkInterfaces().values()) {
-				// TODO
-				maclist.appendLine("ACCEPT\t" + ParentZone.INTERNAL_ONLY + "\t" + nic.getMac() + "\t" + nic.getAddresses() + "\t#" + device.getLabel());
+			for (final String line : machine2MaclistEntry(device, MachineType.INTERNAL_ONLY)) {
+				maclist.appendLine(line);
 			}
 		}
 
 		for (final ExternalOnlyDeviceModel device : getNetworkModel().getExternalOnlyDevices().values()) {
 			hosts.appendLine(machine2Host(device, ParentZone.EXTERNAL_ONLY));
-			for (final NetworkInterfaceModel nic : device.getNetworkInterfaces().values()) {
-				// TODO
-				maclist.appendLine("ACCEPT\t" + ParentZone.EXTERNAL_ONLY + "\t" + nic.getMac() + "\t" + nic.getAddresses() + "\t#" + device.getLabel());
+			for (final String line : machine2MaclistEntry(device, MachineType.EXTERNAL_ONLY)) {
+				maclist.appendLine(line);
 			}
 		}
+
 		units.add(hosts);
 		units.add(maclist);
 
@@ -345,5 +340,31 @@ public class ShorewallFirewall extends AFirewallProfile {
 		nics = nics.replaceAll(",$", ""); // Get rid of any trailing comma
 
 		return cleanZone(machine.getLabel()) + " " + zone.toString() + ":" + nics + "\tmaclist";
+	}
+
+	/**
+	 * Parses a Machine into shorewall maclist lines
+	 *
+	 * @param machine
+	 * @param iface
+	 * @return
+	 */
+	private Collection<String> machine2MaclistEntry(AMachineModel machine, MachineType iface) {
+		final Collection<String> lines = new ArrayList<>();
+
+		for (final ISystemdNetworkd nic : machine.getNetworkInterfaces().values()) {
+			String line = "ACCEPT\t" + iface.toString() + "\t" + nic.getMac().toNormalizedString() + "\t";
+
+			for (final IPAddress ip : nic.getAddresses()) {
+				line += ip.withoutPrefixLength().toCompressedString() + "/32,";
+			}
+			line = line.replaceAll(",$", ""); // Get rid of any trailing comma
+
+			line += "\t#" + machine.getLabel();
+
+			lines.add(line);
+		}
+
+		return lines;
 	}
 }
