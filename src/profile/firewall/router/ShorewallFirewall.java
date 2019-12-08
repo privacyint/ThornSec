@@ -7,13 +7,20 @@
  */
 package profile.firewall.router;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+
+import javax.json.stream.JsonParsingException;
 
 import core.StringUtils;
 import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
+import core.data.machine.configuration.NetworkInterfaceData;
+import core.data.machine.configuration.NetworkInterfaceData.Direction;
+import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.exception.AThornSecException;
+import core.exception.data.ADataException;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
@@ -297,6 +304,22 @@ public class ShorewallFirewall extends AFirewallProfile {
 		interfaces.appendLine("#Dedicate interfaces to parent zones");
 		interfaces.appendLine("#Please see http://shorewall.net/manpages/shorewall-interfaces.html for more details");
 		interfaces.appendLine("#zone\tinterface\tbroadcast\toptions");
+
+		// First declare our Internet-facing NICs
+		try {
+			for (final NetworkInterfaceData nicData : getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)) {
+				String line = "";
+				line += ParentZone.INTERNET;
+				line += "\t" + nicData.getIface();
+				line += "\t-\t";
+				line += (nicData.getInet().equals(Inet.DHCP)) ? "dhcp," : "";
+				line += "routefilter,arp_filter";
+				interfaces.appendLine(line);
+			}
+		} catch (JsonParsingException | ADataException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		interfaces.appendLine(cleanZone(ParentZone.SERVERS.toString()) + "\t" + MachineType.SERVER.toString() + "\t-\tdhcp,routefilter,arp_filter");
 		interfaces.appendLine(cleanZone(ParentZone.USERS.toString()) + "\t" + MachineType.USER.toString() + "\t-\tdhcp,routefilter,arp_filter");
 		interfaces.appendLine(cleanZone(ParentZone.ADMINS.toString()) + "\t" + MachineType.ADMIN.toString() + "\t-\tdhcp,routefilter,arp_filter");
