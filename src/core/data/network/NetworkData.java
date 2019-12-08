@@ -185,6 +185,8 @@ public class NetworkData extends AData {
 		// If we've just hit a hypervisor machine, we need to dig a little.
 		if (serverTypes.contains(MachineType.HYPERVISOR)) {
 			serverData = new HypervisorData(label);
+			// Read in data to the newly specialised object
+			serverData.read(dataObject);
 
 			// They *should* contain information about their services
 			if (dataObject.containsKey("services")) {
@@ -202,10 +204,9 @@ public class NetworkData extends AData {
 			}
 		} else if (serverTypes.contains(MachineType.SERVICE)) {
 			serverData = new ServiceData(label);
+			// Read in data to the newly specialised object
+			serverData.read(dataObject);
 		}
-
-		// Read in data to the newly specialised object
-		serverData.read(dataObject);
 
 		for (final MachineType type : serverTypes) {
 			putMachine(type, serverData);
