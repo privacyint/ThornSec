@@ -346,32 +346,4 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		return cleanZone(machine.getLabel()) + " " + zone.toString() + ":" + nics + "\tmaclist";
 	}
-
-	private String makeRule(Action action, String source, String dest, String proto, String dport, String sport, String origDest) {
-		String lines = "";
-
-		if (dest.equals(getLabel())) {
-			dest = "\\\\$FW";
-		}
-		if (origDest == null) {
-			origDest = "-";
-		} else if (origDest.equals(getLabel())) {
-			origDest = "\\\\$FW";
-		}
-		if (dport == null) {
-			dport = "-";
-		}
-		if (sport == null) {
-			sport = "-";
-		}
-
-		// Generate a descriptive comment
-		lines += "?COMMENT " + action.toString() + " traffic from " + source + " to " + dest + ":" + dport;
-		lines += (origDest != "-") ? " instead of " + origDest + "\n" : "\n";
-
-		lines += action.toString() + " " + source + " " + dest + " " + proto + " " + dport + " " + sport + " " + origDest + "\n";
-		lines += "?COMMENT";
-
-		return lines;
-	}
 }
