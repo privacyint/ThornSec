@@ -14,7 +14,6 @@ import java.util.Collection;
 import javax.json.stream.JsonParsingException;
 
 import core.StringUtils;
-import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
@@ -33,7 +32,6 @@ import core.model.network.NetworkModel;
 import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
-import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
 import profile.firewall.AFirewallProfile;
 
@@ -355,14 +353,6 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 	@Override
 	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
-		for (final HostName upstreamDNSServer : getNetworkModel().getData().getUpstreamDNSServers()) {
-			getNetworkModel().getServerModel(getLabel()).addEgress(upstreamDNSServer);
-
-		}
-
-		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 53);
-		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.UDP, 53);
-
 		return new ArrayList<>();
 	}
 
