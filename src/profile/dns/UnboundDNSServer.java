@@ -24,6 +24,8 @@ import core.model.machine.AMachineModel;
 import core.model.machine.configuration.networking.ISystemdNetworkd;
 import core.model.network.NetworkModel;
 import core.unit.SimpleUnit;
+import core.unit.fs.DirOwnUnit;
+import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
@@ -159,6 +161,13 @@ public class UnboundDNSServer extends ADNSServerProfile {
 			}
 			unboundConf.appendLine("\t\tforward-addr: " + upstream.getHost() + "@" + port);
 		}
+
+		final DirUnit unboundConfD = new DirUnit("unbound_conf_d", "dns_installed", UNBOUND_CONFIG_FILE_PATH + ".d");
+		final DirOwnUnit unboundConfDOwner = new DirOwnUnit("unbound_conf_d", "unbound_conf_d_created",
+				UNBOUND_CONFIG_FILE_PATH + ".d", "unbound", "unbound");
+
+		units.add(unboundConfD);
+		units.add(unboundConfDOwner);
 
 		return units;
 	}
