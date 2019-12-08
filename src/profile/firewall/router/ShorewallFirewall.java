@@ -96,7 +96,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zones.appendLine("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
 		zones.appendLine("#zone\ttype");
 		zones.appendLine(cleanZone(ParentZone.INTERNET.toString()) + "\tipv4");
-		zones.appendLine(cleanZone(ParentZone.ROUTER.toString()) + "\tipv4");
+		zones.appendLine(cleanZone(ParentZone.ROUTER.toString()) + "\tfirewall");
 		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our server zone, and give each server its own subzone");
