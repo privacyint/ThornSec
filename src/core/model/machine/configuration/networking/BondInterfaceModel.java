@@ -20,6 +20,7 @@ public class BondInterfaceModel extends NetworkInterfaceModel {
 		super(name);
 
 		this.bond = bond;
+		super.setInet(Inet.MANUAL);
 	}
 
 	@Override

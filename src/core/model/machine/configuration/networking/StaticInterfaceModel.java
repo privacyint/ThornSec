@@ -7,6 +7,7 @@
  */
 package core.model.machine.configuration.networking;
 
+import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.unit.fs.FileUnit;
 import inet.ipaddr.IPAddress;
 
@@ -16,6 +17,7 @@ import inet.ipaddr.IPAddress;
 public class StaticInterfaceModel extends NetworkInterfaceModel {
 	public StaticInterfaceModel(String name) {
 		super(name);
+		super.setInet(Inet.STATIC);
 	}
 
 	@Override

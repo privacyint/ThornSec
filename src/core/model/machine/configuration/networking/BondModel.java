@@ -7,6 +7,7 @@
  */
 package core.model.machine.configuration.networking;
 
+import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.unit.fs.FileUnit;
 
 /**
@@ -16,6 +17,7 @@ import core.unit.fs.FileUnit;
 public class BondModel extends NetworkInterfaceModel {
 	public BondModel(String name) {
 		super(name);
+		super.setInet(Inet.BOND);
 	}
 
 	@Override

@@ -10,6 +10,7 @@ package core.model.machine.configuration.networking;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.unit.fs.FileUnit;
 
 /**
@@ -21,6 +22,7 @@ public class MACVLANTrunkModel extends NetworkInterfaceModel {
 
 	public MACVLANTrunkModel(String name) {
 		super(name);
+		super.setInet(Inet.MACVLAN);
 	}
 
 	@Override

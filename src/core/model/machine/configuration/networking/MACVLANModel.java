@@ -7,6 +7,7 @@
  */
 package core.model.machine.configuration.networking;
 
+import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.exception.data.InvalidIPAddressException;
 import core.unit.fs.FileUnit;
 import inet.ipaddr.AddressStringException;
@@ -22,6 +23,7 @@ public class MACVLANModel extends NetworkInterfaceModel {
 	public MACVLANModel(String name, MACVLANTrunkModel trunk) {
 		super(name);
 		trunk.addVLAN(this);
+		super.setInet(Inet.STATIC);
 	}
 
 	@Override
