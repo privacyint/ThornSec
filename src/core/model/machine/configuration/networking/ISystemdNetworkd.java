@@ -11,6 +11,7 @@ import java.util.Collection;
 
 import core.unit.fs.FileUnit;
 import inet.ipaddr.IPAddress;
+import inet.ipaddr.mac.MACAddress;
 
 /**
  * Represents a Systemd-networkd network interface.
@@ -49,5 +50,12 @@ public interface ISystemdNetworkd {
 	Collection<IPAddress> getAddresses();
 
 	IPAddress getGateway();
+
+	/**
+	 * Get the MAC Address of this NIC
+	 * 
+	 * @return
+	 */
+	MACAddress getMac();
 
 }
