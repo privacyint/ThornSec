@@ -131,7 +131,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		// Do we want an autoguest network? Build its zone if so
 		if (getNetworkModel().getData().buildAutoGuest()) {
-			zones.appendLine(cleanZone(ParentZone.GUESTS.toString()) + ":" + cleanZone(ParentZone.GUESTS.toString()) + "\tipv4");
+			zones.appendLine(cleanZone(ParentZone.GUESTS.toString()) + "\tipv4");
 		}
 
 		units.add(zones);
