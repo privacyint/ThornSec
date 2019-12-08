@@ -7,6 +7,7 @@
  */
 package core.model.machine.configuration.networking;
 
+import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.unit.fs.FileUnit;
 
 /**
