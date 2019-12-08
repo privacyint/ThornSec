@@ -30,6 +30,7 @@ import core.model.machine.ServerModel;
 import core.model.machine.UserDeviceModel;
 import core.model.machine.configuration.networking.ISystemdNetworkd;
 import core.model.network.NetworkModel;
+import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import inet.ipaddr.HostName;
@@ -288,6 +289,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 	@Override
 	public Collection<IUnit> getPersistentConfig() throws ARuntimeException {
 		final Collection<IUnit> units = new ArrayList<>();
+
+		final FileEditUnit shorewallConf = new FileEditUnit("shorewall_implicit_continue_on", "shorewall_installed", "IMPLICIT_CONTINUE=No", "IMPLICIT_CONTINUE=Yes",
+				"/etc/shorewall/shorewall.conf", "I couldn't enable implicit continue on your firewall - this means many of our firewall configurations will fail.");
+		units.add(shorewallConf);
 
 		// Build our default policies
 		final FileUnit policies = new FileUnit("shorewall_policies", "shorewall_installed", CONFIG_BASEDIR + "/policy");
