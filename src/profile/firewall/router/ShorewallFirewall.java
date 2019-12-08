@@ -61,9 +61,11 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	private static String CONFIG_BASEDIR = "/etc/shorewall";
+	private final Collection<String> wanIfaces;
 
 	public ShorewallFirewall(String label, NetworkModel networkModel) {
 		super(label, networkModel);
+		this.wanIfaces = new ArrayList<>();
 	}
 
 	/**
@@ -311,6 +313,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 		// First work out our Internet-facing NICs
 		try {
 			for (final NetworkInterfaceData nicData : getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)) {
+				this.wanIfaces.add(nicData.getIface());
+			}
+		// @TODO: Refactor this mess
+		for (final String iface : this.wanIfaces) {
 				String line = "";
 				line += ParentZone.INTERNET;
 				line += "\t" + nicData.getIface();
