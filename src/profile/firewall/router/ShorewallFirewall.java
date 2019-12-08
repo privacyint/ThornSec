@@ -308,7 +308,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		interfaces.appendLine("#Please see http://shorewall.net/manpages/shorewall-interfaces.html for more details");
 		interfaces.appendLine("#zone\tinterface\tbroadcast\toptions");
 
-		// First declare our Internet-facing NICs
+		// First work out our Internet-facing NICs
 		try {
 			for (final NetworkInterfaceData nicData : getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)) {
 				String line = "";
