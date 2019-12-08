@@ -78,7 +78,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zone = StringUtils.stringToAlphaNumeric(zone);
 
 		if (zone.length() > 10) {
-			zone = zone.substring(0, 9);
+			zone = zone.substring(0, 10);
 		}
 
 		return zone;
