@@ -10,6 +10,7 @@ package core.model.machine.configuration.networking;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.mac.MACAddress;
 
@@ -28,6 +29,7 @@ import inet.ipaddr.mac.MACAddress;
 public abstract class NetworkInterfaceModel implements ISystemdNetworkd {
 	private String comment;
 	private String iface;
+	private Inet inet;
 
 	private MACAddress mac;
 
@@ -51,6 +53,7 @@ public abstract class NetworkInterfaceModel implements ISystemdNetworkd {
 		this.addresses = null;
 
 		this.iface = iface;
+		this.inet = null;
 		this.subnet = null;
 		this.netmask = null;
 		this.broadcast = null;
@@ -114,6 +117,10 @@ public abstract class NetworkInterfaceModel implements ISystemdNetworkd {
 		return this.subnet;
 	}
 
+	public Inet getInet() {
+		return this.inet;
+	}
+
 	public final void addAddress(IPAddress address) {
 		// Don't add null addresses
 		if (address == null) {
@@ -156,6 +163,10 @@ public abstract class NetworkInterfaceModel implements ISystemdNetworkd {
 
 	public final void setMac(MACAddress mac) {
 		this.mac = mac;
+	}
+
+	public final void setInet(Inet inet) {
+		this.inet = inet;
 	}
 
 	protected final void setNetmask(IPAddress netmask) {
