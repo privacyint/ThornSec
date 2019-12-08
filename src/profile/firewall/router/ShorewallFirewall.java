@@ -335,6 +335,21 @@ public class ShorewallFirewall extends AFirewallProfile {
 		}
 		units.add(interfaces);
 
+		// Once we've done all that, it's time to tell shorewall about our various
+		// masquerading
+		final FileUnit masq = new FileUnit("shorewall_masquerades", "shorewall_installed", CONFIG_BASEDIR + "/masq");
+		for (final String wanNic : this.wanIfaces) {
+			masq.appendLine(wanNic + "\t" + MachineType.SERVER.toString());
+			masq.appendLine(wanNic + "\t" + MachineType.USER.toString());
+			masq.appendLine(wanNic + "\t" + MachineType.ADMIN.toString());
+			masq.appendLine(wanNic + "\t" + MachineType.INTERNAL_ONLY.toString());
+			masq.appendLine(wanNic + "\t" + MachineType.EXTERNAL_ONLY.toString());
+			if (getNetworkModel().getData().buildAutoGuest()) {
+				masq.appendLine(wanNic + "\t" + MachineType.GUEST.toString());
+			}
+		}
+		units.add(masq);
+
 		return units;
 	}
 
