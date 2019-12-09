@@ -315,20 +315,23 @@ public class ShorewallFirewall extends AFirewallProfile {
 			for (final NetworkInterfaceData nicData : getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)) {
 				this.wanIfaces.add(nicData.getIface());
 			}
-		// @TODO: Refactor this mess
-		for (final String iface : this.wanIfaces) {
-				String line = "";
-				line += ParentZone.INTERNET;
-				line += "\t" + nicData.getIface();
-				line += "\t-\t";
-				line += (nicData.getInet().equals(Inet.DHCP)) ? "dhcp," : "";
-				line += "routefilter,arp_filter";
-				interfaces.appendLine(line);
-			}
 		} catch (JsonParsingException | ADataException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+		// @TODO: Refactor this mess
+		for (final String iface : this.wanIfaces) {
+			String line = "";
+			line += ParentZone.INTERNET;
+			line += "\t" + iface;
+			line += "\t-\t";
+			line += (getNetworkModel().getServerModel(getLabel()).getNetworkInterfaces().get(iface).getInet().equals(Inet.DHCP)) ? "dhcp," : "";
+			line += "routefilter,arp_filter";
+			interfaces.appendLine(line);
+		}
+
+		// Then, declare our various interface:zone mapping
 		interfaces.appendLine(cleanZone(ParentZone.SERVERS.toString()) + "\t" + MachineType.SERVER.toString() + "\t-\tdhcp,routefilter,arp_filter");
 		interfaces.appendLine(cleanZone(ParentZone.USERS.toString()) + "\t" + MachineType.USER.toString() + "\t-\tdhcp,routefilter,arp_filter");
 		interfaces.appendLine(cleanZone(ParentZone.ADMINS.toString()) + "\t" + MachineType.ADMIN.toString() + "\t-\tdhcp,routefilter,arp_filter");
