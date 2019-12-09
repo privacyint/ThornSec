@@ -49,6 +49,11 @@ public interface ISystemdNetworkd {
 	 */
 	Collection<IPAddress> getAddresses();
 
+	/**
+	 * Get the gateway associated with this NIC
+	 * 
+	 * @return
+	 */
 	IPAddress getGateway();
 
 	/**

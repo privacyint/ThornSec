@@ -11,8 +11,8 @@ import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.unit.fs.FileUnit;
 
 /**
- * This model represents a MACVLAN Trunk - i.e. the "physical" interface upon
- * which to stack the VLANs.
+ * This model represents a Bonded physical interface - i.e. the "physical"
+ * interface to add to a Bond.
  */
 public class BondInterfaceModel extends NetworkInterfaceModel {
 	private final BondModel bond;
@@ -48,7 +48,7 @@ public class BondInterfaceModel extends NetworkInterfaceModel {
 
 	@Override
 	public FileUnit getNetDevFile() {
-		// Don't need a NetDev for a MACVLAN Trunk
+		// Don't need a NetDev for a Bonded Link
 		return null;
 	}
 }

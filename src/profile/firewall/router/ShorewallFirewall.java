@@ -14,7 +14,6 @@ import java.util.Collection;
 import javax.json.stream.JsonParsingException;
 
 import core.StringUtils;
-import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
@@ -33,7 +32,6 @@ import core.model.network.NetworkModel;
 import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
-import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
 import profile.firewall.AFirewallProfile;
 
@@ -63,9 +61,11 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	private static String CONFIG_BASEDIR = "/etc/shorewall";
+	private final Collection<String> wanIfaces;
 
 	public ShorewallFirewall(String label, NetworkModel networkModel) {
 		super(label, networkModel);
+		this.wanIfaces = new ArrayList<>();
 	}
 
 	/**
@@ -78,7 +78,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zone = StringUtils.stringToAlphaNumeric(zone);
 
 		if (zone.length() > 10) {
-			zone = zone.substring(0, 9);
+			zone = zone.substring(0, 10);
 		}
 
 		return zone;
@@ -310,21 +310,28 @@ public class ShorewallFirewall extends AFirewallProfile {
 		interfaces.appendLine("#Please see http://shorewall.net/manpages/shorewall-interfaces.html for more details");
 		interfaces.appendLine("#zone\tinterface\tbroadcast\toptions");
 
-		// First declare our Internet-facing NICs
+		// First work out our Internet-facing NICs
 		try {
 			for (final NetworkInterfaceData nicData : getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)) {
-				String line = "";
-				line += ParentZone.INTERNET;
-				line += "\t" + nicData.getIface();
-				line += "\t-\t";
-				line += (nicData.getInet().equals(Inet.DHCP)) ? "dhcp," : "";
-				line += "routefilter,arp_filter";
-				interfaces.appendLine(line);
+				this.wanIfaces.add(nicData.getIface());
 			}
 		} catch (JsonParsingException | ADataException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+		// @TODO: Refactor this mess
+		for (final String iface : this.wanIfaces) {
+			String line = "";
+			line += ParentZone.INTERNET;
+			line += "\t" + iface;
+			line += "\t-\t";
+			line += (getNetworkModel().getServerModel(getLabel()).getNetworkInterfaces().get(iface).getInet().equals(Inet.DHCP)) ? "dhcp," : "";
+			line += "routefilter,arp_filter";
+			interfaces.appendLine(line);
+		}
+
+		// Then, declare our various interface:zone mapping
 		interfaces.appendLine(cleanZone(ParentZone.SERVERS.toString()) + "\t" + MachineType.SERVER.toString() + "\t-\tdhcp,routefilter,arp_filter");
 		interfaces.appendLine(cleanZone(ParentZone.USERS.toString()) + "\t" + MachineType.USER.toString() + "\t-\tdhcp,routefilter,arp_filter");
 		interfaces.appendLine(cleanZone(ParentZone.ADMINS.toString()) + "\t" + MachineType.ADMIN.toString() + "\t-\tdhcp,routefilter,arp_filter");
@@ -335,19 +342,26 @@ public class ShorewallFirewall extends AFirewallProfile {
 		}
 		units.add(interfaces);
 
+		// Once we've done all that, it's time to tell shorewall about our various
+		// masquerading
+		final FileUnit masq = new FileUnit("shorewall_masquerades", "shorewall_installed", CONFIG_BASEDIR + "/masq");
+		for (final String wanNic : this.wanIfaces) {
+			masq.appendLine(wanNic + "\t" + MachineType.SERVER.toString());
+			masq.appendLine(wanNic + "\t" + MachineType.USER.toString());
+			masq.appendLine(wanNic + "\t" + MachineType.ADMIN.toString());
+			masq.appendLine(wanNic + "\t" + MachineType.INTERNAL_ONLY.toString());
+			masq.appendLine(wanNic + "\t" + MachineType.EXTERNAL_ONLY.toString());
+			if (getNetworkModel().getData().buildAutoGuest()) {
+				masq.appendLine(wanNic + "\t" + MachineType.GUEST.toString());
+			}
+		}
+		units.add(masq);
+
 		return units;
 	}
 
 	@Override
 	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
-		for (final HostName upstreamDNSServer : getNetworkModel().getData().getUpstreamDNSServers()) {
-			getNetworkModel().getServerModel(getLabel()).addEgress(upstreamDNSServer);
-
-		}
-
-		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 53);
-		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.UDP, 53);
-
 		return new ArrayList<>();
 	}
 
