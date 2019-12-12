@@ -145,7 +145,7 @@ public abstract class NetworkInterfaceModel implements ISystemdNetworkd {
 		this.gateway = gateway;
 	}
 
-	protected final void setIface(String iface) {
+	public void setIface(String iface) {
 		this.iface = iface;
 	}
 
