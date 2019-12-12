@@ -122,7 +122,7 @@ public abstract class AMachineModel extends AModel {
 	}
 
 	public final void addNetworkInterface(NetworkInterfaceModel ifaceModel) {
-		addNetworkInterface(ifaceModel.getIface(), ifaceModel);
+		addNetworkInterface(ifaceModel.getLabel(), ifaceModel);
 	}
 
 	public final Map<String, NetworkInterfaceModel> getNetworkInterfaces() {
