@@ -28,7 +28,7 @@ public class BondModel extends NetworkInterfaceModel {
 
 	@Override
 	public FileUnit getNetDevFile() {
-		final FileUnit netdev = new FileUnit(getIface() + "_network", "proceed", "/etc/systemd/network/10-" + getIface() + ".netdev");
+		final FileUnit netdev = new FileUnit(getIface() + "_netdev", "proceed", "/etc/systemd/network/10-" + getIface() + ".netdev");
 
 		netdev.appendLine("[NetDev]");
 		netdev.appendLine("Name=" + getIface());
