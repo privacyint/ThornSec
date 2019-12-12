@@ -42,7 +42,7 @@ public class Virtualisation extends AStructuredProfile {
 		units.add(new InstalledUnit("build_essential", "proceed", "build-essential"));
 		units.add(new InstalledUnit("linux_headers", "build_essential_installed", "linux-headers-$(uname -r)"));
 
-		units.add(new InstalledUnit("metal_virtualbox", "virtualbox_pgp", "virtualbox-6.0"));
+		units.add(new InstalledUnit("metal_virtualbox", "virtualbox_pgp", "virtualbox-6.1"));
 		units.add(new InstalledUnit("metal_genisoimage", "proceed", "genisoimage"));
 		units.add(new InstalledUnit("metal_rsync", "proceed", "rsync"));
 		units.add(new InstalledUnit("metal_guestfs_utils", "proceed", "libguestfs-tools"));
