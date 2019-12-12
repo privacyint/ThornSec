@@ -27,6 +27,8 @@ import inet.ipaddr.mac.MACAddress;
  * For more information, see https://wiki.debian.org/Debate/initsystem/sysvinit
  */
 public abstract class NetworkInterfaceModel implements ISystemdNetworkd {
+	private final String label;
+
 	private String comment;
 	private String iface;
 	private Inet inet;
@@ -49,10 +51,11 @@ public abstract class NetworkInterfaceModel implements ISystemdNetworkd {
 	 *
 	 * Don't invoke me directly.
 	 */
-	protected NetworkInterfaceModel(String iface) {
+	protected NetworkInterfaceModel(String label) {
 		this.addresses = null;
 
-		this.iface = iface;
+		this.label = label;
+		this.iface = label;
 		this.inet = null;
 		this.subnet = null;
 		this.netmask = null;
@@ -175,5 +178,9 @@ public abstract class NetworkInterfaceModel implements ISystemdNetworkd {
 
 	protected void setSubnet(IPAddress subnet) {
 		this.subnet = subnet;
+	}
+
+	final public String getLabel() {
+		return this.label;
 	}
 }
