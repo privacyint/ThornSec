@@ -58,7 +58,8 @@ public class Router extends AStructuredProfile {
 
 		// Start by building our (bonded) trunk. This trunk will bond any LAN-facing
 		// NICs, and we'll hang all our VLANs off it.
-		final BondModel bond = new BondModel("LAN");
+		final BondModel bond = new BondModel("Bond");
+		bond.setIface("LAN");
 		me.addNetworkInterface(bond);
 		try {
 			for (final NetworkInterfaceData lanNic : networkModel.getData().getNetworkInterfaces(getLabel()).get(Direction.LAN)) {
@@ -70,7 +71,9 @@ public class Router extends AStructuredProfile {
 		}
 
 		// Now build the VLANs we'll be hanging all of our networking off
-		final MACVLANTrunkModel trunk = new MACVLANTrunkModel("LAN");
+		final MACVLANTrunkModel trunk = new MACVLANTrunkModel("Trunk");
+		trunk.setIface("LAN");
+
 		final MACVLANModel adminsVlan = new MACVLANModel(MachineType.ADMIN.toString(), trunk);
 		final MACVLANModel usersVlan = new MACVLANModel(MachineType.USER.toString(), trunk);
 		final MACVLANModel externalsVlan = new MACVLANModel(MachineType.EXTERNAL_ONLY.toString(), trunk);
