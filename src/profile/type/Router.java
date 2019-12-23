@@ -56,19 +56,54 @@ public class Router extends AStructuredProfile {
 
 		final ServerModel me = getNetworkModel().getServerModel(getLabel());
 
+		// From this point, differentiate between LAN and WAN again. Makes bondage
+		// easier.
+		Collection<NetworkInterfaceData> lanIfaces = new ArrayList<>();
+		Collection<NetworkInterfaceData> wanIfaces = new ArrayList<>();
+
 		// Start by building our (bonded) trunk. This trunk will bond any LAN-facing
 		// NICs, and we'll hang all our VLANs off it.
 		final BondModel bond = new BondModel("Bond");
 		bond.setIface("LAN");
 		me.addNetworkInterface(bond);
+
 		try {
-			for (final NetworkInterfaceData lanNic : networkModel.getData().getNetworkInterfaces(getLabel()).get(Direction.LAN)) {
-				final NetworkInterfaceModel link = new BondInterfaceModel(lanNic.getIface(), bond);
-				me.addNetworkInterface(link);
-			}
+			lanIfaces = getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.LAN);
+			wanIfaces = getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN);
 		} catch (final IOException e) {
+			// @TODO: This
 			e.printStackTrace();
 		}
+
+		// Bond each LAN interface
+		lanIfaces.forEach(iface -> {
+			final NetworkInterfaceModel link = new BondInterfaceModel(iface.getIface(), bond);
+			me.addNetworkInterface(link);
+		});
+
+		// Declare external network interfaces
+		wanIfaces.forEach(iface -> {
+			NetworkInterfaceModel link = null;
+
+			switch (iface.getInet()) {
+			case STATIC:
+				link = new StaticInterfaceModel(iface.getIface());
+				link.addAddress(iface.getAddress());
+				link.setGateway(iface.getGateway());
+				link.setBroadcast(iface.getBroadcast());
+				link.setIsIPMasquerading(true);
+				break;
+			case DHCP:
+				link = new DHCPClientInterfaceModel(iface.getIface());
+				link.setIsIPMasquerading(true);
+				break;
+			case PPP: // @TODO
+				break;
+			default:
+			}
+
+			me.addNetworkInterface(link);
+		});
 
 		// Now build the VLANs we'll be hanging all of our networking off
 		final MACVLANTrunkModel trunk = new MACVLANTrunkModel("Trunk");
@@ -108,35 +143,6 @@ public class Router extends AStructuredProfile {
 			guestsVlan.setSubnet(getNetworkModel().getData().getGuestSubnet());
 			guestsVlan.addAddress(getNetworkModel().getData().getGuestSubnet());
 			me.addNetworkInterface(guestsVlan);
-		}
-
-		// Finally, add any external network interfaces
-		try {
-			for (final NetworkInterfaceData wanNic : networkModel.getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)) {
-
-				NetworkInterfaceModel link = null;
-
-				switch (wanNic.getInet()) {
-				case STATIC:
-					link = new StaticInterfaceModel(wanNic.getIface());
-					link.addAddress(wanNic.getAddress());
-					link.setGateway(wanNic.getGateway());
-					link.setBroadcast(wanNic.getBroadcast());
-					link.setIsIPMasquerading(true);
-					break;
-				case DHCP:
-					link = new DHCPClientInterfaceModel(wanNic.getIface());
-					link.setIsIPMasquerading(true);
-					break;
-				case PPP: // @TODO
-					break;
-				default:
-				}
-				me.addNetworkInterface(link);
-			}
-
-		} catch (final IOException e) {
-			e.printStackTrace();
 		}
 
 		// Now create our DHCP Server.
