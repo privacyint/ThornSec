@@ -164,23 +164,17 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		for (final UserDeviceModel user : getNetworkModel().getUserDevices().values()) {
 			hosts.appendLine(machine2Host(user, ParentZone.USERS));
-			for (final String line : machine2MaclistEntry(user, MachineType.USER)) {
-				maclist.appendLine(line);
-			}
+			maclist.appendLine(machine2MaclistEntry(user, MachineType.USER).toArray(String[]::new));
 		}
 
 		for (final InternalOnlyDeviceModel device : getNetworkModel().getInternalOnlyDevices().values()) {
 			hosts.appendLine(machine2Host(device, ParentZone.INTERNAL_ONLY));
-			for (final String line : machine2MaclistEntry(device, MachineType.INTERNAL_ONLY)) {
-				maclist.appendLine(line);
-			}
+			maclist.appendLine(machine2MaclistEntry(device, MachineType.INTERNAL_ONLY).toArray(String[]::new));
 		}
 
 		for (final ExternalOnlyDeviceModel device : getNetworkModel().getExternalOnlyDevices().values()) {
 			hosts.appendLine(machine2Host(device, ParentZone.EXTERNAL_ONLY));
-			for (final String line : machine2MaclistEntry(device, MachineType.EXTERNAL_ONLY)) {
-				maclist.appendLine(line);
-			}
+			maclist.appendLine(machine2MaclistEntry(device, MachineType.EXTERNAL_ONLY).toArray(String[]::new));
 		}
 
 		units.add(hosts);
