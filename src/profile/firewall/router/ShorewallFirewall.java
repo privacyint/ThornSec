@@ -150,21 +150,17 @@ public class ShorewallFirewall extends AFirewallProfile {
 		hosts.appendLine("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
 		hosts.appendLine("#zone      hosts          options");
 
-		for (final ServerModel server : getNetworkModel().getServers().values()) {
+		getNetworkModel().getServers().values().forEach(server -> {
 			try {
-				// We're a router, so we're a special case!
-				if (server.isRouter()) {
-					continue;
+				if (!server.isRouter()) { // Ignore routers
+					hosts.appendLine(machine2Host(server, ParentZone.SERVERS));
+					maclist.appendLine(machine2MaclistEntry(server, MachineType.SERVER).toArray(String[]::new));
 				}
-			} catch (final Exception e) {
-				continue;
+			} catch (final InvalidServerException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-
-			hosts.appendLine(machine2Host(server, ParentZone.SERVERS));
-			for (final String line : machine2MaclistEntry(server, MachineType.SERVER)) {
-				maclist.appendLine(line);
-			}
-		}
+		});
 
 		for (final UserDeviceModel user : getNetworkModel().getUserDevices().values()) {
 			hosts.appendLine(machine2Host(user, ParentZone.USERS));
