@@ -124,16 +124,18 @@ public abstract class NetworkInterfaceModel implements ISystemdNetworkd {
 		return this.inet;
 	}
 
-	public final void addAddress(IPAddress address) {
-		// Don't add null addresses
-		if (address == null) {
-			return;
-		}
+	public final void addAddress(IPAddress... addresses) {
+		for (final IPAddress address : addresses) {
+			// Ignore null addresses
+			if (address == null) {
+				continue;
+			}
 
-		if (this.addresses == null) {
-			this.addresses = new ArrayList<>();
+			if (this.addresses == null) {
+				this.addresses = new ArrayList<>();
+			}
+			this.addresses.add(address);
 		}
-		this.addresses.add(address);
 	}
 
 	public final void setBroadcast(IPAddress broadcast) {
