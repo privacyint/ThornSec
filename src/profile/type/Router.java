@@ -109,40 +109,22 @@ public class Router extends AStructuredProfile {
 		final MACVLANTrunkModel trunk = new MACVLANTrunkModel("Trunk");
 		trunk.setIface("LAN");
 
-		final MACVLANModel adminsVlan = new MACVLANModel(MachineType.ADMIN.toString(), trunk);
-		final MACVLANModel usersVlan = new MACVLANModel(MachineType.USER.toString(), trunk);
-		final MACVLANModel externalsVlan = new MACVLANModel(MachineType.EXTERNAL_ONLY.toString(), trunk);
-		final MACVLANModel internalsVlan = new MACVLANModel(MachineType.INTERNAL_ONLY.toString(), trunk);
-		final MACVLANModel serversVlan = new MACVLANModel(MachineType.SERVER.toString(), trunk);
-
-		adminsVlan.setSubnet(getNetworkModel().getData().getAdminSubnet());
-		adminsVlan.addAddress(getNetworkModel().getData().getAdminSubnet());
-
-		usersVlan.setSubnet(getNetworkModel().getData().getUserSubnet());
-		usersVlan.addAddress(getNetworkModel().getData().getUserSubnet());
-
-		externalsVlan.setSubnet(getNetworkModel().getData().getExternalSubnet());
-		externalsVlan.addAddress(getNetworkModel().getData().getExternalSubnet());
-
-		internalsVlan.setSubnet(getNetworkModel().getData().getInternalSubnet());
-		internalsVlan.addAddress(getNetworkModel().getData().getInternalSubnet());
-
-		serversVlan.setSubnet(getNetworkModel().getData().getServerSubnet());
-		serversVlan.addAddress(getNetworkModel().getData().getServerSubnet());
-
 		me.addNetworkInterface(trunk);
-		me.addNetworkInterface(adminsVlan);
-		me.addNetworkInterface(usersVlan);
-		me.addNetworkInterface(externalsVlan);
-		me.addNetworkInterface(internalsVlan);
-		me.addNetworkInterface(serversVlan);
+		me.addNetworkInterface(new MACVLANModel(MachineType.ADMIN.toString(), trunk,
+				getNetworkModel().getData().getAdminSubnet(), getNetworkModel().getData().getAdminSubnet()));
+		me.addNetworkInterface(new MACVLANModel(MachineType.USER.toString(), trunk,
+				getNetworkModel().getData().getUserSubnet(), getNetworkModel().getData().getUserSubnet()));
+		me.addNetworkInterface(new MACVLANModel(MachineType.EXTERNAL_ONLY.toString(), trunk,
+				getNetworkModel().getData().getExternalSubnet(), getNetworkModel().getData().getExternalSubnet()));
+		me.addNetworkInterface(new MACVLANModel(MachineType.INTERNAL_ONLY.toString(), trunk,
+				getNetworkModel().getData().getInternalSubnet(), getNetworkModel().getData().getInternalSubnet()));
+		me.addNetworkInterface(new MACVLANModel(MachineType.SERVER.toString(), trunk,
+				getNetworkModel().getData().getServerSubnet(), getNetworkModel().getData().getServerSubnet()));
 
 		// if we want a guest network, build one of them, too
 		if (getNetworkModel().getData().buildAutoGuest()) {
-			final MACVLANModel guestsVlan = new MACVLANModel(MachineType.GUEST.toString(), trunk);
-			guestsVlan.setSubnet(getNetworkModel().getData().getGuestSubnet());
-			guestsVlan.addAddress(getNetworkModel().getData().getGuestSubnet());
-			me.addNetworkInterface(guestsVlan);
+			me.addNetworkInterface(new MACVLANModel(MachineType.GUEST.toString(), trunk,
+					getNetworkModel().getData().getGuestSubnet(), getNetworkModel().getData().getGuestSubnet()));
 		}
 
 		// Now create our DHCP Server.
