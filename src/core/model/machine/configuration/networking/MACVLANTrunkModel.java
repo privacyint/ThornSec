@@ -23,6 +23,8 @@ public class MACVLANTrunkModel extends NetworkInterfaceModel {
 	public MACVLANTrunkModel(String name) {
 		super(name);
 		super.setInet(Inet.MACVLAN);
+
+		vlans = null;
 	}
 
 	@Override
