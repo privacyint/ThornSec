@@ -26,6 +26,13 @@ public class MACVLANModel extends NetworkInterfaceModel {
 		super.setInet(Inet.STATIC);
 	}
 
+	public MACVLANModel(String name, MACVLANTrunkModel trunk, String subnet, String... addresses)
+			throws InvalidIPAddressException {
+		this(name, trunk);
+
+		setSubnet(subnet);
+		addAddress(addresses);
+	}
 
 	public void addAddress(String... addresses) throws InvalidIPAddressException {
 		for (final String address : addresses) {
