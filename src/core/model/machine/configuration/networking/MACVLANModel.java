@@ -26,6 +26,19 @@ public class MACVLANModel extends NetworkInterfaceModel {
 		super.setInet(Inet.STATIC);
 	}
 
+
+	public void addAddress(String... addresses) throws InvalidIPAddressException {
+		for (final String address : addresses) {
+			final IPAddressString string = new IPAddressString(address);
+
+			try {
+				addAddress(string.toAddress());
+			} catch (AddressStringException | IncompatibleAddressException e) {
+				throw new InvalidIPAddressException(address);
+			}
+		}
+	}
+
 	@Override
 	public FileUnit getNetworkFile() {
 		final FileUnit network = new FileUnit(getIface() + "_network", "proceed", "/etc/systemd/network/20-" + getIface() + ".network");
@@ -79,16 +92,6 @@ public class MACVLANModel extends NetworkInterfaceModel {
 			setSubnet(string.toAddress());
 		} catch (AddressStringException | IncompatibleAddressException e) {
 			throw new InvalidIPAddressException(subnet);
-		}
-	}
-
-	public void addAddress(String address) throws InvalidIPAddressException {
-		final IPAddressString string = new IPAddressString(address);
-
-		try {
-			addAddress(string.toAddress());
-		} catch (AddressStringException | IncompatibleAddressException e) {
-			throw new InvalidIPAddressException(address);
 		}
 	}
 }
