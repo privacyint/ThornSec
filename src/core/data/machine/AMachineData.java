@@ -126,7 +126,10 @@ public abstract class AMachineData extends AData {
 			if (((port < 0)) || ((port > 65535))) {
 				throw new InvalidPortException(port);
 			}
-			currentPorts.add(port);
+
+			if (!currentPorts.contains(port)) {
+				currentPorts.add(port);
+			}
 		}
 
 		this.dnats.put(destination, currentPorts);
@@ -137,7 +140,9 @@ public abstract class AMachineData extends AData {
 			this.egresses = new HashSet<>();
 		}
 
-		this.egresses.add(destination);
+		if (!this.egresses.contains(destination)) {
+			this.egresses.add(destination);
+		}
 	}
 
 	private void addFoward(String label) {
@@ -145,15 +150,18 @@ public abstract class AMachineData extends AData {
 			this.forwards = new HashSet<>();
 		}
 
-		this.forwards.add(label);
+		if (!this.forwards.contains(label)) {
+			this.forwards.add(label);
+		}
 	}
 
 	private void addIngress(HostName source) {
 		if (this.ingresses == null) {
 			this.ingresses = new HashSet<>();
 		}
-
-		this.ingresses.add(source);
+		if (!this.ingresses.contains(source)) {
+			this.ingresses.add(source);
+		}
 	}
 
 	public final Collection<String> getCNAMEs() {
@@ -208,8 +216,9 @@ public abstract class AMachineData extends AData {
 		if (this.cnames == null) {
 			this.cnames = new HashSet<>();
 		}
-
-		this.cnames.add(cname);
+		if (!this.cnames.contains(cname)) {
+			this.cnames.add(cname);
+		}
 	}
 
 	public void putLANNetworkInterface(NetworkInterfaceData... ifaces) {
@@ -231,7 +240,9 @@ public abstract class AMachineData extends AData {
 			if (((port < 0)) || ((port > 65535))) {
 				throw new InvalidPortException(port);
 			}
-			currentPorts.add(port);
+			if (!currentPorts.contains(port)) {
+				currentPorts.add(port);
+			}
 		}
 
 		this.listens.put(encapsulation, currentPorts);
@@ -249,7 +260,9 @@ public abstract class AMachineData extends AData {
 		}
 
 		for (final NetworkInterfaceData iface : ifaces) {
-			currentIfaces.add(iface);
+			if (!currentIfaces.contains(iface)) {
+				currentIfaces.add(iface);
+			}
 		}
 
 		this.networkInterfaces.put(dir, currentIfaces);

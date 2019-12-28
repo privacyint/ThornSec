@@ -197,7 +197,9 @@ public class ServerData extends AMachineData {
 		}
 
 		for (final String profile : profiles) {
-			this.profiles.add(profile);
+			if (!this.profiles.contains(profile)) {
+				this.profiles.add(profile);
+			}
 		}
 	}
 
@@ -208,7 +210,9 @@ public class ServerData extends AMachineData {
 
 		for (String type : types) {
 			type = type.replaceAll("[^a-zA-Z]", "").toUpperCase();
-			this.types.add(MachineType.valueOf(type));
+			if (!this.types.contains(MachineType.valueOf(type))) {
+				this.types.add(MachineType.valueOf(type));
+			}
 		}
 	}
 
@@ -228,7 +232,9 @@ public class ServerData extends AMachineData {
 		}
 
 		for (final String admin : admins) {
-			this.adminUsernames.add(admin);
+			if (!this.adminUsernames.contains(admin)) {
+				this.adminUsernames.add(admin);
+			}
 		}
 	}
 
