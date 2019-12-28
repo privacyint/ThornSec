@@ -24,10 +24,6 @@ import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
-import core.model.machine.ExternalOnlyDeviceModel;
-import core.model.machine.InternalOnlyDeviceModel;
-import core.model.machine.ServerModel;
-import core.model.machine.UserDeviceModel;
 import core.model.machine.configuration.networking.ISystemdNetworkd;
 import core.model.network.NetworkModel;
 import core.unit.fs.FileEditUnit;
@@ -163,20 +159,20 @@ public class ShorewallFirewall extends AFirewallProfile {
 			}
 		});
 
-		for (final UserDeviceModel user : getNetworkModel().getUserDevices().values()) {
+		getNetworkModel().getUserDevices().values().forEach(user -> {
 			hosts.appendLine(machine2Host(user, ParentZone.USERS));
 			maclist.appendLine(machine2MaclistEntry(user, MachineType.USER).toArray(String[]::new));
-		}
+		});
 
-		for (final InternalOnlyDeviceModel device : getNetworkModel().getInternalOnlyDevices().values()) {
+		getNetworkModel().getInternalOnlyDevices().values().forEach(device -> {
 			hosts.appendLine(machine2Host(device, ParentZone.INTERNAL_ONLY));
 			maclist.appendLine(machine2MaclistEntry(device, MachineType.INTERNAL_ONLY).toArray(String[]::new));
-		}
+		});
 
-		for (final ExternalOnlyDeviceModel device : getNetworkModel().getExternalOnlyDevices().values()) {
+		getNetworkModel().getExternalOnlyDevices().values().forEach(device -> {
 			hosts.appendLine(machine2Host(device, ParentZone.EXTERNAL_ONLY));
 			maclist.appendLine(machine2MaclistEntry(device, MachineType.EXTERNAL_ONLY).toArray(String[]::new));
-		}
+		});
 
 		units.add(hosts);
 		units.add(maclist);
