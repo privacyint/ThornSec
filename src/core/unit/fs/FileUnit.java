@@ -31,7 +31,7 @@ public class FileUnit extends SimpleUnit {
 	 * @param message      Custom fail message
 	 */
 	public FileUnit(String name, String precondition, String path, String message) {
-		super(name, precondition, null, "sudo cat " + path + " 2>&1;", "", "pass", message);
+		super(name, precondition, "sudo touch " + path, "sudo cat " + path + " 2>&1;", "", "pass", message);
 
 		this.lines = new ArrayList<>();
 		this.path = path;
