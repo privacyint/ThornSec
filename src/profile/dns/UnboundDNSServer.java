@@ -14,7 +14,9 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 
+import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
+import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
@@ -275,10 +277,13 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws ARuntimeException {
+	public Collection<IUnit> getPersistentFirewall() throws ARuntimeException, InvalidPortException {
 		for (final HostName upstream : getNetworkModel().getData().getUpstreamDNSServers()) {
 			getNetworkModel().getServerModel(getLabel()).addEgress(upstream);
 		}
+
+		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 53);
+		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.UDP, 53);
 
 		return new HashSet<>();
 	}
