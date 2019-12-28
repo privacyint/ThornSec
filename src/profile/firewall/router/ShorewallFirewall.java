@@ -20,6 +20,7 @@ import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.exception.AThornSecException;
 import core.exception.data.ADataException;
+import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
