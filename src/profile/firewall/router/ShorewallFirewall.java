@@ -105,16 +105,16 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		zones.appendLine("#Here, we build our server zone, and give each server its own subzone");
 		zones.appendLine(cleanZone(ParentZone.SERVERS.toString()) + "\tipv4");
-		for (final String serverLabel : getNetworkModel().getServers().keySet()) {
-			zones.appendLine(cleanZone(serverLabel) + ":" + cleanZone(ParentZone.SERVERS.toString()) + "\tipv4");
-		}
+		getNetworkModel().getServers().keySet().forEach(server -> {
+			zones.appendLine(cleanZone(server) + ":" + cleanZone(ParentZone.SERVERS.toString()) + "\tipv4");
+		});
 		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our user zone, and give each user their own subzone");
 		zones.appendLine("Users\tipv4");
-		for (final String userLabel : getNetworkModel().getUserDevices().keySet()) {
-			zones.appendLine(cleanZone(userLabel) + ":" + cleanZone(ParentZone.USERS.toString()) + "\tipv4");
-		}
+		getNetworkModel().getUserDevices().keySet().forEach(user -> {
+			zones.appendLine(cleanZone(user) + ":" + cleanZone(ParentZone.USERS.toString()) + "\tipv4");
+		});
 
 		// TODO: Do we need an admin zone? Should it be sub-zoned too?
 		zones.appendLine(cleanZone(ParentZone.ADMINS.toString()) + ":" + cleanZone(ParentZone.USERS.toString()) + "\tipv4");
@@ -122,16 +122,16 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		zones.appendLine("#Here, we build our internal only zone, and give each device its own subzone");
 		zones.appendLine(cleanZone(ParentZone.INTERNAL_ONLY.toString()) + "\tipv4");
-		for (final String deviceLabel : getNetworkModel().getInternalOnlyDevices().keySet()) {
-			zones.appendLine(cleanZone(deviceLabel) + ":" + cleanZone(ParentZone.INTERNAL_ONLY.toString()) + "\tipv4");
-		}
+		getNetworkModel().getInternalOnlyDevices().keySet().forEach(device -> {
+			zones.appendLine(cleanZone(device) + ":" + cleanZone(ParentZone.INTERNAL_ONLY.toString()) + "\tipv4");
+		});
 		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our external only zone, and give each device its own subzone");
 		zones.appendLine(cleanZone(ParentZone.EXTERNAL_ONLY.toString()) + "\tipv4");
-		for (final String deviceLabel : getNetworkModel().getExternalOnlyDevices().keySet()) {
-			zones.appendLine(cleanZone(deviceLabel) + ":" + cleanZone(ParentZone.EXTERNAL_ONLY.toString()) + "\tipv4");
-		}
+		getNetworkModel().getExternalOnlyDevices().keySet().forEach(device -> {
+			zones.appendLine(cleanZone(device) + ":" + cleanZone(ParentZone.EXTERNAL_ONLY.toString()) + "\tipv4");
+		});
 
 		// Do we want an autoguest network? Build its zone if so
 		if (getNetworkModel().getData().buildAutoGuest()) {
