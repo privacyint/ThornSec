@@ -347,7 +347,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 				}
 
 				masqs.forEach(toMasq -> {
-					masq.appendLine(toMasq + "\t" + toString());
+					masq.appendLine(nic.getIface() + "\t" + toMasq.toString());
 				});
 			});
 		} catch (JsonParsingException | ADataException | IOException e) {
