@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -325,6 +327,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 															ParentZone.EXTERNAL_ONLY, MachineType.EXTERNAL_ONLY);
 		
 		if (getNetworkModel().getData().buildAutoGuest()) {
+			zoneMappings = new HashMap<>(zoneMappings);
 			zoneMappings.put(ParentZone.GUESTS, MachineType.GUEST);
 		}
 		
@@ -339,10 +342,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 		final FileUnit masq = new FileUnit("shorewall_masquerades", "shorewall_installed", CONFIG_BASEDIR + "/masq");
 		try {
 			getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic->{
-				final List<MachineType> masqs = Arrays.asList(MachineType.SERVER, MachineType.USER, MachineType.ADMIN,
-						MachineType.INTERNAL_ONLY, MachineType.EXTERNAL_ONLY);
+				List<MachineType> masqs = Arrays.asList(MachineType.SERVER, MachineType.USER, MachineType.ADMIN, MachineType.INTERNAL_ONLY, MachineType.EXTERNAL_ONLY);
 
 				if (getNetworkModel().getData().buildAutoGuest()) {
+					masqs = new ArrayList<>(masqs);
 					masqs.add(MachineType.GUEST);
 				}
 
