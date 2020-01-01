@@ -9,13 +9,15 @@ package profile.firewall.router;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import javax.json.stream.JsonParsingException;
 
 import core.StringUtils;
 import core.data.machine.AMachineData.MachineType;
-import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.exception.AThornSecException;
@@ -319,14 +321,20 @@ public class ShorewallFirewall extends AFirewallProfile {
 		}
 
 		// Then, declare our various interface:zone mapping
-		interfaces.appendLine(cleanZone(ParentZone.SERVERS.toString()) + "\t" + MachineType.SERVER.toString() + "\t-\tdhcp,routefilter,arp_filter");
-		interfaces.appendLine(cleanZone(ParentZone.USERS.toString()) + "\t" + MachineType.USER.toString() + "\t-\tdhcp,routefilter,arp_filter");
-		interfaces.appendLine(cleanZone(ParentZone.ADMINS.toString()) + "\t" + MachineType.ADMIN.toString() + "\t-\tdhcp,routefilter,arp_filter");
-		interfaces.appendLine(cleanZone(ParentZone.INTERNAL_ONLY.toString()) + "\t" + MachineType.INTERNAL_ONLY.toString() + "\t-\tdhcp,routefilter,arp_filter");
-		interfaces.appendLine(cleanZone(ParentZone.EXTERNAL_ONLY.toString()) + "\t" + MachineType.EXTERNAL_ONLY.toString() + "\t-\tdhcp,routefilter,arp_filter");
+		Map<ParentZone, MachineType> zoneMappings = Map.of(ParentZone.SERVERS, MachineType.SERVER,
+															ParentZone.USERS, MachineType.USER,
+															ParentZone.ADMINS, MachineType.ADMIN,
+															ParentZone.INTERNAL_ONLY, MachineType.INTERNAL_ONLY,
+															ParentZone.EXTERNAL_ONLY, MachineType.EXTERNAL_ONLY);
+		
 		if (getNetworkModel().getData().buildAutoGuest()) {
-			interfaces.appendLine(cleanZone(ParentZone.GUESTS.toString()) + "\t" + MachineType.GUEST.toString() + "\t-\tdhcp,routefilter,arp_filter");
+			zoneMappings.put(ParentZone.GUESTS, MachineType.GUEST);
 		}
+		
+		zoneMappings.forEach((zone, type) -> {
+			interfaces.appendLine(cleanZone(zone.toString()) + "\t" + type.toString() + "\t-\tdhcp,routefilter,arp_filter");
+		});
+		
 		units.add(interfaces);
 
 		// Once we've done all that, it's time to tell shorewall about our various
