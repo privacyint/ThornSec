@@ -197,9 +197,11 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		// Start by updating the ad block list (if req'd)
 		if (getNetworkModel().getData().adBlocking()) {
 			units.add(new SimpleUnit("adblock_up_to_date", "proceed",
-					"sudo wget -O /etc/unbound/rawhosts https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts" + " && cat /etc/unbound/rawhosts | grep '^0\\.0\\.0\\.0'"
+					"sudo wget -O /etc/unbound/rawhosts https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
+							+ " && cat /etc/unbound/rawhosts | grep '^0\\.0\\.0\\.0'"
 							+ " | awk '{print \"local-zone: \\\"\"$2\"\\\" redirect\\nlocal-data: \\\"\"$2\" A 0.0.0.0\\\"\"}'"
-							+ " | sudo tee /etc/unbound/unbound.conf.d/adblock.zone > /dev/null" + " && sudo service unbound restart",
+							+ " | sudo tee /etc/unbound/unbound.conf.d/adblock.zone > /dev/null"
+							+ " && sudo service unbound restart",
 					"[ ! -f /etc/unbound/rawhosts ] && echo fail || wget -O - -o /dev/null https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts | cmp /etc/unbound/rawhosts 2>&1",
 					"", "pass"));
 		}
