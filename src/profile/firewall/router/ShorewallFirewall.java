@@ -81,6 +81,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return zone;
 	}
 
+	private String cleanZone(ParentZone zone) {
+		return cleanZone(zone.toString());
+	}
+
 	@Override
 	public Collection<IUnit> getInstalled() throws ARuntimeException {
 		final Collection<IUnit> units = new ArrayList<>();
@@ -99,43 +103,43 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zones.appendLine("#This is the file which creates our various zones");
 		zones.appendLine("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
 		zones.appendLine("#zone\ttype");
-		zones.appendLine(cleanZone(ParentZone.INTERNET.toString()) + "\tipv4");
-		zones.appendLine(cleanZone(ParentZone.ROUTER.toString()) + "\tfirewall");
+		zones.appendLine(cleanZone(ParentZone.INTERNET) + "\tipv4");
+		zones.appendLine(cleanZone(ParentZone.ROUTER) + "\tfirewall");
 		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our server zone, and give each server its own subzone");
-		zones.appendLine(cleanZone(ParentZone.SERVERS.toString()) + "\tipv4");
+		zones.appendLine(cleanZone(ParentZone.SERVERS) + "\tipv4");
 		getNetworkModel().getServers().keySet().forEach(server -> {
-			zones.appendLine(cleanZone(server) + ":" + cleanZone(ParentZone.SERVERS.toString()) + "\tipv4");
+			zones.appendLine(cleanZone(server) + ":" + cleanZone(ParentZone.SERVERS) + "\tipv4");
 		});
 		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our user zone, and give each user their own subzone");
 		zones.appendLine("Users\tipv4");
 		getNetworkModel().getUserDevices().keySet().forEach(user -> {
-			zones.appendLine(cleanZone(user) + ":" + cleanZone(ParentZone.USERS.toString()) + "\tipv4");
+			zones.appendLine(cleanZone(user) + ":" + cleanZone(ParentZone.USERS) + "\tipv4");
 		});
 
 		// TODO: Do we need an admin zone? Should it be sub-zoned too?
-		zones.appendLine(cleanZone(ParentZone.ADMINS.toString()) + ":" + cleanZone(ParentZone.USERS.toString()) + "\tipv4");
+		zones.appendLine(cleanZone(ParentZone.ADMINS) + ":" + cleanZone(ParentZone.USERS) + "\tipv4");
 		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our internal only zone, and give each device its own subzone");
-		zones.appendLine(cleanZone(ParentZone.INTERNAL_ONLY.toString()) + "\tipv4");
+		zones.appendLine(cleanZone(ParentZone.INTERNAL_ONLY) + "\tipv4");
 		getNetworkModel().getInternalOnlyDevices().keySet().forEach(device -> {
-			zones.appendLine(cleanZone(device) + ":" + cleanZone(ParentZone.INTERNAL_ONLY.toString()) + "\tipv4");
+			zones.appendLine(cleanZone(device) + ":" + cleanZone(ParentZone.INTERNAL_ONLY) + "\tipv4");
 		});
 		zones.appendCarriageReturn();
 
 		zones.appendLine("#Here, we build our external only zone, and give each device its own subzone");
-		zones.appendLine(cleanZone(ParentZone.EXTERNAL_ONLY.toString()) + "\tipv4");
+		zones.appendLine(cleanZone(ParentZone.EXTERNAL_ONLY) + "\tipv4");
 		getNetworkModel().getExternalOnlyDevices().keySet().forEach(device -> {
-			zones.appendLine(cleanZone(device) + ":" + cleanZone(ParentZone.EXTERNAL_ONLY.toString()) + "\tipv4");
+			zones.appendLine(cleanZone(device) + ":" + cleanZone(ParentZone.EXTERNAL_ONLY) + "\tipv4");
 		});
 
 		// Do we want an autoguest network? Build its zone if so
 		if (getNetworkModel().getData().buildAutoGuest()) {
-			zones.appendLine(cleanZone(ParentZone.GUESTS.toString()) + "\tipv4");
+			zones.appendLine(cleanZone(ParentZone.GUESTS) + "\tipv4");
 		}
 
 		units.add(zones);
@@ -325,7 +329,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		}
 		
 		zoneMappings.forEach((zone, type) -> {
-			interfaces.appendLine(cleanZone(zone.toString()) + "\t" + type.toString() + "\t-\tdhcp,routefilter,arp_filter");
+			interfaces.appendLine(cleanZone(zone) + "\t" + type.toString() + "\t-\tdhcp,routefilter,arp_filter");
 		});
 		
 		units.add(interfaces);
