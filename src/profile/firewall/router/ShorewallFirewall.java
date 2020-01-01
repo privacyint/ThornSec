@@ -60,11 +60,9 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	private static String CONFIG_BASEDIR = "/etc/shorewall";
-	private final Collection<String> wanIfaces;
 
 	public ShorewallFirewall(String label, NetworkModel networkModel) {
 		super(label, networkModel);
-		this.wanIfaces = new ArrayList<>();
 	}
 
 	/**
@@ -301,23 +299,18 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		// First work out our Internet-facing NICs
 		try {
-			getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic -> {
-				this.wanIfaces.add(nic.getIface());
+			getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic-> {
+				String line = "";
+				line += ParentZone.INTERNET;
+				line += "\t" + nic.getIface();
+				line += "\t-\t";
+				line += (nic.getInet().equals(Inet.DHCP)) ? "dhcp," : "";
+				line += "routefilter,arp_filter";
+				interfaces.appendLine(line);
 			});
 		} catch (JsonParsingException | ADataException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-
-		// @TODO: Refactor this mess
-		for (final String iface : this.wanIfaces) {
-			String line = "";
-			line += ParentZone.INTERNET;
-			line += "\t" + iface;
-			line += "\t-\t";
-			line += (getNetworkModel().getServerModel(getLabel()).getNetworkInterfaces().get(iface).getInet().equals(Inet.DHCP)) ? "dhcp," : "";
-			line += "routefilter,arp_filter";
-			interfaces.appendLine(line);
 		}
 
 		// Then, declare our various interface:zone mapping
@@ -340,18 +333,23 @@ public class ShorewallFirewall extends AFirewallProfile {
 		// Once we've done all that, it's time to tell shorewall about our various
 		// masquerading
 		final FileUnit masq = new FileUnit("shorewall_masquerades", "shorewall_installed", CONFIG_BASEDIR + "/masq");
-		this.wanIfaces.forEach(nic -> {
-			final List<MachineType> masqs = Arrays.asList(MachineType.SERVER, MachineType.USER, MachineType.ADMIN,
-					MachineType.INTERNAL_ONLY, MachineType.EXTERNAL_ONLY);
+		try {
+			getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic->{
+				final List<MachineType> masqs = Arrays.asList(MachineType.SERVER, MachineType.USER, MachineType.ADMIN,
+						MachineType.INTERNAL_ONLY, MachineType.EXTERNAL_ONLY);
 
-			if (getNetworkModel().getData().buildAutoGuest()) {
-				masqs.add(MachineType.GUEST);
-			}
+				if (getNetworkModel().getData().buildAutoGuest()) {
+					masqs.add(MachineType.GUEST);
+				}
 
-			masqs.forEach(toMasq -> {
-				masq.appendLine(toMasq + "\t" + toString());
+				masqs.forEach(toMasq -> {
+					masq.appendLine(toMasq + "\t" + toString());
+				});
 			});
-		});
+		} catch (JsonParsingException | ADataException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		units.add(masq);
 
