@@ -281,9 +281,12 @@ public class ServerModel extends AMachineModel {
 		}
 
 		units.add(new SimpleUnit("no_additional_ssh_keys", "proceed", "",
-				"for X in $(cut -f6 -d ':' /etc/passwd |sort |uniq); do" + "   for suffix in \"\" \"2\"; do" + "       if sudo [ -s \"${X}/.ssh/authorized_keys$suffix\" ]; then"
-						+ "           cat \"${X}/.ssh/authorized_keys$suffix\";" + "       fi;" + "   done;" + "done" + excludeKnownSSHKeys,
-				"", "pass", "There are unexpected SSH keys on this machine.  This is almost certainly an indicator that this machine has been compromised!"));
+				"for X in $(cut -f6 -d ':' /etc/passwd |sort |uniq); do" + "   for suffix in \"\" \"2\"; do"
+						+ "       if sudo [ -s \"${X}/.ssh/authorized_keys$suffix\" ]; then"
+						+ "           cat \"${X}/.ssh/authorized_keys$suffix\";" + "       fi;" + "   done;" + "done"
+						+ excludeKnownSSHKeys,
+				"", "pass",
+				"There are unexpected SSH keys on this machine.  This is almost certainly an indicator that this machine has been compromised!"));
 
 		// Check for unexpected executables
 		// if (this.isService()) {
