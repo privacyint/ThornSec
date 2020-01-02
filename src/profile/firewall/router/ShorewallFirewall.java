@@ -346,6 +346,24 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	/**
+	 * Returns a comma-delimited string of all IP addresses for a given machine
+	 * 
+	 * @param machine
+	 * @return
+	 */
+	private String getAddresses(AMachineModel machine) {
+		final Collection<String> addresses = new ArrayList<>();
+
+		machine.getNetworkInterfaces().values().forEach(nic -> {
+			nic.getAddresses().forEach(address -> {
+				addresses.add(address.withoutPrefixLength().toCompressedString() + "/32");
+			});
+		});
+
+		return String.join(",", addresses);
+	}
+
+	/**
 	 * Turns a zone and an array of AMachineModels into the Shorewall hosts file
 	 * format
 	 *
@@ -357,16 +375,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		final Collection<String> hosts = new ArrayList<>();
 
 		for (final AMachineModel machine : machines) {
-			final Collection<String> addresses = new ArrayList<>();
-
-			machine.getNetworkInterfaces().values().forEach(nic -> {
-				nic.getAddresses().forEach(address -> {
-					addresses.add(address.withoutPrefixLength().toCompressedString() + "/32");
-				});
-			});
-
-			final String addressesString = String.join(",", addresses);
-			hosts.add(cleanZone(machine.getLabel()) + "\t" + zone.toString() + ":" + addressesString + "\tmaclist");
+			hosts.add(cleanZone(machine.getLabel()) + "\t" + zone.toString() + ":" + getAddresses(machine) + "\tmaclist");
 		}
 
 		return hosts;
