@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -142,6 +141,35 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return hosts;
 	}
 
+	private Collection<String> getRulesFile() {
+		final Collection<String> rules = new ArrayList<>();
+
+		// Iterate over every machine
+		getNetworkModel().getUniqueMachines().forEach((label, machine) -> {
+			// Start by building this machine's egresses.
+			machine.getEgresses().forEach(egress -> {
+				String line = "";
+
+				line += "ACCEPT\t";
+				line += cleanZone(label) + "\t";
+				line += ParentZone.INTERNET + ":" + egress.getHost();
+				// If it's a HostName rather than IP address make it "FQDN"-ish by appending "."
+				if (!egress.isAddress()) {
+					line += ".";
+				}
+
+				if (egress.getPort() != null) {
+					line += "\ttcp\t";
+					line += egress.getPort();
+				}
+
+				rules.add(line);
+			});
+		});
+
+		return rules;
+	}
+
 	private Collection<String> getZonesFile() {
 		// Build our zones
 		final Collection<String> zones = new ArrayList<>();
@@ -212,40 +240,9 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		// Finally, build our FW rules...
 		final FileUnit rules = new FileUnit("shorewall_rules", "shorewall_hosts", CONFIG_BASEDIR + "/rules");
+		rules.appendLine(getRulesFile().toArray(String[]::new));
+
 		units.add(rules);
-
-		// Iterate over the whole network
-		// However, bear in mind that we'll see machines more than once, so we need to
-		// keep track
-		final Collection<String> seen = new HashSet<>();
-		getNetworkModel().getMachines().forEach((type, machines) -> {
-			// Iterate over every machine
-			machines.forEach((label, machine) -> {
-				if (!seen.contains(label)) {
-					seen.add(label);
-
-					// Start by building this machine's egresses.
-					machine.getEgresses().forEach(egress -> {
-						String line = "";
-
-						line += "ACCEPT\t";
-						line += cleanZone(label) + "\t";
-						line += ParentZone.INTERNET + ":" + egress.getHost();
-						if (!egress.isAddress()) {
-							line += ".";
-						}
-
-						if (egress.getPort() != null) {
-							line += "\ttcp\t";
-							line += egress.getPort();
-						}
-
-						rules.appendLine(line);
-					});
-
-				}
-			});
-		});
 
 		return units;
 	}
