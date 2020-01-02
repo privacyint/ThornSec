@@ -414,7 +414,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		}
 		nics = nics.replaceAll(",$", ""); // Get rid of any trailing comma
 
-		return cleanZone(machine.getLabel()) + " " + zone.toString() + ":" + nics + "\tmaclist";
+		return cleanZone(machine.getLabel()) + "\t" + zone.toString() + ":" + nics + "\tmaclist";
 	}
 
 	/**
