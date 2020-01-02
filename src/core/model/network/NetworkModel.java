@@ -266,6 +266,15 @@ public class NetworkModel {
 	}
 
 	/**
+	 * @return A linked map containing all admin machines for this network. Because
+	 *         it is a linked map, it has predictable iteration meaning we can use
+	 *         it to e.g. generate IP Addresses
+	 */
+	public final Map<String, ADeviceModel> getAdminDevices() {
+		return getDevices(MachineType.ADMIN);
+	}
+
+	/**
 	 * @return A linked map containing all device models *of a particular type* for
 	 *         this network. Because it is a linked map, it has predictable
 	 *         iteration meaning we can use it to e.g. generate IP Addresses
