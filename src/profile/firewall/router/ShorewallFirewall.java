@@ -28,12 +28,10 @@ import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
-import core.model.machine.configuration.networking.ISystemdNetworkd;
 import core.model.network.NetworkModel;
 import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
-import inet.ipaddr.IPAddress;
 import profile.firewall.AFirewallProfile;
 
 /**
@@ -93,6 +91,29 @@ public class ShorewallFirewall extends AFirewallProfile {
 		units.add(new InstalledUnit("shorewall", "proceed", "shorewall"));
 
 		return units;
+	}
+
+	private Collection<String> getMaclistFile() {
+		final Collection<String> maclist = new ArrayList<>();
+
+		// Servers are the only ones we want to iterate, since we need to check for
+		// Router machines
+		getNetworkModel().getServers().values().forEach(server -> {
+			try {
+				if (!server.isRouter()) { // Ignore routers
+					maclist.addAll(machines2Maclist(MachineType.SERVER, server));
+				}
+			} catch (final InvalidServerException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+
+		maclist.addAll(machines2Maclist(MachineType.USER, getNetworkModel().getUserDevices().values().toArray(AMachineModel[]::new)));
+		maclist.addAll(machines2Maclist(MachineType.INTERNAL_ONLY, getNetworkModel().getInternalOnlyDevices().values().toArray(AMachineModel[]::new)));
+		maclist.addAll(machines2Maclist(MachineType.EXTERNAL_ONLY, getNetworkModel().getExternalOnlyDevices().values().toArray(AMachineModel[]::new)));
+
+		return maclist;
 	}
 
 	private Collection<String> getHostsFile() {
@@ -185,29 +206,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		units.add(hosts);
 
 		final FileUnit maclist = new FileUnit("shorewall_maclist", "shorewall_hosts", CONFIG_BASEDIR + "/maclist");
-
-		getNetworkModel().getServers().values().forEach(server -> {
-			try {
-				if (!server.isRouter()) { // Ignore routers
-					maclist.appendLine(machine2MaclistEntry(server, MachineType.SERVER).toArray(String[]::new));
-				}
-			} catch (final InvalidServerException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		});
-
-		getNetworkModel().getUserDevices().values().forEach(user -> {
-			maclist.appendLine(machine2MaclistEntry(user, MachineType.USER).toArray(String[]::new));
-		});
-
-		getNetworkModel().getInternalOnlyDevices().values().forEach(device -> {
-			maclist.appendLine(machine2MaclistEntry(device, MachineType.INTERNAL_ONLY).toArray(String[]::new));
-		});
-
-		getNetworkModel().getExternalOnlyDevices().values().forEach(device -> {
-			maclist.appendLine(machine2MaclistEntry(device, MachineType.EXTERNAL_ONLY).toArray(String[]::new));
-		});
+		maclist.appendLine(getMaclistFile().toArray(String[]::new));
 
 		units.add(maclist);
 
@@ -388,22 +387,16 @@ public class ShorewallFirewall extends AFirewallProfile {
 	 * @param iface
 	 * @return
 	 */
-	private Collection<String> machine2MaclistEntry(AMachineModel machine, MachineType iface) {
-		final Collection<String> lines = new ArrayList<>();
+	private Collection<String> machines2Maclist(MachineType iface, AMachineModel... machines) {
+		final Collection<String> maclist = new ArrayList<>();
 
-		for (final ISystemdNetworkd nic : machine.getNetworkInterfaces().values()) {
-			String line = "ACCEPT\t" + iface.toString() + "\t" + nic.getMac().toNormalizedString() + "\t";
+		for (final AMachineModel machine : machines) {
+			machine.getNetworkInterfaces().values().forEach(nic -> {
+				maclist.add("ACCEPT\t" + iface.toString() + "\t" + nic.getMac().toNormalizedString() + "\t" + getAddresses(machine) + "\t#" + machine.getLabel());
 
-			for (final IPAddress ip : nic.getAddresses()) {
-				line += ip.withoutPrefixLength().toCompressedString() + "/32,";
-			}
-			line = line.replaceAll(",$", ""); // Get rid of any trailing comma
-
-			line += "\t#" + machine.getLabel();
-
-			lines.add(line);
+			});
 		}
 
-		return lines;
+		return maclist;
 	}
 }
