@@ -95,6 +95,32 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return units;
 	}
 
+	private Collection<String> getHostsFile() {
+		final Collection<String> hosts = new ArrayList<>();
+
+		hosts.add("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
+		hosts.add("#zone      hosts          options");
+
+		// Servers are the only ones we want to iterate, since we need to check for
+		// Router machines
+		getNetworkModel().getServers().values().forEach(server -> {
+			try {
+				if (!server.isRouter()) { // Ignore routers
+					hosts.addAll(machines2Host(ParentZone.SERVERS, server));
+				}
+			} catch (final InvalidServerException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+
+		hosts.addAll(machines2Host(ParentZone.USERS, getNetworkModel().getUserDevices().values().toArray(AMachineModel[]::new)));
+		hosts.addAll(machines2Host(ParentZone.INTERNAL_ONLY, getNetworkModel().getUserDevices().values().toArray(AMachineModel[]::new)));
+		hosts.addAll(machines2Host(ParentZone.EXTERNAL_ONLY, getNetworkModel().getUserDevices().values().toArray(AMachineModel[]::new)));
+
+		return hosts;
+	}
+
 	private Collection<String> getZonesFile() {
 		// Build our zones
 		final Collection<String> zones = new ArrayList<>();
@@ -154,15 +180,15 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		// Now assign machines their (sub)zone, and enforce our maclist
 		final FileUnit hosts = new FileUnit("shorewall_hosts", "shorewall_interfaces", CONFIG_BASEDIR + "/hosts");
-		final FileUnit maclist = new FileUnit("shorewall_maclist", "shorewall_hosts", CONFIG_BASEDIR + "/maclist");
+		hosts.appendLine(getHostsFile().toArray(String[]::new));
 
-		hosts.appendLine("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
-		hosts.appendLine("#zone      hosts          options");
+		units.add(hosts);
+
+		final FileUnit maclist = new FileUnit("shorewall_maclist", "shorewall_hosts", CONFIG_BASEDIR + "/maclist");
 
 		getNetworkModel().getServers().values().forEach(server -> {
 			try {
 				if (!server.isRouter()) { // Ignore routers
-					hosts.appendLine(machine2Host(server, ParentZone.SERVERS));
 					maclist.appendLine(machine2MaclistEntry(server, MachineType.SERVER).toArray(String[]::new));
 				}
 			} catch (final InvalidServerException e) {
@@ -172,21 +198,17 @@ public class ShorewallFirewall extends AFirewallProfile {
 		});
 
 		getNetworkModel().getUserDevices().values().forEach(user -> {
-			hosts.appendLine(machine2Host(user, ParentZone.USERS));
 			maclist.appendLine(machine2MaclistEntry(user, MachineType.USER).toArray(String[]::new));
 		});
 
 		getNetworkModel().getInternalOnlyDevices().values().forEach(device -> {
-			hosts.appendLine(machine2Host(device, ParentZone.INTERNAL_ONLY));
 			maclist.appendLine(machine2MaclistEntry(device, MachineType.INTERNAL_ONLY).toArray(String[]::new));
 		});
 
 		getNetworkModel().getExternalOnlyDevices().values().forEach(device -> {
-			hosts.appendLine(machine2Host(device, ParentZone.EXTERNAL_ONLY));
 			maclist.appendLine(machine2MaclistEntry(device, MachineType.EXTERNAL_ONLY).toArray(String[]::new));
 		});
 
-		units.add(hosts);
 		units.add(maclist);
 
 		// Finally, build our FW rules...
@@ -324,22 +346,30 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	/**
-	 * Parses a Machine into a shorewall host file
+	 * Turns a zone and an array of AMachineModels into the Shorewall hosts file
+	 * format
 	 *
-	 * @param machine
-	 * @param zone
-	 * @return
+	 * @param zone     the zone
+	 * @param machines the machines
+	 * @return the hosts file contents
 	 */
-	private String machine2Host(AMachineModel machine, ParentZone zone) {
-		String nics = "";
-		for (final ISystemdNetworkd nic : machine.getNetworkInterfaces().values()) {
-			for (final IPAddress ip : nic.getAddresses()) {
-				nics += ip.withoutPrefixLength().toCompressedString() + "/32,";
-			}
-		}
-		nics = nics.replaceAll(",$", ""); // Get rid of any trailing comma
+	private Collection<String> machines2Host(ParentZone zone, AMachineModel... machines) {
+		final Collection<String> hosts = new ArrayList<>();
 
-		return cleanZone(machine.getLabel()) + "\t" + zone.toString() + ":" + nics + "\tmaclist";
+		for (final AMachineModel machine : machines) {
+			final Collection<String> addresses = new ArrayList<>();
+
+			machine.getNetworkInterfaces().values().forEach(nic -> {
+				nic.getAddresses().forEach(address -> {
+					addresses.add(address.withoutPrefixLength().toCompressedString() + "/32");
+				});
+			});
+
+			final String addressesString = String.join(",", addresses);
+			hosts.add(cleanZone(machine.getLabel()) + "\t" + zone.toString() + ":" + addressesString + "\tmaclist");
+		}
+
+		return hosts;
 	}
 
 	/**
