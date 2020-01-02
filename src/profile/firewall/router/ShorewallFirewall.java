@@ -185,8 +185,6 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		// Finally, build our FW rules...
 		final FileUnit rules = new FileUnit("shorewall_rules", "shorewall_hosts", CONFIG_BASEDIR + "/rules");
-		rules.appendLine("#This file is just a list of includes, please see the rules_* files");
-		rules.appendLine("#for per-subnet rules");
 		units.add(rules);
 
 //		// Now iterate through our various zones and build them
