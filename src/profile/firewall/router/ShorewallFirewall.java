@@ -187,6 +187,39 @@ public class ShorewallFirewall extends AFirewallProfile {
 		final FileUnit rules = new FileUnit("shorewall_rules", "shorewall_hosts", CONFIG_BASEDIR + "/rules");
 		units.add(rules);
 
+		// Iterate over the whole network
+		// However, bear in mind that we'll see machines more than once, so we need to
+		// keep track
+		final Collection<String> seen = new HashSet<>();
+		getNetworkModel().getMachines().forEach((type, machines) -> {
+			// Iterate over every machine
+			machines.forEach((label, machine) -> {
+				if (!seen.contains(label)) {
+					seen.add(label);
+
+					// Start by building this machine's egresses.
+					machine.getEgresses().forEach(egress -> {
+						String line = "";
+
+						line += "ACCEPT\t";
+						line += cleanZone(label) + "\t";
+						line += ParentZone.INTERNET + ":" + egress.getHost();
+						if (!egress.isAddress()) {
+							line += ".";
+						}
+
+						if (egress.getPort() != null) {
+							line += "\ttcp\t";
+							line += egress.getPort();
+						}
+
+						rules.appendLine(line);
+					});
+
+				}
+			});
+		});
+
 //		// Now iterate through our various zones and build them
 //		for (final MachineType zone : List.of(MachineType.ADMIN, MachineType.USER, MachineType.GUEST, MachineType.SERVER, MachineType.INTERNAL_ONLY, MachineType.EXTERNAL_ONLY)) {
 //			rules.appendLine("INCLUDE rules_" + zone.toString());
