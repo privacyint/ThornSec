@@ -233,6 +233,20 @@ public class NetworkModel {
 	}
 
 	/**
+	 * @return the whole network. Be aware that you will have to cast the values
+	 *         from this method; you are far better to use one of the specialised
+	 *         methods
+	 */
+	public final Map<String, AMachineModel> getUniqueMachines() {
+		final Map<String, AMachineModel> machines = new LinkedHashMap<>();
+
+		machines.putAll(getServers());
+		machines.putAll(getDevices());
+
+		return machines;
+	}
+
+	/**
 	 * @param type
 	 * @return A map of all machines of a given type
 	 */
