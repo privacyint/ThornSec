@@ -46,8 +46,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	public enum ParentZone {
-		INTERNET("Internet"), ROUTER("Router"), USERS("Users"), ADMINS("Admins"), SERVERS("Servers"), INTERNAL_ONLY("InternalOnly"), EXTERNAL_ONLY("ExternalOnly"),
-		GUESTS("Guests");
+		INTERNET("Internet"), ROUTER("Router"), USERS("Users"), ADMINS("Admins"), SERVERS("Servers"), INTERNAL_ONLY("InternalOnlys"), EXTERNAL_ONLY("ExternalOnlys"), GUESTS("Guests");
 
 		private String parentZone;
 
