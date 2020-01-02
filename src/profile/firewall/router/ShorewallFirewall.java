@@ -335,7 +335,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		// First work out our Internet-facing NICs
 		try {
-			getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic-> {
+			getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic -> {
 				String line = "";
 				line += ParentZone.INTERNET;
 				line += "\t" + nic.getIface();
@@ -371,7 +371,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		// masquerading
 		final FileUnit masq = new FileUnit("shorewall_masquerades", "shorewall_installed", CONFIG_BASEDIR + "/masq");
 		try {
-			getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic->{
+			getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic -> {
 				List<MachineType> masqs = Arrays.asList(MachineType.SERVER, MachineType.USER, MachineType.ADMIN, MachineType.INTERNAL_ONLY, MachineType.EXTERNAL_ONLY);
 
 				if (getNetworkModel().getData().buildAutoGuest()) {

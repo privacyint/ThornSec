@@ -46,6 +46,7 @@ public class Dedicated extends AStructuredProfile {
 					break;
 				case DHCP:
 					link = new DHCPClientInterfaceModel(wanNic.getIface());
+					// @TODO: DHCPClient is a raw socket. Fix that test.
 					break;
 				default:
 				}

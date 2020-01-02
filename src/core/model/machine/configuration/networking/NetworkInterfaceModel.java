@@ -108,6 +108,7 @@ public abstract class NetworkInterfaceModel implements ISystemdNetworkd {
 		return this.ipMasquerading;
 	}
 
+	@Override
 	public final MACAddress getMac() {
 		return this.mac;
 	}
