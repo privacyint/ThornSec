@@ -30,6 +30,7 @@ import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import inet.ipaddr.AddressStringException;
 import inet.ipaddr.HostName;
+import inet.ipaddr.IPAddress;
 import inet.ipaddr.IncompatibleAddressException;
 import inet.ipaddr.MACAddressString;
 import inet.ipaddr.mac.MACAddress;
@@ -56,6 +57,7 @@ public abstract class AMachineModel extends AModel {
 	private Collection<String> forwards;
 	private Collection<HostName> ingresses;
 	private Collection<HostName> egresses;
+	private final Collection<IPAddress> externalIPs;
 
 	private final Map<String, Collection<Integer>> dnats;
 
@@ -67,7 +69,7 @@ public abstract class AMachineModel extends AModel {
 		this.domain = getNetworkModel().getData().getDomain(getLabel());
 		this.cnames = getNetworkModel().getData().getCNAMEs(getLabel());
 
-//		this.networkInterfaces = new LinkedHashSet<>();
+		this.externalIPs = getNetworkModel().getData().getExternalIPs(getLabel());
 //		if (getNetworkModel().getData().getNetworkInterfaces(getLabel()) != null) {
 //			final Map<Direction, Collection<NetworkInterfaceData>> ifaces = getNetworkModel().getData().getNetworkInterfaces(getLabel());
 
@@ -233,6 +235,10 @@ public abstract class AMachineModel extends AModel {
 
 	public final Collection<String> getForwards() {
 		return this.forwards;
+	}
+
+	public final Collection<IPAddress> getExternalIPs() {
+		return this.externalIPs;
 	}
 
 	public final InternetAddress getEmailAddress() {
