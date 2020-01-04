@@ -70,16 +70,6 @@ public abstract class AMachineModel extends AModel {
 		this.cnames = getNetworkModel().getData().getCNAMEs(getLabel());
 
 		this.externalIPs = getNetworkModel().getData().getExternalIPs(getLabel());
-//		if (getNetworkModel().getData().getNetworkInterfaces(getLabel()) != null) {
-//			final Map<Direction, Collection<NetworkInterfaceData>> ifaces = getNetworkModel().getData().getNetworkInterfaces(getLabel());
-
-//			for (final Direction dir : ifaces.keySet()) {
-//				for (final NetworkInterfaceData ifaceData : ifaces.get(dir)) {
-//					final NetworkInterfaceModel iface = ifaceDataToModel(ifaceData);
-//					addNetworkInterface(iface);
-//				}
-//			}
-//		}
 
 		this.throttled = getNetworkModel().getData().isThrottled(getLabel());
 
