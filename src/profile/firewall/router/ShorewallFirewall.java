@@ -25,6 +25,7 @@ import core.exception.AThornSecException;
 import core.exception.data.ADataException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
+import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
 import core.model.network.NetworkModel;
@@ -177,13 +178,22 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zones.add("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
 		zones.add("#zone\ttype");
 		zones.add(cleanZone(ParentZone.INTERNET) + "\tipv4");
-		zones.add(cleanZone(ParentZone.ROUTER) + "\tfirewall");
+		// zones.add(cleanZone(ParentZone.ROUTER) + "\tfirewall");
 		zones.add("");
 
 		zones.add("#Here, we build our server zone, and give each server its own subzone");
 		zones.add(cleanZone(ParentZone.SERVERS) + "\tipv4");
 		getNetworkModel().getServers().keySet().forEach(server -> {
-			zones.add(cleanZone(server) + ":" + cleanZone(ParentZone.SERVERS) + "\tipv4");
+			try {
+				if (getNetworkModel().getServerModel(server).isRouter()) {
+					zones.add(cleanZone(server) + "\tfirewall");
+				} else {
+					zones.add(cleanZone(server) + ":" + cleanZone(ParentZone.SERVERS) + "\tipv4");
+				}
+			} catch (InvalidServerException | InvalidServerModelException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		});
 		zones.add("");
 
