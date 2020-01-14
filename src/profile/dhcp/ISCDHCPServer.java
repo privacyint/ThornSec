@@ -209,8 +209,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 
 			// Now let's create our subnet/groups!
 			subnetConfig.appendCarriageReturn();
-			subnetConfig.appendLine("group " + subnetName + " {");
-			subnetConfig.appendLine("\tserver-name \\\"" + subnetName + "." + getLabel() + "." + getNetworkModel().getData().getDomain() + "\\\";");
+			subnetConfig.appendLine("group " + subnetName.toLowerCase() + " {");
+			subnetConfig.appendLine("\tserver-name \\\"" + subnetName.toLowerCase() + "." + getLabel() + "." + getNetworkModel().getData().getDomain() + "\\\";");
 			// wait, wut?
 			subnetConfig.appendLine("\toption routers " + subnet.getLowerNonZeroHost().withoutPrefixLength() + ";");
 			subnetConfig.appendLine("\toption domain-name-servers " + subnet.getLowerNonZeroHost().withoutPrefixLength() + ";");
@@ -229,7 +229,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 					assert (iface.getAddresses().size() == 1);
 					final IPAddress ip = (IPAddress) iface.getAddresses().toArray()[0];
 
-					subnetConfig.appendLine("\thost " + StringUtils.stringToAlphaNumeric(machine.getLabel()) + "-" + iface.getMac().toHexString(false) + " {");
+					subnetConfig.appendLine("\thost " + StringUtils.stringToAlphaNumeric(machine.getLabel().toLowerCase()) + "-" + iface.getMac().toHexString(false) + " {");
 					subnetConfig.appendLine("\t\thardware ethernet " + iface.getMac().toColonDelimitedString() + ";");
 
 					subnetConfig.appendLine("\t\tfixed-address " + ip.withoutPrefixLength().toCompressedString() + ";");

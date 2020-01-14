@@ -232,19 +232,18 @@ public class UnboundDNSServer extends ADNSServerProfile {
 //
 //						}
 //
-						zoneFile.appendLine("\tlocal-data-ptr: \\\"" + ip.getLowerNonZeroHost().withoutPrefixLength() + " " + machine.getLabel() + "\\\"");
-						zoneFile.appendLine(
-								"\tlocal-data-ptr: \\\"" + ip.getLowerNonZeroHost().withoutPrefixLength() + " " + machine.getLabel() + "." + machine.getDomain() + "\\\"");
+						zoneFile.appendLine("\tlocal-data-ptr: \\\"" + ip.getLowerNonZeroHost().withoutPrefixLength() + " " + machine.getLabel().toLowerCase() + "\\\"");
+						zoneFile.appendLine("\tlocal-data-ptr: \\\"" + ip.getLowerNonZeroHost().withoutPrefixLength() + " " + machine.getLabel().toLowerCase() + "." + machine.getDomain() + "\\\"");
 
 						if (machine.getCNAMEs() == null) {
 							continue;
 						}
 						for (final String cname : machine.getCNAMEs()) {
-							zoneFile.appendLine("\tlocal-data: \\\"" + cname + " A " + ip.withoutPrefixLength() + "\\\"");
+							zoneFile.appendLine("\tlocal-data: \\\"" + cname.toLowerCase() + " A " + ip.withoutPrefixLength() + "\\\"");
 							if (cname.equals(".")) {
 								zoneFile.appendLine("\tlocal-data: \\\"" + domain.getHost() + " A " + ip.withoutPrefixLength() + "\\\"");
 							} else {
-								zoneFile.appendLine("\tlocal-data: \\\"" + cname + "." + domain.getHost() + " A " + ip.withoutPrefixLength() + "\\\"");
+								zoneFile.appendLine("\tlocal-data: \\\"" + cname.toLowerCase() + "." + domain.getHost() + " A " + ip.withoutPrefixLength() + "\\\"");
 							}
 						}
 					}
