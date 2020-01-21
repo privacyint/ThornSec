@@ -26,7 +26,6 @@ import core.exception.data.machine.InvalidMachineException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidProfileException;
 import core.iface.IUnit;
-import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.profile.AProfile;
 import core.profile.AStructuredProfile;
@@ -224,14 +223,14 @@ public class ServerModel extends AMachineModel {
 
 		// Before we go any further... now the machine is at least up to date, and has a
 		// couple of useful diagnostics packages installed...
-		for (final NetworkInterfaceModel nic : getNetworkInterfaces().values()) {
+		getNetworkInterfaces().values().forEach(nic -> {
 			if (nic.getNetworkFile() != null) {
 				units.add(nic.getNetworkFile());
 			}
 			if (nic.getNetDevFile() != null) {
 				units.add(nic.getNetDevFile());
 			}
-		}
+		});
 
 		units.addAll(typesAndProfileUnits);
 		units.addAll(serverConfig());
