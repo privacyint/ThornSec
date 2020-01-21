@@ -19,6 +19,7 @@ import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -33,6 +34,7 @@ import core.data.machine.HypervisorData;
 import core.data.machine.ServerData;
 import core.data.network.NetworkData;
 import core.exception.AThornSecException;
+import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidDeviceModelException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
@@ -277,6 +279,28 @@ public class NetworkModel {
 	 */
 	public final Map<String, ServerModel> getServers() {
 		return getServers(MachineType.SERVER);
+	}
+
+	/**
+	 * @return A linked map containing all server models for this network, without
+	 *         any Routers. Because it is a linked map, it has predictable iteration
+	 *         meaning we can use it to e.g. generate IP Addresses
+	 */
+	public final Map<String, ServerModel> getNonRouterServers() {
+		final Map<String, ServerModel> servers = new HashMap<>();
+
+		getServers(MachineType.SERVER).forEach((label, server) -> {
+			try {
+				if (!server.isRouter()) {
+					servers.put(label, server);
+				}
+			} catch (final InvalidServerException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+
+		return servers;
 	}
 
 	/**
