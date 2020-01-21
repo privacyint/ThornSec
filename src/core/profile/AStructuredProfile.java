@@ -40,11 +40,11 @@ public abstract class AStructuredProfile extends AProfile {
 	public Collection<IUnit> getUnits() throws AThornSecException {
 		final Collection<IUnit> children = new ArrayList<>();
 
+		children.addAll(getPersistentFirewall());
+		children.addAll(getLiveFirewall());
 		children.addAll(getInstalled());
 		children.addAll(getPersistentConfig());
 		children.addAll(getLiveConfig());
-		children.addAll(getPersistentFirewall());
-		children.addAll(getLiveFirewall());
 
 		return children;
 	}
