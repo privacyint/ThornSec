@@ -43,6 +43,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 		ACCEPT, DNAT, DROP, REJECT, REDIRECT;
 	}
 
+	public enum Arm {
+		LAN, FIREWALL, INTERNET;
+	}
+
 	public enum ParentZone {
 		INTERNET("Internet"), ROUTER("Router"), USERS("Users"), ADMINS("Admins"), SERVERS("Servers"), INTERNAL_ONLY("InternalOnlys"), EXTERNAL_ONLY("ExternalOnlys"), GUESTS("Guests");
 
