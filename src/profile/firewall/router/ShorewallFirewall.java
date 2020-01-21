@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,16 +49,37 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	public enum ParentZone {
-		INTERNET("Internet"), ROUTER("Router"), USERS("Users"), ADMINS("Admins"), SERVERS("Servers"), INTERNAL_ONLY("InternalOnlys"), EXTERNAL_ONLY("ExternalOnlys"), GUESTS("Guests");
+		INTERNET(Arm.INTERNET, "Internet"),
+		ROUTER(Arm.FIREWALL, "$FW"),
+		USERS(Arm.LAN, "Users"),
+		ADMINS(Arm.LAN, "Administrators"),
+		SERVERS(Arm.LAN, "Servers"),
+		INTERNAL_ONLY(Arm.LAN, "InternalOnlys"),
+		EXTERNAL_ONLY(Arm.LAN, "ExternalOnlys"),
+		GUESTS(Arm.LAN, "Guests");
 
+		public static Set<ParentZone> internetZone = EnumSet.of(INTERNET);
+		public static Set<ParentZone> routerZone = EnumSet.of(ROUTER);
+		public static Set<ParentZone> lanZone = EnumSet.range(USERS, GUESTS);
+
+		private Arm direction;
 		private String parentZone;
 
-		ParentZone(String parentZone) {
+		ParentZone(Arm direction, String parentZone) {
+			this.direction = direction;
 			this.parentZone = parentZone;
 		}
 
 		@Override
 		public String toString() {
+			return this.parentZone;
+		}
+
+		public Arm getDirection() {
+			return this.direction;
+		}
+
+		public String getParentZone() {
 			return this.parentZone;
 		}
 	}
