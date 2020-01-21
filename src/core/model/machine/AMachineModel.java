@@ -264,8 +264,23 @@ public abstract class AMachineModel extends AModel {
 	public abstract Collection<IUnit> getUnits() throws AThornSecException;
 
 	public String getIP() {
-		// TODO Auto-generated method stub
-		return null;
+		String ips = "";
+
+		for (NetworkInterfaceModel nic : getNetworkInterfaces().values()) {
+			if (nic.getAddresses() == null) {
+				continue;
+			}
+			
+			for (IPAddress ip : nic.getAddresses()) {
+				if (getExternalIPs() != null && getExternalIPs().contains(ip)) {
+					continue;
+				}
+				
+				ips += ip.getLowerNonZeroHost().withoutPrefixLength().toCompressedString();
+			}
+		}
+		
+		return ips;
 	}
 
 	public MACAddress generateMAC(String iface) {
