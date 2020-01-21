@@ -224,14 +224,6 @@ public class UnboundDNSServer extends ADNSServerProfile {
 						if (ip == null) {
 							continue;
 						}
-//
-//						try {
-//						ServerModel server = getNetworkModel().getServerModel(machine.getLabel());
-//							if (server.isRouter()) {
-//						}catch(InvalidServerModelException e) {
-//
-//						}
-//
 						zoneFile.appendLine("\tlocal-data-ptr: \\\"" + ip.getLowerNonZeroHost().withoutPrefixLength() + " " + machine.getLabel().toLowerCase() + "\\\"");
 						zoneFile.appendLine("\tlocal-data-ptr: \\\"" + ip.getLowerNonZeroHost().withoutPrefixLength() + " " + machine.getLabel().toLowerCase() + "." + machine.getDomain() + "\\\"");
 
@@ -249,21 +241,6 @@ public class UnboundDNSServer extends ADNSServerProfile {
 					}
 				}
 			}
-
-			/*
-			 * final Hashtable<String, Set<HostName>> zone = this.zones.get(domain);
-			 * AMachineModel hostMachine = null;
-			 *
-			 * for (final String hostName : zone.keySet()) { // It may not be a real
-			 * machine. It might be a poison. Deal with it. try { hostMachine =
-			 * getNetworkModel().getMachineModel(hostName);
-			 *
-			 *
-			 *
-			 * } catch (final InvalidMachineModelException e) { for (final HostName
-			 * externalIP : zone.get(hostName)) { zoneFile.appendLine("\tlocal-data: \\\"" +
-			 * hostName + " A " + externalIP.getAddress() + "\\\""); } } }
-			 */
 		}
 
 		units.add(new RunningUnit("dns", "unbound", "unbound"));
