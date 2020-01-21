@@ -48,11 +48,24 @@ public class Webproxy extends AStructuredProfile {
 	private FileUnit liveConfig;
 	private Set<String> backends;
 
-	public Webproxy(String label, NetworkModel networkModel) {
+	public Webproxy(String label, NetworkModel networkModel) throws MissingPropertiesException {
 		super(label, networkModel);
 
 		this.webserver = new Nginx(getLabel(), networkModel);
 		this.liveConfig = null;
+
+		final AMachineData data = getNetworkModel().getData().getMachine(MachineType.SERVER, getLabel());
+
+		if (data.getData().containsKey("webproxy")) {
+			final JsonObject proxyData = data.getData().getJsonObject("webproxy");
+			final JsonArray backends = proxyData.getJsonArray("backends");
+
+			for (final JsonValue backend : backends) {
+				putBackend(((JsonString) backend).getString());
+			}
+		} else {
+			throw new MissingPropertiesException("backends");
+		}
 	}
 
 	@Override
@@ -150,19 +163,6 @@ public class Webproxy extends AStructuredProfile {
 	protected Collection<IUnit> getLiveConfig() throws InvalidMachineModelException, InvalidPropertyArrayException,
 			InvalidMachineException, MissingPropertiesException {
 		final Collection<IUnit> units = new ArrayList<>();
-
-		final AMachineData data = getNetworkModel().getData().getMachine(MachineType.SERVER, getLabel());
-
-		if (data.getData().containsKey("webproxy")) {
-			final JsonObject proxyData = data.getData().getJsonObject("webproxy");
-			final JsonArray backends = proxyData.getJsonArray("backends");
-
-			for (final JsonValue backend : backends) {
-				putBackend(((JsonString) backend).getString());
-			}
-		} else {
-			throw new MissingPropertiesException("dave");
-		}
 
 		if (this.liveConfig == null) {
 			Boolean isDefault = true;

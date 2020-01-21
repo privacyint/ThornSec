@@ -34,7 +34,7 @@ public class Tor extends AStructuredProfile {
 
 	private final Webproxy proxy;
 
-	public Tor(String label, NetworkModel networkModel) {
+	public Tor(String label, NetworkModel networkModel) throws MissingPropertiesException {
 		super(label, networkModel);
 
 		this.proxy = new Webproxy(getLabel(), networkModel);
