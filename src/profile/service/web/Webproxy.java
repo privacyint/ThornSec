@@ -152,14 +152,6 @@ public class Webproxy extends AStructuredProfile {
 		return units;
 	}
 
-	private void putBackend(String label) {
-		if (this.backends == null) {
-			this.backends = new LinkedHashSet<>();
-		}
-
-		this.backends.add(label);
-	}
-
 	@Override
 	protected Collection<IUnit> getLiveConfig() throws InvalidMachineModelException, InvalidPropertyArrayException,
 			InvalidMachineException, MissingPropertiesException {
