@@ -70,6 +70,8 @@ public class CSFFirewall extends AFirewallProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
+		units.add(new InstalledUnit("wget", "proceed", "wget"));
+
 		units.add(new FileDownloadUnit("csf", "proceed", "https://download.configserver.com/csf.tgz", "/root/csf.tgz"));
 		units.add(new FileChecksumUnit("csf", "csf_downloaded", Checksum.SHA256, getCSFHashDigest(), "/root/csf.tgz"));
 
