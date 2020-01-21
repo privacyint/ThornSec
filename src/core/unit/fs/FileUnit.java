@@ -95,6 +95,15 @@ public class FileUnit extends SimpleUnit {
 			this.appendLine(line, true);
 		}
 	}
+	
+	/**
+	 * Append line(s) of text to this FileUnit, each ending with a carriage return
+	 *
+	 * @param line
+	 */
+	public final void appendLine(Collection<String> lines) {
+		appendLine(lines.toArray(String[]::new));
+	}
 
 	/**
 	 * Append a carriage return to this FileUnit
