@@ -327,6 +327,14 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 	
 	/**
+	 * Allow unfettered access to the Internet from a given zone
+	 * @param sourceZone
+	 */
+	private void addEgressRule(ParentZone sourceZone) {
+		addRule(Action.ACCEPT.toString(), sourceZone, null, ParentZone.INTERNET.toString(), null);
+	}
+	
+	/**
 	 * 
 	 * @param action
 	 * @param sourceZone
@@ -349,7 +357,11 @@ public class ShorewallFirewall extends AFirewallProfile {
 			addListenRule("DNS", Action.ACCEPT, sourceZone.toString(), null, routerZone, "&" + sourceZone.toString());
 		});
 		addListenRule(ParentZone.USERS.toString(), routerZone, Encapsulation.TCP, getNetworkModel().getData().getSSHPort(getLabel()));
-
+		
+		//Whitelist Users & External-only, because they need 'net access
+		addEgressRule(ParentZone.USERS);
+		addEgressRule(ParentZone.EXTERNAL_ONLY);
+		
 		// Iterate over every machine to build all of its rules
 		getNetworkModel().getUniqueMachines().forEach((machineLabel, machine) -> {
 			machine.getEgresses().forEach(egress -> {
