@@ -13,7 +13,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
-
+import core.StringUtils;
 import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
 import core.exception.data.InvalidPortException;
@@ -224,20 +224,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 						if (ip == null) {
 							continue;
 						}
-						zoneFile.appendLine("\tlocal-data-ptr: \\\"" + ip.getLowerNonZeroHost().withoutPrefixLength() + " " + machine.getLabel().toLowerCase() + "\\\"");
-						zoneFile.appendLine("\tlocal-data-ptr: \\\"" + ip.getLowerNonZeroHost().withoutPrefixLength() + " " + machine.getLabel().toLowerCase() + "." + machine.getDomain() + "\\\"");
-
-						if (machine.getCNAMEs() == null) {
-							continue;
-						}
-						for (final String cname : machine.getCNAMEs()) {
-							zoneFile.appendLine("\tlocal-data: \\\"" + cname.toLowerCase() + " A " + ip.withoutPrefixLength() + "\\\"");
-							if (cname.equals(".")) {
-								zoneFile.appendLine("\tlocal-data: \\\"" + domain.getHost() + " A " + ip.withoutPrefixLength() + "\\\"");
-							} else {
-								zoneFile.appendLine("\tlocal-data: \\\"" + cname.toLowerCase() + "." + domain.getHost() + " A " + ip.withoutPrefixLength() + "\\\"");
-							}
-						}
+						
+						zoneFile.appendLine(createRecords(machine, ip));
 					}
 				}
 			}
@@ -252,6 +240,32 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		resolvConf.appendLine("nameserver 127.0.0.1");
 
 		return units;
+	}
+	
+	private Collection<String> createRecords(AMachineModel machine, IPAddress ip) {
+		Collection<String> records = new ArrayList<>();
+		
+		String hostname = StringUtils.stringToAlphaNumeric(machine.getLabel(), "-").toLowerCase();
+
+		records.add("\tlocal-data: \\\"" + hostname + " A " + ip.getLowerNonZeroHost().withoutPrefixLength() + "\\\"");
+		records.add("\tlocal-data: \\\"" + hostname  + "." + machine.getDomain() + " A " + ip.getLowerNonZeroHost().withoutPrefixLength() + "\\\"");
+		records.add("\tlocal-data-ptr: \\\"" + ip.getLowerNonZeroHost().withoutPrefixLength() + " " + machine.getLabel().toLowerCase() + "\\\"");
+		records.add("\tlocal-data-ptr: \\\"" + ip.getLowerNonZeroHost().withoutPrefixLength() + " " + machine.getLabel().toLowerCase() + "." + machine.getDomain() + "\\\"");
+		
+		if (machine.getCNAMEs() != null) {
+			for (final String cname : machine.getCNAMEs()) {
+				records.add("\tlocal-data: \\\"" + cname.toLowerCase() + " A " + ip.getLowerNonZeroHost().withoutPrefixLength() + "\\\"");
+				records.add("\tlocal-data: \\\"" + hostname  + "." + machine.getDomain() + " A " + ip.getLowerNonZeroHost().withoutPrefixLength() + "\\\"");
+				if (cname.equals(".")) {
+					records.add("\tlocal-data: \\\"" + machine.getDomain().getHost() + " A " + ip.withoutPrefixLength() + "\\\"");
+				}
+				else {
+					records.add("\tlocal-data: \\\"" + cname.toLowerCase() + "." + machine.getDomain().getHost() + " A " + ip.withoutPrefixLength() + "\\\"");
+				}
+			}
+		}
+		
+		return records;
 	}
 
 	@Override
