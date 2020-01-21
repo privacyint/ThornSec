@@ -58,7 +58,7 @@ public class AptSources extends AStructuredProfile {
 	@Override
 	public final Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
 		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName(this.debianRepo.getHost()));
-		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName("security.debian.org"));
+		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName("security-cdn.debian.org"));
 
 		return new ArrayList<>();
 	}
