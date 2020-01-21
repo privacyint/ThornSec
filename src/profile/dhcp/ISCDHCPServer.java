@@ -229,7 +229,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 					assert (iface.getAddresses().size() == 1);
 					final IPAddress ip = (IPAddress) iface.getAddresses().toArray()[0];
 
-					subnetConfig.appendLine("\thost " + StringUtils.stringToAlphaNumeric(machine.getLabel().toLowerCase()) + "-" + iface.getMac().toHexString(false) + " {");
+					subnetConfig.appendLine("\thost " + StringUtils.stringToAlphaNumeric(machine.getLabel().toLowerCase(), "-") + "-" + iface.getMac().toHexString(false) + " {");
 					subnetConfig.appendLine("\t\thardware ethernet " + iface.getMac().toColonDelimitedString() + ";");
 
 					subnetConfig.appendLine("\t\tfixed-address " + ip.withoutPrefixLength().toCompressedString() + ";");
