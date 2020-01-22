@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 
 import javax.json.stream.JsonParsingException;
@@ -30,8 +29,6 @@ import javax.mail.internet.AddressException;
 
 import core.data.machine.AMachineData;
 import core.data.machine.AMachineData.MachineType;
-import core.data.machine.HypervisorData;
-import core.data.machine.ServerData;
 import core.data.network.NetworkData;
 import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidServerException;
@@ -59,7 +56,6 @@ public class NetworkModel {
 	private NetworkData data;
 	private Map<MachineType, Map<String, AMachineModel>> machines;
 	private Map<String, Collection<IUnit>> networkUnits;
-	private Map<String, Collection<String>> hypervisorLayout;
 
 	NetworkModel(String label) throws AddressException, JsonParsingException, AThornSecException, IOException, URISyntaxException {
 		this.label = label;
@@ -127,16 +123,6 @@ public class NetworkModel {
 				addMachineToNetwork(MachineType.SERVER, serverLabel, server);
 				for (final MachineType type : getData().getTypes(serverLabel)) {
 					addMachineToNetwork(type, serverLabel, server);
-
-					if (type.equals(MachineType.HYPERVISOR)) {
-						final HypervisorData hvData = (HypervisorData) getData().getMachine(MachineType.HYPERVISOR, serverLabel);
-
-						if (hvData.getVMs() != null) {
-							for (final ServerData vm : hvData.getVMs()) {
-								registerServiceOnHyperVisor(serverLabel, vm.getLabel());
-							}
-						}
-					}
 				}
 			}
 		}
@@ -165,21 +151,6 @@ public class NetworkModel {
 			putUnits(router.getLabel(), router.getUnits());
 		}
 
-	}
-
-	private void registerServiceOnHyperVisor(String hypervisor, String service) {
-		if (this.hypervisorLayout == null) {
-			this.hypervisorLayout = new LinkedHashMap<>();
-		}
-
-		Collection<String> services = this.hypervisorLayout.get(hypervisor);
-		if (services == null) {
-			services = new LinkedHashSet<>();
-		}
-
-		services.add(service);
-
-		this.hypervisorLayout.put(hypervisor, services);
 	}
 
 	private void putUnits(String label, Collection<IUnit> units) {
@@ -213,16 +184,6 @@ public class NetworkModel {
 		}
 
 		return interfaces;
-	}
-
-	/**
-	 * The VMs residing on a given hypervisor
-	 *
-	 * @param hypervisor
-	 * @return
-	 */
-	public final Collection<String> getServicesOnHyperVisor(String hypervisor) {
-		return this.hypervisorLayout.get(hypervisor);
 	}
 
 	/**

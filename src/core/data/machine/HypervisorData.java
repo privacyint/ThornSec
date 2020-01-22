@@ -10,6 +10,7 @@ package core.data.machine;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 
@@ -27,14 +28,14 @@ import core.exception.data.ADataException;
 public class HypervisorData extends ServerData {
 	private File vmBase;
 	private Integer backupFrequency;
-	private Collection<ServerData> vms;
+	private Collection<ServerData> services;
 
 	public HypervisorData(String label) {
 		super(label);
 
 		this.vmBase = null;
 		this.backupFrequency = null;
-		this.vms = null;
+		this.services = new LinkedHashSet<>();
 	}
 
 	@Override
@@ -50,16 +51,12 @@ public class HypervisorData extends ServerData {
 		}
 	}
 
-	public final Collection<ServerData> getVMs() {
-		return this.vms;
+	public final Collection<ServerData> getServices() {
+		return this.services;
 	}
 
-	public final void addVM(ServerData service) {
-		if (this.vms == null) {
-			this.vms = new LinkedHashSet<>();
-		}
-
-		this.vms.add(service);
+	public final void addService(ServerData service) {
+		this.services.add(service);
 	}
 
 	public final File getVmBase() {

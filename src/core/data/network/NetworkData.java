@@ -196,8 +196,8 @@ public class NetworkData extends AData {
 					final ServerData service = readServer(serviceLabel, servicesData.getJsonObject(serviceLabel));
 
 					// Register the service across various parts of our network...
-					putMachine(MachineType.SERVICE, service);
-					((HypervisorData) serverData).addVM(service);
+					//putMachine(MachineType.SERVICE, service);
+					((HypervisorData) serverData).addService(service);
 				}
 			} else {
 				System.out.println("No services found on " + label);
@@ -894,4 +894,7 @@ public class NetworkData extends AData {
 	public Map<String, AMachineData> getServers() {
 		return this.getMachines(MachineType.SERVER);
 	}
-}
+	
+	public ServerData getServer(String label) {
+		return (ServerData) this.getServers().get(label);
+	}
