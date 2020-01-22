@@ -73,7 +73,7 @@ public class CSFFirewall extends AFirewallProfile {
 		units.add(new InstalledUnit("wget", "proceed", "wget"));
 
 		units.add(new FileDownloadUnit("csf", "proceed", "https://download.configserver.com/csf.tgz", "/root/csf.tgz"));
-		units.add(new FileChecksumUnit("csf", "csf_downloaded", Checksum.SHA256, getCSFHashDigest(), "/root/csf.tgz"));
+		units.add(new FileChecksumUnit("csf", "csf_downloaded", Checksum.SHA256, "/root/csf.tgz", getCSFHashDigest()));
 
 		// TODO: build ExtractUnit
 		units.add(new SimpleUnit("csf_extracted", "csf_checksum", "sudo tar xzf /root/csf.tar.gz",
