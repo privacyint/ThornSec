@@ -222,16 +222,21 @@ public class HyperVisor extends AStructuredProfile {
 			units.add(new SimpleUnit(service + "_password", "proceed", service.toUpperCase() + "_PASSWORD=`printf \"" + password + "\" | mkpasswd -s -m md5`",
 					"echo $" + service.toUpperCase() + "_PASSWORD", "", "fail", "Couldn't set the passphrase for " + service + ".  You won't be able to configure this service."));
 
-			// TODO: Networking stuff in here
-//			String bridge = this.networkModel.getData().getMetalIface(serviceLabel);
-//
-//			if ((bridge == null) || bridge.equals("")) {
-//				if (this.networkModel.getData().isRouter(getLabel())) {
-//					bridge = "vm" + service.getThirdOctet();
-//				} else {
-//					bridge = this.me.getInterfaces().get(0).getIface();
-//				}
-//			}
+			String bridge = "";
+			if (getNetworkModel().getServerModel(getLabel()).isRouter()) {
+				bridge = MachineType.SERVER.toString();
+			}
+			else {
+				Collection<NetworkInterfaceData> lanNics = null;
+				try {
+					lanNics = getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.LAN);
+				} catch (JsonParsingException | ADataException | IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				bridge = lanNics.iterator().next().getIface();
+			}
 
 			// TODO: iso/vms
 			// units.addAll(this.hypervisor.buildIso(service.getLabel(),
