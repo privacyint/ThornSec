@@ -99,13 +99,4 @@ public abstract class AStructuredProfile extends AProfile {
 	protected Collection<IUnit> getLiveFirewall() throws AThornSecException {
 		return new ArrayList<>();
 	}
-
-	/**
-	 * This is where you put any initialisation Units you require. Please don't
-	 * actually use this method, it will be going soon
-	 */
-	@Deprecated
-	public Collection<IUnit> init() {
-		return new ArrayList<>();
-	}
 }
