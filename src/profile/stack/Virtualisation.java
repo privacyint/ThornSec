@@ -84,9 +84,8 @@ public class Virtualisation extends AStructuredProfile {
 		String cleanedFilename = null;
 
 		try {
-			filename = Paths.get(new URI(getNetworkModel().getData().getDebianIsoUrl(service)).getPath()).getFileName()
-					.toString();
-			cleanedFilename = filename.replaceAll("[^A-Za-z0-9]", "_");
+			filename = Paths.get(new URI(getNetworkModel().getData().getDebianIsoUrl(service)).getPath()).getFileName().toString();
+			cleanedFilename = StringUtils.stringToAlphaNumeric(filename, "_");
 		} catch (final Exception e) {
 			JOptionPane.showMessageDialog(null, "You shouldn't have been able to arrive here. Well done!");
 			System.exit(1);
