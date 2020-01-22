@@ -67,7 +67,7 @@ public class Grav extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		final FileUnit nginxConf = new FileUnit("nginx_conf", "nginx_installed", Nginx.DEFAULT_CONFIG_FILE.toString());

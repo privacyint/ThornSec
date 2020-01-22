@@ -118,7 +118,7 @@ public class SVN extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getLiveConfig() {
+	public Collection<IUnit> getLiveConfig() {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		String apacheConf = "";

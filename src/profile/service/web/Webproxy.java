@@ -153,7 +153,7 @@ public class Webproxy extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getLiveConfig() throws InvalidMachineModelException, InvalidPropertyArrayException,
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineModelException, InvalidPropertyArrayException,
 			InvalidMachineException, MissingPropertiesException {
 		final Collection<IUnit> units = new ArrayList<>();
 

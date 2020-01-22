@@ -137,7 +137,7 @@ public class OnionBalance extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getLiveConfig()
+	public Collection<IUnit> getLiveConfig()
 			throws InvalidServerModelException, InvalidPropertyArrayException, InvalidMachineException {
 		final Collection<IUnit> units = new ArrayList<>();
 

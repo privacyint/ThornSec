@@ -140,7 +140,7 @@ public class Nextcloud extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		final FileUnit nginxConf = new FileUnit("nextcloud_nginx_conf", "nginx_installed",

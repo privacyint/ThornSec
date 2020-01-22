@@ -192,7 +192,7 @@ public class SSH extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getLiveConfig() throws InvalidMachineException {
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		for (final String admin : getNetworkModel().getData().getAdmins(getLabel())) {

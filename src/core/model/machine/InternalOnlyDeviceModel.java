@@ -32,7 +32,7 @@ public class InternalOnlyDeviceModel extends ADeviceModel {
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentFirewall() {
+	public Collection<IUnit> getPersistentFirewall() {
 		// TODO Auto-generated method stub
 		return null;
 	}

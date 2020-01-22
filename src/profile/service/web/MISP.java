@@ -179,7 +179,7 @@ public class MISP extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getLiveConfig());

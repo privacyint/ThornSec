@@ -159,7 +159,7 @@ public class Router extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getLiveConfig() throws AThornSecException {
+	public Collection<IUnit> getLiveConfig() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getDHCPServer().getLiveConfig());

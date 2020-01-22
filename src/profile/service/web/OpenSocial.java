@@ -133,7 +133,7 @@ public class OpenSocial extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getLiveConfig() throws InvalidMachineException, InvalidMachineModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getLiveConfig());

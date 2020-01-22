@@ -51,7 +51,7 @@ public class LetsEncrypt extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getLiveConfig() {
+	public Collection<IUnit> getLiveConfig() {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		// First, are we a web proxy?

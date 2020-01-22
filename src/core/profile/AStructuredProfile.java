@@ -73,7 +73,7 @@ public abstract class AStructuredProfile extends AProfile {
 	 * @throws IncompatibleAddressException
 	 * @throws AddressStringException
 	 */
-	protected Collection<IUnit> getLiveConfig() throws AThornSecException {
+	public Collection<IUnit> getLiveConfig() throws AThornSecException {
 		return new ArrayList<>();
 	}
 
@@ -83,7 +83,7 @@ public abstract class AStructuredProfile extends AProfile {
 	 * Please put Units related to the persistent configuration of the firewall
 	 * (e.g. adding a Device) here.
 	 */
-	protected Collection<IUnit> getPersistentFirewall() throws AThornSecException {
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
 		return new ArrayList<>();
 	}
 
