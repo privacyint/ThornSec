@@ -82,7 +82,6 @@ public class SSH extends AStructuredProfile {
 		sshdConf.appendLine("IgnoreRhosts yes");
 		sshdConf.appendLine("HostbasedAuthentication no");
 		sshdConf.appendLine("PermitEmptyPasswords no");
-		sshdConf.appendLine("PasswordAuthentication no");
 		sshdConf.appendLine("ChallengeResponseAuthentication no");
 		sshdConf.appendLine("X11Forwarding yes");
 		sshdConf.appendLine("X11DisplayOffset 10");
