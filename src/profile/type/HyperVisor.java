@@ -32,7 +32,6 @@ import core.exec.network.APassphrase;
 import core.exec.network.OpenKeePassPassphrase;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
-import core.model.machine.ServiceModel;
 import core.model.machine.configuration.networking.DHCPClientInterfaceModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.machine.configuration.networking.StaticInterfaceModel;
@@ -51,7 +50,7 @@ public class HyperVisor extends AStructuredProfile {
 
 	// TODO: roll scripts back in
 	private final Virtualisation hypervisor;
-	private final Map<String, ServiceModel> services;
+	private Map<String, ServerModel> services;
 
 	public HyperVisor(String label, NetworkModel networkModel) throws InvalidServerModelException, JsonParsingException, ADataException {
 		super(label, networkModel);
@@ -103,14 +102,27 @@ public class HyperVisor extends AStructuredProfile {
 		}
 
 		this.hypervisor = new Virtualisation(label, networkModel);
-		this.services = new LinkedHashMap<>();
+		this.services = null;
+
+		((HypervisorData)getNetworkModel().getData().getServers().get(label)).getServices().forEach(server -> {
+			try {
+				addService(server.getLabel(), getNetworkModel().getServerModel(server.getLabel()));
+			} catch (InvalidServerModelException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
 	}
 
-	public void addService(String label, ServiceModel service) {
+	public void addService(String label, ServerModel service) {
+		if (this.services == null) {
+			this.services = new LinkedHashMap<>();
+		}
+		
 		this.services.put(label, service);
 	}
 
-	public Map<String, ServiceModel> getServices() {
+	public Map<String, ServerModel> getServices() {
 		return this.services;
 	}
 
