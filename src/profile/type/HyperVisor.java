@@ -210,16 +210,20 @@ public class HyperVisor extends AStructuredProfile {
 
 			if (pass.init()) {
 				password = pass.getPassphrase();
-
 				password = Pattern.quote(password); // Turn special characters into literal so they don't get parsed out
-				password = password.substring(2, password.length() - 2).trim(); // Remove '\Q' and '\E' from
-																				// beginning/end since we're not using
-																				// this as a regex
+				password = password.substring(2, password.length() - 2).trim(); // Remove '\Q' and '\E' from beginning/end since we're not using this as a regex
 				password = password.replace("\"", "\\\""); // Also, make sure quote marks are properly escaped!
 			}
-
-			if (pass.isADefaultPassphrase()) {
+			else {
+				password = ((UserDeviceData)getNetworkModel().getData().getUserDevices().get(getNetworkModel().getData().getUser())).getDefaultPassphrase();
 			}
+			
+			if (password == null || password.isEmpty()) {
+				password = service;
+			}
+
+			//if (pass.isADefaultPassphrase()) {
+			//}
 
 			units.add(new SimpleUnit(service + "_password", "proceed", service.toUpperCase() + "_PASSWORD=`printf \"" + password + "\" | mkpasswd -s -m md5`",
 					"echo $" + service.toUpperCase() + "_PASSWORD", "", "fail", "Couldn't set the passphrase for " + service + ".  You won't be able to configure this service."));
