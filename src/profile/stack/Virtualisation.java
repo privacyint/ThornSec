@@ -51,7 +51,7 @@ public class Virtualisation extends AStructuredProfile {
 	}
 
 	@Override
-	protected final Collection<IUnit> getPersistentConfig() throws InvalidServerModelException {
+	public final Collection<IUnit> getPersistentConfig() throws InvalidServerModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/lib/virtualbox/VBoxXPCOMIPCD$");

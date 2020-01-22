@@ -23,6 +23,7 @@ import javax.swing.JOptionPane;
 
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
+import core.exception.AThornSecException;
 import core.exception.data.ADataException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
@@ -136,6 +137,8 @@ public class HyperVisor extends AStructuredProfile {
 		units.add(fuseConf);
 		fuseConf.appendLine("#user_allow_other");
 
+		units.addAll(this.hypervisor.getPersistentConfig());
+
 		return units;
 	}
 
@@ -143,14 +146,16 @@ public class HyperVisor extends AStructuredProfile {
 	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("gensho.ftp.acc.umu.se");
-		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
+		units.addAll(this.hypervisor.getPersistentFirewall());
+
+		getNetworkModel().getServerModel(getLabel()).addEgress("gensho.ftp.acc.umu.se:80");
+		getNetworkModel().getServerModel(getLabel()).addEgress("github.com:443");
 
 		return units;
 	}
 
 	@Override
-	protected Collection<IUnit> getLiveConfig() throws ARuntimeException, ADataException {
+	public Collection<IUnit> getLiveConfig() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		final Set<String> urls = new LinkedHashSet<>();
@@ -253,6 +258,8 @@ public class HyperVisor extends AStructuredProfile {
 					"I was unable to loopback mount the data disk for " + service + " in " + getLabel() + ".  Backups will not work."));
 		}
 
+		units.addAll(this.hypervisor.getLiveConfig());
+		
 		return units;
 	}
 }
