@@ -64,13 +64,6 @@ public class Virtualisation extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getLiveConfig() {
-		final Collection<IUnit> units = new ArrayList<>();
-
-		return units;
-	}
-
-	@Override
 	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
