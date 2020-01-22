@@ -173,33 +173,31 @@ public class HyperVisor extends AStructuredProfile {
 		final Set<String> urls = new LinkedHashSet<>();
 
 		for (final String service : getServices().keySet()) {
-			final String newURL = getNetworkModel().getData().getDebianIsoUrl(service);
-			if (urls.contains(newURL)) {
+			final String url = getNetworkModel().getData().getDebianIsoUrl(service);
+			if (urls.contains(url)) {
 				continue;
-			} else {
-				urls.add(newURL);
 			}
-		}
+			else {
+				String filename = null;
+				String cleanedFilename = null;
 
-		for (final String url : urls) {
-			String filename = null;
-			String cleanedFilename = null;
+				try {
+					filename = Paths.get(new URI(url).getPath()).getFileName().toString();
+					cleanedFilename = filename.replaceAll("[^A-Za-z0-9]", "_");
+				} catch (final Exception e) {
+					JOptionPane.showMessageDialog(null, "It doesn't appear that " + url + " is a valid link to a Debian ISO.\n\nPlease fix this in your JSON");
+					System.exit(1);
+				}
 
-			try {
-				filename = Paths.get(new URI(url).getPath()).getFileName().toString();
-				cleanedFilename = filename.replaceAll("[^A-Za-z0-9]", "_");
-			} catch (final Exception e) {
-				JOptionPane.showMessageDialog(null, "It doesn't appear that " + url + " is a valid link to a Debian ISO.\n\nPlease fix this in your JSON");
-				System.exit(1);
+				units.add(new FileDownloadUnit("debian_netinst_iso_" + cleanedFilename, "metal_genisoimage_installed", url,
+						getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/" + filename,
+						"The Debian net install ISO couldn't be downloaded.  Please check the URI in your config."));
+				units.add(new FileChecksumUnit("debian_netinst_iso", "debian_netinst_iso_" + cleanedFilename + "_downloaded", Checksum.SHA512,
+						getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/" + filename, getNetworkModel().getData().getDebianIsoSha512(service),
+						"The sha512 sum of the Debian net install in your config doesn't match what has been downloaded.  This could mean your connection is man-in-the-middle'd, or it could just be that the file has been updated on the server. "
+								+ "Please check http://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA512SUMS (64 bit) or http://cdimage.debian.org/debian-cd/current/i386/iso-cd/SHA512SUMS (32 bit) for the correct checksum."));
 			}
-
-			units.add(new FileDownloadUnit("debian_netinst_iso_" + cleanedFilename, "metal_genisoimage_installed", url,
-					getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/" + filename,
-					"The Debian net install ISO couldn't be downloaded.  Please check the URI in your config."));
-			units.add(new FileChecksumUnit("debian_netinst_iso", "debian_netinst_iso_" + cleanedFilename + "_downloaded", Checksum.SHA512,
-					getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/" + filename, getNetworkModel().getData().getDebianIsoSha512(getLabel()),
-					"The sha512 sum of the Debian net install in your config doesn't match what has been downloaded.  This could mean your connection is man-in-the-middle'd, or it could just be that the file has been updated on the server. "
-							+ "Please check http://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA512SUMS (64 bit) or http://cdimage.debian.org/debian-cd/current/i386/iso-cd/SHA512SUMS (32 bit) for the correct checksum."));
+		
 		}
 
 		for (final String service : getServices().keySet()) {
