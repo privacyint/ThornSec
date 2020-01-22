@@ -8,7 +8,9 @@
 package profile.type;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,13 +22,15 @@ import java.util.regex.Pattern;
 
 import javax.json.stream.JsonParsingException;
 import javax.swing.JOptionPane;
-
+import core.data.machine.AMachineData.MachineType;
+import core.data.machine.HypervisorData;
+import core.data.machine.UserDeviceData;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.AThornSecException;
 import core.exception.data.ADataException;
+import core.exception.data.NoValidUsersException;
 import core.exception.data.machine.InvalidServerException;
-import core.exception.runtime.ARuntimeException;
 import core.exception.runtime.InvalidServerModelException;
 import core.exec.network.APassphrase;
 import core.exec.network.OpenKeePassPassphrase;
@@ -236,10 +240,13 @@ public class HyperVisor extends AStructuredProfile {
 				bridge = lanNics.iterator().next().getIface();
 			}
 
-			// TODO: iso/vms
-			// units.addAll(this.hypervisor.buildIso(service.getLabel(),
-			// this.hypervisor.preseed(service.getLabel(), expirePasswords)));
-			// units.addAll(this.hypervisor.buildServiceVm(service.getLabel(), bridge));
+			try {
+				units.addAll(this.hypervisor.buildIso(service, this.hypervisor.preseed(service, true)));
+			} catch (InvalidServerException | InvalidServerModelException | NoValidUsersException | MalformedURLException | URISyntaxException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			units.addAll(this.hypervisor.buildServiceVm(service, bridge));
 
 			final String bootDiskDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/disks/boot/" + service + "/";
 			final String dataDiskDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/disks/data/" + service + "/";
