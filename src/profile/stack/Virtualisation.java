@@ -42,7 +42,7 @@ public class Virtualisation extends AStructuredProfile {
 		units.add(new InstalledUnit("build_essential", "proceed", "build-essential"));
 		units.add(new InstalledUnit("linux_headers", "build_essential_installed", "linux-headers-$(uname -r)"));
 
-		units.add(new InstalledUnit("metal_virtualbox", "virtualbox_pgp", "virtualbox-6.1"));
+		units.add(new InstalledUnit("metal_virtualbox", "a2f683c52980aecf_pgp", "virtualbox-6.1"));
 		units.add(new InstalledUnit("metal_genisoimage", "proceed", "genisoimage"));
 		units.add(new InstalledUnit("metal_rsync", "proceed", "rsync"));
 		units.add(new InstalledUnit("metal_guestfs_utils", "proceed", "libguestfs-tools"));
@@ -67,10 +67,8 @@ public class Virtualisation extends AStructuredProfile {
 	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("virtualbox",
-				"deb http://download.virtualbox.org/virtualbox/debian buster contrib", "keyserver.ubuntu.com",
-				"0xa2f683c52980aecf");
-		getNetworkModel().getServerModel(getLabel()).addEgress("download.virtualbox.org");
+		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("virtualbox", "deb http://download.virtualbox.org/virtualbox/debian buster contrib", "keyserver.ubuntu.com", "a2f683c52980aecf");
+		getNetworkModel().getServerModel(getLabel()).addEgress("download.virtualbox.org:80");
 
 		return units;
 	}
