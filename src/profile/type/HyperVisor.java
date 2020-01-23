@@ -262,40 +262,44 @@ public class HyperVisor extends AStructuredProfile {
 				e.printStackTrace();
 			}
 			units.addAll(this.hypervisor.buildServiceVm(service, getNetworkBridge()));
-
-			final String bootDiskDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/disks/boot/" + service + "/";
-			final String dataDiskDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/disks/data/" + service + "/";
-
-			units.add(new SimpleUnit(service + "_boot_disk_formatted", "proceed", "",
-					"sudo bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + "virt-filesystems -a " + bootDiskDir + service + "_boot.v*'", "", "fail",
-					"Boot disk is unformatted (therefore has no OS on it), please configure the service and try mounting again."));
-
-			// For now, do this as root. We probably want to move to another user, idk
-			units.add(new SimpleUnit(service + "_boot_disk_loopback_mounted", service + "_boot_disk_formatted",
-					"sudo bash -c '" + " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + " guestmount -a " + bootDiskDir + service + "_boot.v*" + " -i" // Inspect the disk for the
-																																							// relevant
-																																							// partition
-							+ " -o direct_io" // All read operations must be done against live, not cache
-							+ " --ro" // _MOUNT THE DISK READ ONLY_
-							+ " " + bootDiskDir + "live/" + "'",
-					"sudo mount | grep " + bootDiskDir, "", "fail", "I was unable to loopback mount the boot disk for " + service + " in " + getLabel() + "."));
-
-			units.add(new SimpleUnit(service + "_data_disk_formatted", "proceed", "",
-					"sudo bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + "virt-filesystems -a " + dataDiskDir + service + "_data.v*'", "", "fail",
-					"Data disk is unformatted (therefore hasn't been configured), please configure the service and try mounting again."));
-
-			units.add(new SimpleUnit(service + "_data_disk_loopback_mounted", service + "_data_disk_formatted",
-					"sudo bash -c '" + " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + " guestmount -a " + dataDiskDir + service + "_data.v*" + " -m /dev/sda1" // Mount the
-																																									// first
-																																									// partition
-							+ " -o direct_io" // All read operations must be done against live, not cache
-							+ " --ro" // _MOUNT THE DISK READ ONLY_
-							+ " " + dataDiskDir + "live/" + "'",
-					"sudo mount | grep " + dataDiskDir, "", "fail",
-					"I was unable to loopback mount the data disk for " + service + " in " + getLabel() + ".  Backups will not work."));
+			units.addAll(getDisksFormattedUnits(service));
 		}
 
 		units.addAll(this.hypervisor.getLiveConfig());
+		
+		return units;
+	}
+
+	private Collection<IUnit> getDisksFormattedUnits(String service) throws InvalidServerException {
+		final Collection<IUnit> units = new ArrayList<>();
+		
+		final String bootDiskDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/disks/boot/" + service + "/";
+		final String dataDiskDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/disks/data/" + service + "/";
+
+		units.add(new SimpleUnit(service + "_boot_disk_formatted", "proceed", "",
+				"sudo bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + "virt-filesystems -a " + bootDiskDir + service + "_boot.v*'", "", "fail",
+				"Boot disk is unformatted (therefore has no OS on it), please configure the service and try mounting again."));
+
+		//TODO: move to new disks
+		// For now, do this as root. We probably want to move to another user, idk
+		units.add(new SimpleUnit(service + "_boot_disk_loopback_mounted", service + "_boot_disk_formatted",
+				"sudo bash -c '" + " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + " guestmount -a " + bootDiskDir + service + "_boot.v*" + " -i" // Inspect the disk for the relevant partition
+						+ " -o direct_io" // All read operations must be done against live, not cache
+						+ " --ro" // _MOUNT THE DISK READ ONLY_
+						+ " " + bootDiskDir + "live/" + "'",
+				"sudo mount | grep " + bootDiskDir, "", "fail", "I was unable to loopback mount the boot disk for " + service + " in " + getLabel() + "."));
+
+		units.add(new SimpleUnit(service + "_data_disk_formatted", "proceed", "",
+				"sudo bash -c 'export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + "virt-filesystems -a " + dataDiskDir + service + "_data.v*'", "", "fail",
+				"Data disk is unformatted (therefore hasn't been configured), please configure the service and try mounting again."));
+
+		units.add(new SimpleUnit(service + "_data_disk_loopback_mounted", service + "_data_disk_formatted",
+				"sudo bash -c '" + " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + " guestmount -a " + dataDiskDir + service + "_data.v*" + " -m /dev/sda1" // Mount the first partition
+						+ " -o direct_io" // All read operations must be done against live, not cache
+						+ " --ro" // _MOUNT THE DISK READ ONLY_
+						+ " " + dataDiskDir + "live/" + "'",
+				"sudo mount | grep " + dataDiskDir, "", "fail",
+				"I was unable to loopback mount the data disk for " + service + " in " + getLabel() + ".  Backups will not work."));
 		
 		return units;
 	}
