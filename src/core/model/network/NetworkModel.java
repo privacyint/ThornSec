@@ -42,6 +42,7 @@ import core.model.machine.AMachineModel;
 import core.model.machine.ExternalOnlyDeviceModel;
 import core.model.machine.InternalOnlyDeviceModel;
 import core.model.machine.ServerModel;
+import core.model.machine.ServiceModel;
 import core.model.machine.UserDeviceModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
 
@@ -362,6 +363,21 @@ public class NetworkModel {
 		throw new InvalidServerModelException(server + " is not a server on your network");
 	}
 
+	/**
+	 * @param serviceLabel
+	 * @return a given ServiceModel
+	 * @throws InvalidServerModelException if the service doesn't exist, or if it's not a service
+	 */
+	public final ServiceModel getServiceModel(String serviceLabel) throws InvalidServerModelException  {
+		ServerModel service = getServerModel(serviceLabel);
+		
+		if (service.isType(MachineType.SERVICE)) {
+			return (ServiceModel) service;
+		}
+
+		throw new InvalidServerModelException(serviceLabel + " is a server, not a service");
+	}
+	
 	/**
 	 * @return A specific device model.
 	 */
