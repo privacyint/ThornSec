@@ -231,6 +231,22 @@ public class HyperVisor extends AStructuredProfile {
 		return units;
 	}
 	
+	private String getNetworkBridge() throws InvalidServerException, InvalidServerModelException {
+		if (getNetworkModel().getServerModel(getLabel()).isRouter()) {
+			return MachineType.SERVER.toString();
+		}
+
+		Collection<NetworkInterfaceData> lanNics = null;
+		try {
+			lanNics = getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.LAN);
+		} catch (JsonParsingException | ADataException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return lanNics.iterator().next().getIface();
+	}
+	
 	@Override
 	public Collection<IUnit> getLiveConfig() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
@@ -239,29 +255,13 @@ public class HyperVisor extends AStructuredProfile {
 			units.addAll(getISODownloadUnits(getNetworkModel().getData().getDebianIsoUrl(service), getNetworkModel().getData().getDebianIsoSha512(service)));
 			units.addAll(getUserPasswordUnits(service));
 
-			String bridge = "";
-			if (getNetworkModel().getServerModel(getLabel()).isRouter()) {
-				bridge = MachineType.SERVER.toString();
-			}
-			else {
-				Collection<NetworkInterfaceData> lanNics = null;
-				try {
-					lanNics = getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.LAN);
-				} catch (JsonParsingException | ADataException | IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
-				bridge = lanNics.iterator().next().getIface();
-			}
-
 			try {
 				units.addAll(this.hypervisor.buildIso(service, this.hypervisor.preseed(service, true)));
-			} catch (InvalidServerException | InvalidServerModelException | NoValidUsersException | MalformedURLException | URISyntaxException e) {
+			} catch (InvalidServerException | MalformedURLException | URISyntaxException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			units.addAll(this.hypervisor.buildServiceVm(service, bridge));
+			units.addAll(this.hypervisor.buildServiceVm(service, getNetworkBridge()));
 
 			final String bootDiskDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/disks/boot/" + service + "/";
 			final String dataDiskDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/disks/data/" + service + "/";
