@@ -48,6 +48,7 @@ import core.data.machine.InternalDeviceData;
 import core.data.machine.ServerData;
 import core.data.machine.ServiceData;
 import core.data.machine.UserDeviceData;
+import core.data.machine.configuration.DiskData;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
@@ -896,3 +897,8 @@ public class NetworkData extends AData {
 	public ServerData getServer(String label) {
 		return (ServerData) this.getServers().get(label);
 	}
+
+	public Collection<DiskData> getDisks(String label) {
+		return ((ServiceData)this.getServer(label)).getDisks();
+	}
+}

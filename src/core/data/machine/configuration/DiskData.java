@@ -57,6 +57,10 @@ public class DiskData extends AData {
 			return this.format;
 		}
 	}
+	
+	public enum DiskType {
+		
+	}
 
 	private Medium medium;
 	private Format format;
