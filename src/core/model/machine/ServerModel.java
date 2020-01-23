@@ -23,7 +23,6 @@ import com.metapossum.utils.scanner.reflect.ClassesInPackageScanner;
 import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidMachineException;
-import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidProfileException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
@@ -384,15 +383,15 @@ public class ServerModel extends AMachineModel {
 		return this.types;
 	}
 
-	public Boolean isType(MachineType type) throws InvalidServerException {
+	public Boolean isType(MachineType type) {
 		return getNetworkModel().getData().getTypes(getLabel()).contains(type);
 	}
 
-	public Boolean isRouter() throws InvalidServerException {
+	public Boolean isRouter() {
 		return isType(MachineType.ROUTER);
 	}
 
-	public Boolean isHyperVisor() throws InvalidServerException {
+	public Boolean isHyperVisor() {
 		return isType(MachineType.HYPERVISOR);
 	}
 

@@ -31,7 +31,6 @@ import core.data.machine.AMachineData;
 import core.data.machine.AMachineData.MachineType;
 import core.data.network.NetworkData;
 import core.exception.AThornSecException;
-import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidDeviceModelException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
@@ -251,13 +250,8 @@ public class NetworkModel {
 		final Map<String, ServerModel> servers = new HashMap<>();
 
 		getServers(MachineType.SERVER).forEach((label, server) -> {
-			try {
-				if (!server.isRouter()) {
-					servers.put(label, server);
-				}
-			} catch (final InvalidServerException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			if (!server.isRouter()) {
+				servers.put(label, server);
 			}
 		});
 

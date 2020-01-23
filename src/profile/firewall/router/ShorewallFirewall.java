@@ -373,7 +373,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 					if (getNetworkModel().getServerModel(machineLabel).isRouter()) {
 						return;
 					}
-				} catch (InvalidServerException | InvalidServerModelException e) {
+				} catch (InvalidServerModelException e) {
 					return;
 				}
 
@@ -417,7 +417,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 				} else {
 					zones.add(cleanZone(server) + ":" + cleanZone(ParentZone.SERVERS) + "\tipv4");
 				}
-			} catch (InvalidServerException | InvalidServerModelException e) {
+			} catch (InvalidServerModelException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -627,7 +627,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 				if (getNetworkModel().getServerModel(machine.getLabel()).isRouter()) {
 					continue;
 				}
-			} catch (InvalidServerException | InvalidServerModelException e) {
+			} catch (InvalidServerModelException e) {
 				//As you were. This is not the droid you're looking for.
 			}
 			
@@ -654,7 +654,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 				if (getNetworkModel().getServerModel(machine.getLabel()).isRouter()) {
 					continue;
 				}
-			} catch (InvalidServerException | InvalidServerModelException e) {
+			} catch (InvalidServerModelException e) {
 				//As you were. This is not the droid you're looking for.
 			}
 			

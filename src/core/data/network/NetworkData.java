@@ -478,10 +478,8 @@ public class NetworkData extends AData {
 	 * @param server Server's name
 	 * @return All types assigned to the given machine, or default values if not
 	 *         explicitly set
-	 * @throws InvalidServerException if attempting to find a server which isn't
-	 *                                defined
 	 */
-	final public Collection<MachineType> getTypes(String server) throws InvalidServerException {
+	final public Collection<MachineType> getTypes(String server) {
 		Collection<MachineType> types = ((ServerData) getMachine(MachineType.SERVER, server)).getTypes();
 
 		if (types == null) {
