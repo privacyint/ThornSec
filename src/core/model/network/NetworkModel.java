@@ -92,7 +92,7 @@ public class NetworkModel {
 		final Map<String, AMachineData> externals = getData().getExternalOnlyDevices();
 		if (externals != null) {
 			for (final String external : externals.keySet()) {
-				final AMachineModel device = new ExternalOnlyDeviceModel(external, this);
+				final ExternalOnlyDeviceModel device = new ExternalOnlyDeviceModel(external, this);
 				addMachineToNetwork(MachineType.EXTERNAL_ONLY, external, device);
 				addMachineToNetwork(MachineType.DEVICE, external, device);
 			}
@@ -101,7 +101,7 @@ public class NetworkModel {
 		final Map<String, AMachineData> internals = getData().getInternalOnlyDevices();
 		if (internals != null) {
 			for (final String internal : internals.keySet()) {
-				final AMachineModel device = new InternalOnlyDeviceModel(internal, this);
+				final InternalOnlyDeviceModel device = new InternalOnlyDeviceModel(internal, this);
 				addMachineToNetwork(MachineType.INTERNAL_ONLY, internal, device);
 				addMachineToNetwork(MachineType.DEVICE, internal, device);
 			}
@@ -110,7 +110,7 @@ public class NetworkModel {
 		final Map<String, AMachineData> users = getData().getUserDevices();
 		if (users != null) {
 			for (final String user : users.keySet()) {
-				final AMachineModel device = new UserDeviceModel(user, this);
+				final UserDeviceModel device = new UserDeviceModel(user, this);
 				addMachineToNetwork(MachineType.USER, user, device);
 				addMachineToNetwork(MachineType.DEVICE, user, device);
 			}
@@ -119,7 +119,16 @@ public class NetworkModel {
 		final Map<String, AMachineData> servers = getData().getServers();
 		if (servers != null) {
 			for (final String serverLabel : servers.keySet()) {
-				final ServerModel server = new ServerModel(serverLabel, this);
+				ServerModel server = null;
+				
+				if (this.getData().getTypes(serverLabel).contains(MachineType.SERVICE)) {
+					server = new ServiceModel(serverLabel, this);
+					
+				}
+				else {
+					server = new ServerModel(serverLabel, this);
+				}
+				
 				addMachineToNetwork(MachineType.SERVER, serverLabel, server);
 				for (final MachineType type : getData().getTypes(serverLabel)) {
 					addMachineToNetwork(type, serverLabel, server);
@@ -366,16 +375,18 @@ public class NetworkModel {
 	/**
 	 * @param serviceLabel
 	 * @return a given ServiceModel
-	 * @throws InvalidServerModelException if the service doesn't exist, or if it's not a service
+	 * @throws InvalidMachineModelException 
 	 */
-	public final ServiceModel getServiceModel(String serviceLabel) throws InvalidServerModelException  {
-		ServerModel service = getServerModel(serviceLabel);
-		
-		if (service.isType(MachineType.SERVICE)) {
-			return (ServiceModel) service;
+	public final ServiceModel getServiceModel(String serviceLabel) throws InvalidMachineModelException  {
+		AMachineModel service = null;
+
+		service = getMachineModel(serviceLabel);
+
+		if (service instanceof ServiceModel) {
+			return (ServiceModel)service;
 		}
 
-		throw new InvalidServerModelException(serviceLabel + " is a server, not a service");
+		throw new InvalidServerModelException(serviceLabel + " isn't a service");
 	}
 	
 	/**
