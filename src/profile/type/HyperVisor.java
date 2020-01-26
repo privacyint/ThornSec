@@ -15,9 +15,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.json.stream.JsonParsingException;
@@ -30,7 +28,6 @@ import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.AThornSecException;
 import core.exception.data.ADataException;
-import core.exception.data.NoValidUsersException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
 import core.exception.runtime.InvalidServerModelException;

@@ -386,7 +386,6 @@ public class ShorewallFirewall extends AFirewallProfile {
 				
 				machine.getDNAT().forEach((destination, dnatPorts)->{
 					try {
-						
 						addDNATRule("all", "!", machineLabel, machineLabel, machine.getIP(), dnatPorts, getNetworkModel().getServerModel(destination).getIP());
 					} catch (InvalidServerModelException e) {
 						// TODO Auto-generated catch block
