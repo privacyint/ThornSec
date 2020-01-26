@@ -7,6 +7,9 @@
  */
 package core.exception.runtime;
 
+/**
+ * Thrown when a given ServerModel isn't found
+ */
 public class InvalidServerModelException extends InvalidMachineModelException {
 	private static final long serialVersionUID = 3473443319096462509L;
 
