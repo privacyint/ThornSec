@@ -30,6 +30,7 @@ import core.exception.AThornSecException;
 import core.exception.data.ADataException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.exec.network.APassphrase;
 import core.exec.network.OpenKeePassPassphrase;
@@ -268,7 +269,7 @@ public class HyperVisor extends AStructuredProfile {
 		return units;
 	}
 
-	private Collection<IUnit> getDisksFormattedUnits(String service) throws InvalidServerModelException {
+	private Collection<IUnit> getDisksFormattedUnits(String service) throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 		
 		getNetworkModel().getServiceModel(service).getDisks().forEach((label, disk) -> {
@@ -282,7 +283,7 @@ public class HyperVisor extends AStructuredProfile {
 		return units;
 	}
 	
-	private Collection<IUnit> getDiskLoopbackUnits(String service) throws InvalidServerModelException {
+	private Collection<IUnit> getDiskLoopbackUnits(String service) throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 		
 		getNetworkModel().getServiceModel(service).getDisks().forEach((label, disk) -> {
