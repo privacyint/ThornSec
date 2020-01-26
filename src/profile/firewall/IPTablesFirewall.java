@@ -27,6 +27,7 @@ import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 
 //https://linux.die.net/man/8/iptables
+@Deprecated
 public class IPTablesFirewall extends AStructuredProfile {
 
 	private final Hashtable<String, Hashtable<String, Set<String>>> tables;
