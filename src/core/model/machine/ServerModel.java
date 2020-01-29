@@ -114,7 +114,11 @@ public class ServerModel extends AMachineModel {
 				if (this.firewall == null) {
 					this.firewall = new CSFFirewall(getLabel(), this.networkModel);
 				}
-				this.types.add(new Service(getLabel(), this.networkModel));
+				String hv = this.networkModel.getData().getService(getLabel()).getHypervisor();
+				Service service = new Service(getLabel(), this.networkModel);
+				service.setHypervisor(hv);
+				this.types.add(service);
+				
 				break;
 			case DEDICATED:
 				this.types.add(new Dedicated(getLabel(), this.networkModel));

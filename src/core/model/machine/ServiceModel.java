@@ -35,13 +35,14 @@ import core.model.network.NetworkModel;
 public class ServiceModel extends ServerModel {
 	
 	private Map<String, DiskModel> disks;
+	private String hypervisor;
 	
 	public ServiceModel(String label, NetworkModel networkModel)
 			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
 			NoSuchMethodException, SecurityException, ClassNotFoundException, URISyntaxException, AddressException,
 			IOException, JsonParsingException, AThornSecException {
 		super(label, networkModel);
-	}
+		this.setHypervisor(getNetworkModel().getData().getService(getLabel()).getHypervisor());
 
 	@Override
 	public Collection<IUnit> getUnits() throws AThornSecException {
