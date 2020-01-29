@@ -901,4 +901,8 @@ public class NetworkData extends AData {
 	public Collection<DiskData> getDisks(String label) {
 		return ((ServiceData)this.getServer(label)).getDisks();
 	}
+
+	public ServiceData getService(String label) {
+		return (ServiceData) this.getServer(label);
+	}
 }
