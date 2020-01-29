@@ -53,7 +53,8 @@ public class DiskData extends AData {
 			this.format = format;
 		}
 
-		public String getFormat() {
+		@Override
+		public String toString() {
 			return this.format;
 		}
 	}
