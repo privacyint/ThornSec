@@ -36,7 +36,7 @@ import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
-
+import org.apache.commons.io.FilenameUtils;
 import core.data.AData;
 import core.data.machine.ADeviceData;
 import core.data.machine.AMachineData;
@@ -707,7 +707,7 @@ public class NetworkData extends AData {
 		return hash;
 	}
 
-	public File getHypervisorThornsecBase(String hypervisor) throws InvalidServerException {
+	public String getHypervisorThornsecBase(String hypervisor) throws InvalidServerException {
 		final ServerData data = (ServerData) getMachine(MachineType.HYPERVISOR, hypervisor);
 		File baseDir = ((HypervisorData) data).getVmBase();
 
@@ -718,7 +718,7 @@ public class NetworkData extends AData {
 			}
 		}
 
-		return baseDir;
+		return FilenameUtils.normalize(baseDir.toString(), true);
 	}
 
 	public URL getDebianMirror(String server) throws URISyntaxException, MalformedURLException {
