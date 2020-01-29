@@ -37,9 +37,13 @@ import core.unit.pkg.RunningUnit;
  */
 public class Service extends AStructuredProfile {
 
+	private String hypervisor;
+	
 	public Service(String label, NetworkModel networkModel) throws InvalidMachineModelException {
 		super(label, networkModel);
 
+		setHypervisor(null);
+		
 		try {
 			if (getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
 				for (final NetworkInterfaceData nicData : getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)) {
@@ -86,6 +90,20 @@ public class Service extends AStructuredProfile {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * @return the hypervisor
+	 */
+	public String getHypervisor() {
+		return hypervisor;
+	}
+
+	/**
+	 * @param hypervisor the hypervisor to set
+	 */
+	public void setHypervisor(String hypervisor) {
+		this.hypervisor = hypervisor;
 	}
 
 	@Override
