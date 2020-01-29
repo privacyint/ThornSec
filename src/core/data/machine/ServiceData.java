@@ -63,8 +63,6 @@ public class ServiceData extends ServerData {
 			}
 		}
 
-		this.hypervisor = data.getString("hypervisor", null);
-
 		this.debianISOURL = data.getString("debianisourl", null);
 		this.debianISOSHA512 = data.getString("debianisosha512", null);
 
@@ -93,7 +91,11 @@ public class ServiceData extends ServerData {
 	public final String getHypervisor() {
 		return this.hypervisor;
 	}
-
+	
+	public final void setHypervisor(String hypervisor) {
+		this.hypervisor = hypervisor;
+	}
+	
 	/**
 	 * @return the URL to use for building this service
 	 */
