@@ -1,6 +1,7 @@
 package core.model.machine.configuration;
 
 import java.io.File;
+import org.apache.commons.io.FilenameUtils;
 import core.data.machine.configuration.DiskData;
 import core.data.machine.configuration.DiskData.Format;
 import core.data.machine.configuration.DiskData.Medium;
@@ -71,8 +72,12 @@ public class DiskModel {
 	/**
 	 * @return the filename
 	 */
-	public File getFilename() {
-		return filename;
+	public String getFilename() {
+		return FilenameUtils.normalize(filename.toString(), true);
+	}
+	
+	public String getFilePath() {
+		return FilenameUtils.normalize(filename.getParent().toString(), true);
 	}
 
 	/**
