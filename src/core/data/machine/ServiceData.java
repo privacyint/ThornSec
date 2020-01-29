@@ -45,8 +45,6 @@ public class ServiceData extends ServerData {
 		this.debianISOSHA512 = null;
 
 		this.disks = null;
-
-		this.backupFrequency = null;
 	}
 
 	@Override
@@ -69,10 +67,6 @@ public class ServiceData extends ServerData {
 
 		this.debianISOURL = data.getString("debianisourl", null);
 		this.debianISOSHA512 = data.getString("debianisosha512", null);
-
-		if (data.containsKey("backup_frequency")) {
-			this.backupFrequency = data.getInt("backup_frequency");
-		}
 
 		// Force it to recognise us as a service...
 		if ((getTypes() == null) || !getTypes().contains(MachineType.SERVICE)) {
