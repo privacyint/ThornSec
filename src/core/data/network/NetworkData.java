@@ -899,7 +899,7 @@ public class NetworkData extends AData {
 	}
 
 	public Collection<DiskData> getDisks(String label) {
-		return ((ServiceData)this.getServer(label)).getDisks();
+		return this.getService(label).getDisks();
 	}
 
 	public ServiceData getService(String label) {
