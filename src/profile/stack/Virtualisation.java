@@ -7,18 +7,25 @@
  */
 package profile.stack;
 
-import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
-
+import java.util.Map;
 import javax.swing.JOptionPane;
-
+import org.apache.commons.io.FilenameUtils;
+import core.StringUtils;
+import core.exception.data.NoValidUsersException;
 import core.exception.data.machine.InvalidServerException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
+import core.model.machine.configuration.DiskModel;
 import core.model.network.NetworkModel;
+import core.data.machine.UserDeviceData;
+import core.data.machine.configuration.DiskData.Medium;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirOwnUnit;
@@ -73,12 +80,11 @@ public class Virtualisation extends AStructuredProfile {
 		return units;
 	}
 
-	Collection<IUnit> buildIso(String service, String preseed) throws InvalidServerException {
+	public Collection<IUnit> buildIso(String service, String preseed) throws InvalidServerException {
 
 		final Collection<IUnit> units = new ArrayList<>();
 
-		final String isoDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/isos/" + service
-				+ "/";
+		final String isoDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/isos/" + service;
 
 		String filename = null;
 		String cleanedFilename = null;
@@ -224,153 +230,131 @@ public class Virtualisation extends AStructuredProfile {
 	}
 
 	public Collection<IUnit> buildServiceVm(String service, String bridge)
-			throws InvalidServerModelException, InvalidServerException {
-		final File baseDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel());
+			throws InvalidServerException, InvalidMachineModelException {
+		final String baseDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel());
 
 		// Disks
-		final String diskExtension = "vmdk";
-		final String disksDir = baseDir + "/disks";
-		final String bootDiskDir = disksDir + "/boot/" + service;
-		final String bootDiskImg = bootDiskDir + "/" + service + "_boot.";
-		final String bootLoopbackDir = bootDiskDir + "/live";
-		final String dataDiskDir = disksDir + "/data/" + service;
-		final String dataDiskImg = dataDiskDir + "/" + service + "_data.";
-		final String dataLoopbackDir = dataDiskDir + "/live";
+		Map<String, DiskModel> disks = getNetworkModel().getServiceModel(service).getDisks();
 
 		final String logDir = baseDir + "/logs/" + service;
 		final String backupTargetDir = baseDir + "/backups/" + service;
 		final String ttySocketDir = baseDir + "/sockets/" + service;
 
-		final String installIso = baseDir + "/isos/" + service + "/" + service + ".iso";
+		//final String installIso = baseDir + "/isos/" + service + "/" + service + ".iso";
 		final String user = "vboxuser_" + service;
 		final String group = "vboxusers";
-		final String osType = getNetworkModel().getData().getDebianIsoUrl(service).contains("amd64") ? "Debian_64"
-				: "Debian";
+		final String osType = getNetworkModel().getData().getDebianIsoUrl(service).contains("amd64") ? "Debian_64" : "Debian";
 
 		final Collection<IUnit> units = new ArrayList<>();
 
-		// Metal user setup
+		// Create VirtualBox user
 		units.add(new SimpleUnit("metal_virtualbox_" + service + "_user", "metal_virtualbox_installed",
 				"sudo adduser " + user + " --system --shell=/bin/false --disabled-login --ingroup " + group,
-				"id -u " + user + " 2>&1 | grep 'no such user'", "", "pass", "Couldn't create the user for " + service
-						+ " on its metal.  This is fatal, " + service + " will not be installed."));
+				"id -u " + user + " 2>&1 | grep 'no such user'", "", "pass",
+				"Couldn't create the user for " + service + " on its HyperVisor.  This is fatal, " + service + " will not be installed."));
+		
+		// Create VM itself
+		units.add(new SimpleUnit(service + "_exists", "metal_virtualbox_" + service + "_user",
+				"sudo -u " + user + " VBoxManage createvm --name " + service + " --ostype \"" + osType + "\"" + " --register;"
+				+ "sudo -u " + user + " VBoxManage modifyvm " + service + " --description "
+						+ "\"" + service + "." + getNetworkModel().getData().getDomain() + "\n"
+						+ "ThornSec guest machine\n"
+						+ "Built with profile(s): "	+ String.join(", ", getNetworkModel().getData().getProfiles(service)) + "\n"
+						+ "Built at $(date)" + "\"",
+				"sudo -u " + user + " VBoxManage list vms | grep " + service, "", "fail",
+				"Couldn't create " + service + " on its HyperVisor.  This is fatal, " + service + " will not exist on your network."));
+		
+		// Set up VM's storage
+		
+		// Disk controller setup
+		units.add(new SimpleUnit(service + "_sas_controller", service + "_exists",
+				"sudo -u " + user + " VBoxManage storagectl " + service	+ " --name \"SAS\""
+						+ " --add sas"
+						+ " --controller LSILogicSAS"
+						+ " --portcount 2"
+						+ " --hostiocache off",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^storagecontrollername0=",
+				"storagecontrollername0=\\\"HDD\\\"", "pass",
+				"The SAS controller for " + service + " (where its disks are attached) Couldn't be created/attached to "
+						+ service + ".  This is fatal, " + service + " will not be installed."));
 
-		// Metal storage setup
-		units.add(new DirUnit("boot_disk_dir_" + service, "proceed", bootDiskDir));
-		units.add(new DirOwnUnit("boot_disk_dir_" + service, "boot_disk_dir_" + service + "_created", bootDiskDir, user,
-				group));
-		units.add(new DirPermsUnit("boot_disk_dir_" + service, "boot_disk_dir_" + service + "_chowned", bootDiskDir,
-				"750"));
+		int deviceCounter = 0;
+		for (DiskModel disk : disks.values().stream().filter(disk -> disk.getMedium() == Medium.DISK).toArray(DiskModel[]::new)) {
+			units.add(new DirUnit(disk.getLabel() + "_disk_dir_" + service, "proceed", disk.getFilePath()));
+			units.add(new DirOwnUnit(disk.getLabel() + "_disk_dir_" + service, disk.getLabel() + "_disk_dir_" + service + "_created", disk.getFilePath(), user,	group));
+			units.add(new DirPermsUnit(disk.getLabel() + "_disk_dir_" + service, disk.getLabel() + "_disk_dir_" + service + "_chowned", disk.getFilePath(),	"750"));
+			
+			units.add(new DirUnit(disk.getLabel() + "_disk_loopback_dir_" + service, "proceed", disk.getFilePath() + "/live/"));
+			units.add(new DirOwnUnit(disk.getLabel() + "_disk_loopback_dir_" + service, disk.getLabel() + "_disk_loopback_dir_" + service + "_created", disk.getFilePath() + "/live/", "root"));
+			units.add(new DirPermsUnit(disk.getLabel() + "_disk_loopback_dir_" + service, disk.getLabel() + "_disk_loopback_dir_" + service + "_chowned", disk.getFilePath() + "/live/", "700"));
+			
+			String diskCreation = "";
+			diskCreation += "sudo -u " + user + " VBoxManage createmedium --filename " + disk.getFilename();
+			diskCreation += " --size " + disk.getSize();
+			diskCreation += " --format " + disk.getFormat();
+			diskCreation += (disk.getDiffParent() != null) ? " --diffparent " + disk.getDiffParent() :"";
+			
+			units.add(new SimpleUnit(service + "_" + disk.getLabel() + "_disk", disk.getLabel() + "_disk_dir_" + service + "_chmoded",
+					diskCreation,
+					"sudo [ -f " + disk.getFilename() + " ] && echo pass;", "pass", "pass",
+					"Couldn't create the disk " + disk.getLabel() + " for " + service + "."));
+			units.add(new FileOwnUnit(service + "_" + disk.getLabel() + "_disk", service + "_" + disk.getLabel() + "_disk", disk.getFilename(), user, group));
+			
+			String diskAttach = "";
+			diskAttach += "sudo -u " + user + " VBoxManage storageattach " + service;
+			diskAttach += " --storagectl \"SAS\"";
+			diskAttach += " --port 0";
+			diskAttach += " --device " + deviceCounter;
+			diskAttach += " --type hdd";
+			diskAttach += " --medium " + disk.getFilename();
+			diskAttach += (disk.getLabel().contentEquals("boot")) ? " --bootable on" : " --bootable -off";
+			diskAttach += " --comment \\\"" + disk.getComment() + "\\\";";
+			
+			units.add(new SimpleUnit(service + "_" + disk.getLabel() + "_disk_attached", service + "_sas_controller",
+					diskAttach,
+					"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"SAS-0-" + deviceCounter + "\"",
+					"\\\"SAS-0-" + deviceCounter + "\\\"=\\\"" + disk.getFilename() + "\\\"", "pass",
+					"Couldn't attach disk " + disk.getLabel() + "for " + service + "."));
 
-		units.add(new DirUnit("data_disk_dir_" + service, "proceed", dataDiskDir));
-		units.add(new DirOwnUnit("data_disk_dir_" + service, "data_disk_dir_" + service + "_created", dataDiskDir, user,
-				group));
-		units.add(new DirPermsUnit("data_disk_dir_" + service, "data_disk_dir_" + service + "_chowned", dataDiskDir,
-				"750"));
+			deviceCounter++;
+		};
+		
+		deviceCounter = 0;
+		for (DiskModel disk : disks.values().stream().filter(disk -> disk.getMedium() == Medium.DVD).toArray(DiskModel[]::new)) {
+			String diskAttach = "";
+			diskAttach += "sudo -u " + user + " VBoxManage storageattach " + service;
+			diskAttach += " --storagectl \"SAS\"";
+			diskAttach += " --port 1";
+			diskAttach += " --device " + deviceCounter;
+			diskAttach += " --type dvd";
+			diskAttach += " --medium " + disk.getFilename();
+			diskAttach += (disk.getLabel().contentEquals("boot")) ? " --bootable on" : " --bootable -off";
+			diskAttach += " --comment \\\"" + disk.getComment() + "\\\";";
+			
+			units.add(new SimpleUnit(service + "_" + disk.getLabel() + "_disk_attached", service + "_sas_controller",
+					diskAttach,
+					"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"SAS-0-" + deviceCounter + "\"",
+					"\\\"SAS-0-" + deviceCounter + "\\\"=\\\"" + disk.getFilename() + "\\\"", "pass",
+					"Couldn't attach disk " + disk.getLabel() + "for " + service + "."));
 
+			deviceCounter++;
+		};
+		
+		
 		units.add(new DirUnit("log_dir_" + service, "proceed", logDir));
 		units.add(new DirOwnUnit("log_dir_" + service, "log_dir_" + service + "_created", logDir, user, group));
 		units.add(new DirPermsUnit("log_dir_" + service, "log_dir_" + service + "_chowned", logDir, "750"));
 
 		units.add(new DirUnit("backup_dir_" + service, "proceed", backupTargetDir));
-		units.add(new DirOwnUnit("backup_dir_" + service, "backup_dir_" + service + "_created", backupTargetDir, user,
-				group));
-		units.add(new DirPermsUnit("backup_dir_" + service, "backup_dir_" + service + "_chowned", backupTargetDir,
-				"750"));
+		units.add(new DirOwnUnit("backup_dir_" + service, "backup_dir_" + service + "_created", backupTargetDir, user, group));
+		units.add(new DirPermsUnit("backup_dir_" + service, "backup_dir_" + service + "_chowned", backupTargetDir, "750"));
 		// Mark the backup destination directory as a valid destination
 		units.add(new FileUnit(service + "_mark_backup_dir", "backup_dir_" + service + "_chmoded",
 				"In memoriam Luke and Guy.  Miss you two!", backupTargetDir + "/backup.marker"));
 
 		units.add(new DirUnit("socket_dir_" + service, "proceed", ttySocketDir));
-		units.add(new DirOwnUnit("socket_dir_" + service, "socket_dir_" + service + "_created", ttySocketDir, user,
-				group));
+		units.add(new DirOwnUnit("socket_dir_" + service, "socket_dir_" + service + "_created", ttySocketDir, user,	group));
 		units.add(new DirPermsUnit("socket_dir_" + service, "socket_dir_" + service + "_chowned", ttySocketDir, "750"));
-
-		// Create the mount point for the boot disk
-		units.add(new DirUnit("boot_disk_loopback_dir_" + service, "proceed", bootLoopbackDir + "/"));
-		// units.add(new DirOwnUnit("boot_disk_loopback_dir_" + service,
-		// "boot_disk_loopback_dir_" + service + "_created", bootLoopbackDir, "root",
-		// "root"));
-		// units.add(new DirPermsUnit("boot_disk_loopback_dir_" + service,
-		// "boot_disk_loopback_dir_" + service + "_chowned", bootLoopbackDir, "755"));
-		// And, more importantly, the data disk
-		units.add(new DirUnit("data_disk_loopback_dir_" + service, "proceed", dataLoopbackDir + "/"));
-		// units.add(new DirOwnUnit("data_disk_loopback_dir_" + service,
-		// "data_disk_loopback_dir_" + service + "_created", dataLoopbackDir, "root",
-		// "root"));
-		// units.add(new DirPermsUnit("data_disk_loopback_dir_" + service,
-		// "data_disk_loopback_dir_" + service + "_chowned", dataLoopbackDir, "755"));
-
-		// VM setup
-		units.add(new SimpleUnit(service + "_exists", "boot_disk_dir_" + service + "_chmoded",
-				"sudo -u " + user + " VBoxManage createvm --name " + service + " --ostype \"" + osType
-						+ "\" --register;" + "sudo -u " + user + " VBoxManage modifyvm " + service + " --description "
-						+ "\"" + service + "." + getNetworkModel().getData().getDomain() + "\n"
-						+ "ThornSec guest machine\n" + "Built with profile(s): "
-						+ String.join(", ", getNetworkModel().getData().getProfiles(service)) + "\n"
-						+ "Built at $(date)" + "\"",
-				"sudo -u " + user + " VBoxManage list vms | grep " + service, "", "fail", "Couldn't create " + service
-						+ " on its metal.  This is fatal, " + service + " will not be installed."));
-
-		// HDD creation
-		// TODO: iterate through the disks properly
-//		units.add(new SimpleUnit(service + "_boot_disk", "boot_disk_dir_" + service + "_chmoded",
-//				"sudo -u " + user + " VBoxManage createmedium --filename " + bootDiskImg + diskExtension + " --size "
-//						+ getNetworkModel().getData().getBootDiskSize(service) + " --format VMDK",
-//				"sudo [ -f " + bootDiskImg + diskExtension + " ] && echo pass;", "pass", "pass",
-//				"Couldn't create the disk for " + service + "'s base filesystem.  This is fatal."));
-//		units.add(new FileOwnUnit(service + "_boot_disk", service + "_boot_disk", bootDiskImg + diskExtension, user,
-//				group));
-//
-//		units.add(new SimpleUnit(service + "_data_disk", "data_disk_dir_" + service + "_chmoded",
-//				"sudo -u " + user + " VBoxManage createmedium --filename " + dataDiskImg + diskExtension + " --size "
-//						+ getNetworkModel().getData().getDataDiskSize(service) + " --format VMDK",
-//				"sudo [ -f " + dataDiskImg + diskExtension + " ] && echo pass;", "pass", "pass",
-//				"Couldn't create the disk for " + service + "'s data.  This is fatal."));
-//		units.add(new FileOwnUnit(service + "_data_disk", service + "_data_disk", dataDiskImg + diskExtension, user,
-//				group));
-
-		// Disk controller setup
-		units.add(new SimpleUnit(service + "_sas_controller", service + "_exists",
-				"sudo -u " + user + " VBoxManage storagectl " + service
-						+ " --name \"SAS\" --add sas --controller LSILogicSAS --portcount 5 --hostiocache off",
-				"sudo -u " + user + " VBoxManage showvminfo " + service
-						+ " --machinereadable | grep ^storagecontrollername0=",
-				"storagecontrollername0=\\\"SAS\\\"", "pass",
-				"The SAS controller for " + service + " (where its disks are attached) Couldn't be created/attached to "
-						+ service + ".  This is fatal, " + service + " will not be installed."));
-
-		units.add(new SimpleUnit(service + "_boot_disk_attached", service + "_sas_controller",
-				"sudo -u " + user + " VBoxManage storageattach " + service
-						+ " --storagectl \"SAS\" --port 0 --device 0 --type hdd --medium " + bootDiskImg + diskExtension
-						+ " --comment \\\"" + service + "BootDisk\\\"",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"SAS-0-0\"",
-				"\\\"SAS-0-0\\\"=\\\"" + bootDiskImg + diskExtension + "\\\"", "pass",
-				"Couldn't attach the disk for " + service + "'s base filesystem.  This is fatal."));
-
-		units.add(new SimpleUnit(service + "_data_disk_attached", service + "_sas_controller",
-				"sudo -u " + user + " VBoxManage storageattach " + service
-						+ " --storagectl \"SAS\" --port 1 --device 0 --type hdd --medium " + dataDiskImg + diskExtension
-						+ " --comment \\\"" + service + "DataDisk\\\"",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"SAS-1-0\"",
-				"\\\"SAS-1-0\\\"=\\\"" + dataDiskImg + diskExtension + "\\\"", "pass",
-				"Couldn't attach the disk for " + service + "'s data.  This is fatal."));
-
-		units.add(new SimpleUnit(service + "_install_iso_attached", service + "_sas_controller",
-				"sudo -u " + user + " VBoxManage storageattach " + service
-						+ " --storagectl \"SAS\" --port 2 --device 0 --type dvddrive --medium " + installIso,
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"SAS-2-0\"",
-				"\\\"SAS-2-0\\\"=\\\"" + installIso + "\\\"", "pass",
-				"Couldn't attach the preseeded installation disk for " + service
-						+ ".  This service will not be installed."));
-
-		units.add(new SimpleUnit(service + "_guest_additions_iso_attached", service + "_sas_controller", "sudo -u "
-				+ user + " VBoxManage storageattach " + service
-				+ " --storagectl \"SAS\" --port 3 --device 0 --type dvddrive --medium /usr/share/virtualbox/VBoxGuestAdditions.iso",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"SAS-3-0\"",
-				"\\\"SAS-3-0\\\"=\\\"/usr/share/virtualbox/VBoxGuestAdditions.iso\\\"", "pass",
-				"Couldn't attach the VirtualBox Guest Additions disk for " + service
-						+ ".  Logs will not be pushed out to the hypervisor as expected."));
 
 		// Architecture setup
 		units.add(modifyVm(service, user, "paravirtprovider", "kvm")); // Default, make it explicit

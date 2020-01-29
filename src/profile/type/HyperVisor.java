@@ -288,12 +288,13 @@ public class HyperVisor extends AStructuredProfile {
 		
 		getNetworkModel().getServiceModel(service).getDisks().forEach((label, disk) -> {
 			// For now, do all this as root. We probably want to move to another user, idk
-			units.add(new SimpleUnit(service + "_boot_disk_loopback_mounted", service + "_boot_disk_formatted",
+			
+			units.add(new SimpleUnit(service + "_" + disk.getLabel() + "_disk_loopback_mounted", service + "_" + disk.getLabel() + "_disk_formatted",
 					"sudo bash -c '" + " export LIBGUESTFS_BACKEND_SETTINGS=force_tcg;" + " guestmount -a " + disk.getFilename() + " -i" // Inspect the disk for the relevant partition
 							+ " -o direct_io" // All read operations must be done against live, not cache
 							+ " --ro" // _MOUNT THE DISK READ ONLY_
-							+ " " + disk.getFilename().getParent() + "live/" + "'",
-					"sudo mount | grep " + disk.getFilename().getParent(), "", "fail",
+							+ " " + disk.getFilePath() + "/live/" + "'",
+					"sudo mount | grep " + disk.getFilePath(), "", "fail",
 					"I was unable to loopback mount the " + label + " disk for " + service + " in " + getLabel() + "."));
 		});
 		
