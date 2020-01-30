@@ -42,7 +42,7 @@ public class ServiceModel extends ServerModel {
 			NoSuchMethodException, SecurityException, ClassNotFoundException, URISyntaxException, AddressException,
 			IOException, JsonParsingException, AThornSecException {
 		super(label, networkModel);
-		this.setHypervisor(getNetworkModel().getData().getService(getLabel()).getHypervisor());
+		setHypervisor(getNetworkModel().getData().getService(getLabel()).getHypervisor());
 
 	@Override
 	public Collection<IUnit> getUnits() throws AThornSecException {
