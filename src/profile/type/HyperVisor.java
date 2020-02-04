@@ -109,15 +109,6 @@ public class HyperVisor extends AStructuredProfile {
 
 		this.hypervisor = new Virtualisation(label, networkModel);
 		this.services = null;
-
-		((HypervisorData)getNetworkModel().getData().getServers().get(label)).getServices().forEach(server -> {
-			try {
-				addService(server.getLabel(), getNetworkModel().getServerModel(server.getLabel()));
-			} catch (InvalidServerModelException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		});
 	}
 
 	public void addService(String label, ServerModel service) {
@@ -253,6 +244,15 @@ public class HyperVisor extends AStructuredProfile {
 	public Collection<IUnit> getLiveConfig() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
+		((HypervisorData)getNetworkModel().getData().getServers().get(getLabel())).getServices().forEach(server -> {
+			try {
+				addService(server.getLabel(), getNetworkModel().getServerModel(server.getLabel()));
+			} catch (InvalidServerModelException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+		
 		for (final String service : getServices().keySet()) {
 			units.addAll(getISODownloadUnits(getNetworkModel().getData().getDebianIsoUrl(service), getNetworkModel().getData().getDebianIsoSha512(service)));
 			units.addAll(getUserPasswordUnits(service));
