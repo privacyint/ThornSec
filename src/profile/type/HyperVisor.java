@@ -50,12 +50,14 @@ import core.unit.fs.FileChecksumUnit.Checksum;
 import core.unit.fs.FileDownloadUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import profile.HypervisorScripts;
 import profile.stack.Virtualisation;
 
 public class HyperVisor extends AStructuredProfile {
 
-	// TODO: roll scripts back in
 	private final Virtualisation hypervisor;
+	private final HypervisorScripts scripts;
+	
 	private Map<String, ServerModel> services;
 
 	public HyperVisor(String label, NetworkModel networkModel) throws InvalidServerModelException, JsonParsingException, ADataException {
@@ -108,6 +110,7 @@ public class HyperVisor extends AStructuredProfile {
 		}
 
 		this.hypervisor = new Virtualisation(label, networkModel);
+		this.scripts = new HypervisorScripts(label, networkModel);
 		this.services = null;
 	}
 
@@ -128,6 +131,7 @@ public class HyperVisor extends AStructuredProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.hypervisor.getInstalled());
+		units.addAll(this.scripts.getInstalled());
 
 		units.add(new DirUnit("media_dir", "proceed", getNetworkModel().getData().getHypervisorThornsecBase(getLabel()).toString()));
 
@@ -139,7 +143,7 @@ public class HyperVisor extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentConfig() throws InvalidServerModelException {
+	protected Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		final FileUnit fuseConf = new FileUnit("fuse", "proceed", "/etc/fuse.conf");
@@ -147,15 +151,17 @@ public class HyperVisor extends AStructuredProfile {
 		fuseConf.appendLine("#user_allow_other");
 
 		units.addAll(this.hypervisor.getPersistentConfig());
+		units.addAll(this.scripts.getPersistentConfig());
 
 		return units;
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.hypervisor.getPersistentFirewall());
+		units.addAll(this.scripts.getPersistentFirewall());
 
 		getNetworkModel().getServerModel(getLabel()).addEgress("gensho.ftp.acc.umu.se:80");
 		getNetworkModel().getServerModel(getLabel()).addEgress("github.com:443");
@@ -269,6 +275,7 @@ public class HyperVisor extends AStructuredProfile {
 		}
 
 		units.addAll(this.hypervisor.getLiveConfig());
+		units.addAll(this.scripts.getLiveConfig());
 		
 		return units;
 	}

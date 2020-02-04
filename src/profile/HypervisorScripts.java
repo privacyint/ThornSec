@@ -36,7 +36,7 @@ public class HypervisorScripts extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() {
+	public Collection<IUnit> getInstalled() {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("metal_git", "proceed", "git"));
@@ -47,7 +47,7 @@ public class HypervisorScripts extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentConfig() throws InvalidServerException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		this.vmBase = getNetworkModel().getData().getHypervisorThornsecBase(getLabel());
