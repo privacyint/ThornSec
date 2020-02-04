@@ -127,4 +127,18 @@ public class ServiceData extends ServerData {
 		return this.debianISOSHA512;
 	}
 
+	/**
+	 * @return The boot disk size, or null 
+	 */
+	public Integer getBootDiskSize() {
+		return getDisk("boot").getSize();
+	}
+
+	/**
+	 * @return The data disk size, or null 
+	 */
+	public Integer getDataDiskSize() {
+		return getDisk("data").getSize();
+	}
+
 }
