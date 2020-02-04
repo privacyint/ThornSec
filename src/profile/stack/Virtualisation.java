@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import javax.swing.JOptionPane;
-import org.apache.commons.io.FilenameUtils;
 import core.StringUtils;
 import core.exception.data.NoValidUsersException;
 import core.exception.data.machine.InvalidServerException;

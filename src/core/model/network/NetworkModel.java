@@ -123,7 +123,6 @@ public class NetworkModel {
 				
 				if (this.getData().getTypes(serverLabel).contains(MachineType.SERVICE)) {
 					server = new ServiceModel(serverLabel, this);
-					
 				}
 				else {
 					server = new ServerModel(serverLabel, this);
