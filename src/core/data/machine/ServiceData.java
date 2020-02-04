@@ -63,8 +63,8 @@ public class ServiceData extends ServerData {
 			}
 		}
 
-		this.debianISOURL = data.getString("debianisourl", null);
-		this.debianISOSHA512 = data.getString("debianisosha512", null);
+		this.debianISOURL = data.getString("debian_iso_url", null);
+		this.debianISOSHA512 = data.getString("debian_iso_sha512", null);
 
 		// Force it to recognise us as a service...
 		if ((getTypes() == null) || !getTypes().contains(MachineType.SERVICE)) {
