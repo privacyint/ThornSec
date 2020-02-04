@@ -76,6 +76,11 @@ public class ServiceData extends ServerData {
 		}
 	}
 
+	/**
+	 * Get all of the disks associated with this Service
+	 * 
+	 * @return a Map<label, DiskData> of all disks
+	 */
 	public final Map<String, DiskData> getDisks() {
 		return this.disks;
 	}
