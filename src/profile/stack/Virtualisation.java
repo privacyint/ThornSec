@@ -126,8 +126,6 @@ public class Virtualisation extends AStructuredProfile {
 		buildIso += " sed -i \"s_append_append file=/cdrom/preseed.cfg auto=true_g\" isolinux/gtk.cfg;";
 		// Switch off vga and add console
 		buildIso += " sed -i \"s_vga=788_vga=none console=ttyS0,115200n8_g\" isolinux/gtk.cfg;";
-		// Point at non-graphical installer
-		buildIso += " sed -i \"s_/install.amd/gtk/initrd.gz_/install.amd/initrd.gz_g\" isolinux/gtk.cfg;";
 		// Redirect output to console
 		buildIso += " sed -i \"s_quiet_console=ttyS0,115200n8_g\" isolinux/gtk.cfg;";
 		// Rebuild md5sums to reflect changes
