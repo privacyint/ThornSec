@@ -83,7 +83,12 @@ public class ServiceData extends ServerData {
 	 * @return the DiskData
 	 */
 	public final DiskData getDisk(String label) {
-		return getDisks().get(label);
+		try {
+			return getDisks().getOrDefault(label, null);
+		}
+		catch (NullPointerException e) {
+			return null;
+		}
 	}
 	
 	/**
@@ -131,14 +136,24 @@ public class ServiceData extends ServerData {
 	 * @return The boot disk size, or null 
 	 */
 	public Integer getBootDiskSize() {
-		return getDisk("boot").getSize();
+		try {
+			return getDisk("boot").getSize();
+		}
+		catch (NullPointerException e) {
+			return null;
+		}
 	}
 
 	/**
 	 * @return The data disk size, or null 
 	 */
 	public Integer getDataDiskSize() {
-		return getDisk("data").getSize();
+		try {
+			return getDisk("data").getSize();
+		}
+		catch (NullPointerException e) {
+			return null;
+		}
 	}
 
 }
