@@ -108,6 +108,9 @@ public class NetworkData extends AData {
 	private static final Integer MACHINE_SSH_PORT = 65422;
 	private static final Integer MACHINE_ADMIN_PORT = 65422;
 
+	private static final Integer SERVICE_BOOT_DISK_SIZE = (8 * 1024);
+	private static final Integer SERVICE_DATA_DISK_SIZE = (20 * 1024);
+
 	private String myUser;
 	private IPAddress configIP;
 	private String domain;
@@ -911,5 +914,29 @@ public class NetworkData extends AData {
 
 	public ServiceData getService(String label) {
 		return (ServiceData) this.getServer(label);
+	}
+
+	public Integer getBootDiskSize(String service) {
+		Integer size = getService(service).getBootDiskSize();
+
+		if (size == null) {
+			size = this.defaultServiceData.getBootDiskSize();
+			if (size == null) {
+				return NetworkData.SERVICE_BOOT_DISK_SIZE;
+			}
+		}
+		return size;
+	}
+	
+	public Integer getDataDiskSize(String service) {
+		Integer size = getService(service).getDataDiskSize();
+
+		if (size == null) {
+			size = this.defaultServiceData.getDataDiskSize();
+			if (size == null) {
+				return NetworkData.SERVICE_DATA_DISK_SIZE;
+			}
+		}
+		return size;
 	}
 }
