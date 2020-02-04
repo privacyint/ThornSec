@@ -25,6 +25,7 @@ import core.data.machine.AMachineData.MachineType;
 import core.data.machine.HypervisorData;
 import core.data.machine.UserDeviceData;
 import core.data.machine.configuration.NetworkInterfaceData;
+import core.data.machine.configuration.DiskData.Medium;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.AThornSecException;
 import core.exception.data.ADataException;
@@ -36,6 +37,7 @@ import core.exec.network.APassphrase;
 import core.exec.network.OpenKeePassPassphrase;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
+import core.model.machine.configuration.DiskModel;
 import core.model.machine.configuration.networking.DHCPClientInterfaceModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.machine.configuration.networking.StaticInterfaceModel;
@@ -174,19 +176,21 @@ public class HyperVisor extends AStructuredProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		String filename = null;
+		String cleanedFilename = null;
 
 		try {
-			filename = StringUtils.stringToAlphaNumeric(Paths.get(new URI(url).getPath()).getFileName().toString(), "_");
+			filename = Paths.get(new URI(url).getPath()).getFileName().toString();
+			cleanedFilename = StringUtils.stringToAlphaNumeric(filename, "_");
 		}
 		catch (final Exception e) {
 			JOptionPane.showMessageDialog(null, "It doesn't appear that " + url + " is a valid link to a Debian ISO.\n\nPlease fix this in your JSON");
 			System.exit(1);
 		}
 
-		units.add(new FileDownloadUnit("debian_netinst_iso_" + filename, "metal_genisoimage_installed", url,
+		units.add(new FileDownloadUnit(cleanedFilename, "metal_genisoimage_installed", url,
 				getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/" + filename,
 				"The Debian net install ISO couldn't be downloaded.  Please check the URI in your config."));
-		units.add(new FileChecksumUnit("debian_netinst_iso", "debian_netinst_iso_" + filename + "_downloaded", Checksum.SHA512,
+		units.add(new FileChecksumUnit(cleanedFilename, cleanedFilename + "_downloaded", Checksum.SHA512,
 				getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/" + filename, checksum,
 				"The sha512 sum of the Debian net install in your config doesn't match what has been downloaded."
 				+ " This could mean your connection is man-in-the-middle'd, that the download was corrupted,"
@@ -286,7 +290,7 @@ public class HyperVisor extends AStructuredProfile {
 	private Collection<IUnit> getDiskLoopbackUnits(String service) throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 		
-		getNetworkModel().getServiceModel(service).getDisks().forEach((label, disk) -> {
+		for (DiskModel disk : getNetworkModel().getServiceModel(service).getDisks().values().stream().filter(disk -> disk.getMedium() == Medium.DISK).toArray(DiskModel[]::new)) {
 			// For now, do all this as root. We probably want to move to another user, idk
 			
 			units.add(new SimpleUnit(service + "_" + disk.getLabel() + "_disk_loopback_mounted", service + "_" + disk.getLabel() + "_disk_formatted",
@@ -295,8 +299,8 @@ public class HyperVisor extends AStructuredProfile {
 							+ " --ro" // _MOUNT THE DISK READ ONLY_
 							+ " " + disk.getFilePath() + "/live/" + "'",
 					"sudo mount | grep " + disk.getFilePath(), "", "fail",
-					"I was unable to loopback mount the " + label + " disk for " + service + " in " + getLabel() + "."));
-		});
+					"I was unable to loopback mount the " + disk.getLabel() + " disk for " + service + " in " + getLabel() + "."));
+		}
 		
 		return units;
 	}
