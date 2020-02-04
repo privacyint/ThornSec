@@ -98,11 +98,11 @@ public class Virtualisation extends AStructuredProfile {
 		}
 
 		units.add(new DirUnit("iso_dir_" + service, "proceed", isoDir));
-		FileUnit preseedUnit = new FileUnit("preseed_" + service, "debian_netinst_iso_" + cleanedFilename + "_downloaded", isoDir + "preseed.cfg");
+		FileUnit preseedUnit = new FileUnit("preseed_" + service, cleanedFilename + "_downloaded", isoDir + "/preseed.cfg");
 		preseedUnit.appendLine(preseed);
 		units.add(preseedUnit);
-		units.add(new FileOwnUnit("preseed_" + service, "preseed_" + service, isoDir + "preseed.cfg", "root"));
-		units.add(new FilePermsUnit("preseed_" + service, "preseed_" + service + "_chowned", isoDir + "preseed.cfg",
+		units.add(new FileOwnUnit("preseed_" + service, "preseed_" + service, isoDir + "/preseed.cfg", "root"));
+		units.add(new FilePermsUnit("preseed_" + service, "preseed_" + service + "_chowned", isoDir + "/preseed.cfg",
 				"700"));
 
 		String buildIso = "";
@@ -139,8 +139,8 @@ public class Virtualisation extends AStructuredProfile {
 		buildIso += " rm -R cd loopdir;";
 		buildIso += "'";
 
-		units.add(new SimpleUnit("build_iso_" + service, "debian_netinst_iso_" + cleanedFilename + "_downloaded",
-				buildIso, "test -f " + isoDir + service + ".iso && echo 'pass' || echo 'fail'", "pass", "pass",
+		units.add(new SimpleUnit("build_iso_" + service, cleanedFilename + "_downloaded",
+				buildIso, "test -f " + isoDir + "/" + service + ".iso && echo 'pass' || echo 'fail'", "pass", "pass",
 				"Couldn't create the install ISO for " + service + ".  This service won't be able to install."));
 
 		return units;
