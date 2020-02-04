@@ -43,7 +43,7 @@ public class ServiceModel extends ServerModel {
 		super(label, networkModel);
 		setHypervisor(getNetworkModel().getData().getService(getLabel()).getHypervisor());
 
-		Collection<DiskData> disks = getNetworkModel().getData().getDisks(getLabel()); //.getServiceModel(label).getDisks().values();
+		Collection<DiskData> disks = getNetworkModel().getData().getDisks(getLabel()).values();
 
 		if (disks != null) {
 			disks.forEach(diskData -> {

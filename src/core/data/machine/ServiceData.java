@@ -11,7 +11,9 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.json.JsonObject;
@@ -32,7 +34,7 @@ public class ServiceData extends ServerData {
 	private String debianISOURL;
 	private String debianISOSHA512;
 
-	private Collection<DiskData> disks;
+	private Map<String, DiskData> disks;
 
 	private Integer backupFrequency;
 
@@ -52,14 +54,14 @@ public class ServiceData extends ServerData {
 		super.read(data);
 
 		if (data.containsKey("disks")) {
-			this.disks = new HashSet<>();
+			this.disks = new LinkedHashMap<>();
 			final JsonObject disks = data.getJsonObject("disks");
 
 			for (final String diskLabel : disks.keySet()) {
 				final DiskData diskData = new DiskData(diskLabel);
 				diskData.read(disks.getJsonObject(diskLabel));
 
-				this.disks.add(diskData);
+				this.disks.put(diskLabel, diskData);
 			}
 		}
 
@@ -74,7 +76,7 @@ public class ServiceData extends ServerData {
 		}
 	}
 
-	public final Collection<DiskData> getDisks() {
+	public final Map<String, DiskData> getDisks() {
 		return this.disks;
 	}
 
