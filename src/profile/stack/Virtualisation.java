@@ -147,7 +147,7 @@ public class Virtualisation extends AStructuredProfile {
 		String user            = getNetworkModel().getData().getUser();
 		String sshDir          = "/home/" + user + "/.ssh";
 		String pubKey          = getNetworkModel().getData().getSSHKey(user);
-		String hostname        = service;
+		String hostname        = StringUtils.stringToAlphaNumeric(service, "-");
 		String domain          = getNetworkModel().getServerModel(service).getDomain().getHost();
 		String fullName        = ((UserDeviceData) getNetworkModel().getData().getUserDevices().get(user)).getFullName();
 		String debianMirror    = getNetworkModel().getData().getDebianMirror(service).toString();
