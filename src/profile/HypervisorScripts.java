@@ -7,7 +7,6 @@
  */
 package profile;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -23,7 +22,7 @@ import core.unit.pkg.InstalledUnit;
 
 public class HypervisorScripts extends AStructuredProfile {
 
-	private File vmBase;
+	private String vmBase;
 
 	private String scriptsBase;
 	private String recoveryScriptsBase;
