@@ -265,17 +265,28 @@ public class Virtualisation extends AStructuredProfile {
 		// Set up VM's storage
 		
 		// Disk controller setup
-		units.add(new SimpleUnit(service + "_sas_controller", service + "_exists",
-				"sudo -u " + user + " VBoxManage storagectl " + service	+ " --name \"SAS\""
+		units.add(new SimpleUnit(service + "_hdds_sas_controller", service + "_exists",
+				"sudo -u " + user + " VBoxManage storagectl " + service	+ " --name \"HDDs\""
 						+ " --add sas"
 						+ " --controller LSILogicSAS"
-						+ " --portcount 2"
+						+ " --portcount " + disks.values().stream().filter(disk -> disk.getMedium() == Medium.DISK).count()
 						+ " --hostiocache off",
 				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^storagecontrollername0=",
-				"storagecontrollername0=\\\"HDD\\\"", "pass",
-				"The SAS controller for " + service + " (where its disks are attached) Couldn't be created/attached to "
+				"storagecontrollername0=\\\"HDDs\\\"", "pass",
+				"The hard drive SAS controller for " + service + " (where its disks are attached) Couldn't be created/attached to "
 						+ service + ".  This is fatal, " + service + " will not be installed."));
-
+		
+		units.add(new SimpleUnit(service + "_dvds_ide_controller", service + "_exists",
+				"sudo -u " + user + " VBoxManage storagectl " + service	+ " --name \"DVDs\""
+						+ " --add ide"
+						+ " --controller PIIX4"
+						//+ " --portcount " + disks.values().stream().filter(disk -> disk.getMedium() == Medium.DVD).count()
+						+ " --hostiocache off",
+				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^storagecontrollername1=",
+				"storagecontrollername1=\\\"DVDs\\\"", "pass",
+				"The DVD SAS controller for " + service + " (where its disks are attached) Couldn't be created/attached to "
+						+ service + ".  This is fatal, " + service + " will not be installed."));
+		
 		int deviceCounter = 0;
 		for (DiskModel disk : disks.values().stream().filter(disk -> disk.getMedium() == Medium.DISK).toArray(DiskModel[]::new)) {
 			units.add(new DirUnit(disk.getLabel() + "_disk_dir_" + service, "proceed", disk.getFilePath()));
@@ -300,18 +311,18 @@ public class Virtualisation extends AStructuredProfile {
 			
 			String diskAttach = "";
 			diskAttach += "sudo -u " + user + " VBoxManage storageattach " + service;
-			diskAttach += " --storagectl \"SAS\"";
-			diskAttach += " --port 0";
-			diskAttach += " --device " + deviceCounter;
+			diskAttach += " --storagectl \"HDDs\"";
+			diskAttach += " --port " + deviceCounter;
+			diskAttach += " --device 0";
 			diskAttach += " --type hdd";
 			diskAttach += " --medium " + disk.getFilename();
-			diskAttach += (disk.getLabel().contentEquals("boot")) ? " --bootable on" : " --bootable -off";
-			diskAttach += " --comment \\\"" + disk.getComment() + "\\\";";
+			//diskAttach += (disk.getLabel().contentEquals("boot")) ? " --bootable on" : " --bootable -off";
+			//diskAttach += " --comment \\\"" + disk.getComment() + "\\\";";
 			
-			units.add(new SimpleUnit(service + "_" + disk.getLabel() + "_disk_attached", service + "_sas_controller",
+			units.add(new SimpleUnit(service + "_" + disk.getLabel() + "_disk_attached", service + "_hdds_sas_controller",
 					diskAttach,
-					"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"SAS-0-" + deviceCounter + "\"",
-					"\\\"SAS-0-" + deviceCounter + "\\\"=\\\"" + disk.getFilename() + "\\\"", "pass",
+					"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"HDDs-0-" + deviceCounter + "\"",
+					"\\\"HDDs-0-" + deviceCounter + "\\\"=\\\"" + disk.getFilename() + "\\\"", "pass",
 					"Couldn't attach disk " + disk.getLabel() + "for " + service + "."));
 
 			deviceCounter++;
@@ -321,23 +332,22 @@ public class Virtualisation extends AStructuredProfile {
 		for (DiskModel disk : disks.values().stream().filter(disk -> disk.getMedium() == Medium.DVD).toArray(DiskModel[]::new)) {
 			String diskAttach = "";
 			diskAttach += "sudo -u " + user + " VBoxManage storageattach " + service;
-			diskAttach += " --storagectl \"SAS\"";
-			diskAttach += " --port 1";
-			diskAttach += " --device " + deviceCounter;
-			diskAttach += " --type dvd";
+			diskAttach += " --storagectl \"DVDs\"";
+			diskAttach += " --port " + deviceCounter;
+			diskAttach += " --device 0";
+			diskAttach += " --type dvddrive";
 			diskAttach += " --medium " + disk.getFilename();
-			diskAttach += (disk.getLabel().contentEquals("boot")) ? " --bootable on" : " --bootable -off";
-			diskAttach += " --comment \\\"" + disk.getComment() + "\\\";";
+			//diskAttach += (disk.getLabel().contentEquals("boot")) ? " --bootable on" : " --bootable -off";
+			//diskAttach += " --comment \\\"" + disk.getComment() + "\\\";";
 			
-			units.add(new SimpleUnit(service + "_" + disk.getLabel() + "_disk_attached", service + "_sas_controller",
+			units.add(new SimpleUnit(service + "_" + disk.getLabel() + "_disk_attached", service + "_dvds_ide_controller",
 					diskAttach,
-					"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"SAS-0-" + deviceCounter + "\"",
-					"\\\"SAS-0-" + deviceCounter + "\\\"=\\\"" + disk.getFilename() + "\\\"", "pass",
-					"Couldn't attach disk " + disk.getLabel() + "for " + service + "."));
+					"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"DVDs-0-" + deviceCounter + "\"",
+					"\\\"DVDs-" + deviceCounter + "-0\\\"=\\\"" + disk.getFilename() + "\\\"", "pass",
+					"Couldn't attach disk " + disk.getLabel() + " for " + service + "."));
 
 			deviceCounter++;
 		};
-		
 		
 		units.add(new DirUnit("log_dir_" + service, "proceed", logDir));
 		units.add(new DirOwnUnit("log_dir_" + service, "log_dir_" + service + "_created", logDir, user, group));
@@ -373,10 +383,10 @@ public class Virtualisation extends AStructuredProfile {
 		// brought up
 		units.add(modifyVm(service, user, "boot1", "disk",
 				"Couldn't set the boot order for " + service + ".  This may mean the service will not be installed.",
-				service + "_sas_controller"));
+				service + "_hdds_sas_controller"));
 		units.add(modifyVm(service, user, "boot2", "dvd",
 				"Couldn't set the boot order for " + service + ".  This may mean the service will not be installed.",
-				service + "_sas_controller"));
+				service + "_dvds_ide_controller"));
 
 		// Audio setup (switch it off)
 		units.add(modifyVm(service, user, "audio", "none"));
