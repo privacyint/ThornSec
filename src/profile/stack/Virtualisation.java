@@ -358,7 +358,7 @@ public class Virtualisation extends AStructuredProfile {
 		units.add(new DirPermsUnit("backup_dir_" + service, "backup_dir_" + service + "_chowned", backupTargetDir, "750"));
 		// Mark the backup destination directory as a valid destination
 		units.add(new FileUnit(service + "_mark_backup_dir", "backup_dir_" + service + "_chmoded",
-				"In memoriam Luke and Guy.  Miss you two!", backupTargetDir + "/backup.marker"));
+				backupTargetDir + "/backup.marker", "In memoriam Luke and Guy.  Miss you two!"));
 
 		units.add(new DirUnit("socket_dir_" + service, "proceed", ttySocketDir));
 		units.add(new DirOwnUnit("socket_dir_" + service, "socket_dir_" + service + "_created", ttySocketDir, user,	group));
