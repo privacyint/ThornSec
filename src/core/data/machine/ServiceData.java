@@ -77,6 +77,16 @@ public class ServiceData extends ServerData {
 	}
 
 	/**
+	 * Get a given DiskData from its label
+	 * 
+	 * @param label the DiskData label
+	 * @return the DiskData
+	 */
+	public final DiskData getDisk(String label) {
+		return getDisks().get(label);
+	}
+	
+	/**
 	 * Get all of the disks associated with this Service
 	 * 
 	 * @return a Map<label, DiskData> of all disks
