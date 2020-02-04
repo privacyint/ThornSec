@@ -105,39 +105,35 @@ public class Virtualisation extends AStructuredProfile {
 		units.add(new FilePermsUnit("preseed_" + service, "preseed_" + service + "_chowned", isoDir + "/preseed.cfg",
 				"700"));
 
-		String buildIso = "";
-		buildIso += "sudo bash -c '";
+		String buildIso = "\n";
+		buildIso += "\tsudo bash -c '\n";
 		// Create a working copy of the iso for preseeding
-		buildIso += " cd " + isoDir + ";";
-		buildIso += " mkdir loopdir;";
-		buildIso += " mount -o loop " + getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/"
-				+ filename + " loopdir;";
-		buildIso += " mkdir cd;";
-		buildIso += " rsync -a -H --exclude=TRANS.TBL loopdir/ cd;";
-		buildIso += " umount loopdir;";
-		buildIso += " cd cd;";
-		// Copy our preseed over to the working copy
-		buildIso += " cp ../preseed.cfg .;";
+		buildIso += "\t\tcd " + isoDir + ";\n";
+		buildIso += "\t\tmkdir loopdir;\n";
+		buildIso += "\t\tmount -o loop " + getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/"	+ filename + " loopdir;\n";
+		buildIso += "\t\tmkdir cd;\n";
+		buildIso += "\t\trsync -a -H --exclude=TRANS.TBL loopdir/ cd;\n";
+		buildIso += "\t\tumount loopdir;\n";
+		buildIso += "\t\tcd cd;\n";
+		// Add our preseed directly to the initrd as per https://wiki.debian.org/DebianInstaller/Preseed/EditIso
+		buildIso += "\t\tgunzip install.*/initrd.gz;\n";
+		buildIso += "\t\techo ../preseed.cfg | cpio -H newc -o -A -F install.*/initrd;\n";
+		buildIso += "\t\tgzip install.*/initrd;\n";
 		// Set the menu timeout to 1 second, otherwise it waits for user input
-		buildIso += " sed -i \"s/timeout 0/timeout 1/g\" isolinux/isolinux.cfg;";
-		// Switch off graphical menu
-		buildIso += " sed -i \"s/^default/#default/g\" isolinux/isolinux.cfg;";
-		// Append the preseed to the boot line
-		buildIso += " sed -i \"s_append_append file=/cdrom/preseed.cfg auto=true_g\" isolinux/gtk.cfg;";
-		// Switch off vga and add console
-		buildIso += " sed -i \"s_vga=788_vga=none console=ttyS0,115200n8_g\" isolinux/gtk.cfg;";
-		// Redirect output to console
-		buildIso += " sed -i \"s_quiet_console=ttyS0,115200n8_g\" isolinux/gtk.cfg;";
+		buildIso += "\t\tsed -i \"s/timeout 0/timeout 1/g\" isolinux/isolinux.cfg;\n";
+		// Switch off default menu
+		buildIso += "\t\tsed -i \"s/^default/#default/g\" isolinux/isolinux.cfg;\n";
+		// Switch off vga and add console to *all* boot lines
+		buildIso += "\t\tsed -i \"s_vga=788_vga=none console=ttyS0,115200n8_g\" isolinux/*.cfg;\n";
 		// Rebuild md5sums to reflect changes
-		buildIso += " md5sum `find -follow -type f` > md5sum.txt;";
-		buildIso += "' > /dev/null 2>&1;";
+		buildIso += "\t\tmd5sum `find -follow -type f` > md5sum.txt;\n";
+		buildIso += "\t' > /dev/null 2>&1;\n";
 		// Create our new preseeded image
-		buildIso += "sudo bash -c '";
-		buildIso += "cd " + isoDir + ";";
-		buildIso += " genisoimage -o " + service
-				+ ".iso -r -J -no-emul-boot -boot-load-size 4 -boot-info-table -b isolinux/isolinux.bin -c isolinux/boot.cat ./cd;";
-		buildIso += " rm -R cd loopdir;";
-		buildIso += "'";
+		buildIso += "\tsudo bash -c '\n";
+		buildIso += "\t\tcd " + isoDir + ";\n";
+		buildIso += "\t\tgenisoimage -o " + service+ ".iso -r -J -no-emul-boot -boot-load-size 4 -boot-info-table -b isolinux/isolinux.bin -c isolinux/boot.cat ./cd;\n";
+		buildIso += "\t\trm -R cd loopdir;\n";
+		buildIso += "\t'";
 
 		units.add(new SimpleUnit("build_iso_" + service, cleanedFilename + "_downloaded",
 				buildIso, "test -f " + isoDir + "/" + service + ".iso && echo 'pass' || echo 'fail'", "pass", "pass",
