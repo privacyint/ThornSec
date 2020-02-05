@@ -20,6 +20,7 @@ import javax.json.stream.JsonParsingException;
 
 import core.data.machine.configuration.DiskData;
 import core.exception.data.ADataException;
+import core.exception.data.InvalidPropertyException;
 import profile.type.HyperVisor;
 
 /**
@@ -37,6 +38,8 @@ public class ServiceData extends ServerData {
 
 	private Integer backupFrequency;
 
+	private Integer cpuExecutionCap;
+
 	public ServiceData(String label) {
 		super(label);
 
@@ -45,6 +48,8 @@ public class ServiceData extends ServerData {
 		this.debianISOURL = null;
 		this.debianISOSHA512 = null;
 
+		this.cpuExecutionCap = null;
+		
 		this.disks = null;
 	}
 
@@ -73,6 +78,18 @@ public class ServiceData extends ServerData {
 			types.add(MachineType.SERVICE);
 			setTypes(types);
 		}
+		
+		if (data.containsKey("cpu_execution_cap")) {
+			setCPUExecutionCap(data.getInt("cpu_execution_cap"));
+		}
+	}
+
+	public void setCPUExecutionCap(Integer capPct) throws InvalidPropertyException {
+		if (capPct < 1 || capPct > 100) {
+			throw new InvalidPropertyException("CPU Execution Cap must be an integer between 1-100");
+		}
+		
+		this.cpuExecutionCap = capPct;
 	}
 
 	/**
@@ -153,6 +170,13 @@ public class ServiceData extends ServerData {
 		catch (NullPointerException e) {
 			return null;
 		}
+	}
+
+	/**
+	 * @return The CPU execution cap as an Integer {1-100}
+	 */
+	public Integer getCPUExecutionCap() {
+		return this.cpuExecutionCap;
 	}
 
 }

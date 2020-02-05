@@ -111,6 +111,8 @@ public class NetworkData extends AData {
 	private static final Integer SERVICE_BOOT_DISK_SIZE = (8 * 1024);
 	private static final Integer SERVICE_DATA_DISK_SIZE = (20 * 1024);
 
+	private static final Integer SERVICE_CPU_EXECUTION_CAP = 100;
+
 	private String myUser;
 	private IPAddress configIP;
 	private String domain;
@@ -938,5 +940,17 @@ public class NetworkData extends AData {
 			}
 		}
 		return size;
+	}
+
+	public Integer getCPUExecutionCap(String service) {
+		Integer cap = getService(service).getCPUExecutionCap();
+
+		if (cap == null) {
+			cap = this.defaultServiceData.getCPUExecutionCap();
+			if (cap == null) {
+				return NetworkData.SERVICE_CPU_EXECUTION_CAP;
+			}
+		}
+		return cap;
 	}
 }

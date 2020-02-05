@@ -367,6 +367,7 @@ public class Virtualisation extends AStructuredProfile {
 		units.add(modifyVm(service, user, "hwvirtex", "on"));
 		units.add(modifyVm(service, user, "pae", "on"));
 		units.add(modifyVm(service, user, "cpus", getNetworkModel().getData().getCPUs(service)));
+		units.add(modifyVm(service, user, "cpuexecutioncap", getNetworkModel().getData().getCPUExecutionCap(service)));
 
 		// RAM setup
 		units.add(modifyVm(service, user, "memory", getNetworkModel().getData().getRAM(service)));
