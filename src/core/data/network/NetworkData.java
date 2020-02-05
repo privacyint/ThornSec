@@ -98,7 +98,7 @@ public class NetworkData extends AData {
 	private static final String MACHINE_NETMASK = "/32";
 	private static final String MACHINE_KEEPASS_DB = "ThornSec.kdbx";
 	private static final String MACHINE_DOMAIN = "lan";
-	private static final String MACHINE_NETWORK_INTERFACE = "enp0s7"; // TODO: this is from memory
+	private static final String MACHINE_NETWORK_INTERFACE = "enp0s7";
 
 	private static final Inet MACHINE_INET = Inet.STATIC;
 
