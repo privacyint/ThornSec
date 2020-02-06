@@ -178,8 +178,8 @@ public class Virtualisation extends AStructuredProfile {
 		
 		//Debian installer options.
 		preseed += "\n";
-		preseed += "d-i debian-installer/locale string en_US\n";
-		preseed += "d-i keyboard-configuration/xkb-keymap select us\n";
+		preseed += "d-i debian-installer/locale string en_GB.UTF-8\n";
+		preseed += "d-i keyboard-configuration/xkb-keymap select gb\n";
 		preseed += "d-i clock-setup/ntp boolean false\n";
 		preseed += "d-i netcfg/target_network_config select ifupdown\n";
 		preseed += "d-i netcfg/choose_interface select auto\n";
