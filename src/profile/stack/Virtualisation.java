@@ -214,7 +214,7 @@ public class Virtualisation extends AStructuredProfile {
 		preseed += "discover discover/install_hw_packages multiselect virtualbox-ose-guest-x11\n";
 		preseed += "popularity-contest popularity-contest/participate boolean false\n";
 		preseed += "d-i grub-installer/only_debian boolean true\n";
-		preseed += "d-i grub-installer/with_other_os boolean true\n";
+		preseed += "d-i grub-installer/with_other_os boolean false\n";
 		preseed += "d-i grub-installer/bootdev string default\n";
 		preseed += "d-i finish-install/reboot_in_progress note";
 
