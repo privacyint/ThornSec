@@ -149,7 +149,7 @@ public class Virtualisation extends AStructuredProfile {
 		String hostname        = StringUtils.stringToAlphaNumeric(service, "-");
 		String domain          = getNetworkModel().getServerModel(service).getDomain().getHost();
 		String fullName        = ((UserDeviceData) getNetworkModel().getData().getUserDevices().get(user)).getFullName();
-		String debianMirror    = getNetworkModel().getData().getDebianMirror(service).toString();
+		String debianMirror    = getNetworkModel().getData().getDebianMirror(service).getHost();
 		String debianDirectory = getNetworkModel().getData().getDebianDirectory(service);
 
 		String preseed = "";
