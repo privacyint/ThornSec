@@ -7,6 +7,7 @@
  */
 package core.unit;
 
+import java.util.regex.Pattern;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
 
@@ -33,7 +34,7 @@ public abstract class AUnit implements IUnit {
 	}
 
 	public AUnit(String label, String precondition, String config, String audit) {
-		this(label, precondition, config, audit, "Default failure message. Oops!");
+		this(label, precondition, config, audit, "Default failure message. Oops! I don't know whether this failure is good, bad, or indifferent.");
 	}
 	
 	public final String getLabel() {
@@ -48,7 +49,15 @@ public abstract class AUnit implements IUnit {
 
 	protected abstract String getDryRun();
 	
-	protected abstract String getMessage();
+	protected String getMessage() {
+		String message = this.message;
+		
+		message = Pattern.quote(message); //Turn special characters into literal so they don't get parsed out
+		message = message.substring(2, message.length()-2).trim(); //Remove '\Q' and '\E' from beginning/end since we're not using this as a regex
+		message = message.replace("\"", "\\\""); //Also, make sure quote marks are properly escaped!
+		
+		return message;
+	}
 	
 	public String genAudit(boolean quiet) {
 		String auditString = getLabel() + "=0;\n";

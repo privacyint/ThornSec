@@ -7,13 +7,10 @@
  */
 package core.unit;
 
-import java.util.regex.Pattern;
-
 public class SimpleUnit extends ComplexUnit {
 
 	protected String test;
 	protected String result;
-	protected String message;
 
 	/**
 	 * This is a unit test, with a default fail message.
@@ -29,7 +26,6 @@ public class SimpleUnit extends ComplexUnit {
 		super(name, precondition, config, audit);
 		this.test = test;
 		this.result = result;
-		this.message = "This is a placeholder.  I don't know whether this failure is good, bad, or indifferent.  I'm sorry!";
 	}
 	
 	/**
@@ -44,10 +40,9 @@ public class SimpleUnit extends ComplexUnit {
 	 * @param message      Custom fail message
 	 */
 	public SimpleUnit(String name, String precondition, String config, String audit, String test, String result, String message) {
-		super(name, precondition, config, audit);
+		super(name, precondition, config, audit, message);
 		this.test = test;
 		this.result = result;
-		this.message = message;
 	}
 
 	@Override
@@ -73,16 +68,4 @@ public class SimpleUnit extends ComplexUnit {
 	protected final String getResult() {
 		return this.result;
 	}
-	
-	@Override
-	protected final String getMessage() {
-		String message = this.message;
-		
-		message = Pattern.quote(message); //Turn special characters into literal so they don't get parsed out
-		message = message.substring(2, message.length()-2).trim(); //Remove '\Q' and '\E' from beginning/end since we're not using this as a regex
-		message = message.replace("\"", "\\\""); //Also, make sure quote marks are properly escaped!
-		
-		return message;
-	}
-
 }
