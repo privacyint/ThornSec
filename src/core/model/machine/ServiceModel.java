@@ -43,25 +43,33 @@ public class ServiceModel extends ServerModel {
 		super(label, networkModel);
 		setHypervisor(getNetworkModel().getData().getService(getLabel()).getHypervisor());
 
-		Map<String, DiskData> disks = getNetworkModel().getData().getDisks(getLabel());
+		final Map<String, DiskData> disks = getNetworkModel().getData().getDisks(getLabel());
 
 		if (disks != null) {
 			disks.values().forEach(diskData -> {
-				DiskModel disk = new DiskModel(diskData);
+				final DiskModel disk = new DiskModel(diskData);
 				try {
-					File diskPath = new File(getNetworkModel().getData().getHypervisorThornsecBase(hypervisor) + "/disks/"+disk.getLabel()+"/" + getLabel() + "/" + disk.getLabel() + "." + disk.getFormat().toString());
-					disk.setFilename(diskPath);
-					
+					if (disk.getFormat() == null) {
+						disk.setFormat(Format.VMDK);
+					}
+
 					if (disk.getLabel().equals("boot")) {
 						if (disk.getSize() == null) {
 							disk.setSize(getNetworkModel().getData().getBootDiskSize(getLabel()));
 						}
 					}
-					
+
 					if (disk.getSize() == null) {
 						disk.setSize(getNetworkModel().getData().getDataDiskSize(getLabel()));
 					}
-				} catch (InvalidServerException e) {
+
+					final File diskPath = new File(
+							getNetworkModel().getData().getHypervisorThornsecBase(this.hypervisor) + "/disks/"
+									+ disk.getLabel() + "/" + getLabel() + "/" + disk.getLabel() + "."
+									+ disk.getFormat().toString());
+					disk.setFilename(diskPath);
+
+				} catch (final InvalidServerException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
