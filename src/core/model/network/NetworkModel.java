@@ -7,13 +7,14 @@
  */
 package core.model.network;
 
-import java.io.File;
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
@@ -400,7 +401,13 @@ public class NetworkModel {
 	}
 
 	public final void auditNonBlock(String server, OutputStream out, InputStream in, boolean quiet) throws InvalidServerModelException {
-		final ManageExec exec = getManageExec(server, "audit", out, quiet);
+		ManageExec exec = null;
+		try {
+			exec = getManageExec(server, "audit", out, quiet);
+		} catch (InvalidServerModelException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		if (exec != null) {
 			exec.manage();
 		}
@@ -408,28 +415,34 @@ public class NetworkModel {
 
 	public final void auditAll(OutputStream out, InputStream in, boolean quiet) throws InvalidServerModelException {
 		for (final String server : getServers().keySet()) {
-			final ManageExec exec = getManageExec(server, "audit", out, quiet);
+			ManageExec exec = null;
+			try {
+				exec = getManageExec(server, "audit", out, quiet);
+			} catch (InvalidServerModelException | IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			if (exec != null) {
 				exec.manage();
 			}
 		}
 	}
 
-	public final void configNonBlock(String server, OutputStream out, InputStream in) throws InvalidServerModelException {
+	public final void configNonBlock(String server, OutputStream out, InputStream in) throws InvalidServerModelException, IOException {
 		final ManageExec exec = getManageExec(server, "config", out, false);
 		if (exec != null) {
 			exec.manage();
 		}
 	}
 
-	public final void dryrunNonBlock(String server, OutputStream out, InputStream in) throws InvalidServerModelException {
+	public final void dryrunNonBlock(String server, OutputStream out, InputStream in) throws InvalidServerModelException, IOException {
 		final ManageExec exec = getManageExec(server, "dryrun", out, false);
 		if (exec != null) {
 			exec.manage();
 		}
 	}
 
-	private final ManageExec getManageExec(String server, String action, OutputStream out, boolean quiet) throws InvalidServerModelException {
+	private final ManageExec getManageExec(String server, String action, OutputStream out, boolean quiet) throws InvalidServerModelException, IOException {
 		// need to do a series of local checks eg known_hosts or expected
 		// fingerprint
 		final OpenKeePassPassphrase pass = new OpenKeePassPassphrase(server, this);
@@ -440,7 +453,7 @@ public class NetworkModel {
 			try {
 				final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
 				final String filename = server + "_" + dateFormat.format(new Date()) + ".sh";
-				final PrintWriter wr = new PrintWriter(new FileOutputStream(new File("./", filename), false));
+				final Writer wr = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename), "UTF8"));
 				wr.write(audit);
 				wr.flush();
 				wr.close();
