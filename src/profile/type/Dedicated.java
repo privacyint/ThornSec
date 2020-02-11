@@ -10,6 +10,7 @@ package profile.type;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 import javax.json.stream.JsonParsingException;
 
@@ -37,43 +38,54 @@ public class Dedicated extends AStructuredProfile {
 		final ServerModel me = getNetworkModel().getServerModel(getLabel());
 
 		try {
-			for (final NetworkInterfaceData wanNic : networkModel.getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)) {
-				NetworkInterfaceModel link = null;
+			final Map<Direction, Collection<NetworkInterfaceData>> nics = networkModel.getData()
+					.getNetworkInterfaces(getLabel());
 
-				switch (wanNic.getInet()) {
-				case STATIC:
-					link = new StaticInterfaceModel(wanNic.getIface());
-					break;
-				case DHCP:
-					link = new DHCPClientInterfaceModel(wanNic.getIface());
-					// @TODO: DHCPClient is a raw socket. Fix that test.
-					break;
-				default:
-				}
-				link.addAddress(wanNic.getAddress());
-				link.setGateway(wanNic.getGateway());
-				link.setBroadcast(wanNic.getBroadcast());
-				link.setMac(wanNic.getMAC());
-				link.setIsIPMasquerading(true);
-				me.addNetworkInterface(link);
-			}
-			for (final NetworkInterfaceData lanNic : networkModel.getData().getNetworkInterfaces(getLabel()).get(Direction.LAN)) {
-				NetworkInterfaceModel link = null;
+			if (nics != null) {
+				if (nics.containsKey(Direction.WAN)) {
+					nics.get(Direction.WAN).forEach(nic -> {
+						NetworkInterfaceModel link = null;
 
-				switch (lanNic.getInet()) {
-				case STATIC:
-					link = new StaticInterfaceModel(lanNic.getIface());
-					break;
-				case DHCP:
-					link = new DHCPClientInterfaceModel(lanNic.getIface());
-					break;
-				default:
+						switch (nic.getInet()) {
+						case STATIC:
+							link = new StaticInterfaceModel(nic.getIface());
+							break;
+						case DHCP:
+							link = new DHCPClientInterfaceModel(nic.getIface());
+							// @TODO: DHCPClient is a raw socket. Fix that test.
+							break;
+						default:
+						}
+
+						link.addAddress(nic.getAddress());
+						link.setGateway(nic.getGateway());
+						link.setBroadcast(nic.getBroadcast());
+						link.setMac(nic.getMAC());
+						link.setIsIPMasquerading(true);
+						me.addNetworkInterface(link);
+					});
 				}
-				link.addAddress(lanNic.getAddress());
-				link.setGateway(lanNic.getGateway());
-				link.setBroadcast(lanNic.getBroadcast());
-				link.setMac(lanNic.getMAC());
-				me.addNetworkInterface(link);
+				if (nics.containsKey(Direction.LAN)) {
+					nics.get(Direction.LAN).forEach(nic -> {
+						NetworkInterfaceModel link = null;
+
+						switch (nic.getInet()) {
+						case STATIC:
+							link = new StaticInterfaceModel(nic.getIface());
+							break;
+						case DHCP:
+							link = new DHCPClientInterfaceModel(nic.getIface());
+							break;
+						default:
+						}
+
+						link.addAddress(nic.getAddress());
+						link.setGateway(nic.getGateway());
+						link.setBroadcast(nic.getBroadcast());
+						link.setMac(nic.getMAC());
+						me.addNetworkInterface(link);
+					});
+				}
 			}
 		} catch (final IOException e) {
 			e.printStackTrace();
