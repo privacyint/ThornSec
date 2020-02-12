@@ -226,7 +226,7 @@ public class ServerModel extends AMachineModel {
 
 		// Before we go any further... now the machine is at least up to date, and has a
 		// couple of useful diagnostics packages installed...
-		getNetworkInterfaces().values().forEach(nic -> {
+		getNetworkInterfaces().forEach(nic -> {
 			if (nic.getNetworkFile() != null) {
 				units.add(nic.getNetworkFile());
 			}

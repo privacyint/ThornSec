@@ -79,7 +79,7 @@ public class Device extends AStructuredProfile {
 				link.setGateway(lanNic.getGateway());
 				link.setBroadcast(lanNic.getBroadcast());
 				link.setMac(lanNic.getMAC());
-				me.addNetworkInterface(getLabel(), link);
+				me.addNetworkInterface(link);
 			}
 		} catch (final IOException e) {
 			e.printStackTrace();

@@ -18,10 +18,10 @@ import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -185,11 +185,11 @@ public class NetworkModel {
 		this.machines.put(type, machines);
 	}
 
-	public Map<String, NetworkInterfaceModel> getNetworkInterfaces(String machine) throws InvalidMachineModelException {
-		Map<String, NetworkInterfaceModel> interfaces = getMachineModel(machine).getNetworkInterfaces();
+	public Collection<NetworkInterfaceModel> getNetworkInterfaces(String machine) throws InvalidMachineModelException {
+		Collection<NetworkInterfaceModel> interfaces = getMachineModel(machine).getNetworkInterfaces();
 
 		if (interfaces == null) {
-			interfaces = new Hashtable<>();
+			interfaces = new ArrayList<>();
 		}
 
 		return interfaces;

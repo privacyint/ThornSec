@@ -528,16 +528,15 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		// First work out our Internet-facing NICs
 		try {
-			getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)
-					.forEach(nic -> {
-						String line = "";
-						line += ParentZone.INTERNET;
-						line += "\t" + nic.getIface();
-						line += "\t-\t";
-						line += (nic.getInet().equals(Inet.DHCP)) ? "dhcp," : "";
-						line += "routefilter,arp_filter";
-						interfaces.appendLine(line);
-					});
+			getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic -> {
+				String line = "";
+				line += ParentZone.INTERNET;
+				line += "\t" + nic.getIface();
+				line += "\t-\t";
+				line += (nic.getInet().equals(Inet.DHCP)) ? "dhcp," : "";
+				line += "routefilter,arp_filter";
+				interfaces.appendLine(line);
+			});
 		} catch (JsonParsingException | ADataException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -566,12 +565,11 @@ public class ShorewallFirewall extends AFirewallProfile {
 		final FileUnit masq = new FileUnit("shorewall_masquerades", "shorewall_installed",
 				CONFIG_BASEDIR + "/masq");
 		try {
-			getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)
-					.forEach(nic -> {
-						ParentZone.lanZone.forEach(zone -> {
-							masq.appendLine(nic.getIface() + "\t" + zone.toString());
-						});
-					});
+			getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic -> {
+				ParentZone.lanZone.forEach(zone -> {
+					masq.appendLine(nic.getIface() + "\t" + zone.toString());
+				});
+			});
 		} catch (JsonParsingException | ADataException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -596,14 +594,25 @@ public class ShorewallFirewall extends AFirewallProfile {
 	private String getAddresses(AMachineModel machine) {
 		final Collection<String> addresses = new ArrayList<>();
 
-		machine.getNetworkInterfaces().values().forEach(nic -> {
+		machine.getNetworkInterfaces().forEach(nic -> {
 			if (nic.getAddresses() != null) {
 				nic.getAddresses().forEach(address -> {
 					if (address != null) {
-						addresses.add(address.getLowerNonZeroHost().withoutPrefixLength()
-								.toCompressedString() + "/32");
+						addresses.add(address.getLowerNonZeroHost().withoutPrefixLength().toCompressedString() + "/32");
 					}
 				});
+			}
+		});
+
+		return String.join(",", addresses);
+	}
+
+	private String getAddresses(Collection<IPAddress> ips) {
+		final Collection<String> addresses = new ArrayList<>();
+
+		ips.forEach(address -> {
+			if (address != null) {
+				addresses.add(address.getLowerNonZeroHost().withoutPrefixLength().toCompressedString() + "/32");
 			}
 		});
 

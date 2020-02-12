@@ -59,7 +59,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 				// It's not a server, so can't possibly be a Router
 			}
 
-			for (final NetworkInterfaceModel nic : machine.getNetworkInterfaces().values()) {
+			for (final NetworkInterfaceModel nic : machine.getNetworkInterfaces()) {
 				// DHCP servers distribute IP addresses, correct? :)
 				if (nic.getAddresses() == null) {
 					ip = ip.increment(1);
@@ -79,7 +79,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	 * @throws InvalidNetworkInterfaceException
 	 */
 	private Boolean checkMACs(AMachineModel machine, Boolean isRequired) throws InvalidNetworkInterfaceException {
-		for (final NetworkInterfaceModel nic : machine.getNetworkInterfaces().values()) {
+		for (final NetworkInterfaceModel nic : machine.getNetworkInterfaces()) {
 			if (nic.getMac() == null) {
 				if (isRequired) {
 					throw new InvalidNetworkInterfaceException("Network interface " + nic.getIface() + " on " + machine.getLabel() + " requires a MAC address to be set.");
@@ -119,7 +119,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		// TODO: tidy up this loopy mess?
 		for (final ServerModel server : getNetworkModel().getServers(MachineType.SERVICE).values()) {
 			if (checkMACs(server, false) == false) {
-				for (final NetworkInterfaceModel nic : server.getNetworkInterfaces().values()) {
+				for (final NetworkInterfaceModel nic : server.getNetworkInterfaces()) {
 					if (nic.getMac() == null) {
 						nic.setMac(server.generateMAC(nic.getIface()));
 					}
@@ -223,7 +223,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 					continue;
 				}
 
-				for (final NetworkInterfaceModel iface : machine.getNetworkInterfaces().values()) {
+				for (final NetworkInterfaceModel iface : machine.getNetworkInterfaces()) {
 
 					assert (iface.getMac() != null);
 					assert (iface.getAddresses().size() == 1);

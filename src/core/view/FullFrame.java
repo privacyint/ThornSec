@@ -296,7 +296,7 @@ public class FullFrame {
 
 			addresses.setText(addresses.getText() + "<html><body><ul>");
 			try {
-				final Collection<NetworkInterfaceModel> ifaces = model.getNetworkInterfaces(serverLabel).values();
+				final Collection<NetworkInterfaceModel> ifaces = model.getNetworkInterfaces(serverLabel);
 				if (ifaces.size() > 0) {
 					for (final NetworkInterfaceModel iface : ifaces) {
 						final Collection<IPAddress> ipAddresses = iface.getAddresses();

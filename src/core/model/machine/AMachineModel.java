@@ -10,9 +10,9 @@ package core.model.machine;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
@@ -41,7 +41,7 @@ import inet.ipaddr.mac.MACAddress;
  * This is where we stash our various networking rules
  */
 public abstract class AMachineModel extends AModel {
-	private Map<String, NetworkInterfaceModel> networkInterfaces;
+	private ArrayList<NetworkInterfaceModel> networkInterfaces;
 
 	private final HostName domain;
 	private final Collection<String> cnames;
@@ -105,21 +105,17 @@ public abstract class AMachineModel extends AModel {
 		this.cidr = cidr;
 	}
 
-	public final void addNetworkInterface(String iface, NetworkInterfaceModel ifaceModel) {
+	public final void addNetworkInterface(NetworkInterfaceModel ifaceModel) {
 		if (this.networkInterfaces == null) {
-			this.networkInterfaces = new Hashtable<>();
+			this.networkInterfaces = new ArrayList<>();
 		}
 
-		this.networkInterfaces.put(iface, ifaceModel);
+		this.networkInterfaces.add(ifaceModel);
 	}
 
-	public final void addNetworkInterface(NetworkInterfaceModel ifaceModel) {
-		addNetworkInterface(ifaceModel.getLabel(), ifaceModel);
-	}
-
-	public final Map<String, NetworkInterfaceModel> getNetworkInterfaces() {
+	public final Collection<NetworkInterfaceModel> getNetworkInterfaces() {
 		if (this.networkInterfaces == null) {
-			return new Hashtable<>();
+			return new ArrayList<>();
 		}
 		return this.networkInterfaces;
 	}
@@ -266,13 +262,13 @@ public abstract class AMachineModel extends AModel {
 	public String getIP() {
 		String ips = "";
 
-		for (NetworkInterfaceModel nic : getNetworkInterfaces().values()) {
+		for (final NetworkInterfaceModel nic : getNetworkInterfaces()) {
 			if (nic.getAddresses() == null) {
 				continue;
 			}
 			
-			for (IPAddress ip : nic.getAddresses()) {
-				if (getExternalIPs() != null && getExternalIPs().contains(ip)) {
+			for (final IPAddress ip : nic.getAddresses()) {
+				if ((getExternalIPs() != null) && getExternalIPs().contains(ip)) {
 					continue;
 				}
 				

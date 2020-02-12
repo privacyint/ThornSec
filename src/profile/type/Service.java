@@ -60,12 +60,12 @@ public class Service extends AStructuredProfile {
 //					ifaceModel.setSubnet(ifaceData.getSubnet());
 					NetworkInterfaceModel nic = null;
 					if (nicData.getInet() == Inet.STATIC) {
-						nic = getNetworkModel().getNetworkInterfaces(getLabel()).getOrDefault(nicData.getIface(), new StaticInterfaceModel(nicData.getIface()));
+						nic = new StaticInterfaceModel(nicData.getIface());
 						nic.addAddress(nicData.getAddress());
 						nic.setGateway(nicData.getGateway());
 						nic.setBroadcast(nicData.getBroadcast());
 					} else if (nicData.getInet() == Inet.DHCP) {
-						nic = getNetworkModel().getNetworkInterfaces(getLabel()).getOrDefault(nicData.getIface(), new DHCPClientInterfaceModel(nicData.getIface()));
+						nic = new DHCPClientInterfaceModel(nicData.getIface());
 					}
 
 					nic.setIsIPMasquerading(true); // We're an external iface
@@ -78,15 +78,16 @@ public class Service extends AStructuredProfile {
 				}
 			}
 
-			for (final NetworkInterfaceData nicData : getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.LAN)) {
+			for (final NetworkInterfaceData nicData : getNetworkModel().getData().getNetworkInterfaces(getLabel())
+					.get(Direction.LAN)) {
 				NetworkInterfaceModel nic = null;
 				if (nicData.getInet() == Inet.STATIC) {
-					nic = getNetworkModel().getNetworkInterfaces(getLabel()).getOrDefault(nicData.getIface(), new StaticInterfaceModel(nicData.getIface()));
+					nic = new StaticInterfaceModel(nicData.getIface());
 					nic.addAddress(nicData.getAddress());
 					nic.setGateway(nicData.getGateway());
 					nic.setBroadcast(nicData.getBroadcast());
 				} else if (nicData.getInet() == Inet.DHCP) {
-					nic = getNetworkModel().getNetworkInterfaces(getLabel()).getOrDefault(nicData.getIface(), new DHCPClientInterfaceModel(nicData.getIface()));
+					nic = new DHCPClientInterfaceModel(nicData.getIface());
 				}
 
 				if (nicData.getMAC() != null) {
