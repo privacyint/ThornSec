@@ -69,6 +69,11 @@ public class Service extends AStructuredProfile {
 					}
 
 					nic.setIsIPMasquerading(true); // We're an external iface
+
+					if (nicData.getMAC() != null) {
+						nic.setMac(nicData.getMAC());
+					}
+
 					getNetworkModel().getServerModel(getLabel()).addNetworkInterface(nic);
 				}
 			}
@@ -82,6 +87,10 @@ public class Service extends AStructuredProfile {
 					nic.setBroadcast(nicData.getBroadcast());
 				} else if (nicData.getInet() == Inet.DHCP) {
 					nic = getNetworkModel().getNetworkInterfaces(getLabel()).getOrDefault(nicData.getIface(), new DHCPClientInterfaceModel(nicData.getIface()));
+				}
+
+				if (nicData.getMAC() != null) {
+					nic.setMac(nicData.getMAC());
 				}
 
 				getNetworkModel().getServerModel(getLabel()).addNetworkInterface(nic);
