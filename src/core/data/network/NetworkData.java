@@ -198,16 +198,11 @@ public class NetworkData extends AData {
 			if (dataObject.containsKey("services")) {
 				final JsonObject servicesData = dataObject.getJsonObject("services");
 
-				for (String serviceLabel : servicesData.keySet()) {
+				for (final String serviceLabel : servicesData.keySet()) {
 					final ServiceData service = (ServiceData) readServer(serviceLabel, servicesData.getJsonObject(serviceLabel));
-					try {
-						service.read(servicesData.getJsonObject(serviceLabel));
-						service.setHypervisor(label);
-					} catch (JsonParsingException | ADataException | IOException | URISyntaxException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
 					
+					service.setHypervisor(label);
+
 					// Register the service across various parts of our network...
 					putMachine(MachineType.SERVICE, service);
 					((HypervisorData) serverData).addService(service);
