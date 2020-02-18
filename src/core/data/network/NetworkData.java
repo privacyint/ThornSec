@@ -909,6 +909,10 @@ public class NetworkData extends AData {
 		return this.getService(label).getDisks();
 	}
 
+	public String getWireGuardKey(String user) {
+		return ((UserDeviceData) getUserDevices().get(user)).getWireGuardKey();
+	}
+
 	public ServiceData getService(String label) {
 		return (ServiceData) this.getServer(label);
 	}

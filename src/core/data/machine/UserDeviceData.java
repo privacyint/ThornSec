@@ -24,6 +24,7 @@ public class UserDeviceData extends ADeviceData {
 	private String fullname;
 	private String sshKey;
 	private String defaultPassword;
+	private String wireguardKey;
 
 	public UserDeviceData(String label) {
 		super(label);
@@ -31,6 +32,7 @@ public class UserDeviceData extends ADeviceData {
 		this.fullname = null;
 		this.sshKey = null;
 		this.defaultPassword = null;
+		this.wireguardKey = null;
 	}
 
 	@Override
@@ -41,6 +43,11 @@ public class UserDeviceData extends ADeviceData {
 
 		this.sshKey = data.getString("sshkey", null);
 		this.defaultPassword = data.getString("defaultpw", null);
+		this.wireguardKey = data.getString("wireguardKey", null);
+	}
+
+	public final void setWireGuardKey(String key) {
+		this.wireguardKey = key;
 	}
 
 	public final void setFullName(String fullname) {
@@ -49,6 +56,10 @@ public class UserDeviceData extends ADeviceData {
 
 	public final String getFullName() {
 		return this.fullname;
+	}
+
+	public final String getWireGuardKey() {
+		return this.wireguardKey;
 	}
 
 	public final String getSSHKey() {

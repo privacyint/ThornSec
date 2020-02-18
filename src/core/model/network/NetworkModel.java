@@ -677,6 +677,9 @@ public class NetworkModel {
 
 	public String getKeePassDBPath() {
 		// TODO Auto-generated method stub
-		return null;
+	}
+
+	public String getWireGuardKey(String user) {
+		return getData().getWireGuardKey(user);
 	}
 }
