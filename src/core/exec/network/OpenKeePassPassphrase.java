@@ -7,6 +7,8 @@
  */
 package core.exec.network;
 
+import java.net.URISyntaxException;
+
 import core.model.network.NetworkModel;
 import de.slackspace.openkeepass.KeePassDatabase;
 
@@ -22,8 +24,15 @@ public final class OpenKeePassPassphrase extends APassphrase {
 
 	@Override
 	public Boolean init() {
-		this.db = KeePassDatabase.getInstance(getNetworkModel().getKeePassDBPath());
-		this.db.openDatabase(getNetworkModel().getKeePassDBPassphrase());
+		try {
+			this.db = KeePassDatabase.getInstance(getNetworkModel().getKeePassDBPath(getLabel()));
+			this.db.openDatabase(getNetworkModel().getKeePassDBPassphrase());
+
+		} catch (final URISyntaxException | IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
 
 		return true;
 	}

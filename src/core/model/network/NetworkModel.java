@@ -675,8 +675,8 @@ public class NetworkModel {
 		return null;
 	}
 
-	public String getKeePassDBPath() {
-		// TODO Auto-generated method stub
+	public String getKeePassDBPath(String server) throws URISyntaxException {
+		return getData().getKeePassDB(server);
 	}
 
 	public String getWireGuardKey(String user) {
