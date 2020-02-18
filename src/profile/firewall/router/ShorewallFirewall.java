@@ -8,6 +8,8 @@
 package profile.firewall.router;
 
 import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -114,18 +116,38 @@ public class ShorewallFirewall extends AFirewallProfile {
 	private String cleanZone(Object zone) {
 		String _zone = zone.toString();
 		String prefix = "";
-		
-		if(_zone.startsWith("$")) {
-			prefix = "\\"+ _zone.substring(0, 1);
-		}
-		else if (_zone.startsWith("!")) {
+
+		if (_zone.startsWith("$")) {
+			prefix = "\\" + _zone.substring(0, 1);
+		} else if (_zone.startsWith("!")) {
 			prefix = "!";
 		}
-		
+
 		_zone = StringUtils.stringToAlphaNumeric(_zone);
 
+		// @TODO: Refactor this (we use it for MAC generation elsewhere...)
 		if (_zone.length() > 10) {
-			_zone = _zone.substring(0, 10);
+			MessageDigest md = null;
+			try {
+				md = MessageDigest.getInstance("SHA-512");
+			} catch (final NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			md.update(zone.toString().getBytes());
+
+			final byte byteData[] = md.digest();
+			final StringBuffer hashCodeBuffer = new StringBuffer();
+			for (final byte element : byteData) {
+				hashCodeBuffer.append(Integer.toString((element & 0xff) + 0x100, 16).substring(1));
+
+				if (hashCodeBuffer.length() > 3) {
+					break;
+				}
+			}
+
+			_zone = _zone.substring(0, 7) + hashCodeBuffer.toString().substring(0, 3);
 		}
 
 		return prefix + _zone;
