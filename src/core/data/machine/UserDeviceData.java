@@ -43,7 +43,7 @@ public class UserDeviceData extends ADeviceData {
 
 		this.sshKey = data.getString("sshkey", null);
 		this.defaultPassword = data.getString("defaultpw", null);
-		this.wireguardKey = data.getString("wireguardKey", null);
+		this.wireguardKey = data.getString("wireguard", null);
 	}
 
 	public final void setWireGuardKey(String key) {

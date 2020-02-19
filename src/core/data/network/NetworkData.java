@@ -80,6 +80,7 @@ public class NetworkData extends AData {
 	private static final String NETWORK_INTERNAL_SUBNET = "172.24.0.0/16";
 	private static final String NETWORK_EXTERNAL_SUBNET = "172.28.0.0/16";
 	private static final String NETWORK_GUEST_SUBNET = "172.31.0.0/16";
+	private static final String NETWORK_VPN_SUBNET = "172.36.0.0/16";
 
 	private static final Boolean NETWORK_ADBLOCKING = false;
 	private static final Boolean NETWORK_AUTOGENPASSWDS = false;
@@ -597,6 +598,10 @@ public class NetworkData extends AData {
 		return getSubnet(MachineType.EXTERNAL_ONLY, NETWORK_EXTERNAL_SUBNET);
 	}
 
+	public String getVPNSubnet() {
+		return getSubnet(MachineType.VPN, NETWORK_VPN_SUBNET);
+	}
+
 	public Integer getSSHPort(String server) {
 		Integer port = ((ServerData) getMachine(MachineType.SERVER, server)).getSSHPort();
 
@@ -883,6 +888,10 @@ public class NetworkData extends AData {
 
 	public String getProperty(String label, String property) {
 		return getMachine(label).getData().getString(property, null);
+	}
+
+	public JsonObject getProperties(String machine, String properties) {
+		return getMachine(machine).getData().getJsonObject(properties);
 	}
 
 	public Map<String, AMachineData> getExternalOnlyDevices() {

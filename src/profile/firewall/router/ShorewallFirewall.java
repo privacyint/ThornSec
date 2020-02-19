@@ -57,18 +57,13 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	public enum ParentZone {
-		INTERNET(Arm.INTERNET, "Internet"),
-		ROUTER(Arm.FIREWALL, "$FW"),
-		USERS(Arm.LAN, "Users"),
-		ADMINS(Arm.LAN, "Administrators"),
-		SERVERS(Arm.LAN, "Servers"),
-		INTERNAL_ONLY(Arm.LAN, "InternalOnlys"),
-		EXTERNAL_ONLY(Arm.LAN, "ExternalOnlys"),
-		GUESTS(Arm.LAN, "Guests");
+		INTERNET(Arm.INTERNET, "Internet"), ROUTER(Arm.FIREWALL, "$FW"), USERS(Arm.LAN, "Users"),
+		ADMINS(Arm.LAN, "Administrators"), SERVERS(Arm.LAN, "Servers"), INTERNAL_ONLY(Arm.LAN, "InternalOnlys"),
+		EXTERNAL_ONLY(Arm.LAN, "ExternalOnlys"), GUESTS(Arm.LAN, "Guests"), VPN(Arm.LAN, "VPN");
 
 		public static Set<ParentZone> internetZone = EnumSet.of(INTERNET);
 		public static Set<ParentZone> routerZone = EnumSet.of(ROUTER);
-		public static Set<ParentZone> lanZone = EnumSet.range(USERS, GUESTS);
+		public static Set<ParentZone> lanZone = EnumSet.range(USERS, VPN, GUESTS);
 
 		private Arm direction;
 		private String parentZone;
