@@ -683,7 +683,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 				//As you were. This is not the droid you're looking for.
 			}
 			
-			machine.getNetworkInterfaces().values().forEach(nic -> {
+			machine.getNetworkInterfaces().forEach(nic -> {
 				maclist.add("ACCEPT\t" + zone.toString() + "\t" + nic.getMac().toNormalizedString()
 						+ "\t" + getAddresses(machine) + "\t#" + machine.getLabel());
 
