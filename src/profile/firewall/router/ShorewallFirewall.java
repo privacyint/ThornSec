@@ -63,7 +63,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		public static Set<ParentZone> internetZone = EnumSet.of(INTERNET);
 		public static Set<ParentZone> routerZone = EnumSet.of(ROUTER);
-		public static Set<ParentZone> lanZone = EnumSet.range(USERS, VPN, GUESTS);
+		public static Set<ParentZone> lanZone = EnumSet.range(USERS, VPN);
 
 		private Arm direction;
 		private String parentZone;
