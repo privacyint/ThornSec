@@ -556,15 +556,17 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		// First work out our Internet-facing NICs
 		try {
-			getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic -> {
-				String line = "";
-				line += ParentZone.INTERNET;
-				line += "\t" + nic.getIface();
-				line += "\t-\t";
-				line += (nic.getInet().equals(Inet.DHCP)) ? "dhcp," : "";
-				line += "routefilter,arp_filter";
-				interfaces.appendLine(line);
-			});
+			if (getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
+				getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic -> {
+					String line = "";
+					line += ParentZone.INTERNET;
+					line += "\t" + nic.getIface();
+					line += "\t-\t";
+					line += (nic.getInet().equals(Inet.DHCP)) ? "dhcp," : "";
+					line += "routefilter,arp_filter";
+					interfaces.appendLine(line);
+				});
+			}
 		} catch (JsonParsingException | ADataException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -593,11 +595,13 @@ public class ShorewallFirewall extends AFirewallProfile {
 		final FileUnit masq = new FileUnit("shorewall_masquerades", "shorewall_installed",
 				CONFIG_BASEDIR + "/masq");
 		try {
-			getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic -> {
-				ParentZone.lanZone.forEach(zone -> {
-					masq.appendLine(nic.getIface() + "\t" + zone.toString());
+			if (getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
+				getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic -> {
+					ParentZone.lanZone.forEach(zone -> {
+						masq.appendLine(nic.getIface() + "\t" + zone.toString());
+					});
 				});
-			});
+			}
 		} catch (JsonParsingException | ADataException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
