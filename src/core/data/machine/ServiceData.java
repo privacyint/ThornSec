@@ -11,9 +11,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 
 import javax.json.JsonObject;
 import javax.json.stream.JsonParsingException;
@@ -60,30 +58,31 @@ public class ServiceData extends ServerData {
 		super.read(data);
 
 		if (data.containsKey("disks")) {
-			this.disks = new LinkedHashMap<>();
 			final JsonObject disks = data.getJsonObject("disks");
 
-			for (final String diskLabel : disks.keySet()) {
-				final DiskData diskData = new DiskData(diskLabel);
-				diskData.read(disks.getJsonObject(diskLabel));
-
-				this.disks.put(diskLabel, diskData);
+			for (final String disk : disks.keySet()) {
+				final DiskData diskData = new DiskData(disk);
+				diskData.read(disks.getJsonObject(disk));
+				
+				this.addDisk(diskData);
 			}
 		}
 
 		this.debianISOURL = data.getString("debian_iso_url", null);
 		this.debianISOSHA512 = data.getString("debian_iso_sha512", null);
 
-		// Force it to recognise us as a service...
-		if ((getTypes() == null) || !getTypes().contains(MachineType.SERVICE)) {
-			final Set<MachineType> types = new LinkedHashSet<>();
-			types.add(MachineType.SERVICE);
-			setTypes(types);
+		if (data.containsKey("cpu_execution_cap")) {
+			this.setCPUExecutionCap(data.getInt("cpu_execution_cap"));
 		}
 		
-		if (data.containsKey("cpu_execution_cap")) {
-			setCPUExecutionCap(data.getInt("cpu_execution_cap"));
+	}
+
+	private void addDisk(DiskData diskData) {
+		if (getDisks() == null) {
+			this.disks = new LinkedHashMap<>();
 		}
+		
+		this.disks.put(diskData.getLabel(), diskData);
 	}
 
 	public void setCPUExecutionCap(Integer capPct) throws InvalidPropertyException {
