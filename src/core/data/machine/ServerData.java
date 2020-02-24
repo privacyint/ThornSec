@@ -204,14 +204,20 @@ public class ServerData extends AMachineData {
 	}
 
 	protected void putType(String... types) {
+		for (String type : types) {
+			MachineType machineType = MachineType.valueOf(type.replaceAll("[^a-zA-Z]", "").toUpperCase());
+			putType(machineType);
+		}
+	}
+	
+	protected void putType(MachineType... types) {
 		if (this.types == null) {
 			this.types = new LinkedHashSet<>();
 		}
 
-		for (String type : types) {
-			type = type.replaceAll("[^a-zA-Z]", "").toUpperCase();
-			if (!this.types.contains(MachineType.valueOf(type))) {
-				this.types.add(MachineType.valueOf(type));
+		for (MachineType type : types) {
+			if (!this.types.contains(type)) {
+				this.types.add(type);
 			}
 		}
 	}
