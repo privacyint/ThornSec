@@ -37,7 +37,6 @@ import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import inet.ipaddr.HostName;
-import inet.ipaddr.IPAddress;
 import profile.stack.Nginx;
 
 /**
@@ -217,9 +216,7 @@ public class Webproxy extends AStructuredProfile {
 				// nginxConf.appendLine(" deny all;");
 				// }
 
-				final Collection<IPAddress> ips = backendObj.getIPs();
-				assert (ips.size() >= 1);
-				nginxConf.appendLine("\t\tproxy_pass              http://" + ips.iterator().next() + ";");
+				nginxConf.appendLine("\t\tproxy_pass              http://" + backendLabel + "/;");
 				nginxConf.appendLine("\t\tproxy_request_buffering off;");
 				nginxConf.appendLine("\t\tproxy_buffering         off;");
 				nginxConf.appendLine("\t\tclient_max_body_size    0;");
