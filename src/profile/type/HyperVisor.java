@@ -64,51 +64,53 @@ public class HyperVisor extends AStructuredProfile {
 		super(label, networkModel);
 
 		final ServerModel me = getNetworkModel().getServerModel(getLabel());
-
-		try {
-			if (networkModel.getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
-				for (final NetworkInterfaceData wanNic : networkModel.getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)) {
+	
+		if (!me.isRouter()) {
+			try {
+				if (networkModel.getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
+					for (final NetworkInterfaceData wanNic : networkModel.getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)) {
+						NetworkInterfaceModel link = null;
+	
+						switch (wanNic.getInet()) {
+						case STATIC:
+							link = new StaticInterfaceModel(wanNic.getIface());
+							break;
+						case DHCP:
+							link = new DHCPClientInterfaceModel(wanNic.getIface());
+							break;
+						default:
+						}
+						link.addAddress(wanNic.getAddress());
+						link.setGateway(wanNic.getGateway());
+						link.setBroadcast(wanNic.getBroadcast());
+						link.setMac(wanNic.getMAC());
+						link.setIsIPMasquerading(true);
+						me.addNetworkInterface(link);
+					}
+				}
+				for (final NetworkInterfaceData lanNic : networkModel.getData().getNetworkInterfaces(getLabel()).get(Direction.LAN)) {
 					NetworkInterfaceModel link = null;
-
-					switch (wanNic.getInet()) {
+	
+					switch (lanNic.getInet()) {
 					case STATIC:
-						link = new StaticInterfaceModel(wanNic.getIface());
+						link = new StaticInterfaceModel(lanNic.getIface());
 						break;
 					case DHCP:
-						link = new DHCPClientInterfaceModel(wanNic.getIface());
+						link = new DHCPClientInterfaceModel(lanNic.getIface());
 						break;
 					default:
 					}
-					link.addAddress(wanNic.getAddress());
-					link.setGateway(wanNic.getGateway());
-					link.setBroadcast(wanNic.getBroadcast());
-					link.setMac(wanNic.getMAC());
-					link.setIsIPMasquerading(true);
+					link.addAddress(lanNic.getAddress());
+					link.setGateway(lanNic.getGateway());
+					link.setBroadcast(lanNic.getBroadcast());
+					link.setMac(lanNic.getMAC());
 					me.addNetworkInterface(link);
 				}
+			} catch (final IOException e) {
+				e.printStackTrace();
 			}
-			for (final NetworkInterfaceData lanNic : networkModel.getData().getNetworkInterfaces(getLabel()).get(Direction.LAN)) {
-				NetworkInterfaceModel link = null;
-
-				switch (lanNic.getInet()) {
-				case STATIC:
-					link = new StaticInterfaceModel(lanNic.getIface());
-					break;
-				case DHCP:
-					link = new DHCPClientInterfaceModel(lanNic.getIface());
-					break;
-				default:
-				}
-				link.addAddress(lanNic.getAddress());
-				link.setGateway(lanNic.getGateway());
-				link.setBroadcast(lanNic.getBroadcast());
-				link.setMac(lanNic.getMAC());
-				me.addNetworkInterface(link);
-			}
-		} catch (final IOException e) {
-			e.printStackTrace();
 		}
-
+		
 		this.hypervisor = new Virtualisation(label, networkModel);
 		this.scripts = new HypervisorScripts(label, networkModel);
 		this.services = null;
