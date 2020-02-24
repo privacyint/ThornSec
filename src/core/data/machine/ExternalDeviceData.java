@@ -25,6 +25,8 @@ public class ExternalDeviceData extends ADeviceData {
 
 	public ExternalDeviceData(String label) {
 		super(label);
+		
+		this.putType(MachineType.EXTERNAL_ONLY);
 	}
 
 	@Override

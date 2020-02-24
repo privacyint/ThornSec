@@ -43,6 +43,8 @@ public class ServiceData extends ServerData {
 	public ServiceData(String label) {
 		super(label);
 
+		this.putType(MachineType.SERVICE);
+
 		this.hypervisor = null;
 
 		this.debianISOURL = null;

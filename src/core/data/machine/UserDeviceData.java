@@ -29,6 +29,8 @@ public class UserDeviceData extends ADeviceData {
 	public UserDeviceData(String label) {
 		super(label);
 
+		this.putType(MachineType.USER);
+		
 		this.fullname = null;
 		this.sshKey = null;
 		this.defaultPassword = null;

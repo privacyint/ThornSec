@@ -27,6 +27,8 @@ public abstract class ADeviceData extends AMachineData {
 		super(label);
 
 		this.managed = null;
+		
+		this.putType(MachineType.DEVICE);
 	}
 
 	@Override

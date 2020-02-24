@@ -36,6 +36,8 @@ public class HypervisorData extends ServerData {
 		this.vmBase = null;
 		this.backupFrequency = null;
 		this.services = new LinkedHashSet<>();
+		
+		this.putType(MachineType.HYPERVISOR);
 	}
 
 	@Override

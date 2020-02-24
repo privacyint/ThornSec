@@ -64,6 +64,8 @@ public class ServerData extends AMachineData {
 		this.sshSources = null;
 		this.profiles = null;
 
+		this.putType(MachineType.SERVER);
+
 		this.adminUsernames = null;
 		this.remoteAdminIPAddresses = null;
 

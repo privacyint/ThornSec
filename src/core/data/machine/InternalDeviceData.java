@@ -28,6 +28,8 @@ public class InternalDeviceData extends ADeviceData {
 
 	public InternalDeviceData(String label) {
 		super(label);
+		
+		this.putType(MachineType.INTERNAL_ONLY);
 	}
 
 	@Override
