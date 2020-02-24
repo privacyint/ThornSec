@@ -9,6 +9,7 @@ package core.data.machine;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -34,7 +35,6 @@ import inet.ipaddr.AddressStringException;
 import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
-import inet.ipaddr.MACAddressString;
 
 /**
  * Abstract class for something representing a "Machine" on our network.
@@ -74,7 +74,7 @@ public abstract class AMachineData extends AData {
 	public static Boolean DEFAULT_IS_THROTTLED = true;
 
 	private Map<Direction, Collection<NetworkInterfaceData>> networkInterfaces;
-	private final Collection<IPAddress> externalIPAddresses;
+	private Collection<IPAddress> externalIPAddresses;
 	private Collection<String> cnames;
 	// Alerting
 	private InternetAddress emailAddress;
@@ -279,6 +279,82 @@ public abstract class AMachineData extends AData {
 		putNetworkInterface(Direction.WAN, ifaces);
 	}
 
+	private void readFirewallData(JsonObject firewallData) throws InvalidPortException, NumberFormatException, InvalidIPAddressException {
+		// Custom profile? You're brave!
+		if (firewallData.containsKey("profile")) {
+			this.firewallProfile = firewallData.getString("profile");
+		}
+
+		if (firewallData.containsKey("throttle")) {
+			this.throttled = firewallData.getBoolean("throttle");
+		}
+
+		if (firewallData.containsKey("listen")) {
+			final JsonObject listens = firewallData.getJsonObject("listen");
+
+			if (listens.containsKey("tcp")) {
+				final JsonArray tcp = listens.getJsonArray("tcp");
+
+				for (final JsonValue port : tcp) {
+					putListenPort(Encapsulation.TCP, Integer.parseInt(port.toString()));
+				}
+			}
+			if (listens.containsKey("udp")) {
+				final JsonArray udp = listens.getJsonArray("udp");
+
+				for (final JsonValue port : udp) {
+					putListenPort(Encapsulation.UDP, Integer.parseInt(port.toString()));
+				}
+			}
+		}
+		if (firewallData.containsKey("allow_forward_to")) {
+			final JsonArray forwards = firewallData.getJsonArray("allow_forward_to");
+
+			for (final JsonValue forward : forwards) {
+				addFoward(((JsonString) forward).getString());
+			}
+		}
+		if (firewallData.containsKey("allow_ingress_from")) {
+			final JsonArray sources = firewallData.getJsonArray("allow_ingress_from");
+
+			for (final JsonValue source : sources) {
+				addIngress(new HostName(((JsonString) source).getString()));
+			}
+		}
+		if (firewallData.containsKey("allow_egress_to")) {
+			final JsonArray destinations = firewallData.getJsonArray("allow_egress_to");
+
+			for (final JsonValue destination : destinations) {
+				addEgress(new HostName(((JsonString) destination).getString()));
+			}
+		}
+		if (firewallData.containsKey("dnat_to")) {
+			final JsonArray destinations = firewallData.getJsonArray("dnat_to");
+
+			for (final JsonValue destination : destinations) {
+				addDNAT(((JsonString) destination).getString());
+			}
+		}
+		// External IP address?
+		if (firewallData.containsKey("external_ip")) {
+			putExternalIP(firewallData.getString("external_ip"));
+		}
+
+	}
+	
+	private void putExternalIP(String address) throws InvalidIPAddressException {
+		if (this.externalIPAddresses == null) {
+			this.externalIPAddresses = new ArrayList<>();
+		}
+		
+		try {
+			this.externalIPAddresses.add(new IPAddressString(address).toAddress());
+		}
+		catch (final AddressStringException e) {
+			throw new InvalidIPAddressException(address + " on machine " + getLabel() + " is not a valid IP Address");
+		}		
+	}
+
 	@Override
 	protected void read(JsonObject data) throws ADataException, JsonParsingException, IOException, URISyntaxException {
 		setData(data);
@@ -303,107 +379,11 @@ public abstract class AMachineData extends AData {
 			}
 		}
 
-		// Build network interfaces
-		if (data.containsKey("network_interfaces")) {
-			final JsonObject networkInterfaces = data.getJsonObject("network_interfaces");
-
-			if (networkInterfaces.containsKey("wan")) {
-				final JsonArray wanIfaces = networkInterfaces.getJsonArray("wan");
-				for (int i = 0; i < wanIfaces.size(); ++i) {
-					final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
-
-					iface.read(wanIfaces.getJsonObject(i));
-					putWANNetworkInterface(iface);
-				}
-			}
-
-			if (networkInterfaces.containsKey("lan")) {
-				final JsonArray lanIfaces = networkInterfaces.getJsonArray("lan");
-				for (int i = 0; i < lanIfaces.size(); ++i) {
-					final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
-
-					iface.read(lanIfaces.getJsonObject(i));
-					putLANNetworkInterface(iface);
-				}
-			}
-		} else if (data.containsKey("macs")) {
-			final JsonArray macs = data.getJsonArray("macs");
-			for (int i = 0; i < macs.size(); ++i) {
-				final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
-
-				iface.setMAC(new MACAddressString(macs.getString(i)).getAddress());
-				putLANNetworkInterface(iface);
-			}
-		}
-
 		// Firewall...
 		if (data.containsKey("firewall")) {
 			final JsonObject firewallConf = data.getJsonObject("firewall");
 
-			// Custom profile? You're brave!
-			if (firewallConf.containsKey("profile")) {
-				this.firewallProfile = data.getString("profile");
-			}
-
-			if (data.containsKey("throttle")) {
-				this.throttled = data.getBoolean("throttle");
-			}
-
-			if (data.containsKey("listen")) {
-				final JsonObject listens = data.getJsonObject("listen");
-
-				if (listens.containsKey("tcp")) {
-					final JsonArray tcp = listens.getJsonArray("tcp");
-
-					for (final JsonValue port : tcp) {
-						putListenPort(Encapsulation.TCP, Integer.parseInt(port.toString()));
-					}
-				}
-				if (listens.containsKey("udp")) {
-					final JsonArray udp = listens.getJsonArray("udp");
-
-					for (final JsonValue port : udp) {
-						putListenPort(Encapsulation.UDP, Integer.parseInt(port.toString()));
-					}
-				}
-			}
-			if (data.containsKey("allow_forward_to")) {
-				final JsonArray forwards = data.getJsonArray("allow_forward_to");
-
-				for (final JsonValue forward : forwards) {
-					addFoward(((JsonString) forward).getString());
-				}
-			}
-			if (data.containsKey("allow_ingress_from")) {
-				final JsonArray sources = data.getJsonArray("allow_ingress_from");
-
-				for (final JsonValue source : sources) {
-					addIngress(new HostName(((JsonString) source).getString()));
-				}
-			}
-			if (data.containsKey("allow_egress_to")) {
-				final JsonArray destinations = data.getJsonArray("allow_egress_to");
-
-				for (final JsonValue destination : destinations) {
-					addEgress(new HostName(((JsonString) destination).getString()));
-				}
-			}
-			if (data.containsKey("dnat_to")) {
-				final JsonArray destinations = data.getJsonArray("dnat_to");
-
-				for (final JsonValue destination : destinations) {
-					addDNAT(((JsonString) destination).getString());
-				}
-			}
-			// External IP address?
-			if (data.containsKey("external_ip")) {
-				try {
-					this.externalIPAddresses.add(new IPAddressString(data.getString("external_ip")).toAddress());
-
-				} catch (final AddressStringException e) {
-					throw new InvalidIPAddressException(data.getString("external_ip") + " on machine " + getLabel() + " is not a valid IP Address");
-				}
-			}
+			readFirewallData(firewallConf);
 		}
 	}
 
