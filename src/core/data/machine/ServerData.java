@@ -203,7 +203,7 @@ public class ServerData extends AMachineData {
 		}
 	}
 
-	private void putType(String... types) {
+	protected void putType(String... types) {
 		if (this.types == null) {
 			this.types = new LinkedHashSet<>();
 		}
