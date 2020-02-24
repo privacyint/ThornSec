@@ -7,6 +7,7 @@
  */
 package core.exec.network;
 
+import java.io.File;
 import java.net.URISyntaxException;
 
 import core.model.network.NetworkModel;
@@ -25,16 +26,19 @@ public final class OpenKeePassPassphrase extends APassphrase {
 	@Override
 	public Boolean init() {
 		try {
-			this.db = KeePassDatabase.getInstance(getNetworkModel().getKeePassDBPath(getLabel()));
-			this.db.openDatabase(getNetworkModel().getKeePassDBPassphrase());
+			final File keypassDB = new File(getNetworkModel().getKeePassDBPath(getLabel()));
+			if (keypassDB.isFile()) {
+				this.db = KeePassDatabase.getInstance(keypassDB);
+				this.db.openDatabase("IAmAString");
 
+				return true;
+			}
 		} catch (final URISyntaxException | IllegalArgumentException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			return false;
 		}
 
-		return true;
+		return false;
 	}
 
 	@Override
