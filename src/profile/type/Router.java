@@ -76,10 +76,12 @@ public class Router extends AStructuredProfile {
 		}
 
 		// Bond each LAN interface
-		lanIfaces.forEach(iface -> {
-			final NetworkInterfaceModel link = new BondInterfaceModel(iface.getIface(), bond);
-			me.addNetworkInterface(link);
-		});
+		if (lanIfaces != null) {
+			lanIfaces.forEach(iface -> {
+				final NetworkInterfaceModel link = new BondInterfaceModel(iface.getIface(), bond);
+				me.addNetworkInterface(link);
+			});
+		}
 
 		// Declare external network interfaces
 		wanIfaces.forEach(iface -> {
