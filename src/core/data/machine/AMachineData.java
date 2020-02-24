@@ -12,8 +12,9 @@ import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.LinkedHashSet;
 import java.util.Map;
-
+import java.util.Set;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonString;
@@ -90,6 +91,8 @@ public abstract class AMachineData extends AData {
 
 	private HostName domain;
 
+	protected Collection<MachineType> types;
+
 	protected AMachineData(String label) {
 		super(label);
 
@@ -100,6 +103,8 @@ public abstract class AMachineData extends AData {
 		this.cnames = null;
 
 		this.emailAddress = null;
+
+		this.types = null;
 
 		this.firewallProfile = null;
 		this.throttled = null;
@@ -404,5 +409,32 @@ public abstract class AMachineData extends AData {
 
 	private void setDomain(HostName domain) {
 		this.domain = domain;
+	}
+
+	protected void putType(String... types) {
+		for (String type : types) {
+			MachineType machineType = MachineType.valueOf(type.replaceAll("[^a-zA-Z]", "").toUpperCase());
+			putType(machineType);
+		}
+	}
+
+	protected void putType(MachineType... types) {
+		if (this.types == null) {
+			this.types = new LinkedHashSet<>();
+		}
+	
+		for (MachineType type : types) {
+			if (!this.types.contains(type)) {
+				this.types.add(type);
+			}
+		}
+	}
+
+	public final Collection<MachineType> getTypes() {
+		return this.types;
+	}
+
+	public final void setTypes(Set<MachineType> types) {
+		this.types = types;
 	}
 }

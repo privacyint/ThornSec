@@ -12,8 +12,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.Set;
-
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonString;
@@ -42,8 +40,6 @@ public class ServerData extends AMachineData {
 
 	private Collection<HostName> sshSources;
 	private Collection<String> profiles;
-	private Collection<MachineType> types;
-
 	private Collection<String> adminUsernames;
 	private final Collection<IPAddress> remoteAdminIPAddresses;
 
@@ -67,7 +63,6 @@ public class ServerData extends AMachineData {
 
 		this.sshSources = null;
 		this.profiles = null;
-		this.types = null;
 
 		this.adminUsernames = null;
 		this.remoteAdminIPAddresses = null;
@@ -203,25 +198,6 @@ public class ServerData extends AMachineData {
 		}
 	}
 
-	protected void putType(String... types) {
-		for (String type : types) {
-			MachineType machineType = MachineType.valueOf(type.replaceAll("[^a-zA-Z]", "").toUpperCase());
-			putType(machineType);
-		}
-	}
-	
-	protected void putType(MachineType... types) {
-		if (this.types == null) {
-			this.types = new LinkedHashSet<>();
-		}
-
-		for (MachineType type : types) {
-			if (!this.types.contains(type)) {
-				this.types.add(type);
-			}
-		}
-	}
-
 	private void putSSHSource(HostName... sources) {
 		if (this.sshSources == null) {
 			this.sshSources = new LinkedHashSet<>();
@@ -292,10 +268,6 @@ public class ServerData extends AMachineData {
 		return this.update;
 	}
 
-	public final Collection<MachineType> getTypes() {
-		return this.types;
-	}
-
 	public final Collection<String> getProfiles() {
 		return this.profiles;
 	}
@@ -306,10 +278,6 @@ public class ServerData extends AMachineData {
 
 	public final String getKeePassDB() {
 		return this.keePassDB;
-	}
-
-	public final void setTypes(Set<MachineType> types) {
-		this.types = types;
 	}
 
 	/**
