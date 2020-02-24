@@ -50,14 +50,14 @@ public class ThornsecModel {
 		jsonReader = Json.createReader(new StringReader(rawText));
 		networks = jsonReader.readObject();
 
-		for (final String networkName : networks.keySet()) {
-			final NetworkModel networkModel = new NetworkModel(networkName);
-			final NetworkData networkData = new NetworkData(networkName);
+		for (final String network : networks.keySet()) {
+			final NetworkModel networkModel = new NetworkModel(network);
+			final NetworkData networkData = new NetworkData(network);
 
-			networkData.read(networks.getJsonObject(networkName));
+			networkData.read(networks.getJsonObject(network));
 			networkModel.setData(networkData);
 
-			this.networks.put(networkName, networkModel);
+			this.networks.put(network, networkModel);
 		}
 	}
 
