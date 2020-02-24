@@ -19,6 +19,7 @@ import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
 
 import core.StringUtils;
+import core.data.machine.configuration.NetworkInterfaceData;
 import core.exception.data.ADataException;
 import core.exception.data.InvalidPortException;
 import core.exception.data.InvalidPropertyException;
@@ -89,6 +90,31 @@ public class ServerData extends AMachineData {
 	public void read(JsonObject data) throws ADataException, JsonParsingException, IOException, URISyntaxException {
 		super.read(data);
 
+		// Build network interfaces
+		if (data.containsKey("network_interfaces")) {
+			final JsonObject networkInterfaces = data.getJsonObject("network_interfaces");
+
+			if (networkInterfaces.containsKey("wan")) {
+				final JsonArray wanIfaces = networkInterfaces.getJsonArray("wan");
+				for (int i = 0; i < wanIfaces.size(); ++i) {
+					final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
+
+					iface.read(wanIfaces.getJsonObject(i));
+					putWANNetworkInterface(iface);
+				}
+			}
+
+			if (networkInterfaces.containsKey("lan")) {
+				final JsonArray lanIfaces = networkInterfaces.getJsonArray("lan");
+				for (int i = 0; i < lanIfaces.size(); ++i) {
+					final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
+
+					iface.read(lanIfaces.getJsonObject(i));
+					putLANNetworkInterface(iface);
+				}
+			}
+		}
+		
 		if (data.containsKey("admins")) {
 			final JsonArray admins = data.getJsonArray("admins");
 			for (final JsonValue admin : admins) {
