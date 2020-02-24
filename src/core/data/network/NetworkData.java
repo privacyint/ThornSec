@@ -54,6 +54,7 @@ import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.exception.data.ADataException;
 import core.exception.data.InvalidIPAddressException;
+import core.exception.data.MissingPropertiesException;
 import core.exception.data.NoValidUsersException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.data.machine.InvalidServerException;
@@ -172,7 +173,40 @@ public class NetworkData extends AData {
 		read(jsonReader.readObject());
 	}
 
-	private ServerData readServer(String label, JsonObject dataObject) throws JsonParsingException, ADataException, IOException, URISyntaxException {
+	private Collection<ServerData> readHyperVisor(String hypervisorLabel, JsonObject hypervisorData) throws JsonParsingException, ADataException, IOException, URISyntaxException {
+		Collection<ServerData> machines = new ArrayList<>();
+		
+		HypervisorData hv = new HypervisorData(hypervisorLabel);
+		hv.read(hypervisorData);
+		machines.add(hv);
+		
+		// They *should* contain information about their services
+		if (!hypervisorData.containsKey("services")) {
+			throw new MissingPropertiesException(hypervisorLabel + " doesn't contain any services. Please check your config");
+		}
+		
+		JsonObject services = hypervisorData.getJsonObject("services");
+		
+		for (final String serviceLabel : services.keySet()) {
+			ServiceData service = readService(serviceLabel, hypervisorLabel, services.getJsonObject(serviceLabel));
+			hv.addService(service);
+			machines.add(service);
+		}
+		
+		return machines;
+	}
+	
+	private ServiceData readService(String label, String hypervisorLabel, JsonObject serviceData) throws JsonParsingException, ADataException, IOException, URISyntaxException {
+		final ServiceData service = new ServiceData(label);
+		service.read(serviceData);
+		service.setHypervisor(hypervisorLabel);
+
+		return service;
+	}
+	
+	private void readServer(String label, JsonObject dataObject) throws JsonParsingException, ADataException, IOException, URISyntaxException {
+		Collection<ServerData> servers = new ArrayList<>();
+		
 		// We have to read it in first to find out what it is - we can then replace it
 		// with a specialised version
 		ServerData serverData = new ServerData(label);
@@ -180,50 +214,28 @@ public class NetworkData extends AData {
 
 		// Some servers don't have types set, as they inherit them. Let's make sure they
 		// actually do inherit them.
-		Collection<MachineType> serverTypes = serverData.getTypes();
-		if (serverTypes == null) {
+		Collection<MachineType> serverTypes;
+		
+		if (serverData.getTypes() == null) {
 			serverTypes = this.defaultServiceData.getTypes();
-
-			if (serverTypes == null) {
-				serverTypes = new HashSet<>();
-			}
+		}
+		else {
+			serverTypes = serverData.getTypes();
 		}
 
 		// If we've just hit a hypervisor machine, we need to dig a little.
 		if (serverTypes.contains(MachineType.HYPERVISOR)) {
-			serverData = new HypervisorData(label);
-			// Read in data to the newly specialised object
-			serverData.read(dataObject);
-
-			// They *should* contain information about their services
-			if (dataObject.containsKey("services")) {
-				final JsonObject servicesData = dataObject.getJsonObject("services");
-
-				for (final String serviceLabel : servicesData.keySet()) {
-					final ServiceData service = (ServiceData) readServer(serviceLabel, servicesData.getJsonObject(serviceLabel));
-					
-					service.setHypervisor(label);
-
-					// Register the service across various parts of our network...
-					putMachine(MachineType.SERVICE, service);
-					((HypervisorData) serverData).addService(service);
-				}
-			} else {
-				System.out.println("No services found on " + label);
-			}
-		} else if (serverTypes.contains(MachineType.SERVICE)) {
-			serverData = new ServiceData(label);
-			// Read in data to the newly specialised object
-			serverData.read(dataObject);
+			servers = readHyperVisor(label, dataObject);
+		}
+		else {
+			servers.add(serverData);
 		}
 
-		for (final MachineType type : serverTypes) {
-			putMachine(type, serverData);
-		}
-
-		putMachine(MachineType.SERVER, serverData);
-
-		return serverData;
+		servers.forEach(server -> {
+			server.getTypes().forEach(type -> {
+				putMachine(type, server);
+			});
+		});
 	}
 
 	/**
