@@ -29,6 +29,7 @@ import core.exception.AThornSecException;
 import core.exception.data.ADataException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
@@ -36,8 +37,12 @@ import core.model.network.NetworkModel;
 import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.AddressStringException;
 import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
+import inet.ipaddr.IPAddress.IPVersion;
+import inet.ipaddr.IPAddressString;
+import inet.ipaddr.IncompatibleAddressException;
 import profile.firewall.AFirewallProfile;
 
 /**
@@ -88,9 +93,121 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	private static String CONFIG_BASEDIR = "/etc/shorewall";
-	private final Collection<String> rules;
+	private final Collection<Rule> rules;
 	Map<ParentZone, Collection<AMachineModel>> hostMap;
 	
+	private class Rule {
+		private String macro;
+		private Action action;
+		
+		private String sourceZone;
+		private String sourceSubZone;
+		private Collection<Integer> sPorts;
+		
+		private String destinationZone;
+		private String destinationSubZone;
+		private Encapsulation proto;
+		private Collection<Integer> dPorts;
+		
+		private Collection<IPAddress> origDest;
+		
+		private String rate;
+
+		public Rule() {
+			macro = null;
+			action = null;
+			
+			sourceZone = null;
+			sourceSubZone = null;
+			sPorts = null;
+			
+			destinationZone = null;
+			destinationSubZone = null;
+			proto = null;
+			dPorts = null;
+			
+			origDest = null;
+			
+			rate = null;
+		}
+		
+		public void setMacro(String macro) {
+			this.macro = macro;
+		}
+		
+		public void setAction(Action action) {
+			this.action = action;
+		}
+		
+		public void setSourceZone(String sourceZone) {
+			this.sourceZone = sourceZone;
+		}
+		
+		public void setSPorts(Collection<Integer> sPorts) {
+			this.sPorts = sPorts;
+		}
+		
+		public void setDestinationZone(String destinationZone) {
+			this.destinationZone = destinationZone;
+		}
+		
+		public void setDestinationSubZone(String destinationSubZone) {
+			this.destinationSubZone = destinationSubZone;
+		}
+		
+		public void setProto(Encapsulation proto) {
+			this.proto = proto;
+		}
+		
+		public void setDPorts(Collection<Integer> dPorts) {
+			this.dPorts = dPorts;
+		}
+		
+		public void setOrigDest(Collection<IPAddress> origDest) {
+			this.origDest = origDest;
+		}
+		
+		public void setRate(String rate) {
+			this.rate = rate;
+		}
+		
+		public String getRule() {
+			String _action = (macro == null) ? action.toString() : macro+"("+action.toString()+")";
+			String _dPorts = null;
+			String _sPorts = null;
+			String _origDest = null;
+			String _sourceZone = cleanZone(sourceZone);
+			String _destinationZone = cleanZone(destinationZone);
+			
+			String _egress = destinationSubZone;
+			if (destinationSubZone != null && new HostName(destinationSubZone).isAddress()) {
+				_egress += ".";
+			}		
+			if (dPorts != null) {
+				_dPorts = dPorts.stream().map(Object::toString).collect(Collectors.joining(","));
+			}
+			if (sPorts != null) {
+				_sPorts = sPorts.stream().map(Object::toString).collect(Collectors.joining(","));
+			}
+			if (origDest != null) {
+				_origDest = origDest.stream().map(IPAddress::toCompressedString).collect(Collectors.joining(","));
+			}
+			
+			String rule = "";
+			rule += _action + "\t";
+			rule += _sourceZone;
+			rule += (sourceSubZone != null) ? ":" + sourceSubZone.toString() + "\t" : "\t";
+			rule += _destinationZone;
+			rule += (_egress != null) ? ":" + _egress + "\t" : "\t";
+			rule += (proto != null) ? proto.toString().toLowerCase() + "\t" : "-\t";
+			rule += (_dPorts != null) ? _dPorts + "\t" : "-\t";
+			rule += (_sPorts != null) ? _sPorts + "\t" : "-\t";
+			rule += (_origDest != null) ? _origDest + "\t" : "-\t";
+			rule += (rate != null) ? rate : "";
+		
+			return rule;
+		}
+	}
 
 	public ShorewallFirewall(String label, NetworkModel networkModel) {
 		super(label, networkModel);
@@ -109,6 +226,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 	 * @return valid zone name
 	 */
 	private String cleanZone(Object zone) {
+		if (zone == null) {
+			return null;
+		}
+		
 		String _zone = zone.toString();
 		String prefix = "";
 
@@ -180,239 +301,128 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return hosts;
 	}
 
-	/**
-	 * Please be aware that each param will have its toString() method invoked
-	 * 
-	 * @param action
-	 * @param sourceZone
-	 * @param sourceSubZone
-	 * @param destinationZone
-	 * @param destinationSubZone
-	 * @param encapsulation
-	 * @param dPorts
-	 * @param sPorts
-	 * @param origDest
-	 * @param rate
-	 */
-	private void addRule(Object action, Object sourceZone, Object sourceSubZone, Object destinationZone, Object destinationSubZone, Encapsulation encapsulation, String dPorts, String sPorts,String origDest, String rate) {
-		addRule(action, sourceZone, ":", sourceSubZone, destinationZone, destinationSubZone, encapsulation, dPorts, sPorts, origDest, rate);
-	}
-	
-	private void addRule(Object action, Object sourceZone, Object delimiter, Object sourceSubZone, Object destinationZone, Object destinationSubZone, Encapsulation encapsulation, String dPorts, String sPorts,
-			String origDest, String rate) {
-		String rule = "";
-		rule += action.toString() + "\t";
-		rule += cleanZone(sourceZone);
-		rule += (sourceSubZone != null) ? delimiter.toString() + sourceSubZone.toString() + "\t" : "\t";
-		rule += cleanZone(destinationZone);
-		rule += (destinationSubZone != null) ? ":" + destinationSubZone.toString() + "\t" : "\t";
-		rule += (encapsulation != null) ? encapsulation.toString().toLowerCase() + "\t" : "-\t";
-		rule += (dPorts != null) ? dPorts + "\t" : "-\t";
-		rule += (sPorts != null) ? sPorts + "\t" : "-\t";
-		rule += (origDest != null) ? origDest + "\t" : "-\t";
-		rule += (rate != null) ? rate : "";
-
-		this.rules.add(rule);
-	}
-
-	/**
-	 * 
-	 * @param action
-	 * @param sourceZone
-	 * @param sourceSubZone
-	 * @param destinationZone
-	 * @param destinationSubZone
-	 * @param encapsulation
-	 * @param dPorts
-	 */
-	private void addRule(Object action, Object sourceZone, Object sourceSubZone, Object destinationZone, Object destinationSubZone,Encapsulation encapsulation,String dPorts) {
-		addRule(action, sourceZone, sourceSubZone, destinationZone, destinationSubZone, encapsulation, dPorts, null, null, null);
-	}
-	
-	/**
-	 * 
-	 * @param action
-	 * @param sourceZone
-	 * @param sourceSubZone
-	 * @param destinationZone
-	 * @param destinationSubZone
-	 */
-	private void addRule(Object action, Object sourceZone, Object sourceSubZone, Object destinationZone, Object destinationSubZone) {
-		addRule(action, sourceZone, sourceSubZone, destinationZone, destinationSubZone, null, null, null, null, null);
-	}
-	
-	/**
-	 * 
-	 * @param macro
-	 * @param sourceZone
-	 * @param destinationZone
-	 */
-	private void addListenRule(String macro, String sourceZone, String destinationZone) {
-		addListenRule(macro,Action.ACCEPT,sourceZone,null,destinationZone,null);
-	}
-	
-	/**
-	 * 
-	 * @param macro
-	 * @param action
-	 * @param sourceZone
-	 * @param sourceSubZone
-	 * @param destination
-	 * @param destinationSubZone
-	 */
-	private void addListenRule(String macro, Action action, String sourceZone,String sourceSubZone, String destination, String destinationSubZone) {
-		addListenRule(macro, action, sourceZone, sourceSubZone, destination, destinationSubZone, null, null,null);
-	}
-	
-	/**
-	 * 
-	 * @param sourceZone
-	 * @param destinationZone
-	 * @param encapsulation
-	 * @param ports
-	 */
-	private void addListenRule(String sourceZone, String destinationZone, Encapsulation encapsulation, Collection<Integer> ports) {
-		addListenRule(sourceZone, destinationZone, encapsulation, ports, null);
-	}
-	
-	private void addListenRule(String sourceZone, String destinationZone, Encapsulation encapsulation, Integer... ports) {
-		addListenRule(sourceZone, destinationZone, encapsulation, Arrays.asList(ports));
-	}
-	
-	/**
-	 * 
-	 * @param sourceZone
-	 * @param destinationZone
-	 * @param encapsulation
-	 * @param ports
-	 * @param externalIPs
-	 */
-	private void addListenRule(String sourceZone, String destinationZone, Encapsulation encapsulation, Collection<Integer> ports, Collection<IPAddress> externalIPs) {
-		String _ports = null;
-		String _externalIPs = null;
+	private Collection<Rule> getRulesFile() throws InvalidServerException, InvalidServerModelException {
+		Collection<Rule> rules = new ArrayList<>();
 		
-		if (ports != null) {
-			_ports = ports.stream().map(Object::toString).collect(Collectors.joining(","));
-		}
-		if (externalIPs!=null) {
-			_externalIPs = externalIPs.stream().map(IPAddress::toCompressedString).collect(Collectors.joining(","));
-		}
-		
-		addListenRule(null, Action.ACCEPT, sourceZone, null, destinationZone, null, encapsulation, _ports, _externalIPs);
-	}
-		
-	/**
-	 * 
-	 * @param macro
-	 * @param action
-	 * @param sourceZone
-	 * @param sourceSubZone
-	 * @param destination
-	 * @param destinationSubZone
-	 * @param encapsulation
-	 * @param dPorts
-	 */
-	private void addListenRule(String macro, Action action, String sourceZone,String sourceSubZone, String destination, String destinationSubZone, Encapsulation encapsulation, String dPorts, String externalIPs) {
-		String _action = (macro == null) ? action.toString(): macro+"("+action.toString()+")";
-		
-		addRule(_action, sourceZone, sourceSubZone, destination, destinationSubZone, encapsulation, dPorts);
-	}
-	
-	/**
-	 * 
-	 * @param sourceZone
-	 * @param destinationZone
-	 * @param destinationSubZone
-	 * @param ports
-	 * @param originalDestination
-	 */
-	private void addDNATRule(String sourceZone, String destinationZone, String destinationSubZone, Collection<Integer> ports, String originalDestination) {
-		addDNATRule(sourceZone, null, null, destinationZone, destinationSubZone, ports, originalDestination);
-	}
-	
-	/**
-	 * 
-	 * @param sourceZone
-	 * @param destinationZone
-	 * @param destinationSubZone
-	 * @param ports
-	 */
-	private void addDNATRule(String sourceZone, String delimiter, String sourceSubZone, String destinationZone, String destinationSubZone, Collection<Integer> ports, String originalDestination) {
-		final String _ports = ports.stream().map(Object::toString).collect(Collectors.joining(","));
-		
-		addRule(Action.DNAT, sourceZone, delimiter, cleanZone(sourceSubZone), destinationZone, destinationSubZone, Encapsulation.TCP, _ports, null, originalDestination, null);
-	}
-	
-	/**
-	 * Allow unfettered access to the Internet from a given zone
-	 * @param sourceZone
-	 */
-	private void addEgressRule(ParentZone sourceZone) {
-		addRule(Action.ACCEPT.toString(), sourceZone, null, ParentZone.INTERNET.toString(), null);
-	}
-	
-	/**
-	 * 
-	 * @param action
-	 * @param sourceZone
-	 * @param destination
-	 */
-	private void addEgressRule(String sourceZone, HostName destination) {
-		String _egress = destination.getHost();
-		if (!destination.isAddress()) {
-			_egress += ".";
-		}
-		
-		addRule(Action.ACCEPT.toString(), sourceZone, null, ParentZone.INTERNET.toString(), _egress);
-	}
-
-	private Collection<String> getRulesFile() throws InvalidServerException, InvalidServerModelException {
 		String routerZone = ParentZone.ROUTER.toString();
 		
-		addListenRule("DNS", routerZone, routerZone);
+		Rule dnsRule = new Rule();
+		dnsRule.setMacro("DNS");
+		dnsRule.setAction(Action.ACCEPT);
+		dnsRule.setSourceZone(routerZone);
+		dnsRule.setDestinationZone(routerZone);
+
+		rules.add(dnsRule);
+		
 		ParentZone.lanZone.forEach(sourceZone -> {
-			addListenRule("DNS", Action.ACCEPT, sourceZone.toString(), null, routerZone, "&" + sourceZone.toString());
+			Rule lanDnsRule = new Rule();
+			lanDnsRule.setMacro("DNS");
+			lanDnsRule.setAction(Action.ACCEPT);
+			lanDnsRule.setSourceZone(sourceZone.toString());
+			lanDnsRule.setDestinationZone(routerZone);
+			lanDnsRule.setDestinationSubZone("&" + sourceZone.toString());
+			
+			rules.add(lanDnsRule);
 		});
-		addListenRule(ParentZone.USERS.toString(), routerZone, Encapsulation.TCP, getNetworkModel().getData().getSSHPort(getLabel()));
+		
+		Rule sshRule = new Rule();
+		sshRule.setAction(Action.ACCEPT);
+		sshRule.setSourceZone(ParentZone.USERS.toString());
+		sshRule.setProto(Encapsulation.TCP);
+		sshRule.setDPorts(Arrays.asList(getNetworkModel().getData().getSSHPort(getLabel())));
+		sshRule.setDestinationZone(getLabel());
+		
+		rules.add(sshRule);
 		
 		//Whitelist Users & External-only, because they need 'net access
-		addEgressRule(ParentZone.USERS);
-		addEgressRule(ParentZone.EXTERNAL_ONLY);
+		Rule userEgress = new Rule();
+		userEgress.setAction(Action.ACCEPT);
+		userEgress.setSourceZone(ParentZone.USERS.toString());
+		userEgress.setDestinationZone(ParentZone.INTERNET.toString());
+		
+		rules.add(userEgress);
+		
+		Rule externalOnlyEgress = new Rule();
+		externalOnlyEgress.setAction(Action.ACCEPT);
+		externalOnlyEgress.setSourceZone(ParentZone.EXTERNAL_ONLY.toString());
+		externalOnlyEgress.setDestinationZone(ParentZone.INTERNET.toString());
+		
+		rules.add(externalOnlyEgress);
 		
 		// Iterate over every machine to build all of its rules
-		getNetworkModel().getUniqueMachines().forEach((machineLabel, machine) -> {
+		getNetworkModel().getUniqueMachines().values().forEach(machine -> {
 			machine.getEgresses().forEach(egress -> {
-				addEgressRule(machineLabel, egress);
+				Rule machineEgressRule = new Rule();
+				machineEgressRule.setAction(Action.ACCEPT);
+				machineEgressRule.setSourceZone(machine.getLabel());
+				machineEgressRule.setDestinationZone(ParentZone.INTERNET.toString());
+				machineEgressRule.setDestinationSubZone(egress.getHost());
+				
+				rules.add(machineEgressRule);
 			});
 
-			machine.getListens().forEach((encapsulation, ports) -> {
-				try {
-					if (getNetworkModel().getServerModel(machineLabel).isRouter()) {
-						return;
-					}
-				} catch (InvalidServerModelException e) {
-					return;
-				}
+			machine.getListens().forEach((encapsulation, dPorts) -> {
+//				try {
+//					if (getNetworkModel().getServerModel(machineLabel).isRouter()) {
+//						return;
+//					}
+//				} catch (InvalidServerModelException e) {
+//					return;
+//				}
 
 				if (machine.getExternalIPs() != null) {
-					addDNATRule(ParentZone.INTERNET.toString(), machineLabel, machine.getIP(), ports, machine.getExternalIPs().toString());
-					addListenRule("all+", machineLabel,  encapsulation, ports, machine.getExternalIPs());
+					Rule externalDNATRule = new Rule();
+					externalDNATRule.setAction(Action.DNAT);
+					externalDNATRule.setSourceZone(ParentZone.INTERNET.toString());
+					externalDNATRule.setDestinationZone(machine.getLabel());
+					externalDNATRule.setDestinationSubZone(machine.getIPs().stream().map(IPAddress::toCompressedString).collect(Collectors.joining(",")));
+					externalDNATRule.setDPorts(dPorts);
+					externalDNATRule.setProto(encapsulation);
+					externalDNATRule.setOrigDest(machine.getExternalIPs());
+					
+					rules.add(externalDNATRule);
+					
+					Rule externalDNATListenRule = new Rule();
+					externalDNATListenRule.setAction(Action.ACCEPT);
+					externalDNATListenRule.setSourceZone("all+");
+					externalDNATListenRule.setProto(encapsulation);
+					externalDNATListenRule.setDestinationZone(machine.getLabel());
+					externalDNATListenRule.setDPorts(dPorts);
+					
+					rules.add(externalDNATListenRule);
 				} else {
-					addListenRule(ParentZone.USERS.toString(), machineLabel, encapsulation, ports);
+					Rule listenRule = new Rule();
+					listenRule.setAction(Action.ACCEPT);
+					listenRule.setSourceZone("all+");
+					listenRule.setProto(encapsulation);
+					listenRule.setDestinationZone(machine.getLabel());
+					listenRule.setDPorts(dPorts);
+					
+					rules.add(listenRule);
 				}
 				
 				machine.getDNAT().forEach((destination, dnatPorts)->{
+					Rule dnatRule = new Rule();
+					dnatRule.setAction(Action.DNAT);
+					dnatRule.setSourceZone("!" + machine.getLabel());
+					dnatRule.setDestinationZone(machine.getLabel());
+					dnatRule.setDestinationSubZone(machine.getIPs().stream().map(IPAddress::toCompressedString).collect(Collectors.joining(",")));
+					dnatRule.setDPorts(dPorts);
+					dnatRule.setProto(encapsulation);
+					
 					try {
-						addDNATRule("all", "!", machineLabel, machineLabel, machine.getIP(), dnatPorts, getNetworkModel().getServerModel(destination).getIP());
-					} catch (InvalidServerModelException e) {
+						dnatRule.setOrigDest(getNetworkModel().getMachineModel(destination).getIPs());
+					} catch (InvalidMachineModelException | IncompatibleAddressException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					
+					rules.add(dnatRule);
 				});
 			});
 		});
 
-		return this.rules;
+		return rules;
 	}
 
 	private Collection<String> getZonesFile() {
@@ -492,10 +502,11 @@ public class ShorewallFirewall extends AFirewallProfile {
 		units.add(maclist);
 
 		// Finally, build our FW rules...
-		final FileUnit rules =
-				new FileUnit("shorewall_rules", "shorewall_hosts", CONFIG_BASEDIR + "/rules");
+		final FileUnit rules = new FileUnit("shorewall_rules", "shorewall_hosts", CONFIG_BASEDIR + "/rules");
 		try {
-			rules.appendLine(getRulesFile().toArray(String[]::new));
+			getRulesFile().forEach(rule -> {
+				rules.appendLine(rule.getRule());
+			});
 		} catch (InvalidServerException | InvalidServerModelException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -684,9 +695,11 @@ public class ShorewallFirewall extends AFirewallProfile {
 			}
 			
 			machine.getNetworkInterfaces().forEach(nic -> {
-				maclist.add("ACCEPT\t" + zone.toString() + "\t" + nic.getMac().toNormalizedString()
-						+ "\t" + getAddresses(machine) + "\t#" + machine.getLabel());
+				if (nic.getMac() != null) {
+					maclist.add("ACCEPT\t" + zone.toString() + "\t" + nic.getMac().toNormalizedString()
+							+ "\t" + getAddresses(machine) + "\t#" + machine.getLabel());
 
+				}
 			});
 		}
 
