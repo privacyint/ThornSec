@@ -94,25 +94,22 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 
 	@Override
 	protected void distributeMACs() throws AThornSecException {
+		final Boolean isRouterHV = getNetworkModel().getServerModel(getLabel()).isHyperVisor();
 
 		// Start by checking all of the devices have a MAC address provided, as these
 		// are physical devices!
 		for (final ADeviceModel device : getNetworkModel().getDevices().values()) {
-			checkMACs(device, true);
+			checkMACs(device, !isRouterHV);
 		}
 
 		// Iterate through our dedi machines, these are also physical machines
 		for (final ServerModel server : getNetworkModel().getServers(MachineType.DEDICATED).values()) {
-			checkMACs(server, true);
+			checkMACs(server, !isRouterHV);
 		}
 
 		// Iterate through our HyperVisor machines, these are also physical machines
 		for (final ServerModel server : getNetworkModel().getServers(MachineType.HYPERVISOR).values()) {
-			if (server.isRouter()) {
-				continue; // We don't care
-			} else {
-				checkMACs(server, true);
-			}
+			checkMACs(server, !isRouterHV);
 		}
 
 		// Finally, iterate through our services, filling in any gaps.
@@ -224,8 +221,11 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 				}
 
 				for (final NetworkInterfaceModel iface : machine.getNetworkInterfaces()) {
+					// We check the requirement elsewhere. Don't try and build non-machine leases
+					if (iface.getMac() == null) {
+						continue;
+					}
 
-					assert (iface.getMac() != null);
 					assert (iface.getAddresses().size() == 1);
 					final IPAddress ip = (IPAddress) iface.getAddresses().toArray()[0];
 
