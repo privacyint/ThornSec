@@ -259,8 +259,8 @@ public abstract class AMachineModel extends AModel {
 
 	public abstract Collection<IUnit> getUnits() throws AThornSecException;
 
-	public String getIP() {
-		String ips = "";
+	public Collection<IPAddress> getIPs() {
+		final Collection<IPAddress> ips = new ArrayList<>();
 
 		for (final NetworkInterfaceModel nic : getNetworkInterfaces()) {
 			if (nic.getAddresses() == null) {
@@ -272,7 +272,7 @@ public abstract class AMachineModel extends AModel {
 					continue;
 				}
 				
-				ips += ip.getLowerNonZeroHost().withoutPrefixLength().toCompressedString();
+				ips.add(ip);
 			}
 		}
 		
