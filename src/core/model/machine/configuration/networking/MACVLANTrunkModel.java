@@ -62,4 +62,8 @@ public class MACVLANTrunkModel extends NetworkInterfaceModel {
 
 		this.vlans.add(vlan);
 	}
+
+	public final Collection<MACVLANModel> getVLANs() {
+		return this.vlans;
+	}
 }
