@@ -42,8 +42,10 @@ public class MACVLANTrunkModel extends NetworkInterfaceModel {
 		network.appendLine("[Network]");
 		network.appendLine("IPForward=yes");
 
-		for (final MACVLANModel vlan : this.vlans) {
-			network.appendLine("MACVLAN=" + vlan.getIface());
+		if (getVLANs() != null) {
+			getVLANs().forEach(vlan -> {
+				network.appendLine("MACVLAN=" + vlan.getIface());
+			});
 		}
 
 		return network;
