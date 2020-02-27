@@ -69,12 +69,30 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		final Collection<IPAddress> ips = new ArrayList<>();
 
 		try {
-			ips.add(new IPAddressString(getNetworkModel().getData().getAdminSubnet()).toAddress());
-			ips.add(new IPAddressString(getNetworkModel().getData().getServerSubnet()).toAddress());
-			ips.add(new IPAddressString(getNetworkModel().getData().getUserSubnet()).toAddress());
-			ips.add(new IPAddressString(getNetworkModel().getData().getGuestSubnet()).toAddress());
-			ips.add(new IPAddressString(getNetworkModel().getData().getInternalSubnet()).toAddress());
-			ips.add(new IPAddressString(getNetworkModel().getData().getExternalSubnet()).toAddress());
+			if (!getNetworkModel().getMachines(MachineType.ADMIN).isEmpty()) {
+				ips.add(new IPAddressString(getNetworkModel().getData().getAdminSubnet()).toAddress());
+			}
+
+			if (!getNetworkModel().getMachines(MachineType.SERVER).isEmpty()) {
+				ips.add(new IPAddressString(getNetworkModel().getData().getServerSubnet()).toAddress());
+			}
+
+			if (!getNetworkModel().getMachines(MachineType.USER).isEmpty()
+					&& !getNetworkModel().getServerModel(getLabel()).isHyperVisor()) {
+				ips.add(new IPAddressString(getNetworkModel().getData().getUserSubnet()).toAddress());
+			}
+
+			if (getNetworkModel().getData().buildAutoGuest()) {
+				ips.add(new IPAddressString(getNetworkModel().getData().getGuestSubnet()).toAddress());
+			}
+
+			if (!getNetworkModel().getMachines(MachineType.INTERNAL_ONLY).isEmpty()) {
+				ips.add(new IPAddressString(getNetworkModel().getData().getInternalSubnet()).toAddress());
+			}
+
+			if (!getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).isEmpty()) {
+				ips.add(new IPAddressString(getNetworkModel().getData().getExternalSubnet()).toAddress());
+			}
 		} catch (AddressStringException | IncompatibleAddressException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
