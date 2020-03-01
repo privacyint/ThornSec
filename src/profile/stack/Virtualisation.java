@@ -52,6 +52,7 @@ public class Virtualisation extends AStructuredProfile {
 		units.add(new InstalledUnit("metal_genisoimage", "proceed", "genisoimage"));
 		units.add(new InstalledUnit("metal_rsync", "proceed", "rsync"));
 		units.add(new InstalledUnit("metal_guestfs_utils", "proceed", "libguestfs-tools"));
+		units.add(new InstalledUnit("metal_wget", "proceed", "wget"));
 
 		return units;
 	}
@@ -315,8 +316,8 @@ public class Virtualisation extends AStructuredProfile {
 			
 			units.add(new SimpleUnit(service + "_" + disk.getLabel() + "_disk_attached", service + "_hdds_sas_controller",
 					diskAttach,
-					"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"HDDs-0-" + deviceCounter + "\"",
-					"\\\"HDDs-0-" + deviceCounter + "\\\"=\\\"" + disk.getFilename() + "\\\"", "pass",
+					"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep \"HDDs-" + deviceCounter + "-0\"",
+					"\\\"HDDs-" + deviceCounter + "-0\\\"=\\\"" + disk.getFilename() + "\\\"", "pass",
 					"Couldn't attach disk " + disk.getLabel() + "for " + service + "."));
 
 			deviceCounter++;
