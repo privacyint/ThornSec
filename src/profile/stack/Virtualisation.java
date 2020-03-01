@@ -52,6 +52,7 @@ public class Virtualisation extends AStructuredProfile {
 		units.add(new InstalledUnit("metal_genisoimage", "proceed", "genisoimage"));
 		units.add(new InstalledUnit("metal_rsync", "proceed", "rsync"));
 		units.add(new InstalledUnit("metal_guestfs_utils", "proceed", "libguestfs-tools"));
+		units.add(new InstalledUnit("metal_wget", "proceed", "wget"));
 
 		return units;
 	}
