@@ -53,12 +53,17 @@ public class MACVLANModel extends NetworkInterfaceModel {
 		network.appendLine("Name=" + getIface());
 		network.appendCarriageReturn();
 
+		network.appendLine("[Link]");
+		network.appendLine("RequiredForOnline=yes");
+		
 		network.appendLine("[Network]");
+		network.appendLine("ConfigureWithoutCarrier=yes");
 		// There should only ever be one IP address here
 		assert (super.getAddresses().size() == 1);
 		for (final IPAddress address : super.getAddresses()) {
 			network.appendLine("Address=" + address.getLowerNonZeroHost());
 		}
+		
 		network.appendCarriageReturn();
 
 		network.appendLine("[Route]");
