@@ -80,7 +80,7 @@ public class NetworkData extends AData {
 	private static final String NETWORK_ADMIN_SUBNET = "172.20.0.0/16";
 	private static final String NETWORK_INTERNAL_SUBNET = "172.24.0.0/16";
 	private static final String NETWORK_EXTERNAL_SUBNET = "172.28.0.0/16";
-	private static final String NETWORK_GUEST_SUBNET = "172.31.0.0/16";
+	private static final String NETWORK_GUEST_SUBNET = "172.32.0.0/16";
 	private static final String NETWORK_VPN_SUBNET = "172.36.0.0/16";
 
 	private static final Boolean NETWORK_ADBLOCKING = false;
