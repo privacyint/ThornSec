@@ -43,7 +43,7 @@ public class UserDeviceData extends ADeviceData {
 
 		this.fullname = data.getString("fullname", "Dr McNuggets");
 
-		this.sshKey = data.getString("sshkey", null);
+		this.sshKey = data.getString("ssh", null);
 		this.defaultPassword = data.getString("defaultpw", null);
 		this.wireguardKey = data.getString("wireguard", null);
 	}
