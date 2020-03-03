@@ -190,7 +190,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 				_sPorts = sPorts.stream().map(Object::toString).collect(Collectors.joining(","));
 			}
 			if (origDest != null) {
-				_origDest = origDest.stream().map(IPAddress::toCompressedString).collect(Collectors.joining(","));
+				_origDest = this.origDest.stream().map(dest -> dest.withoutPrefixLength().toCompressedString())
+						.collect(Collectors.joining(","));
 			}
 			
 			String rule = "";
@@ -375,7 +376,9 @@ public class ShorewallFirewall extends AFirewallProfile {
 					externalDNATRule.setAction(Action.DNAT);
 					externalDNATRule.setSourceZone(ParentZone.INTERNET.toString());
 					externalDNATRule.setDestinationZone(machine.getLabel());
-					externalDNATRule.setDestinationSubZone(machine.getIPs().stream().map(IPAddress::toCompressedString).collect(Collectors.joining(",")));
+					externalDNATRule.setDestinationSubZone(
+							machine.getIPs().stream().map(dest -> dest.withoutPrefixLength().toCompressedString())
+									.collect(Collectors.joining(",")));
 					externalDNATRule.setDPorts(dPorts);
 					externalDNATRule.setProto(encapsulation);
 					externalDNATRule.setOrigDest(machine.getExternalIPs());
@@ -406,7 +409,9 @@ public class ShorewallFirewall extends AFirewallProfile {
 					dnatRule.setAction(Action.DNAT);
 					dnatRule.setSourceZone("!" + machine.getLabel());
 					dnatRule.setDestinationZone(machine.getLabel());
-					dnatRule.setDestinationSubZone(machine.getIPs().stream().map(IPAddress::toCompressedString).collect(Collectors.joining(",")));
+					dnatRule.setDestinationSubZone(
+							machine.getIPs().stream().map(dest -> dest.withoutPrefixLength().toCompressedString())
+									.collect(Collectors.joining(",")));
 					dnatRule.setDPorts(dPorts);
 					dnatRule.setProto(encapsulation);
 					
