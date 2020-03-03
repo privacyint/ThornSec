@@ -70,8 +70,8 @@ public class WireGuard extends AStructuredProfile {
 		getNetworkModel().getServerModel(getLabel()).addNetworkInterface(nic);
 
 		units.add(new SimpleUnit("wireguard_private_key", "wireguard_installed",
-				"echo \\$(wg genkey) | sudo tee /etc/wireguard/private.key > /dev/null",
-				"sudo cat /etc/wireguard/private.key 2>&1;", "", "pass",
+				"echo $(wg genkey) | sudo tee /etc/wireguard/private.key > /dev/null",
+				"sudo cat /etc/wireguard/private.key 2>&1;", "", "fail",
 				"I was unable to generate you a private key."));
 
 		return units;
