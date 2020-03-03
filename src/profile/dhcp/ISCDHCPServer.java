@@ -295,12 +295,16 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 					"/etc/dhcp/dhcpd.conf.d/Guests.conf");
 			units.add(guestConfig);
 
+			final IPAddress subnet = new IPAddressString(getNetworkModel().getData().getGuestSubnet()).getAddress();
+
 			guestConfig.appendLine("group Guests {");
-			guestConfig.appendLine("\tsubnet 10.250.0.0 netmask 255.255.252.0 {");
+			guestConfig.appendLine("\tsubnet " + subnet.getLower().withoutPrefixLength() + " netmask 255.255.252.0 {");
 			guestConfig.appendLine("\t\tpool {");
-			guestConfig.appendLine("\t\t\trange 10.250.0.15 10.250.3.255;");
-			guestConfig.appendLine("\t\t\toption routers 10.0.0.1;");
-			guestConfig.appendLine("\t\t\toption domain-name-servers 1.1.1.1;");
+			guestConfig.appendLine("\t\t\trange " + subnet.getLower().withoutPrefixLength() + " "
+					+ subnet.getUpper().withoutPrefixLength() + ";");
+			guestConfig.appendLine("\t\t\toption routers " + subnet.getLowerNonZeroHost().withoutPrefixLength() + ";");
+			guestConfig.appendLine(
+					"\t\t\toption domain-name-servers " + subnet.getLowerNonZeroHost().withoutPrefixLength() + ";");
 			guestConfig.appendLine("\t\t\tdeny known-clients;");
 			guestConfig.appendLine("\t\t\tallow unknown-clients;");
 			guestConfig.appendLine("\t\t}");
