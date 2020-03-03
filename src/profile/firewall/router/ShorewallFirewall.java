@@ -527,23 +527,12 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return new ArrayList<>();
 	}
 
-	@Override
-	public Collection<IUnit> getPersistentConfig() throws ARuntimeException {
-		this.hostMap.put(ParentZone.SERVERS, getNetworkModel().getMachines(MachineType.SERVER).values());
-		this.hostMap.put(ParentZone.USERS, getNetworkModel().getMachines(MachineType.USER).values());
-		this.hostMap.put(ParentZone.ADMINS, getNetworkModel().getMachines(MachineType.ADMIN).values());
-		this.hostMap.put(ParentZone.INTERNAL_ONLY, getNetworkModel().getMachines(MachineType.INTERNAL_ONLY).values());
-		this.hostMap.put(ParentZone.EXTERNAL_ONLY, getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).values());
-		
-		final Collection<IUnit> units = new ArrayList<>();
-
-		final FileEditUnit shorewallConf = new FileEditUnit("shorewall_implicit_continue_on",
-				"shorewall_installed", "IMPLICIT_CONTINUE=No", "IMPLICIT_CONTINUE=Yes",
-				"/etc/shorewall/shorewall.conf",
-				"I couldn't enable implicit continue on your firewall - this means many of our firewall configurations will fail.");
-		units.add(shorewallConf);
-
-		// Build our default policies
+	/**
+	 * This is where we build our default rules
+	 *
+	 * @return
+	 */
+	private FileUnit getPoliciesFile() {
 		final FileUnit policies = new FileUnit("shorewall_policies", "shorewall_installed", CONFIG_BASEDIR + "/policy");
 		policies.appendLine("#Default policies to use for intra-zone communication");
 		policies.appendLine("#For specific rules, please look at " + CONFIG_BASEDIR + "/rules");
@@ -551,10 +540,14 @@ public class ShorewallFirewall extends AFirewallProfile {
 		policies.appendLine("#source\tdestination\taction");
 		policies.appendLine("Internet\tall+\tDROP"); // DROP all ingress traffic
 		policies.appendLine("all+\tall+\tREJECT"); // REJECT all other traffic
-		units.add(policies);
 
+		return policies;
+	}
+
+	private FileUnit getInterfacesFile() {
 		// Dedicate interfaces to parent zones
-		final FileUnit interfaces = new FileUnit("shorewall_interfaces", "shorewall_policies", CONFIG_BASEDIR + "/interfaces");
+		final FileUnit interfaces = new FileUnit("shorewall_interfaces", "shorewall_policies",
+				CONFIG_BASEDIR + "/interfaces");
 		interfaces.appendLine("#Dedicate interfaces to parent zones");
 		interfaces.appendLine("#Please see http://shorewall.net/manpages/shorewall-interfaces.html for more details");
 		interfaces.appendLine("#zone\tinterface\tbroadcast\toptions");
@@ -578,10 +571,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 		}
 
 		// Then, declare our various interface:zone mapping
-		Map<ParentZone, MachineType> zoneMappings = Map.of(ParentZone.SERVERS, MachineType.SERVER,
-				ParentZone.USERS, MachineType.USER, ParentZone.ADMINS, MachineType.ADMIN,
-				ParentZone.INTERNAL_ONLY, MachineType.INTERNAL_ONLY, ParentZone.EXTERNAL_ONLY,
-				MachineType.EXTERNAL_ONLY);
+		Map<ParentZone, MachineType> zoneMappings = Map.of(ParentZone.SERVERS, MachineType.SERVER, ParentZone.USERS,
+				MachineType.USER, ParentZone.ADMINS, MachineType.ADMIN, ParentZone.INTERNAL_ONLY,
+				MachineType.INTERNAL_ONLY, ParentZone.EXTERNAL_ONLY, MachineType.EXTERNAL_ONLY, ParentZone.VPN,
+				MachineType.USER);
 
 		if (getNetworkModel().getData().buildAutoGuest()) {
 			zoneMappings = new HashMap<>(zoneMappings);
@@ -589,16 +582,14 @@ public class ShorewallFirewall extends AFirewallProfile {
 		}
 
 		zoneMappings.forEach((zone, type) -> {
-			interfaces.appendLine(
-					cleanZone(zone) + "\t" + type.toString() + "\t-\tdhcp,routefilter,arp_filter");
+			interfaces.appendLine(cleanZone(zone) + "\t" + type.toString() + "\t-\tdhcp,routefilter,arp_filter");
 		});
 
-		units.add(interfaces);
+		return interfaces;
+	}
 
-		// Once we've done all that, it's time to tell shorewall about our various
-		// masquerading
-		final FileUnit masq = new FileUnit("shorewall_masquerades", "shorewall_installed",
-				CONFIG_BASEDIR + "/masq");
+	private FileUnit getMasqFile() {
+		final FileUnit masq = new FileUnit("shorewall_masquerades", "shorewall_installed", CONFIG_BASEDIR + "/masq");
 		try {
 			if (getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
 				getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic -> {
@@ -612,7 +603,26 @@ public class ShorewallFirewall extends AFirewallProfile {
 			e.printStackTrace();
 		}
 
-		units.add(masq);
+		return masq;
+	}
+
+	@Override
+	public Collection<IUnit> getPersistentConfig() throws ARuntimeException {
+		this.hostMap.put(ParentZone.SERVERS, getNetworkModel().getMachines(MachineType.SERVER).values());
+		this.hostMap.put(ParentZone.USERS, getNetworkModel().getMachines(MachineType.USER).values());
+		this.hostMap.put(ParentZone.ADMINS, getNetworkModel().getMachines(MachineType.ADMIN).values());
+		this.hostMap.put(ParentZone.INTERNAL_ONLY, getNetworkModel().getMachines(MachineType.INTERNAL_ONLY).values());
+		this.hostMap.put(ParentZone.EXTERNAL_ONLY, getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).values());
+
+		final Collection<IUnit> units = new ArrayList<>();
+
+		final FileEditUnit shorewallConf = new FileEditUnit("shorewall_implicit_continue_on", "shorewall_installed",
+				"IMPLICIT_CONTINUE=No", "IMPLICIT_CONTINUE=Yes", "/etc/shorewall/shorewall.conf",
+				"I couldn't enable implicit continue on your firewall - this means many of our firewall configurations will fail.");
+		units.add(shorewallConf);
+		units.add(getPoliciesFile());
+		units.add(getInterfacesFile());
+		units.add(getMasqFile());
 
 		return units;
 	}
