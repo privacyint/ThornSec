@@ -180,7 +180,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 			String _destinationZone = cleanZone(destinationZone);
 			
 			String _egress = destinationSubZone;
-			if (destinationSubZone != null && new HostName(destinationSubZone).isAddress()) {
+			if ((this.destinationSubZone != null) && !(new HostName(this.destinationSubZone).isAddress())) {
 				_egress += ".";
 			}		
 			if (dPorts != null) {
