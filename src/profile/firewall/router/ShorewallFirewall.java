@@ -99,7 +99,9 @@ public class ShorewallFirewall extends AFirewallProfile {
 	private class Rule {
 		private String macro;
 		private Action action;
-		
+
+		private Boolean invertSource;
+
 		private String sourceZone;
 		private String sourceSubZone;
 		private Collection<Integer> sPorts;
@@ -117,10 +119,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 			macro = null;
 			action = null;
 			
-			sourceZone = null;
+			this.invertSource = false;
 			sourceSubZone = null;
 			sPorts = null;
-			
+
 			destinationZone = null;
 			destinationSubZone = null;
 			proto = null;
@@ -143,8 +145,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 			this.sourceZone = sourceZone;
 		}
 		
-		public void setSPorts(Collection<Integer> sPorts) {
-			this.sPorts = sPorts;
+		public void setInvertSource(Boolean val) {
+			this.invertSource = val;
 		}
 		
 		public void setDestinationZone(String destinationZone) {
@@ -179,7 +181,11 @@ public class ShorewallFirewall extends AFirewallProfile {
 			String _sourceZone = cleanZone(sourceZone);
 			String _destinationZone = cleanZone(destinationZone);
 			
-			String _egress = destinationSubZone;
+			if (this.invertSource) {
+				_sourceZone = "all!" + _sourceZone;
+			}
+
+			String _egress = this.destinationSubZone;
 			if ((this.destinationSubZone != null) && !(new HostName(this.destinationSubZone).isAddress())) {
 				_egress += ".";
 			}		
@@ -382,6 +388,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 					externalDNATRule.setDPorts(dPorts);
 					externalDNATRule.setProto(encapsulation);
 					externalDNATRule.setOrigDest(machine.getExternalIPs());
+					externalDNATRule.setInvertSource(true);
 					
 					rules.add(externalDNATRule);
 					
@@ -407,13 +414,14 @@ public class ShorewallFirewall extends AFirewallProfile {
 				machine.getDNAT().forEach((destination, dnatPorts)->{
 					Rule dnatRule = new Rule();
 					dnatRule.setAction(Action.DNAT);
-					dnatRule.setSourceZone("!" + machine.getLabel());
+					dnatRule.setSourceZone(machine.getLabel());
 					dnatRule.setDestinationZone(machine.getLabel());
 					dnatRule.setDestinationSubZone(
 							machine.getIPs().stream().map(dest -> dest.withoutPrefixLength().toCompressedString())
 									.collect(Collectors.joining(",")));
 					dnatRule.setDPorts(dPorts);
 					dnatRule.setProto(encapsulation);
+					dnatRule.setInvertSource(true);
 					
 					try {
 						dnatRule.setOrigDest(getNetworkModel().getMachineModel(destination).getIPs());
