@@ -298,7 +298,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 			final IPAddress subnet = new IPAddressString(getNetworkModel().getData().getGuestSubnet()).getAddress();
 
 			guestConfig.appendLine("group Guests {");
-			guestConfig.appendLine("\tsubnet " + subnet.getLower().withoutPrefixLength() + " netmask 255.255.252.0 {");
+			guestConfig.appendLine("\tsubnet " + subnet.getLower().withoutPrefixLength() + " netmask "
+					+ subnet.getNetwork().getNetworkMask(subnet.getPrefixLength(), false) + " {");
 			guestConfig.appendLine("\t\tpool {");
 			guestConfig.appendLine("\t\t\trange " + subnet.getLower().withoutPrefixLength() + " "
 					+ subnet.getUpper().withoutPrefixLength() + ";");
