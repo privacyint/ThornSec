@@ -286,7 +286,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		for (final String subnet : getSubnets().keySet()) {
-			buildSubNet(subnet);
+			units.add(buildSubNet(subnet));
 		}
 
 		// @TODO: guest networking
