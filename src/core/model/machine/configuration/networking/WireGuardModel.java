@@ -97,14 +97,15 @@ public class WireGuardModel extends NetworkInterfaceModel {
 		netdev.appendLine("PrivateKey=/etc/wireguard/private.key");
 		netdev.appendLine("ListenPort=" + this.listenPort);
 
-		this.peerKeys.forEach(peerKey -> {
-			netdev.appendCarriageReturn();
-			netdev.appendLine("[WireGuardPeer]");
-			netdev.appendLine("PublicKey=" + peerKey);
-			netdev.appendLine("PresharedKey=" + this.psk);
-			netdev.appendLine("AllowedIPs=0.0.0.0/0");
-		});
-
+		if (this.peerKeys != null) {
+			this.peerKeys.forEach(peerKey -> {
+				netdev.appendCarriageReturn();
+				netdev.appendLine("[WireGuardPeer]");
+				netdev.appendLine("PublicKey=" + peerKey);
+				netdev.appendLine("PresharedKey=" + this.psk);
+				netdev.appendLine("AllowedIPs=0.0.0.0/0");
+			});
+		}
 		return netdev;
 	}
 
