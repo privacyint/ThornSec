@@ -187,9 +187,9 @@ public class Virtualisation extends AStructuredProfile {
 		preseed += "d-i netcfg/get_domain string " + domain + "\n";
 		preseed += "d-i netcfg/hostname string " + hostname + "\n";
 		preseed += "d-i mirror/country string manual\n";
-		preseed += "d-i mirror/http/hostname string \\\"" + debianMirror + "\\\"\n";
-		preseed += "d-i mirror/http/directory string \\\"" + debianDirectory + "\\\"\n";
-		preseed += "d-i mirror/http/proxy string \\\"\\\"\n";
+		preseed += "d-i mirror/http/hostname string " + debianMirror + "\n";
+		preseed += "d-i mirror/http/directory string " + debianDirectory + "\n";
+		preseed += "d-i mirror/http/proxy string \n";
 		preseed += "d-i passwd/root-password-crypted password ${" + service.toUpperCase() + "_PASSWORD}\n";
 		preseed += "d-i passwd/user-fullname string " + fullName + "\n";
 		preseed += "d-i passwd/username string " + user + "\n";
