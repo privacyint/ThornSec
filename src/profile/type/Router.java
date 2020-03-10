@@ -140,8 +140,10 @@ public class Router extends AStructuredProfile {
 
 		// if we want a guest network, build one of them, too
 		if (getNetworkModel().getData().buildAutoGuest()) {
-			me.addNetworkInterface(new MACVLANModel(MachineType.GUEST.toString(), trunk,
+			if ( !me.isHyperVisor() ) { // Unless you're a hypervisor router - this is a silly thing to have :/
+				me.addNetworkInterface(new MACVLANModel(MachineType.GUEST.toString(), trunk,
 					getNetworkModel().getData().getGuestSubnet(), getNetworkModel().getData().getGuestSubnet()));
+			}
 		}
 
 		// Now create our DHCP Server.
