@@ -142,7 +142,7 @@ public class Nginx extends AStructuredProfile {
 			units.addAll(this.liveConfigs);
 		} else {
 			final FileUnit defaultServerBlock = new FileUnit("nginx_default", "nginx_installed",
-					Nginx.CONF_D_DIRECTORY + "default.conf");
+					Nginx.CONF_D_DIRECTORY + "/default.conf");
 			units.add(defaultServerBlock);
 
 			defaultServerBlock.appendLine("server {");
