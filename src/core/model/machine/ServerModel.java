@@ -32,7 +32,6 @@ import core.unit.SimpleUnit;
 import core.unit.fs.FileAppendUnit;
 import core.unit.pkg.InstalledUnit;
 import profile.firewall.AFirewallProfile;
-import profile.firewall.machine.CSFFirewall;
 import profile.firewall.router.ShorewallFirewall;
 import profile.machine.configuration.AptSources;
 import profile.machine.configuration.BindFS;
@@ -96,24 +95,25 @@ public class ServerModel extends AMachineModel {
 	public void init() throws AThornSecException {
 		// TODO: Probably a cleaner way of doing the below
 		this.types = new HashSet<>();
+		this.firewall = new ShorewallFirewall(getLabel(), this.networkModel);
+
 		for (final MachineType type : getNetworkModel().getData().getTypes(getLabel())) {
 			switch (type) {
 			case ROUTER:
-				if (this.firewall == null) {
-					this.firewall = new ShorewallFirewall(getLabel(), this.networkModel);
-				}
+//				if (this.firewall == null) {
+//				}
 				this.types.add(new Router(getLabel(), this.networkModel));
 				break;
 			case HYPERVISOR:
-				if (this.firewall == null) {
-					this.firewall = new CSFFirewall(getLabel(), this.networkModel);
-				}
+//				if (this.firewall == null) {
+//					this.firewall = new CSFFirewall(getLabel(), this.networkModel);
+//				}
 				this.types.add(new HyperVisor(getLabel(), this.networkModel));
 				break;
 			case SERVICE:
-				if (this.firewall == null) {
-					this.firewall = new CSFFirewall(getLabel(), this.networkModel);
-				}
+//				if (this.firewall == null) {
+//					this.firewall = new CSFFirewall(getLabel(), this.networkModel);
+//				}
 				String hv = this.networkModel.getData().getService(getLabel()).getHypervisor();
 				Service service = new Service(getLabel(), this.networkModel);
 				service.setHypervisor(hv);
