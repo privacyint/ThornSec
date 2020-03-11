@@ -184,18 +184,21 @@ public class Webproxy extends AStructuredProfile {
 					nginxConf.appendText(" default"); // We need this to be here, or it'll crap out :'(
 					isDefault = false;
 				}
-				nginxConf.appendText(";");
+				nginxConf.appendLine(";");
 
-				nginxConf.appendLine("\tserver_name " + backendLabel + "." + domain);
+				nginxConf.appendCarriageReturn();
+
+				nginxConf.appendLine("\tserver_name " + backendLabel + "." + domain + ";");
 
 				if (cnames != null) {
 					for (final String cname : cnames) {
-						nginxConf.appendLine((cname.equals("")) ? " " : " " + cname + ".");
-						nginxConf.appendLine(domain.toNormalizedString());
+						nginxConf.appendText("\tserver_name ");
+						nginxConf.appendText((cname.equals("") || (cname.equals("."))) ? "" : cname + ".");
+						nginxConf.appendLine(domain.toNormalizedString() + ";");
 					}
 				}
 
-				nginxConf.appendLine(";");
+				nginxConf.appendCarriageReturn();
 
 				// Let's separate the logs out...
 				nginxConf.appendLine("\taccess_log " + logDir + "access.log;"); // main buffer=16k;");
