@@ -108,9 +108,13 @@ public class Webproxy extends AStructuredProfile {
 		sslConf.appendCarriageReturn();
 		sslConf.appendLine("\tssl_stapling on;");
 		sslConf.appendLine("\tssl_stapling_verify on;");
-		for (final HostName resolver : getNetworkModel().getData().getUpstreamDNSServers()) {
-			sslConf.appendLine("\tresolver " + resolver.asInetAddress() + " valid=300s;");
-		}
+
+		sslConf.appendText("\tresolver ");
+		getNetworkModel().getData().getUpstreamDNSServers().forEach(resolver -> {
+			sslConf.appendText(resolver.asInetAddress() + " ");
+		});
+		sslConf.appendLine("valid=300s;");
+
 		sslConf.appendLine("\tresolver_timeout 5s;");
 
 		// Now build our headers file
