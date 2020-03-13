@@ -609,7 +609,11 @@ public class ShorewallFirewall extends AFirewallProfile {
 			if (getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
 				getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic -> {
 					ParentZone.lanZone.forEach(zone -> {
-						masq.appendLine(nic.getIface() + "\t" + zone.toString());
+						final String line = nic.getIface() + "\t" + zone.toString();
+
+						if (!masq.containsLine(line)) {
+							masq.appendLine(line);
+						}
 					});
 				});
 			}
