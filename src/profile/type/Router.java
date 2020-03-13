@@ -22,6 +22,7 @@ import core.model.machine.ServerModel;
 import core.model.machine.configuration.networking.BondInterfaceModel;
 import core.model.machine.configuration.networking.BondModel;
 import core.model.machine.configuration.networking.DHCPClientInterfaceModel;
+import core.model.machine.configuration.networking.DummyModel;
 import core.model.machine.configuration.networking.ISystemdNetworkd;
 import core.model.machine.configuration.networking.MACVLANModel;
 import core.model.machine.configuration.networking.MACVLANTrunkModel;
@@ -61,11 +62,9 @@ public class Router extends AStructuredProfile {
 		Collection<NetworkInterfaceData> lanIfaces = new ArrayList<>();
 		Collection<NetworkInterfaceData> wanIfaces = new ArrayList<>();
 
-		// Start by building our (bonded) trunk. This trunk will bond any LAN-facing
-		// NICs, and we'll hang all our VLANs off it.
-		final BondModel bond = new BondModel("Bond");
-		bond.setIface("LAN");
-		me.addNetworkInterface(bond);
+		// Start by building our trunk. This trunk will bond any LAN-facing
+		// NICs, or will be a dummy if there aren't any. We'll hang our VLANs off it.
+		NetworkInterfaceModel lanTrunk = null;
 
 		try {
 			lanIfaces = getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.LAN);
@@ -77,10 +76,16 @@ public class Router extends AStructuredProfile {
 
 		// Bond each LAN interface
 		if (lanIfaces != null) {
-			lanIfaces.forEach(iface -> {
-				final NetworkInterfaceModel link = new BondInterfaceModel(iface.getIface(), bond);
-				me.addNetworkInterface(link);
-			});
+			lanTrunk = new BondModel("bond");
+		} else {
+			lanTrunk = new DummyModel("dummy");
+		}
+
+		lanTrunk.setIface("LAN");
+
+		for (final NetworkInterfaceData ifaceData : lanIfaces) {
+			final NetworkInterfaceModel link = new BondInterfaceModel(ifaceData.getIface(), lanTrunk);
+			me.addNetworkInterface(link);
 		}
 
 		// Declare external network interfaces
