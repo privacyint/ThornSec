@@ -12,15 +12,15 @@ import core.unit.fs.FileUnit;
 
 /**
  * This model represents a Bonded physical interface - i.e. the "physical"
- * interface to add to a Bond.
+ * interface to add to a trunk.
  */
 public class BondInterfaceModel extends NetworkInterfaceModel {
-	private final BondModel bond;
+	private final NetworkInterfaceModel trunk;
 
-	public BondInterfaceModel(String name, BondModel bond) {
+	public BondInterfaceModel(String name, NetworkInterfaceModel trunk) {
 		super(name);
 
-		this.bond = bond;
+		this.trunk = trunk;
 		super.setInet(Inet.MANUAL);
 	}
 
@@ -43,7 +43,7 @@ public class BondInterfaceModel extends NetworkInterfaceModel {
 	}
 
 	private String getBond() {
-		return this.bond.getIface();
+		return this.trunk.getIface();
 	}
 
 	@Override
