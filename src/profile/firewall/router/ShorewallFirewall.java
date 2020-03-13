@@ -440,57 +440,65 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return rules;
 	}
 
-	private Collection<String> getZonesFile() {
-		// Build our zones
-		final Collection<String> zones = new ArrayList<>();
-		zones.add("#This is the file which creates our various zones");
-		zones.add("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
-		zones.add("#zone\ttype");
-		zones.add(cleanZone(ParentZone.INTERNET) + "\tipv4");
-		zones.add("");
+	/**
+	 * Build our shorewall zones file.
+	 *
+	 * See http://shorewall.net/manpages/shorewall-zones.html for more details
+	 *
+	 * @return the zones file
+	 */
+	private FileUnit getZonesFile() {
+		final FileUnit zones = new FileUnit("shorewall_zones", "shorewall_installed", CONFIG_BASEDIR + "/zones");
 
-		zones.add("#Here, we build our server zone, and give each server its own subzone");
-		zones.add(cleanZone(ParentZone.SERVERS) + "\tipv4");
+		zones.appendLine("#This is the file which creates our various zones");
+		zones.appendLine("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
+		zones.appendLine("#zone\ttype");
+		zones.appendLine(cleanZone(ParentZone.INTERNET) + "\tipv4");
+		zones.appendLine("");
+
+		zones.appendLine("#Here, we build our server zone, and give each server its own subzone");
+		zones.appendLine(cleanZone(ParentZone.SERVERS) + "\tipv4");
 		getNetworkModel().getServers().keySet().forEach(server -> {
 			try {
 				if (getNetworkModel().getServerModel(server).isRouter()) {
-					zones.add(cleanZone(server) + "\tfirewall");
+					zones.appendLine(cleanZone(server) + "\tfirewall");
 				} else {
-					zones.add(cleanZone(server) + ":" + cleanZone(ParentZone.SERVERS) + "\tipv4");
+					zones.appendLine(cleanZone(server) + ":" + cleanZone(ParentZone.SERVERS) + "\tipv4");
 				}
-			} catch (InvalidServerModelException e) {
+			} catch (final InvalidServerModelException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		});
-		zones.add("");
 
-		zones.add("#Here, we build our user zone, and give each user their own subzone");
-		zones.add("Users\tipv4");
+		zones.appendLine("");
+
+		zones.appendLine("#Here, we build our user zone, and give each user their own subzone");
+		zones.appendLine("Users\tipv4");
 		getNetworkModel().getUserDevices().keySet().forEach(user -> {
-			zones.add(cleanZone(user) + ":" + cleanZone(ParentZone.USERS) + "\tipv4");
+			zones.appendLine(cleanZone(user) + ":" + cleanZone(ParentZone.USERS) + "\tipv4");
 		});
 
 		// TODO: Do we need an admin zone? Should it be sub-zoned too?
-		zones.add(cleanZone(ParentZone.ADMINS) + ":" + cleanZone(ParentZone.USERS) + "\tipv4");
-		zones.add("");
+		zones.appendLine(cleanZone(ParentZone.ADMINS) + ":" + cleanZone(ParentZone.USERS) + "\tipv4");
+		zones.appendLine("");
 
-		zones.add("#Here, we build our internal only zone, and give each device its own subzone");
-		zones.add(cleanZone(ParentZone.INTERNAL_ONLY) + "\tipv4");
+		zones.appendLine("#Here, we build our internal only zone, and give each device its own subzone");
+		zones.appendLine(cleanZone(ParentZone.INTERNAL_ONLY) + "\tipv4");
 		getNetworkModel().getInternalOnlyDevices().keySet().forEach(device -> {
-			zones.add(cleanZone(device) + ":" + cleanZone(ParentZone.INTERNAL_ONLY) + "\tipv4");
+			zones.appendLine(cleanZone(device) + ":" + cleanZone(ParentZone.INTERNAL_ONLY) + "\tipv4");
 		});
-		zones.add("");
+		zones.appendLine("");
 
-		zones.add("#Here, we build our external only zone, and give each device its own subzone");
-		zones.add(cleanZone(ParentZone.EXTERNAL_ONLY) + "\tipv4");
+		zones.appendLine("#Here, we build our external only zone, and give each device its own subzone");
+		zones.appendLine(cleanZone(ParentZone.EXTERNAL_ONLY) + "\tipv4");
 		getNetworkModel().getExternalOnlyDevices().keySet().forEach(device -> {
-			zones.add(cleanZone(device) + ":" + cleanZone(ParentZone.EXTERNAL_ONLY) + "\tipv4");
+			zones.appendLine(cleanZone(device) + ":" + cleanZone(ParentZone.EXTERNAL_ONLY) + "\tipv4");
 		});
 
 		// Do we want an autoguest network? Build its zone if so
 		if (getNetworkModel().getData().buildAutoGuest()) {
-			zones.add(cleanZone(ParentZone.GUESTS) + "\tipv4");
+			zones.appendLine(cleanZone(ParentZone.GUESTS) + "\tipv4");
 		}
 
 		return zones;
@@ -500,10 +508,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 	public Collection<IUnit> getLiveConfig() throws ARuntimeException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		final FileUnit zones = new FileUnit("shorewall_zones", "shorewall_installed", CONFIG_BASEDIR + "/zones");
-		zones.appendLine(getZonesFile().toArray(String[]::new));
-
-		units.add(zones);
+		units.add(getZonesFile());
 
 		// Now assign machines their (sub)zone, and enforce our maclist
 		final FileUnit hosts = new FileUnit("shorewall_hosts", "shorewall_interfaces", CONFIG_BASEDIR + "/hosts");
