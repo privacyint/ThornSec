@@ -63,6 +63,17 @@ public class FileUnit extends SimpleUnit {
 	}
 
 	/**
+	 * Check the FileUnit for an occurrence of a given line of text
+	 *
+	 * @param line The text to search for
+	 * @return true if the FileUnit contains at least one occurrence of the given
+	 *         text; false otherwise
+	 */
+	public final Boolean containsLine(String line) {
+		return this.lines.contains(line);
+	}
+
+	/**
 	 * Append text to this FileUnit, without a trailing carriage return
 	 * 
 	 * @param text
