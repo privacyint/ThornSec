@@ -471,30 +471,43 @@ public class ShorewallFirewall extends AFirewallProfile {
 			}
 		});
 
-		zones.appendLine("");
+		if (getNetworkModel().getUserDevices() != null) {
 
-		zones.appendLine("#Here, we build our user zone, and give each user their own subzone");
-		zones.appendLine("Users\tipv4");
-		getNetworkModel().getUserDevices().keySet().forEach(user -> {
-			zones.appendLine(cleanZone(user) + ":" + cleanZone(ParentZone.USERS) + "\tipv4");
-		});
+			if (getNetworkModel().getUserDevices().values()
+					.stream()
+					.filter((dev) -> dev.getNetworkInterfaces() != null)
+					.count() > 0) {
+				zones.appendCarriageReturn();
+				zones.appendLine("#Here, we build our user zone, and give each user their own subzone");
+				zones.appendLine("Users\tipv4");
+				getNetworkModel().getUserDevices().keySet().forEach(user -> {
+					zones.appendLine(cleanZone(user) + ":" + cleanZone(ParentZone.USERS) + "\tipv4");
 
-		// TODO: Do we need an admin zone? Should it be sub-zoned too?
-		zones.appendLine(cleanZone(ParentZone.ADMINS) + ":" + cleanZone(ParentZone.USERS) + "\tipv4");
-		zones.appendLine("");
+				});
+			}
+		}
 
-		zones.appendLine("#Here, we build our internal only zone, and give each device its own subzone");
-		zones.appendLine(cleanZone(ParentZone.INTERNAL_ONLY) + "\tipv4");
-		getNetworkModel().getInternalOnlyDevices().keySet().forEach(device -> {
-			zones.appendLine(cleanZone(device) + ":" + cleanZone(ParentZone.INTERNAL_ONLY) + "\tipv4");
-		});
-		zones.appendLine("");
+		if (getNetworkModel().getAdminDevices() != null) {
+			zones.appendLine(cleanZone(ParentZone.ADMINS) + ":" + cleanZone(ParentZone.USERS) + "\tipv4");
+			zones.appendCarriageReturn();
+		}
 
-		zones.appendLine("#Here, we build our external only zone, and give each device its own subzone");
-		zones.appendLine(cleanZone(ParentZone.EXTERNAL_ONLY) + "\tipv4");
-		getNetworkModel().getExternalOnlyDevices().keySet().forEach(device -> {
-			zones.appendLine(cleanZone(device) + ":" + cleanZone(ParentZone.EXTERNAL_ONLY) + "\tipv4");
-		});
+		if (getNetworkModel().getInternalOnlyDevices() != null) {
+			zones.appendLine("#Here, we build our internal only zone, and give each device its own subzone");
+			zones.appendLine(cleanZone(ParentZone.INTERNAL_ONLY) + "\tipv4");
+			getNetworkModel().getInternalOnlyDevices().keySet().forEach(device -> {
+				zones.appendLine(cleanZone(device) + ":" + cleanZone(ParentZone.INTERNAL_ONLY) + "\tipv4");
+			});
+			zones.appendCarriageReturn();
+		}
+
+		if (getNetworkModel().getExternalOnlyDevices() != null) {
+			zones.appendLine("#Here, we build our external only zone, and give each device its own subzone");
+			zones.appendLine(cleanZone(ParentZone.EXTERNAL_ONLY) + "\tipv4");
+			getNetworkModel().getExternalOnlyDevices().keySet().forEach(device -> {
+				zones.appendLine(cleanZone(device) + ":" + cleanZone(ParentZone.EXTERNAL_ONLY) + "\tipv4");
+			});
+		}
 
 		// Do we want an autoguest network? Build its zone if so
 		if (getNetworkModel().getData().buildAutoGuest()) {
