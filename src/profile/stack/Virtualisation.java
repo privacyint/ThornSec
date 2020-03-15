@@ -328,13 +328,47 @@ public class Virtualisation extends AStructuredProfile {
 
 		return units;
 	}
+	
+	private Collection<IUnit> buildBackups(String service, String logDir, String user, String group) {
+		Collection<IUnit> units = new ArrayList<>();
+		
+		units.add(new DirUnit("log_dir_" + service, "proceed", logDir));
+		units.add(new DirOwnUnit("log_dir_" + service, "log_dir_" + service + "_created", logDir, user, group));
+		units.add(new DirPermsUnit("log_dir_" + service, "log_dir_" + service + "_chowned", logDir, "750"));
+
+		units.add(new SimpleUnit(service + "_log_sf_attached", service + "_exists",
+				"sudo -u " + user + " VBoxManage sharedfolder add " + service + " --name log --hostpath " + logDir + ";"
+						+ "sudo -u " + user + " VBoxManage setextradata " + service
+						+ " VBoxInternal1/SharedFoldersEnableSymlinksCreate/log 1",
+				"sudo -u " + user + " VBoxManage showvminfo " + service
+						+ " --machinereadable | grep SharedFolderPathMachineMapping1",
+				"SharedFolderPathMachineMapping1=\\\"" + logDir + "\\\"", "pass",
+				"Couldn't attach the logs folder to " + service + ".  This means logs will only exist in the VM."));
+		
+		return units;
+	}
+	
+	private Collection<IUnit> buildLogs(String service, String backupDir, String user, String group) {
+		Collection<IUnit> units = new ArrayList<>();
+		
+		units.add(new DirUnit("backup_dir_" + service, "proceed", backupDir));
+		units.add(new DirOwnUnit("backup_dir_" + service, "backup_dir_" + service + "_created", backupDir, user,
+				group));
+		units.add(new DirPermsUnit("backup_dir_" + service, "backup_dir_" + service + "_chowned", backupDir,
+				"750"));
+		// Mark the backup destination directory as a valid destination
+		units.add(new FileUnit(service + "_mark_backup_dir", "backup_dir_" + service + "_chmoded",
+				backupDir + "/backup.marker", "In memoriam Luke and Guy.  Miss you two!"));
+		
+		return units;
+	}
 
 	public Collection<IUnit> buildServiceVm(String service, String bridge)
 			throws InvalidServerException, InvalidMachineModelException {
 		final String baseDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel());
 
 		final String logDir = baseDir + "/logs/" + service;
-		final String backupTargetDir = baseDir + "/backups/" + service;
+		final String backupDir = baseDir + "/backups/" + service;
 		final String ttySocketDir = baseDir + "/sockets/" + service;
 
 		// final String installIso = baseDir + "/isos/" + service + "/" + service +
@@ -365,19 +399,10 @@ public class Virtualisation extends AStructuredProfile {
 
 		// Set up VM's storage
 		units.addAll(buildDisks(user, group, service, getNetworkModel().getServiceModel(service).getDisks()));
-
-		units.add(new DirUnit("log_dir_" + service, "proceed", logDir));
-		units.add(new DirOwnUnit("log_dir_" + service, "log_dir_" + service + "_created", logDir, user, group));
-		units.add(new DirPermsUnit("log_dir_" + service, "log_dir_" + service + "_chowned", logDir, "750"));
-
-		units.add(new DirUnit("backup_dir_" + service, "proceed", backupTargetDir));
-		units.add(new DirOwnUnit("backup_dir_" + service, "backup_dir_" + service + "_created", backupTargetDir, user,
-				group));
-		units.add(new DirPermsUnit("backup_dir_" + service, "backup_dir_" + service + "_chowned", backupTargetDir,
-				"750"));
-		// Mark the backup destination directory as a valid destination
-		units.add(new FileUnit(service + "_mark_backup_dir", "backup_dir_" + service + "_chmoded",
-				backupTargetDir + "/backup.marker", "In memoriam Luke and Guy.  Miss you two!"));
+		//Make sure Logs are attached
+		units.addAll(buildLogs(service, logDir, user, group));
+		//And the backups
+		units.addAll(buildBackups(service, backupDir, user, group));
 
 		units.add(new DirUnit("socket_dir_" + service, "proceed", ttySocketDir));
 		units.add(new DirOwnUnit("socket_dir_" + service, "socket_dir_" + service + "_created", ttySocketDir, user,
@@ -416,21 +441,14 @@ public class Virtualisation extends AStructuredProfile {
 		units.add(modifyVm(service, user, "hpet", "on"));
 
 		// Shared folders setup
-		units.add(new SimpleUnit(service + "_log_sf_attached", service + "_exists",
-				"sudo -u " + user + " VBoxManage sharedfolder add " + service + " --name log --hostpath " + logDir + ";"
-						+ "sudo -u " + user + " VBoxManage setextradata " + service
-						+ " VBoxInternal1/SharedFoldersEnableSymlinksCreate/log 1",
-				"sudo -u " + user + " VBoxManage showvminfo " + service
-						+ " --machinereadable | grep SharedFolderPathMachineMapping1",
-				"SharedFolderPathMachineMapping1=\\\"" + logDir + "\\\"", "pass",
-				"Couldn't attach the logs folder to " + service + ".  This means logs will only exist in the VM."));
+
 
 		units.add(new SimpleUnit(service + "_backup_sf_attached", service + "_exists",
 				"sudo -u " + user + " VBoxManage sharedfolder add " + service + " --name backup --hostpath "
-						+ backupTargetDir,
+						+ backupDir,
 				"sudo -u " + user + " VBoxManage showvminfo " + service
 						+ " --machinereadable | grep SharedFolderPathMachineMapping2",
-				"SharedFolderPathMachineMapping2=\\\"" + backupTargetDir + "\\\"", "pass"));
+				"SharedFolderPathMachineMapping2=\\\"" + backupDir + "\\\"", "pass"));
 
 		// Clock setup to try and stop drift between host and guest
 		// https://www.virtualbox.org/manual/ch09.html#changetimesync
