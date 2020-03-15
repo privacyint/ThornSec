@@ -222,7 +222,7 @@ public class Virtualisation extends AStructuredProfile {
 		return preseed;
 	}
 
-	private Collection<IUnit> buildDisks(String user, String service, Map<String, DiskModel> disks) {
+	private Collection<IUnit> buildDisks(String user, String group, String service, Map<String, DiskModel> disks) {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		// Disk controller setup
@@ -364,7 +364,7 @@ public class Virtualisation extends AStructuredProfile {
 						+ " on its HyperVisor.  This is fatal, " + service + " will not exist on your network."));
 
 		// Set up VM's storage
-		units.addAll(buildDisks(user, service, getNetworkModel().getServiceModel(service).getDisks()));
+		units.addAll(buildDisks(user, group, service, getNetworkModel().getServiceModel(service).getDisks()));
 
 		units.add(new DirUnit("log_dir_" + service, "proceed", logDir));
 		units.add(new DirOwnUnit("log_dir_" + service, "log_dir_" + service + "_created", logDir, user, group));
