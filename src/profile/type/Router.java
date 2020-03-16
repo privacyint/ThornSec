@@ -82,13 +82,12 @@ public class Router extends AStructuredProfile {
 			lanTrunk = new BondModel("bond");
 		} else {
 			lanTrunk = new DummyModel("dummy");
-		}
+			lanTrunk.setIface("LAN");
 
-		lanTrunk.setIface("LAN");
-
-		for (final NetworkInterfaceData ifaceData : lanIfaces) {
-			final NetworkInterfaceModel link = new BondInterfaceModel(ifaceData.getIface(), lanTrunk);
-			me.addNetworkInterface(link);
+			for (final NetworkInterfaceData ifaceData : lanIfaces.values()) {
+				final NetworkInterfaceModel link = new BondInterfaceModel(ifaceData.getIface(), lanTrunk);
+				me.addNetworkInterface(link);
+			}
 		}
 
 		// Declare external network interfaces
