@@ -233,7 +233,7 @@ public class NetworkModel {
 	public Map<String, ServerModel> getServers(MachineType type) {
 		final Map<String, ServerModel> servers = new LinkedHashMap<>();
 
-		if (getMachines().get(type) != null) {
+		if ((getMachines() != null) && (getMachines().get(type) != null)) {
 			for (final AMachineModel server : getMachines(type).values()) {
 				servers.put(server.getLabel(), (ServerModel) server);
 			}
