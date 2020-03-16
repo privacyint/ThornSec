@@ -214,9 +214,17 @@ public abstract class AMachineData extends AData {
 	public final Map<Direction, Map<String, NetworkInterfaceData>> getNetworkInterfaces() {
 		return this.networkInterfaces;
 	}
-	
+
 	public final NetworkInterfaceData getNetworkInterface(Direction dir, String iface) {
-		return getNetworkInterfaces().get(dir).get(iface);
+		if (getNetworkInterfaces() != null) {
+			final Map<String, NetworkInterfaceData> nics = getNetworkInterfaces().get(dir);
+
+			if (nics != null) {
+				return nics.getOrDefault(iface, null);
+			}
+		}
+
+		return null;
 	}
 
 	public final Boolean isThrottled() {
