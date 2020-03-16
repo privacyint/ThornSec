@@ -244,7 +244,7 @@ public class HyperVisor extends AStructuredProfile {
 
 		Collection<NetworkInterfaceData> lanNics = null;
 		try {
-			lanNics = getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.LAN);
+			lanNics = getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.LAN).values();
 		} catch (JsonParsingException | ADataException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
