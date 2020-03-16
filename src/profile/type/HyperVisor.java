@@ -103,7 +103,9 @@ public class HyperVisor extends AStructuredProfile {
 						break;
 					default:
 					}
-					link.addAddress(lanNic.getAddresses().toArray(IPAddress[]::new));
+					if (lanNic.getAddresses() != null) {
+						link.addAddress(lanNic.getAddresses().toArray(IPAddress[]::new));
+					}
 					link.setGateway(lanNic.getGateway());
 					link.setBroadcast(lanNic.getBroadcast());
 					link.setMac(lanNic.getMAC());

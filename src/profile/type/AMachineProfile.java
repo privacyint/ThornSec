@@ -36,8 +36,10 @@ public abstract class AMachineProfile extends AStructuredProfile {
 		default:
 		}
 
-		for (IPAddress address : nic.getAddresses()) {
-			link.addAddress(address);
+		if (nic.getAddresses() != null) {
+			for (final IPAddress address : nic.getAddresses()) {
+				link.addAddress(address);
+			}
 		}
 		
 		link.setGateway(nic.getGateway());

@@ -97,7 +97,9 @@ public class Router extends AStructuredProfile {
 			switch (nic.getInet()) {
 			case STATIC:
 				link = new StaticInterfaceModel(iface);
-				link.addAddress(nic.getAddresses().toArray(IPAddress[]::new));
+				if (nic.getAddresses() != null) {
+					link.addAddress(nic.getAddresses().toArray(IPAddress[]::new));
+				}
 				link.setGateway(nic.getGateway());
 				link.setBroadcast(nic.getBroadcast());
 				link.setIsIPMasquerading(true);
