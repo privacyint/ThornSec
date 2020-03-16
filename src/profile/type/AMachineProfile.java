@@ -1,6 +1,13 @@
 package profile.type;
 
+import java.io.IOException;
+import java.util.Map;
+
+import javax.json.stream.JsonParsingException;
+
 import core.data.machine.configuration.NetworkInterfaceData;
+import core.data.machine.configuration.NetworkInterfaceData.Direction;
+import core.exception.data.ADataException;
 import core.exception.runtime.InvalidServerModelException;
 import core.model.machine.configuration.networking.DHCPClientInterfaceModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
@@ -39,5 +46,28 @@ public abstract class AMachineProfile extends AStructuredProfile {
 		link.setIsIPMasquerading(masquerading);
 		
 		getNetworkModel().getServerModel(getLabel()).addNetworkInterface(link);
+	}
+
+	protected void buildNICs() {
+		try {
+			final Map<Direction, Map<String, NetworkInterfaceData>> nics = getNetworkModel().getData()
+					.getNetworkInterfaces(getLabel());
+
+			if (nics != null) {
+				nics.keySet().forEach(dir -> {
+					nics.get(dir).forEach((iface, nic) -> {
+						try {
+							buildIface(nic, dir.equals(Direction.WAN));
+						} catch (final InvalidServerModelException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					});
+				});
+			}
+		} catch (JsonParsingException | ADataException | IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 	}
 }
