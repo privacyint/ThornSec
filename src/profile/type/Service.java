@@ -96,7 +96,7 @@ public class Service extends AMachineProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentConfig() {
+	public Collection<IUnit> getPersistentConfig() {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new SimpleUnit("data_drive_is_partitioned", "proceed", "(\n" + "	echo o\n" // Create a new empty DOS

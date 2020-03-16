@@ -49,7 +49,7 @@ public class SSH extends AStructuredProfile {
 	 * See https://man.openbsd.org/sshd_config
 	 */
 	@Override
-	protected Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidMachineException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidMachineException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		// The below is informed by https://infosec.mozilla.org/guidelines/openssh

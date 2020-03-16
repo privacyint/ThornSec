@@ -80,7 +80,7 @@ public class Etherpad extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new SimpleUnit("etherpad_mysql_password", "etherpad_installed",

@@ -203,15 +203,17 @@ public class Router extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentConfig() throws AThornSecException {
+	public Collection<IUnit> getPersistentConfig() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		final FileUnit resolvConf = new FileUnit("leave_my_resolv_conf_alone", "proceed", "/etc/dhcp/dhclient-enter-hooks.d/leave_my_resolv_conf_alone");
+		final FileUnit resolvConf = new FileUnit("leave_my_resolv_conf_alone", "proceed",
+				"/etc/dhcp/dhclient-enter-hooks.d/leave_my_resolv_conf_alone");
 		units.add(resolvConf);
 
 		resolvConf.appendLine("make_resolv_conf() { :; }");
 
-		units.add(new FilePermsUnit("leave_my_resolv_conf_alone", "leave_my_resolv_conf_alone", "/etc/dhcp/dhclient-enter-hooks.d/leave_my_resolv_conf_alone", "755",
+		units.add(new FilePermsUnit("leave_my_resolv_conf_alone", "leave_my_resolv_conf_alone",
+				"/etc/dhcp/dhclient-enter-hooks.d/leave_my_resolv_conf_alone", "755",
 				"I couldn't stop various systemd services deciding to override your DNS settings."
 						+ " This will cause you intermittent, difficult to diagnose problems as it randomly"
 						+ " sets your DNS to wherever it decides. Great for laptops/desktops, atrocious for servers..."));
