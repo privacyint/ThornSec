@@ -30,7 +30,7 @@ import core.profile.AStructuredProfile;
  * This is a dedicated server on your network. This is something ThornSec needs
  * to know about, but shouldn't attempt to configure
  */
-public class Dedicated extends AStructuredProfile {
+public class Dedicated extends AMachineProfile {
 
 	public Dedicated(String label, NetworkModel networkModel) throws InvalidServerModelException, JsonParsingException, ADataException {
 		super(label, networkModel);
