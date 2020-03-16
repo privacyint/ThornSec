@@ -19,12 +19,9 @@ import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.data.ADataException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.machine.ServerModel;
-import core.model.machine.configuration.networking.DHCPClientInterfaceModel;
-import core.model.machine.configuration.networking.NetworkInterfaceModel;
-import core.model.machine.configuration.networking.StaticInterfaceModel;
+
 import core.model.network.NetworkModel;
-import core.profile.AStructuredProfile;
+
 
 /**
  * This is a dedicated server on your network. This is something ThornSec needs
@@ -32,63 +29,22 @@ import core.profile.AStructuredProfile;
  */
 public class Dedicated extends AMachineProfile {
 
-	public Dedicated(String label, NetworkModel networkModel) throws InvalidServerModelException, JsonParsingException, ADataException {
+	public Dedicated(String label, NetworkModel networkModel) throws InvalidServerModelException, JsonParsingException, ADataException, IOException {
 		super(label, networkModel);
 
-		final ServerModel me = getNetworkModel().getServerModel(getLabel());
+		final Map<Direction, Map<String, NetworkInterfaceData>> nics = networkModel.getData().getNetworkInterfaces(getLabel());
 
-		try {
-			final Map<Direction, Collection<NetworkInterfaceData>> nics = networkModel.getData()
-					.getNetworkInterfaces(getLabel());
-
-			if (nics != null) {
-				if (nics.containsKey(Direction.WAN)) {
-					nics.get(Direction.WAN).forEach(nic -> {
-						NetworkInterfaceModel link = null;
-
-						switch (nic.getInet()) {
-						case STATIC:
-							link = new StaticInterfaceModel(nic.getIface());
-							break;
-						case DHCP:
-							link = new DHCPClientInterfaceModel(nic.getIface());
-							// @TODO: DHCPClient is a raw socket. Fix that test.
-							break;
-						default:
-						}
-
-						link.addAddress(nic.getAddress());
-						link.setGateway(nic.getGateway());
-						link.setBroadcast(nic.getBroadcast());
-						link.setMac(nic.getMAC());
-						link.setIsIPMasquerading(true);
-						me.addNetworkInterface(link);
-					});
-				}
-				if (nics.containsKey(Direction.LAN)) {
-					nics.get(Direction.LAN).forEach(nic -> {
-						NetworkInterfaceModel link = null;
-
-						switch (nic.getInet()) {
-						case STATIC:
-							link = new StaticInterfaceModel(nic.getIface());
-							break;
-						case DHCP:
-							link = new DHCPClientInterfaceModel(nic.getIface());
-							break;
-						default:
-						}
-
-						link.addAddress(nic.getAddress());
-						link.setGateway(nic.getGateway());
-						link.setBroadcast(nic.getBroadcast());
-						link.setMac(nic.getMAC());
-						me.addNetworkInterface(link);
-					});
-				}
-			}
-		} catch (final IOException e) {
-			e.printStackTrace();
+		if (nics != null) {
+			nics.keySet().forEach(dir -> {
+				nics.get(dir).forEach((iface, nic) -> {
+					try {
+						buildIface(nic, dir.equals(Direction.WAN));
+					} catch (InvalidServerModelException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				});
+			});
 		}
 	}
 
