@@ -10,6 +10,8 @@ package profile.type;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.json.stream.JsonParsingException;
 
@@ -35,6 +37,7 @@ import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.EnabledServiceUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.IPAddress;
 import profile.dhcp.ADHCPServerProfile;
 import profile.dhcp.ISCDHCPServer;
 import profile.dns.ADNSServerProfile;
@@ -59,8 +62,8 @@ public class Router extends AStructuredProfile {
 
 		// From this point, differentiate between LAN and WAN again. Makes bondage
 		// easier.
-		Collection<NetworkInterfaceData> lanIfaces = new ArrayList<>();
-		Collection<NetworkInterfaceData> wanIfaces = new ArrayList<>();
+		Map<String, NetworkInterfaceData> lanIfaces = new HashMap<>();
+		Map<String, NetworkInterfaceData> wanIfaces = new HashMap<>();
 
 		// Start by building our trunk. This trunk will bond any LAN-facing
 		// NICs, or will be a dummy if there aren't any. We'll hang our VLANs off it.
@@ -89,19 +92,19 @@ public class Router extends AStructuredProfile {
 		}
 
 		// Declare external network interfaces
-		wanIfaces.forEach(iface -> {
+		wanIfaces.forEach((iface, nic) -> {
 			NetworkInterfaceModel link = null;
 
-			switch (iface.getInet()) {
+			switch (nic.getInet()) {
 			case STATIC:
-				link = new StaticInterfaceModel(iface.getIface());
-				link.addAddress(iface.getAddress());
-				link.setGateway(iface.getGateway());
-				link.setBroadcast(iface.getBroadcast());
+				link = new StaticInterfaceModel(iface);
+				link.addAddress(nic.getAddresses().toArray(IPAddress[]::new));
+				link.setGateway(nic.getGateway());
+				link.setBroadcast(nic.getBroadcast());
 				link.setIsIPMasquerading(true);
 				break;
 			case DHCP:
-				link = new DHCPClientInterfaceModel(iface.getIface());
+				link = new DHCPClientInterfaceModel(iface);
 				link.setIsIPMasquerading(true);
 				break;
 			case PPP: // @TODO
