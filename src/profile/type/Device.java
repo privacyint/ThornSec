@@ -10,7 +10,7 @@ package profile.type;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-
+import java.util.Map;
 import javax.json.stream.JsonParsingException;
 
 import core.data.machine.configuration.NetworkInterfaceData;
@@ -36,55 +36,28 @@ public class Device extends AMachineProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentConfig() throws JsonParsingException, ADataException, InvalidDeviceModelException {
+	public Collection<IUnit> getPersistentConfig() throws ADataException, InvalidDeviceModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		final ADeviceModel me = getNetworkModel().getDeviceModel(getLabel());
-
 		try {
-			if (getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
-				for (final NetworkInterfaceData wanNic : getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)) {
-					NetworkInterfaceModel link = null;
-
-					switch (wanNic.getInet()) {
-					case STATIC:
-						link = new StaticInterfaceModel(wanNic.getIface());
-						break;
-					case DHCP:
-						link = new DHCPClientInterfaceModel(wanNic.getIface());
-						break;
-					default:
-					}
-					link.addAddress(wanNic.getAddress());
-					link.setGateway(wanNic.getGateway());
-					link.setBroadcast(wanNic.getBroadcast());
-					link.setMac(wanNic.getMAC());
-					link.setIsIPMasquerading(true);
-					me.addNetworkInterface(link);
-				}
+			Map<Direction, Map<String, NetworkInterfaceData>> nics = getNetworkModel().getData().getNetworkInterfaces(getLabel());
+	
+			if (nics != null) {
+				nics.keySet().forEach(dir -> {
+					nics.get(dir).forEach((iface, nic) -> {
+						try {
+							buildIface(nic, dir.equals(Direction.WAN));
+						} catch (InvalidServerModelException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					});
+				});
 			}
-			for (final NetworkInterfaceData lanNic : getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.LAN)) {
-				NetworkInterfaceModel link = null;
-
-				switch (lanNic.getInet()) {
-				case STATIC:
-					link = new StaticInterfaceModel(lanNic.getIface());
-					break;
-				case DHCP:
-					link = new DHCPClientInterfaceModel(lanNic.getIface());
-					break;
-				default:
-				}
-				link.addAddress(lanNic.getAddress());
-				link.setGateway(lanNic.getGateway());
-				link.setBroadcast(lanNic.getBroadcast());
-				link.setMac(lanNic.getMAC());
-				me.addNetworkInterface(link);
-			}
-		} catch (final IOException e) {
-			e.printStackTrace();
+		} catch (JsonParsingException | ADataException | IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
 		}
-
 		return units;
 	}
 
