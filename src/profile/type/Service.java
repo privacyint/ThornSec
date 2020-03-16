@@ -32,7 +32,6 @@ public class Service extends AMachineProfile {
 		super(label, networkModel);
 
 		setHypervisor(null);
-		super.buildNICs();
 	}
 
 	/**
@@ -98,6 +97,8 @@ public class Service extends AMachineProfile {
 	@Override
 	public Collection<IUnit> getPersistentConfig() {
 		final Collection<IUnit> units = new ArrayList<>();
+
+		super.buildNICs();
 
 		units.add(new SimpleUnit("data_drive_is_partitioned", "proceed", "(\n" + "	echo o\n" // Create a new empty DOS
 																								// partition table
