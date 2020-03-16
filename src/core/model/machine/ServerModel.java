@@ -98,33 +98,38 @@ public class ServerModel extends AMachineModel {
 		this.firewall = new ShorewallFirewall(getLabel(), this.networkModel);
 
 		for (final MachineType type : getNetworkModel().getData().getTypes(getLabel())) {
-			switch (type) {
-			case ROUTER:
+			try {
+				switch (type) {
+				case ROUTER:
 //				if (this.firewall == null) {
 //				}
-				this.types.add(new Router(getLabel(), this.networkModel));
-				break;
-			case HYPERVISOR:
-//				if (this.firewall == null) {
-//					this.firewall = new CSFFirewall(getLabel(), this.networkModel);
-//				}
-				this.types.add(new HyperVisor(getLabel(), this.networkModel));
-				break;
-			case SERVICE:
+					this.types.add(new Router(getLabel(), this.networkModel));
+					break;
+				case HYPERVISOR:
 //				if (this.firewall == null) {
 //					this.firewall = new CSFFirewall(getLabel(), this.networkModel);
 //				}
-				String hv = this.networkModel.getData().getService(getLabel()).getHypervisor();
-				Service service = new Service(getLabel(), this.networkModel);
-				service.setHypervisor(hv);
-				this.types.add(service);
-				
-				break;
-			case DEDICATED:
-				this.types.add(new Dedicated(getLabel(), this.networkModel));
-				break;
-			default:
-				break;
+					this.types.add(new HyperVisor(getLabel(), this.networkModel));
+					break;
+				case SERVICE:
+//				if (this.firewall == null) {
+//					this.firewall = new CSFFirewall(getLabel(), this.networkModel);
+//				}
+//				String hv = this.networkModel.getData().getService(getLabel()).getHypervisor();
+//				Service service = new Service(getLabel(), this.networkModel);
+//				service.setHypervisor(hv);
+//				this.types.add(service);
+//
+//				break;
+				case DEDICATED:
+					this.types.add(new Dedicated(getLabel(), this.networkModel));
+					break;
+				default:
+					break;
+				}
+			} catch (InvalidServerModelException | JsonParsingException | ADataException | IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 
