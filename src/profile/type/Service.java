@@ -24,7 +24,6 @@ import core.model.machine.configuration.networking.DHCPClientInterfaceModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.machine.configuration.networking.StaticInterfaceModel;
 import core.model.network.NetworkModel;
-import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirMountedUnit;
 import core.unit.fs.DirUnit;
@@ -35,7 +34,7 @@ import core.unit.pkg.RunningUnit;
 /**
  * This is a Service, which represents a VM on a HyperVisor
  */
-public class Service extends AStructuredProfile {
+public class Service extends AMachineProfile {
 
 	private String hypervisor;
 	
