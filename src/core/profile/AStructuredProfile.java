@@ -62,7 +62,7 @@ public abstract class AStructuredProfile extends AProfile {
 	 *
 	 * @throws AThornSecException
 	 */
-	protected Collection<IUnit> getPersistentConfig() throws AThornSecException {
+	public Collection<IUnit> getPersistentConfig() throws AThornSecException {
 		return new ArrayList<>();
 	}
 
