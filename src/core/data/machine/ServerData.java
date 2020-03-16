@@ -20,6 +20,7 @@ import javax.json.stream.JsonParsingException;
 
 import core.StringUtils;
 import core.data.machine.configuration.NetworkInterfaceData;
+import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.data.ADataException;
 import core.exception.data.InvalidPortException;
 import core.exception.data.InvalidPropertyException;
@@ -86,33 +87,47 @@ public class ServerData extends AMachineData {
 		this.cpus = null;
 	}
 
+	private NetworkInterfaceData readNIC(Direction dir, JsonObject nic) throws JsonParsingException, ADataException, IOException {
+		NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
+		iface.read(nic);
+		
+		NetworkInterfaceData existingIface = getNetworkInterface(Direction.WAN, iface.getIface());
+		if (existingIface != null) {
+			iface = existingIface;
+			iface.read(nic);
+		}
+		
+		return iface;
+	}
+	
+	
+	private void readNICs(JsonObject data) throws JsonParsingException, ADataException, IOException {
+		final JsonObject networkInterfaces = data.getJsonObject("network_interfaces");
+
+		if (networkInterfaces.containsKey("wan")) {
+			final JsonArray wanIfaces = networkInterfaces.getJsonArray("wan");
+			for (int i = 0; i < wanIfaces.size(); ++i) {
+				NetworkInterfaceData nic = readNIC(Direction.WAN, wanIfaces.getJsonObject(i));
+				putWANNetworkInterface(nic);
+			}
+		}
+
+		if (networkInterfaces.containsKey("lan")) {
+			final JsonArray lanIfaces = networkInterfaces.getJsonArray("lan");
+			for (int i = 0; i < lanIfaces.size(); ++i) {
+				NetworkInterfaceData nic = readNIC(Direction.LAN, lanIfaces.getJsonObject(i));
+				putLANNetworkInterface(nic);
+			}
+		}
+	}
+	
 	@Override
 	public void read(JsonObject data) throws ADataException, JsonParsingException, IOException, URISyntaxException {
 		super.read(data);
 
 		// Build network interfaces
 		if (data.containsKey("network_interfaces")) {
-			final JsonObject networkInterfaces = data.getJsonObject("network_interfaces");
-
-			if (networkInterfaces.containsKey("wan")) {
-				final JsonArray wanIfaces = networkInterfaces.getJsonArray("wan");
-				for (int i = 0; i < wanIfaces.size(); ++i) {
-					final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
-
-					iface.read(wanIfaces.getJsonObject(i));
-					putWANNetworkInterface(iface);
-				}
-			}
-
-			if (networkInterfaces.containsKey("lan")) {
-				final JsonArray lanIfaces = networkInterfaces.getJsonArray("lan");
-				for (int i = 0; i < lanIfaces.size(); ++i) {
-					final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
-
-					iface.read(lanIfaces.getJsonObject(i));
-					putLANNetworkInterface(iface);
-				}
-			}
+			readNICs(data);
 		}
 		
 		if (data.containsKey("admins")) {
