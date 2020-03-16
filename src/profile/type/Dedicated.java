@@ -10,18 +10,13 @@ package profile.type;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 
 import javax.json.stream.JsonParsingException;
 
-import core.data.machine.configuration.NetworkInterfaceData;
-import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.data.ADataException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-
 import core.model.network.NetworkModel;
-
 
 /**
  * This is a dedicated server on your network. This is something ThornSec needs
@@ -29,23 +24,10 @@ import core.model.network.NetworkModel;
  */
 public class Dedicated extends AMachineProfile {
 
-	public Dedicated(String label, NetworkModel networkModel) throws InvalidServerModelException, JsonParsingException, ADataException, IOException {
+	public Dedicated(String label, NetworkModel networkModel)
+			throws InvalidServerModelException, JsonParsingException, ADataException, IOException {
 		super(label, networkModel);
-
-		final Map<Direction, Map<String, NetworkInterfaceData>> nics = networkModel.getData().getNetworkInterfaces(getLabel());
-
-		if (nics != null) {
-			nics.keySet().forEach(dir -> {
-				nics.get(dir).forEach((iface, nic) -> {
-					try {
-						buildIface(nic, dir.equals(Direction.WAN));
-					} catch (InvalidServerModelException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				});
-			});
-		}
+		super.buildNICs();
 	}
 
 	@Override
