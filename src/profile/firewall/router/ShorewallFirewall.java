@@ -583,15 +583,16 @@ public class ShorewallFirewall extends AFirewallProfile {
 		// First work out our Internet-facing NICs
 		try {
 			if (getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
-				getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic -> {
-					String line = "";
-					line += ParentZone.INTERNET;
-					line += "\t" + nic.getIface();
-					line += "\t-\t";
-					line += (nic.getInet().equals(Inet.DHCP)) ? "dhcp," : "";
-					line += "routefilter,arp_filter";
-					interfaces.appendLine(line);
-				});
+				getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)
+						.forEach((iface, nic) -> {
+							String line = "";
+							line += ParentZone.INTERNET;
+							line += "\t" + iface;
+							line += "\t-\t";
+							line += (nic.getInet().equals(Inet.DHCP)) ? "dhcp," : "";
+							line += "routefilter,arp_filter";
+							interfaces.appendLine(line);
+						});
 			}
 		} catch (JsonParsingException | ADataException | IOException e) {
 			// TODO Auto-generated catch block
@@ -620,15 +621,16 @@ public class ShorewallFirewall extends AFirewallProfile {
 		final FileUnit masq = new FileUnit("shorewall_masquerades", "shorewall_installed", CONFIG_BASEDIR + "/masq");
 		try {
 			if (getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
-				getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach(nic -> {
-					ParentZone.lanZone.forEach(zone -> {
-						final String line = nic.getIface() + "\t" + zone.toString();
+				getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)
+						.forEach((iface, nic) -> {
+							ParentZone.lanZone.forEach(zone -> {
+								final String line = iface + "\t" + zone.toString();
 
-						if (!masq.containsLine(line)) {
-							masq.appendLine(line);
-						}
-					});
-				});
+								if (!masq.containsLine(line)) {
+									masq.appendLine(line);
+								}
+							});
+						});
 			}
 		} catch (JsonParsingException | ADataException | IOException e) {
 			// TODO Auto-generated catch block
