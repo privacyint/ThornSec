@@ -8,7 +8,7 @@ import javax.json.stream.JsonParsingException;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.data.ADataException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.model.machine.configuration.networking.DHCPClientInterfaceModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.machine.configuration.networking.StaticInterfaceModel;
@@ -22,7 +22,7 @@ public abstract class AMachineProfile extends AStructuredProfile {
 		super(name, networkModel);
 	}
 
-	protected void buildIface(NetworkInterfaceData nic, Boolean masquerading) throws InvalidServerModelException {
+	protected void buildIface(NetworkInterfaceData nic, Boolean masquerading) throws InvalidMachineModelException {
 		NetworkInterfaceModel link = null;
 
 		switch (nic.getInet()) {
@@ -47,7 +47,7 @@ public abstract class AMachineProfile extends AStructuredProfile {
 		link.setMac(nic.getMAC());
 		link.setIsIPMasquerading(masquerading);
 		
-		getNetworkModel().getServerModel(getLabel()).addNetworkInterface(link);
+		getNetworkModel().getMachineModel(getLabel()).addNetworkInterface(link);
 	}
 
 	protected void buildNICs() {
@@ -60,7 +60,7 @@ public abstract class AMachineProfile extends AStructuredProfile {
 					nics.get(dir).forEach((iface, nic) -> {
 						try {
 							buildIface(nic, dir.equals(Direction.WAN));
-						} catch (final InvalidServerModelException e) {
+						} catch (final InvalidMachineModelException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
