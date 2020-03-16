@@ -134,15 +134,17 @@ public class ServerModel extends AMachineModel {
 		}
 
 		this.profiles = new HashSet<>();
-		for (final String profile : getNetworkModel().getData().getProfiles(getLabel())) {
+
+		getNetworkModel().getData().getProfiles(getLabel()).forEach(profile -> {
 			try {
 				addProfile(profile);
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException
-					| ClassNotFoundException | IOException e) {
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException | NoSuchMethodException | SecurityException | ClassNotFoundException
+					| IOException | InvalidProfileException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}
+		});
 	}
 
 	private void addProfile(String... profiles) throws IOException, InvalidProfileException, InstantiationException, IllegalAccessException, IllegalArgumentException,
