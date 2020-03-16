@@ -8,7 +8,8 @@
 package core.data.machine.configuration;
 
 import java.io.IOException;
-
+import java.util.Collection;
+import java.util.HashSet;
 import javax.json.JsonObject;
 import javax.json.stream.JsonParsingException;
 
@@ -53,7 +54,7 @@ public class NetworkInterfaceData extends AData {
 	private Inet inet;
 	private MACAddress mac;
 
-	private IPAddress address;
+	private Collection<IPAddress> addresses;
 	private IPAddress gateway;
 	private IPAddress subnet;
 	private IPAddress netmask;
@@ -64,7 +65,7 @@ public class NetworkInterfaceData extends AData {
 
 		this.iface = null;
 		this.inet = Inet.STATIC;
-		this.address = null;
+		this.addresses = null;
 		this.gateway = null;
 		this.subnet = null;
 		this.broadcast = null;
@@ -72,8 +73,8 @@ public class NetworkInterfaceData extends AData {
 		this.comment = null;
 	}
 
-	final public IPAddress getAddress() {
-		return this.address;
+	final public Collection<IPAddress> getAddresses() {
+		return this.addresses;
 	}
 
 	final public IPAddress getBroadcast() {
@@ -120,7 +121,7 @@ public class NetworkInterfaceData extends AData {
 
 		try {
 			if (data.containsKey("address")) {
-				setAddress(new IPAddressString(data.getString("address")).toAddress(IPVersion.IPV4));
+				addAddress(new IPAddressString(data.getString("address")).toAddress(IPVersion.IPV4));
 			}
 			if (data.containsKey("subnet")) {
 				setSubnet(new IPAddressString(data.getString("subnet")).toAddress(IPVersion.IPV4));
@@ -142,8 +143,17 @@ public class NetworkInterfaceData extends AData {
 		}
 	}
 
-	protected final void setAddress(IPAddress address) {
-		this.address = address;
+	/**
+	 * 
+	 * @param address
+	 * @return true if the IP address was successfully added, false if IP already exists on this interface 
+	 */
+	protected final Boolean addAddress(IPAddress address) {
+		if (this.addresses == null) {
+			this.addresses = new HashSet<>();
+		}
+		
+		return this.addresses.add(address);
 	}
 
 	protected final void setBroadcast(IPAddress broadcast) {
