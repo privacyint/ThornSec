@@ -29,7 +29,7 @@ import core.profile.AStructuredProfile;
 /**
  * This is a device on our network
  */
-public class Device extends AStructuredProfile {
+public class Device extends AMachineProfile {
 
 	public Device(String label, NetworkModel networkModel) throws InvalidServerModelException, JsonParsingException, ADataException, InvalidDeviceModelException {
 		super(label, networkModel);
