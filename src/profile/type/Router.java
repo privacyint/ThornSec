@@ -20,6 +20,7 @@ import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.AThornSecException;
 import core.exception.data.ADataException;
+import core.exception.data.InvalidIPAddressException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
@@ -57,17 +58,22 @@ public class Router extends AMachineProfile {
 	public Router(String label, NetworkModel networkModel) throws AThornSecException, JsonParsingException {
 		super(label, networkModel);
 
-		final ServerModel me = getNetworkModel().getServerModel(getLabel());
-
 		try {
 			addLANIfaces();
 			addWANIfaces();
+			buildVLANs();
 		} catch (JsonParsingException | ADataException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
-		// Now build the VLANs we'll be hanging all of our networking off
+		this.dhcpServer = new ISCDHCPServer(label, networkModel);
+		this.dnsServer = new UnboundDNSServer(label, networkModel);
+	}
+
+	private final void buildVLANs() throws InvalidIPAddressException, InvalidServerModelException {
+		final ServerModel me = getNetworkModel().getServerModel(getLabel());
+
 		final MACVLANTrunkModel trunk = new MACVLANTrunkModel("Trunk");
 		trunk.setIface("LAN");
 
@@ -106,9 +112,6 @@ public class Router extends AMachineProfile {
 			}
 		}
 
-		// Now create our DHCP Server.
-		this.dhcpServer = new ISCDHCPServer(label, networkModel);
-		this.dnsServer = new UnboundDNSServer(label, networkModel);
 	}
 
 	private final void addWANIfaces() throws JsonParsingException, ADataException, IOException {
