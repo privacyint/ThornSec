@@ -31,7 +31,6 @@ import core.model.machine.configuration.networking.MACVLANTrunkModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.machine.configuration.networking.StaticInterfaceModel;
 import core.model.network.NetworkModel;
-import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
@@ -51,7 +50,7 @@ import profile.dns.UnboundDNSServer;
  *
  * If you want to make changes in here, you'll have a lot of reading to do :)!
  */
-public class Router extends AStructuredProfile {
+public class Router extends AMachineProfile {
 	private final ADNSServerProfile dnsServer;
 	private final ADHCPServerProfile dhcpServer;
 
