@@ -79,39 +79,40 @@ public class Router extends AMachineProfile {
 
 		me.addNetworkInterface(trunk);
 
-		if (!getNetworkModel().getMachines(MachineType.ADMIN).isEmpty()) {
-			me.addNetworkInterface(new MACVLANModel(MachineType.ADMIN.toString(), trunk,
-					getNetworkModel().getData().getAdminSubnet(), getNetworkModel().getData().getAdminSubnet()));
-		}
-
-		if ((!getNetworkModel().getMachines(MachineType.USER).isEmpty()) && !me.isHyperVisor()) {
-			me.addNetworkInterface(new MACVLANModel(MachineType.USER.toString(), trunk,
-					getNetworkModel().getData().getUserSubnet(), getNetworkModel().getData().getUserSubnet()));
-		}
-
-		if (!getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).isEmpty()) {
-			me.addNetworkInterface(new MACVLANModel(MachineType.EXTERNAL_ONLY.toString(), trunk,
-					getNetworkModel().getData().getExternalSubnet(), getNetworkModel().getData().getExternalSubnet()));
-		}
-
-		if (!getNetworkModel().getMachines(MachineType.INTERNAL_ONLY).isEmpty()) {
-			me.addNetworkInterface(new MACVLANModel(MachineType.INTERNAL_ONLY.toString(), trunk,
-					getNetworkModel().getData().getInternalSubnet(), getNetworkModel().getData().getInternalSubnet()));
-		}
-
 		if (!getNetworkModel().getMachines(MachineType.SERVER).isEmpty()) {
 			me.addNetworkInterface(new MACVLANModel(MachineType.SERVER.toString(), trunk,
 					getNetworkModel().getData().getServerSubnet(), getNetworkModel().getData().getServerSubnet()));
 		}
 
-		// if we want a guest network, build one of them, too
-		if (getNetworkModel().getData().buildAutoGuest()) {
-			if ( !me.isHyperVisor() ) { // Unless you're a hypervisor router - this is a silly thing to have :/
+		if (!me.isHyperVisor()) {
+			if (!getNetworkModel().getMachines(MachineType.ADMIN).isEmpty()) {
+				me.addNetworkInterface(new MACVLANModel(MachineType.ADMIN.toString(), trunk,
+						getNetworkModel().getData().getAdminSubnet(), getNetworkModel().getData().getAdminSubnet()));
+			}
+
+			if ((!getNetworkModel().getMachines(MachineType.USER).isEmpty())) {
+				me.addNetworkInterface(new MACVLANModel(MachineType.USER.toString(), trunk,
+						getNetworkModel().getData().getUserSubnet(), getNetworkModel().getData().getUserSubnet()));
+			}
+
+			if (!getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).isEmpty()) {
+				me.addNetworkInterface(new MACVLANModel(MachineType.EXTERNAL_ONLY.toString(), trunk,
+						getNetworkModel().getData().getExternalSubnet(),
+						getNetworkModel().getData().getExternalSubnet()));
+			}
+
+			if (!getNetworkModel().getMachines(MachineType.INTERNAL_ONLY).isEmpty()) {
+				me.addNetworkInterface(new MACVLANModel(MachineType.INTERNAL_ONLY.toString(), trunk,
+						getNetworkModel().getData().getInternalSubnet(),
+						getNetworkModel().getData().getInternalSubnet()));
+			}
+
+			// if we want a guest network, build one of them, too
+			if (getNetworkModel().getData().buildAutoGuest()) {
 				me.addNetworkInterface(new MACVLANModel(MachineType.GUEST.toString(), trunk,
-					getNetworkModel().getData().getGuestSubnet(), getNetworkModel().getData().getGuestSubnet()));
+						getNetworkModel().getData().getGuestSubnet(), getNetworkModel().getData().getGuestSubnet()));
 			}
 		}
-
 	}
 
 	private final void addWANIfaces() throws JsonParsingException, ADataException, IOException {
