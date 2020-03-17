@@ -19,24 +19,23 @@ import core.data.machine.AMachineData.MachineType;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.AThornSecException;
+import core.exception.data.ADataException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
 import core.model.machine.configuration.networking.BondInterfaceModel;
 import core.model.machine.configuration.networking.BondModel;
-import core.model.machine.configuration.networking.DHCPClientInterfaceModel;
 import core.model.machine.configuration.networking.DummyModel;
 import core.model.machine.configuration.networking.ISystemdNetworkd;
 import core.model.machine.configuration.networking.MACVLANModel;
 import core.model.machine.configuration.networking.MACVLANTrunkModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
-import core.model.machine.configuration.networking.StaticInterfaceModel;
 import core.model.network.NetworkModel;
 import core.unit.SimpleUnit;
 import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.EnabledServiceUnit;
 import core.unit.pkg.InstalledUnit;
-import inet.ipaddr.IPAddress;
 import profile.dhcp.ADHCPServerProfile;
 import profile.dhcp.ISCDHCPServer;
 import profile.dns.ADNSServerProfile;
@@ -62,7 +61,6 @@ public class Router extends AMachineProfile {
 		// From this point, differentiate between LAN and WAN again. Makes bondage
 		// easier.
 		Map<String, NetworkInterfaceData> lanIfaces = new HashMap<>();
-		Map<String, NetworkInterfaceData> wanIfaces = new HashMap<>();
 
 		// Start by building our trunk. This trunk will bond any LAN-facing
 		// NICs, or will be a dummy if there aren't any. We'll hang our VLANs off it.
@@ -70,7 +68,6 @@ public class Router extends AMachineProfile {
 
 		try {
 			lanIfaces = getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.LAN);
-			wanIfaces = getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN);
 		} catch (final IOException e) {
 			// @TODO: This
 			e.printStackTrace();
@@ -89,16 +86,12 @@ public class Router extends AMachineProfile {
 
 		lanTrunk.setIface("LAN");
 
-		// Declare external network interfaces
-		wanIfaces.forEach((iface, nic) -> {
-			try {
-				super.buildIface(nic, true);
-			}
-			catch (final InvalidMachineModelException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		});
+		try {
+			addWANIfaces();
+		} catch (JsonParsingException | ADataException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		// Now build the VLANs we'll be hanging all of our networking off
 		final MACVLANTrunkModel trunk = new MACVLANTrunkModel("Trunk");
@@ -142,6 +135,21 @@ public class Router extends AMachineProfile {
 		// Now create our DHCP Server.
 		this.dhcpServer = new ISCDHCPServer(label, networkModel);
 		this.dnsServer = new UnboundDNSServer(label, networkModel);
+	}
+
+	private final void addWANIfaces() throws JsonParsingException, ADataException, IOException {
+		final Map<String, NetworkInterfaceData> wanIfaces = getNetworkModel().getData().getNetworkInterfaces(getLabel())
+				.get(Direction.WAN);
+
+		// Declare external network interfaces
+		wanIfaces.forEach((iface, nic) -> {
+			try {
+				super.buildIface(nic, true);
+			} catch (final InvalidMachineModelException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
 	}
 
 	public final ISystemdNetworkd buildBond(String bondName) {
