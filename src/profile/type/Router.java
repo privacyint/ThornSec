@@ -21,6 +21,7 @@ import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.AThornSecException;
 import core.exception.data.ADataException;
 import core.exception.runtime.InvalidMachineModelException;
+import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
 import core.model.machine.configuration.networking.BondInterfaceModel;
@@ -58,35 +59,8 @@ public class Router extends AMachineProfile {
 
 		final ServerModel me = getNetworkModel().getServerModel(getLabel());
 
-		// From this point, differentiate between LAN and WAN again. Makes bondage
-		// easier.
-		Map<String, NetworkInterfaceData> lanIfaces = new HashMap<>();
-
-		// Start by building our trunk. This trunk will bond any LAN-facing
-		// NICs, or will be a dummy if there aren't any. We'll hang our VLANs off it.
-		NetworkInterfaceModel lanTrunk = null;
-
 		try {
-			lanIfaces = getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.LAN);
-		} catch (final IOException e) {
-			// @TODO: This
-			e.printStackTrace();
-		}
-
-		// Bond each LAN interface
-		if (lanIfaces != null) {
-			lanTrunk = new BondModel("bond");
-			for (final NetworkInterfaceData ifaceData : lanIfaces.values()) {
-				final NetworkInterfaceModel link = new BondInterfaceModel(ifaceData.getIface(), lanTrunk);
-				me.addNetworkInterface(link);
-			}
-		} else {
-			lanTrunk = new DummyModel("dummy");
-		}
-
-		lanTrunk.setIface("LAN");
-
-		try {
+			addLANIfaces();
 			addWANIfaces();
 		} catch (JsonParsingException | ADataException | IOException e) {
 			// TODO Auto-generated catch block
@@ -150,6 +124,34 @@ public class Router extends AMachineProfile {
 				e.printStackTrace();
 			}
 		});
+	}
+
+	private final void addLANIfaces() throws JsonParsingException, ADataException, InvalidServerModelException {
+		Map<String, NetworkInterfaceData> lanIfaces = new HashMap<>();
+
+		// Start by building our trunk. This trunk will bond any LAN-facing
+		// NICs, or will be a dummy if there aren't any. We'll hang our VLANs off it.
+		NetworkInterfaceModel lanTrunk = null;
+
+		try {
+			lanIfaces = getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.LAN);
+		} catch (final IOException e) {
+			// @TODO: This
+			e.printStackTrace();
+		}
+
+		// Bond each LAN interface
+		if (lanIfaces != null) {
+			lanTrunk = new BondModel("bond");
+			for (final NetworkInterfaceData ifaceData : lanIfaces.values()) {
+				final NetworkInterfaceModel link = new BondInterfaceModel(ifaceData.getIface(), lanTrunk);
+				getNetworkModel().getServerModel(getLabel()).addNetworkInterface(link);
+			}
+		} else {
+			lanTrunk = new DummyModel("dummy");
+		}
+
+		lanTrunk.setIface("LAN");
 	}
 
 	public final ISystemdNetworkd buildBond(String bondName) {
