@@ -91,28 +91,13 @@ public class Router extends AMachineProfile {
 
 		// Declare external network interfaces
 		wanIfaces.forEach((iface, nic) -> {
-			NetworkInterfaceModel link = null;
-
-			switch (nic.getInet()) {
-			case STATIC:
-				link = new StaticInterfaceModel(iface);
-				if (nic.getAddresses() != null) {
-					link.addAddress(nic.getAddresses().toArray(IPAddress[]::new));
-				}
-				link.setGateway(nic.getGateway());
-				link.setBroadcast(nic.getBroadcast());
-				link.setIsIPMasquerading(true);
-				break;
-			case DHCP:
-				link = new DHCPClientInterfaceModel(iface);
-				link.setIsIPMasquerading(true);
-				break;
-			case PPP: // @TODO
-				break;
-			default:
+			try {
+				super.buildIface(nic, true);
 			}
-
-			me.addNetworkInterface(link);
+			catch (final InvalidMachineModelException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		});
 
 		// Now build the VLANs we'll be hanging all of our networking off
