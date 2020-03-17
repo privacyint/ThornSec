@@ -79,8 +79,6 @@ public class Router extends AMachineProfile {
 		// Bond each LAN interface
 		if (lanIfaces != null) {
 			lanTrunk = new BondModel("bond");
-			lanTrunk.setIface("LAN");
-
 			for (final NetworkInterfaceData ifaceData : lanIfaces.values()) {
 				final NetworkInterfaceModel link = new BondInterfaceModel(ifaceData.getIface(), lanTrunk);
 				me.addNetworkInterface(link);
@@ -88,6 +86,8 @@ public class Router extends AMachineProfile {
 		} else {
 			lanTrunk = new DummyModel("dummy");
 		}
+
+		lanTrunk.setIface("LAN");
 
 		// Declare external network interfaces
 		wanIfaces.forEach((iface, nic) -> {
