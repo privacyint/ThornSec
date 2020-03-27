@@ -64,11 +64,11 @@ public abstract class AUnit implements IUnit {
 		auditString += this.getAudit();
 		auditString += "if [ \"$" + getLabel() + "\" = \"1\" ] ; then\n";
 		if (!quiet)
-			auditString += "\tprintf \"\\e[0;32m ✓ \\e[0m " + getLabel() + "\n\"\n";
+			auditString += "\tprintf \"\\\\e[0;32m ✓ \\\\e[0m " + getLabel() + "\n\"\n";
 		auditString += "\t" + "((pass++))\n";
 		auditString += "else\n";
 		if (!quiet)
-			auditString += "\tprintf \"\\e[0;31m ❌ \\e[0m " + getLabel() + "\n\"\n";
+			auditString += "\tprintf \"\\\\e[0;31m ❌ \\\\e[0m " + getLabel() + "\n\"\n";
 		auditString += "\t" + "((fail++))\n";
 		auditString += "\t" + "fail_string=\"${fail_string}\n" + getLabel();
 		auditString += " failed with the message:\n";
@@ -82,16 +82,16 @@ public abstract class AUnit implements IUnit {
 		String configString = this.getAudit();
 		configString += "if [ \"$" + getLabel() + "\" != \"1\" ] ; then\n";
 		configString += "\tif [ \"$" + getPrecondition() + "\" = \"1\" ] ; then\n";
-		configString += "\t\t" + "printf \"\\e[0;31m ❌ \\e[0m " + getLabel() + "... configuring\n\"\n";
+		configString += "\t\t" + "printf \"\\\\e[0;31m ❌ \\\\e[0m " + getLabel() + "... configuring\n\"\n";
 		configString += "\t\t" + getConfig() + "\n";
 		configString += "\t\t" + "printf \"...Retesting " + getLabel() + "\n\"\n";
 		configString += this.genAudit(false);
 		configString += "\telse\n";
 		configString += "\t\t" + getLabel() + "=0;\n";
-		configString += "\t\t" + "printf \"\\e[0;31m ❌ \\e[0m " + getLabel() + " \\e[0;32mPRECONDITION FAILED\\e[0m " + getPrecondition() + "\n\"\n";
+		configString += "\t\t" + "printf \"\\\\e[0;31m ❌ \\\\e[0m " + getLabel() + " \\\\e[0;32mPRECONDITION FAILED\\\\e[0m " + getPrecondition() + "\n\"\n";
 		configString += "\tfi ;\n";
 		configString += "else\n";
-		configString += "\tprintf \"\\e[0;32m ✓ \\e[0m " + getLabel() + "\n\"\n";
+		configString += "\tprintf \"\\\\e[0;32m ✓ \\\\e[0m " + getLabel() + "\n\"\n";
 		configString += "\t" + "((pass++))\n";
 		configString += "fi ;\n";
 		return configString;
