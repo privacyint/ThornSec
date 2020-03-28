@@ -135,15 +135,15 @@ public class SSH extends AStructuredProfile {
 		motd.appendLine("echo");
 		motd.appendLine("date=\\`date\\`");
 		motd.appendLine("load=\\`cat /proc/loadavg | awk '{print \\$1}'\\`");
-		motd.appendLine("root_usage=\\`df -h / | awk '/\\// {print \\$(NF-1)}'\\`");
+		motd.appendLine("root_usage=\\`df -h / | awk '/\\\\// {print \\$(NF-1)}'\\`");
 		motd.appendLine("memory_usage=\\`free -m | awk '/Mem/ { printf(\\\"%3.1f%%\\\", \\$3/\\$2*100) }'\\`");
 		motd.appendLine("swap_usage=\\`free -m | awk '/Swap/ { printf(\\\"%3.1f%%\\\", \\$3/\\$2*100) }'\\`");
 		motd.appendLine("users=\\`users | wc -w\\`");
 		motd.appendLine("echo \\\"System information as of: \\${date}\\\"");
 		motd.appendLine("echo");
-		motd.appendLine("printf \\\"System load:\\t%s\\tMemory usage:\\t%s\\n\\\" \\${load} \\${memory_usage}");
-		motd.appendLine("printf \\\"Usage on /:\\t%s\\tSwap usage:\\t%s\\n\\\" \\${root_usage} \\${swap_usage}");
-		motd.appendLine("printf \\\"Currently logged in users:\\t%s\\n\\\" \\${users}");
+		motd.appendLine("printf \\\"System load:\\\\t%s\\\\tMemory usage:\\\\t%s\\\\n\\\" \\${load} \\${memory_usage}");
+		motd.appendLine("printf \\\"Usage on /:\\\\t%s\\\\tSwap usage:\\\\t%s\\\\n\\\" \\${root_usage} \\${swap_usage}");
+		motd.appendLine("printf \\\"Currently logged in users:\\\\t%s\\\\n\\\" \\${users}");
 		motd.appendLine("echo");
 		motd.appendLine("echo \\\"HERE BE DRAGONS.\\\"");
 		motd.appendCarriageReturn();
@@ -162,7 +162,7 @@ public class SSH extends AStructuredProfile {
 		// Secure sshd as per
 		// https://stribika.github.io/2015/01/04/secure-secure-shell.html
 		units.add(new SimpleUnit("sshd_ed25519", "sshd_config",
-				"echo -e \"y\\n\" | sudo ssh-keygen -f /etc/ssh/ssh_host_ed25519_key -N \"\" -t ed25519",
+				"echo -e \"y\\\\n\" | sudo ssh-keygen -f /etc/ssh/ssh_host_ed25519_key -N \"\" -t ed25519",
 				"sudo ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key | awk '{print $1}'", "256", "pass",
 				"Couldn't generate you a strong ed25519 SSH key.  This isn't too bad, but try re-running the script to get it to work."));
 

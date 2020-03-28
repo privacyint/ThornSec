@@ -126,7 +126,7 @@ public class Service extends AStructuredProfile {
 				"It seems that " + getLabel() + " isn't actually a VM.  This will cause a bunch of misconfigurations, please fix your config file."));
 
 		units.add(new InstalledUnit("build_essential", "is_virtualbox_guest", "build-essential"));
-		units.add(new InstalledUnit("linux_headers", "build_essential_installed", "linux-headers-$(uname -r)"));
+		units.add(new InstalledUnit("linux_headers", "build_essential_installed", "linux-headers-\"$(uname -r)\""));
 
 		units.add(new SimpleUnit(
 				"guest_additions_installed", "linux_headers_installed", "sudo bash -c '" + "mount /dev/sr1 /mnt;" + "sh /mnt/VBoxLinuxAdditions.run --nox11;"
