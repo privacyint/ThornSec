@@ -55,6 +55,7 @@ public class MACVLANModel extends NetworkInterfaceModel {
 
 		network.appendLine("[Link]");
 		network.appendLine("RequiredForOnline=yes");
+		network.appendCarriageReturn();
 		
 		network.appendLine("[Network]");
 		network.appendLine("ConfigureWithoutCarrier=yes");
