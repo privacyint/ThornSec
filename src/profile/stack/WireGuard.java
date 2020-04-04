@@ -61,7 +61,7 @@ public class WireGuard extends AStructuredProfile {
 			final String key = getNetworkModel().getWireGuardKey(user);
 
 			if (key != null) {
-				nic.addPeer(key);
+				nic.addPeer(user, key);
 			}
 		});
 
