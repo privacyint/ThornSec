@@ -46,7 +46,7 @@ public class Virtualisation extends AStructuredProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("build_essential", "proceed", "build-essential"));
-		units.add(new InstalledUnit("linux_headers", "build_essential_installed", "linux-headers-$(uname -r)"));
+		units.add(new InstalledUnit("linux_headers", "build_essential_installed", "linux-headers-\"$(uname -r)\""));
 
 		units.add(new InstalledUnit("metal_virtualbox", "a2f683c52980aecf_pgp", "virtualbox-6.1"));
 		units.add(new InstalledUnit("metal_genisoimage", "proceed", "genisoimage"));
