@@ -18,8 +18,9 @@ import inet.ipaddr.IPAddressString;
 import inet.ipaddr.IncompatibleAddressException;
 
 /**
- * This model represents a MACVLAN. You have to stack this on top of a Trunk for
- * it to work, of course.
+ * This model creates a WireGuard interface through systemd-networkd.
+ * 
+ * For more information, see https://www.wireguard.com/
  */
 public class WireGuardModel extends NetworkInterfaceModel {
 
