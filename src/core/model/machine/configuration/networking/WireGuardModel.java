@@ -7,9 +7,8 @@
  */
 package core.model.machine.configuration.networking;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
+import java.util.LinkedHashMap;
+import java.util.Map;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.exception.data.InvalidIPAddressException;
 import core.unit.fs.FileUnit;
@@ -24,7 +23,7 @@ import inet.ipaddr.IncompatibleAddressException;
  */
 public class WireGuardModel extends NetworkInterfaceModel {
 
-	Collection<String> peerKeys;
+	Map<String, String> peerKeys;
 	String psk;
 	Integer listenPort;
 
@@ -98,23 +97,24 @@ public class WireGuardModel extends NetworkInterfaceModel {
 		netdev.appendLine("ListenPort=" + this.listenPort);
 
 		if (this.peerKeys != null) {
-			this.peerKeys.forEach(peerKey -> {
+			this.peerKeys.forEach((peer, pubKey) -> {
 				netdev.appendCarriageReturn();
 				netdev.appendLine("[WireGuardPeer]");
-				netdev.appendLine("PublicKey=" + peerKey);
+				netdev.appendLine("PublicKey=" + pubKey);
 				netdev.appendLine("PresharedKey=" + this.psk);
 				netdev.appendLine("AllowedIPs=0.0.0.0/0");
+				netdev.appendLine("Description=" + peer);
 			});
 		}
 		return netdev;
 	}
 
-	public void addPeer(String pubKey) {
+	public void addPeer(String peer, String pubKey) {
 		if (this.peerKeys == null) {
-			this.peerKeys = new ArrayList<>();
+			this.peerKeys = new LinkedHashMap<>();
 		}
 
-		this.peerKeys.add(pubKey);
+		this.peerKeys.put(peer, pubKey);
 	}
 
 	@Override
