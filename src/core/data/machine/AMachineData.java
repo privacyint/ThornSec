@@ -58,7 +58,7 @@ public abstract class AMachineData extends AData {
 	public enum MachineType {
 		ROUTER("Router"), SERVER("Servers"), HYPERVISOR("Hypervisors"), DEDICATED("Dedicateds"), SERVICE("Services"),
 		DEVICE("Devices"), USER("Users"), INTERNAL_ONLY("InternalOnlys"), EXTERNAL_ONLY("ExternalOnlys"),
-		ADMIN("Administrators"), GUEST("Guests"), VPN("VPN");
+		ADMIN("Administrators"), GUEST("Guests"), VPN("VPN"), INTERNET("Internet");
 
 		private String machineType;
 

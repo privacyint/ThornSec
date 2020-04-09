@@ -8,10 +8,12 @@
 package profile.firewall;
 
 import java.util.Collection;
-
+import java.util.Map;
+import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
+import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
 
@@ -21,6 +23,8 @@ import core.profile.AStructuredProfile;
  * Firewalls are quite involved, so you'll need to implement everything!
  */
 public abstract class AFirewallProfile extends AStructuredProfile {
+
+	protected Map<NetworkInterfaceModel, MachineType> vlans;
 
 	public AFirewallProfile(String label, NetworkModel networkModel) {
 		super(label, networkModel);
@@ -40,4 +44,8 @@ public abstract class AFirewallProfile extends AStructuredProfile {
 
 	@Override
 	public abstract Collection<IUnit> getLiveFirewall() throws ARuntimeException;
+
+	public final void addVLANs(Map<NetworkInterfaceModel, MachineType> vlans) {
+		this.vlans = vlans;
+	}
 }

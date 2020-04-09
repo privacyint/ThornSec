@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.json.stream.JsonParsingException;
@@ -42,6 +43,7 @@ import profile.dhcp.ADHCPServerProfile;
 import profile.dhcp.ISCDHCPServer;
 import profile.dns.ADNSServerProfile;
 import profile.dns.UnboundDNSServer;
+import profile.firewall.AFirewallProfile;
 
 /**
  * This is a Router.
@@ -54,14 +56,22 @@ import profile.dns.UnboundDNSServer;
 public class Router extends AMachineProfile {
 	private final ADNSServerProfile dnsServer;
 	private final ADHCPServerProfile dhcpServer;
+	private Map<NetworkInterfaceModel, MachineType> vlans;
+	
+	private final ServerModel me;
+	private final AFirewallProfile firewall;
 
 	public Router(String label, NetworkModel networkModel) throws AThornSecException, JsonParsingException {
 		super(label, networkModel);
 
+		this.vlans = null;
+		this.me = getNetworkModel().getServerModel(getLabel());
+		this.firewall = me.getFirewall();
+		
 		try {
 			addLANIfaces();
 			addWANIfaces();
-			buildVLANs();
+			this.firewall.addVLANs(buildVLANs());
 		} catch (JsonParsingException | ADataException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -71,48 +81,98 @@ public class Router extends AMachineProfile {
 		this.dnsServer = new UnboundDNSServer(label, networkModel);
 	}
 
-	private final void buildVLANs() throws InvalidIPAddressException, InvalidServerModelException {
-		final ServerModel me = getNetworkModel().getServerModel(getLabel());
-
+	/**
+	 * Builds our various VLANs, but only if they're required.
+	 * @return a collection of the VLANs built in this method
+	 * @throws InvalidIPAddressException if an IP address is invalid
+	 * @throws InvalidServerModelException if a given ServerModel doesn't exist
+	 */
+	private final Map<NetworkInterfaceModel, MachineType> buildVLANs() throws InvalidIPAddressException, InvalidServerModelException {
 		final MACVLANTrunkModel trunk = new MACVLANTrunkModel("Trunk");
 		trunk.setIface("LAN");
 
 		me.addNetworkInterface(trunk);
 
 		if (!getNetworkModel().getMachines(MachineType.SERVER).isEmpty()) {
-			me.addNetworkInterface(new MACVLANModel(MachineType.SERVER.toString(), trunk,
-					getNetworkModel().getData().getServerSubnet(), getNetworkModel().getData().getServerSubnet()));
+			NetworkInterfaceModel serversNic = new MACVLANModel(MachineType.SERVER.toString(), trunk,
+					getNetworkModel().getData().getServerSubnet(), getNetworkModel().getData().getServerSubnet());
+			
+			me.addNetworkInterface(serversNic);
+			this.addVLAN(serversNic, MachineType.SERVER);
 		}
 
 		if (!me.isHyperVisor()) {
 			if (!getNetworkModel().getMachines(MachineType.ADMIN).isEmpty()) {
-				me.addNetworkInterface(new MACVLANModel(MachineType.ADMIN.toString(), trunk,
-						getNetworkModel().getData().getAdminSubnet(), getNetworkModel().getData().getAdminSubnet()));
+				NetworkInterfaceModel adminsNic = new MACVLANModel(MachineType.ADMIN.toString(), trunk,
+						getNetworkModel().getData().getAdminSubnet(), getNetworkModel().getData().getAdminSubnet());
+				
+				me.addNetworkInterface(adminsNic);
+				this.addVLAN(adminsNic, MachineType.ADMIN);
 			}
 
 			if ((!getNetworkModel().getMachines(MachineType.USER).isEmpty())) {
-				me.addNetworkInterface(new MACVLANModel(MachineType.USER.toString(), trunk,
-						getNetworkModel().getData().getUserSubnet(), getNetworkModel().getData().getUserSubnet()));
+				if (getNetworkModel().getUserDevices().values()
+						.stream()
+						.filter((dev) -> dev.getNetworkInterfaces() != null) //Only if there are any interfaces, though
+						.count() > 0) {
+				
+					NetworkInterfaceModel usersNic = new MACVLANModel(MachineType.USER.toString(), trunk,
+							getNetworkModel().getData().getUserSubnet(), getNetworkModel().getData().getUserSubnet());
+					
+					me.addNetworkInterface(usersNic);
+					this.addVLAN(usersNic, MachineType.USER);
+				}
 			}
 
 			if (!getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).isEmpty()) {
-				me.addNetworkInterface(new MACVLANModel(MachineType.EXTERNAL_ONLY.toString(), trunk,
+				NetworkInterfaceModel extOnlyNic = new MACVLANModel(MachineType.EXTERNAL_ONLY.toString(), trunk,
 						getNetworkModel().getData().getExternalSubnet(),
-						getNetworkModel().getData().getExternalSubnet()));
+						getNetworkModel().getData().getExternalSubnet());
+				
+				me.addNetworkInterface(extOnlyNic);
+				this.addVLAN(extOnlyNic, MachineType.EXTERNAL_ONLY);
 			}
 
 			if (!getNetworkModel().getMachines(MachineType.INTERNAL_ONLY).isEmpty()) {
-				me.addNetworkInterface(new MACVLANModel(MachineType.INTERNAL_ONLY.toString(), trunk,
+				NetworkInterfaceModel intOnlyNic = new MACVLANModel(MachineType.INTERNAL_ONLY.toString(), trunk,
 						getNetworkModel().getData().getInternalSubnet(),
-						getNetworkModel().getData().getInternalSubnet()));
+						getNetworkModel().getData().getInternalSubnet());
+				
+				me.addNetworkInterface(intOnlyNic);
+				this.addVLAN(intOnlyNic, MachineType.INTERNAL_ONLY);
 			}
 
 			// if we want a guest network, build one of them, too
 			if (getNetworkModel().getData().buildAutoGuest()) {
-				me.addNetworkInterface(new MACVLANModel(MachineType.GUEST.toString(), trunk,
-						getNetworkModel().getData().getGuestSubnet(), getNetworkModel().getData().getGuestSubnet()));
+				NetworkInterfaceModel guestNic = new MACVLANModel(MachineType.GUEST.toString(), trunk,
+						getNetworkModel().getData().getGuestSubnet(), getNetworkModel().getData().getGuestSubnet());
+				
+				me.addNetworkInterface(guestNic);
+				this.addVLAN(guestNic, MachineType.GUEST);
 			}
 		}
+		
+		return this.getVLANs();
+	}
+	
+	/**
+	 * get the VLANs built on this router
+	 * @return a Map of NetworkInterfaceModels and their appropriate MachineType, or null if none set
+	 */
+	public final Map<NetworkInterfaceModel, MachineType> getVLANs() {
+		return this.vlans;
+	}
+	
+	/**
+	 * Register VLANs on this machine
+	 * @param nic the MACVLAN(s) to register
+	 */
+	private final void addVLAN(NetworkInterfaceModel nic, MachineType type) {
+		if (this.vlans == null) {
+			this.vlans = new LinkedHashMap<>();
+		}
+		
+		this.vlans.put(nic, type);
 	}
 
 	private final void addWANIfaces() throws JsonParsingException, ADataException, IOException {

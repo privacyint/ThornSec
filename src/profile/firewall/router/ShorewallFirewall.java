@@ -62,32 +62,32 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	public enum ParentZone {
-		INTERNET(Arm.INTERNET, "Internet"), ROUTER(Arm.FIREWALL, "$FW"), USERS(Arm.LAN, "Users"),
-		ADMINS(Arm.LAN, "Administrators"), SERVERS(Arm.LAN, "Servers"), INTERNAL_ONLY(Arm.LAN, "InternalOnlys"),
-		EXTERNAL_ONLY(Arm.LAN, "ExternalOnlys"), GUESTS(Arm.LAN, "Guests"), VPN(Arm.LAN, "VPN");
+		INTERNET(Arm.INTERNET, MachineType.INTERNET), ROUTER(Arm.FIREWALL, MachineType.ROUTER), USERS(Arm.LAN, MachineType.USER),
+		ADMINS(Arm.LAN, MachineType.ADMIN), SERVERS(Arm.LAN, MachineType.SERVER), INTERNAL_ONLY(Arm.LAN, MachineType.INTERNAL_ONLY),
+		EXTERNAL_ONLY(Arm.LAN, MachineType.EXTERNAL_ONLY), GUESTS(Arm.LAN, MachineType.GUEST), VPN(Arm.LAN, MachineType.VPN);
 
 		public static Set<ParentZone> internetZone = EnumSet.of(INTERNET);
 		public static Set<ParentZone> routerZone = EnumSet.of(ROUTER);
 		public static Set<ParentZone> lanZone = EnumSet.range(USERS, VPN);
 
 		private Arm direction;
-		private String parentZone;
+		private MachineType parentZone;
 
-		ParentZone(Arm direction, String parentZone) {
+		ParentZone(Arm direction, MachineType type) {
 			this.direction = direction;
-			this.parentZone = parentZone;
+			this.parentZone = type;
 		}
 
 		@Override
 		public String toString() {
-			return this.parentZone;
+			return this.parentZone.toString();
 		}
 
 		public Arm getDirection() {
 			return this.direction;
 		}
 
-		public String getParentZone() {
+		public MachineType getParentZone() {
 			return this.parentZone;
 		}
 	}
@@ -222,6 +222,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		super(label, networkModel);
 		this.rules = new ArrayList<>();
 		this.hostMap = new LinkedHashMap<>();
+		this.vlans = null;
 	}
 	
 	private Map<ParentZone, Collection<AMachineModel>> getHostMap() {
@@ -313,129 +314,151 @@ public class ShorewallFirewall extends AFirewallProfile {
 	private Collection<Rule> getRulesFile() throws InvalidServerException, InvalidServerModelException {
 		Collection<Rule> rules = new ArrayList<>();
 		
-		String routerZone = ParentZone.ROUTER.toString();
-		
-		Rule dnsRule = new Rule();
-		dnsRule.setMacro("DNS");
-		dnsRule.setAction(Action.ACCEPT);
-		dnsRule.setSourceZone(routerZone);
-		dnsRule.setDestinationZone(routerZone);
-
-		rules.add(dnsRule);
-		
-		ParentZone.lanZone.forEach(sourceZone -> {
-			Rule lanDnsRule = new Rule();
-			lanDnsRule.setMacro("DNS");
-			lanDnsRule.setAction(Action.ACCEPT);
-			lanDnsRule.setSourceZone(sourceZone.toString());
-			lanDnsRule.setDestinationZone(routerZone);
-			lanDnsRule.setDestinationSubZone("&" + sourceZone.toString());
+		if (getNetworkModel().getServerModel(getLabel()).isRouter()) {
 			
-			rules.add(lanDnsRule);
-		});
-		
-		Rule sshRule = new Rule();
-		sshRule.setAction(Action.ACCEPT);
-		sshRule.setSourceZone(ParentZone.USERS.toString());
-		sshRule.setProto(Encapsulation.TCP);
-		sshRule.setDPorts(Arrays.asList(getNetworkModel().getData().getSSHPort(getLabel())));
-		sshRule.setDestinationZone(getLabel());
-		
-		rules.add(sshRule);
-		
-		//Whitelist Users & External-only, because they need 'net access
-		Rule userEgress = new Rule();
-		userEgress.setAction(Action.ACCEPT);
-		userEgress.setSourceZone(ParentZone.USERS.toString());
-		userEgress.setDestinationZone(ParentZone.INTERNET.toString());
-		
-		rules.add(userEgress);
-		
-		Rule externalOnlyEgress = new Rule();
-		externalOnlyEgress.setAction(Action.ACCEPT);
-		externalOnlyEgress.setSourceZone(ParentZone.EXTERNAL_ONLY.toString());
-		externalOnlyEgress.setDestinationZone(ParentZone.INTERNET.toString());
-		
-		rules.add(externalOnlyEgress);
-		
-		// Iterate over every machine to build all of its rules
-		getNetworkModel().getUniqueMachines().values().forEach(machine -> {
-			machine.getEgresses().forEach(egress -> {
-				Rule machineEgressRule = new Rule();
-				machineEgressRule.setAction(Action.ACCEPT);
-				machineEgressRule.setSourceZone(machine.getLabel());
-				machineEgressRule.setDestinationZone(ParentZone.INTERNET.toString());
-				machineEgressRule.setDestinationSubZone(egress.getHost());
+			String routerZone = ParentZone.ROUTER.toString();
+			
+			//Router always needs to talk DNS to itself.
+			Rule dnsRule = new Rule();
+			dnsRule.setMacro("DNS");
+			dnsRule.setAction(Action.ACCEPT);
+			dnsRule.setSourceZone(routerZone);
+			dnsRule.setDestinationZone(routerZone);
+	
+			rules.add(dnsRule);
+			
+			vlans.forEach((vlan, type) -> {
+				Rule lanDnsRule = new Rule();
+				lanDnsRule.setMacro("DNS");
+				lanDnsRule.setAction(Action.ACCEPT);
+				lanDnsRule.setSourceZone(type.toString());
+				lanDnsRule.setDestinationZone(routerZone);
+				lanDnsRule.setDestinationSubZone("&" + vlan.getIface());
 				
-				rules.add(machineEgressRule);
+				rules.add(lanDnsRule);
 			});
-
-			machine.getListens().forEach((encapsulation, dPorts) -> {
-//				try {
-//					if (getNetworkModel().getServerModel(machineLabel).isRouter()) {
-//						return;
-//					}
-//				} catch (InvalidServerModelException e) {
-//					return;
-//				}
-
-				if (machine.getExternalIPs() != null) {
-					Rule externalDNATRule = new Rule();
-					externalDNATRule.setAction(Action.DNAT);
-					externalDNATRule.setSourceZone(ParentZone.INTERNET.toString());
-					externalDNATRule.setDestinationZone(machine.getLabel());
-					externalDNATRule.setDestinationSubZone(
-							machine.getIPs().stream().map(dest -> dest.withoutPrefixLength().toCompressedString())
-									.collect(Collectors.joining(",")));
-					externalDNATRule.setDPorts(dPorts);
-					externalDNATRule.setProto(encapsulation);
-					externalDNATRule.setOrigDest(machine.getExternalIPs());
-					externalDNATRule.setInvertSource(true);
-					
-					rules.add(externalDNATRule);
-					
-					Rule externalDNATListenRule = new Rule();
-					externalDNATListenRule.setAction(Action.ACCEPT);
-					externalDNATListenRule.setSourceZone("all+");
-					externalDNATListenRule.setProto(encapsulation);
-					externalDNATListenRule.setDestinationZone(machine.getLabel());
-					externalDNATListenRule.setDPorts(dPorts);
-					
-					rules.add(externalDNATListenRule);
-				} else {
-					Rule listenRule = new Rule();
-					listenRule.setAction(Action.ACCEPT);
-					listenRule.setSourceZone("all+");
-					listenRule.setProto(encapsulation);
-					listenRule.setDestinationZone(machine.getLabel());
-					listenRule.setDPorts(dPorts);
-					
-					rules.add(listenRule);
+			
+			getNetworkModel().getServerModel(getLabel()).getNetworkInterfaces().forEach(nic -> {
+				ParentZone sourceZone = null;
+				
+				try {
+					sourceZone = ParentZone.valueOf(nic.getIface());
+				}
+				catch (IllegalArgumentException e) {
+					//This is not the zone you're looking for
+					;;
 				}
 				
-				machine.getDNAT().forEach((destination, dnatPorts)->{
-					Rule dnatRule = new Rule();
-					dnatRule.setAction(Action.DNAT);
-					dnatRule.setSourceZone(machine.getLabel());
-					dnatRule.setDestinationZone(machine.getLabel());
-					dnatRule.setDestinationSubZone(
-							machine.getIPs().stream().map(dest -> dest.withoutPrefixLength().toCompressedString())
-									.collect(Collectors.joining(",")));
-					dnatRule.setDPorts(dPorts);
-					dnatRule.setProto(encapsulation);
-					dnatRule.setInvertSource(true);
+				if (sourceZone != null && sourceZone.direction.equals(Arm.LAN)) {
+					Rule lanDnsRule = new Rule();
+					lanDnsRule.setMacro("DNS");
+					lanDnsRule.setAction(Action.ACCEPT);
+					lanDnsRule.setSourceZone(sourceZone.toString());
+					lanDnsRule.setDestinationZone(routerZone);
+					lanDnsRule.setDestinationSubZone("&" + nic.getIface());
 					
-					try {
-						dnatRule.setOrigDest(getNetworkModel().getMachineModel(destination).getIPs());
-					} catch (InvalidMachineModelException | IncompatibleAddressException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+					rules.add(lanDnsRule);
+				}
+			});
+			
+			Rule sshRule = new Rule();
+			sshRule.setAction(Action.ACCEPT);
+			sshRule.setSourceZone(ParentZone.USERS.toString());
+			sshRule.setProto(Encapsulation.TCP);
+			sshRule.setDPorts(Arrays.asList(getNetworkModel().getData().getSSHPort(getLabel())));
+			sshRule.setDestinationZone(getLabel());
+			
+			rules.add(sshRule);
+			
+			//Whitelist Users & External-only, because they need 'net access
+			Rule userEgress = new Rule();
+			userEgress.setAction(Action.ACCEPT);
+			userEgress.setSourceZone(ParentZone.USERS.toString());
+			userEgress.setDestinationZone(ParentZone.INTERNET.toString());
+			
+			rules.add(userEgress);
+			
+			Rule externalOnlyEgress = new Rule();
+			externalOnlyEgress.setAction(Action.ACCEPT);
+			externalOnlyEgress.setSourceZone(ParentZone.EXTERNAL_ONLY.toString());
+			externalOnlyEgress.setDestinationZone(ParentZone.INTERNET.toString());
+			
+			rules.add(externalOnlyEgress);
+			
+			// Iterate over every machine to build all of its rules
+			getNetworkModel().getUniqueMachines().values().forEach(machine -> {
+				machine.getEgresses().forEach(egress -> {
+					Rule machineEgressRule = new Rule();
+					machineEgressRule.setAction(Action.ACCEPT);
+					machineEgressRule.setSourceZone(machine.getLabel());
+					machineEgressRule.setDestinationZone(ParentZone.INTERNET.toString());
+					machineEgressRule.setDestinationSubZone(egress.getHost());
+					
+					rules.add(machineEgressRule);
+				});
+	
+				machine.getListens().forEach((encapsulation, dPorts) -> {
+					if (machine.getExternalIPs() != null) {
+						Rule externalDNATRule = new Rule();
+						externalDNATRule.setAction(Action.DNAT);
+						externalDNATRule.setSourceZone(ParentZone.INTERNET.toString());
+						externalDNATRule.setDestinationZone(machine.getLabel());
+						externalDNATRule.setDestinationSubZone(
+								machine.getIPs().stream().map(dest -> dest.withoutPrefixLength().toCompressedString())
+										.collect(Collectors.joining(",")));
+						externalDNATRule.setDPorts(dPorts);
+						externalDNATRule.setProto(encapsulation);
+						externalDNATRule.setOrigDest(machine.getExternalIPs());
+						externalDNATRule.setInvertSource(true);
+						
+						rules.add(externalDNATRule);
+						
+						Rule externalDNATListenRule = new Rule();
+						externalDNATListenRule.setAction(Action.ACCEPT);
+						externalDNATListenRule.setSourceZone("all+");
+						externalDNATListenRule.setProto(encapsulation);
+						externalDNATListenRule.setDestinationZone(machine.getLabel());
+						externalDNATListenRule.setDPorts(dPorts);
+						
+						rules.add(externalDNATListenRule);
+					} else {
+						Rule listenRule = new Rule();
+						listenRule.setAction(Action.ACCEPT);
+						listenRule.setSourceZone("all+");
+						listenRule.setProto(encapsulation);
+						listenRule.setDestinationZone(machine.getLabel());
+						listenRule.setDPorts(dPorts);
+						
+						rules.add(listenRule);
 					}
 					
-					rules.add(dnatRule);
+					machine.getDNAT().forEach((destination, dnatPorts)->{
+						Rule dnatRule = new Rule();
+						dnatRule.setAction(Action.DNAT);
+						dnatRule.setSourceZone(machine.getLabel());
+						dnatRule.setDestinationZone(machine.getLabel());
+						dnatRule.setDestinationSubZone(
+								machine.getIPs().stream().map(dest -> dest.withoutPrefixLength().toCompressedString())
+										.collect(Collectors.joining(",")));
+						dnatRule.setDPorts(dPorts);
+						dnatRule.setProto(encapsulation);
+						dnatRule.setInvertSource(true);
+						
+						try {
+							dnatRule.setOrigDest(getNetworkModel().getMachineModel(destination).getIPs());
+						} catch (InvalidMachineModelException | IncompatibleAddressException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						
+						rules.add(dnatRule);
+					});
 				});
 			});
-		});
+		}
+		else {
+			;; //TODO
+		}
 
 		return rules;
 	}
