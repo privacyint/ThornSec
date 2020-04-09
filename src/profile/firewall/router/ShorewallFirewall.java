@@ -97,7 +97,6 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 	private static String CONFIG_BASEDIR = "/etc/shorewall";
 	private final Collection<Rule> rules;
-	Map<ParentZone, Collection<AMachineModel>> hostMap;
 	
 	private final ServerModel me;
 	
@@ -226,15 +225,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 	public ShorewallFirewall(String label, NetworkModel networkModel) throws InvalidServerModelException {
 		super(label, networkModel);
 		this.rules = new ArrayList<>();
-		this.hostMap = new LinkedHashMap<>();
 		this.vlans = null;
 		this.me = getNetworkModel().getServerModel(getLabel());
 	}
 	
-	private Map<ParentZone, Collection<AMachineModel>> getHostMap() {
-		return this.hostMap;
-	}
-
 	/**
 	 * Zones must be a maximum of 10 alpha-numeric chars long
 	 *
@@ -640,12 +634,6 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 	@Override
 	public Collection<IUnit> getPersistentConfig() throws ARuntimeException {
-		this.hostMap.put(ParentZone.SERVERS, getNetworkModel().getMachines(MachineType.SERVER).values());
-		this.hostMap.put(ParentZone.USERS, getNetworkModel().getMachines(MachineType.USER).values());
-		this.hostMap.put(ParentZone.ADMINS, getNetworkModel().getMachines(MachineType.ADMIN).values());
-		this.hostMap.put(ParentZone.INTERNAL_ONLY, getNetworkModel().getMachines(MachineType.INTERNAL_ONLY).values());
-		this.hostMap.put(ParentZone.EXTERNAL_ONLY, getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).values());
-
 		final Collection<IUnit> units = new ArrayList<>();
 
 		final FileEditUnit shorewallConf = new FileEditUnit("shorewall_implicit_continue_on", "shorewall_installed",
