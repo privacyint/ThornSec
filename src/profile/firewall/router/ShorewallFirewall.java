@@ -729,10 +729,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 	 * Parses a Machine into shorewall maclist lines
 	 *
 	 * @param machine
-	 * @param zone
+	 * @param type
 	 * @return
 	 */
-	private Collection<String> machines2Maclist(ParentZone zone, Collection<AMachineModel> machines) {
+	private Collection<String> machines2Maclist(MachineType type, Collection<AMachineModel> machines) {
 		final Collection<String> maclist = new ArrayList<>();
 
 		for (final AMachineModel machine : machines) {
@@ -747,7 +747,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 			
 			machine.getNetworkInterfaces().forEach(nic -> {
 				if (nic.getMac() != null) {
-					maclist.add("ACCEPT\t" + zone.toString() + "\t" + nic.getMac().toNormalizedString()
+					maclist.add("ACCEPT\t" + type.toString() + "\t" + nic.getMac().toNormalizedString()
 							+ "\t" + getAddresses(machine) + "\t#" + machine.getLabel());
 
 				}
