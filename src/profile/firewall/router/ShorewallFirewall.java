@@ -33,6 +33,7 @@ import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
+import core.model.machine.ServerModel;
 import core.model.network.NetworkModel;
 import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
@@ -95,6 +96,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 	private static String CONFIG_BASEDIR = "/etc/shorewall";
 	private final Collection<Rule> rules;
 	Map<ParentZone, Collection<AMachineModel>> hostMap;
+	
+	private final ServerModel me;
 	
 	private class Rule {
 		private String macro;
@@ -218,11 +221,12 @@ public class ShorewallFirewall extends AFirewallProfile {
 		}
 	}
 
-	public ShorewallFirewall(String label, NetworkModel networkModel) {
+	public ShorewallFirewall(String label, NetworkModel networkModel) throws InvalidServerModelException {
 		super(label, networkModel);
 		this.rules = new ArrayList<>();
 		this.hostMap = new LinkedHashMap<>();
 		this.vlans = null;
+		this.me = getNetworkModel().getServerModel(getLabel());
 	}
 	
 	private Map<ParentZone, Collection<AMachineModel>> getHostMap() {
