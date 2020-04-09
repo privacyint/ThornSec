@@ -297,9 +297,15 @@ public class ShorewallFirewall extends AFirewallProfile {
 	private Collection<String> getMaclistFile() {
 		final Collection<String> maclist = new ArrayList<>();
 
-		getHostMap().forEach((zone, machines) -> {
-			maclist.addAll(machines2Maclist(zone, machines));
-		});
+		if (this.vlans != null) {
+			this.vlans.forEach((vlan, type) -> { 
+				Map<String, AMachineModel> machines = getNetworkModel().getMachines(type);
+			
+				machines.forEach((label, machine) -> {
+					maclist.addAll(machines2Maclist(type, machines.values()));
+				});
+			});
+		}
 
 		return maclist;
 	}
