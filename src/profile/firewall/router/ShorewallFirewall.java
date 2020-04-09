@@ -476,67 +476,21 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zones.appendLine("#This is the file which creates our various zones");
 		zones.appendLine("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
 		zones.appendLine("#zone\ttype");
-		zones.appendLine(cleanZone(ParentZone.INTERNET) + "\tipv4");
-		zones.appendLine("");
-
-		zones.appendLine("#Here, we build our server zone, and give each server its own subzone");
-		zones.appendLine(cleanZone(ParentZone.SERVERS) + "\tipv4");
-		getNetworkModel().getServers().keySet().forEach(server -> {
-			try {
-				if (getNetworkModel().getServerModel(server).isRouter()) {
-					zones.appendLine(cleanZone(server) + "\tfirewall");
-				} else {
-					zones.appendLine(cleanZone(server) + ":" + cleanZone(ParentZone.SERVERS) + "\tipv4");
+		
+		if (this.vlans != null) {
+			this.vlans.forEach((vlan, type) -> {
+				zones.appendLine("#" + vlan.getIface());
+				zones.appendLine(cleanZone(vlan.getIface()) + "\tipv4");
+				
+				if (!getNetworkModel().getMachines(type).isEmpty()) {
+					getNetworkModel().getMachines(type).forEach((label, machine) -> {
+						zones.appendLine(cleanZone(vlan.getIface()) + ":" + cleanZone(label) + "\tipv4" + "\t#" + label);
+					});
 				}
-			} catch (final InvalidServerModelException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		});
-
-		if (getNetworkModel().getUserDevices() != null) {
-
-			if (getNetworkModel().getUserDevices().values()
-					.stream()
-					.filter((dev) -> dev.getNetworkInterfaces() != null)
-					.count() > 0) {
 				zones.appendCarriageReturn();
-				zones.appendLine("#Here, we build our user zone, and give each user their own subzone");
-				zones.appendLine("Users\tipv4");
-				getNetworkModel().getUserDevices().keySet().forEach(user -> {
-					zones.appendLine(cleanZone(user) + ":" + cleanZone(ParentZone.USERS) + "\tipv4");
-
-				});
-			}
-		}
-
-		if (getNetworkModel().getAdminDevices() != null) {
-			zones.appendLine(cleanZone(ParentZone.ADMINS) + ":" + cleanZone(ParentZone.USERS) + "\tipv4");
-			zones.appendCarriageReturn();
-		}
-
-		if (getNetworkModel().getInternalOnlyDevices() != null) {
-			zones.appendLine("#Here, we build our internal only zone, and give each device its own subzone");
-			zones.appendLine(cleanZone(ParentZone.INTERNAL_ONLY) + "\tipv4");
-			getNetworkModel().getInternalOnlyDevices().keySet().forEach(device -> {
-				zones.appendLine(cleanZone(device) + ":" + cleanZone(ParentZone.INTERNAL_ONLY) + "\tipv4");
-			});
-			zones.appendCarriageReturn();
-		}
-
-		if (getNetworkModel().getExternalOnlyDevices() != null) {
-			zones.appendLine("#Here, we build our external only zone, and give each device its own subzone");
-			zones.appendLine(cleanZone(ParentZone.EXTERNAL_ONLY) + "\tipv4");
-			getNetworkModel().getExternalOnlyDevices().keySet().forEach(device -> {
-				zones.appendLine(cleanZone(device) + ":" + cleanZone(ParentZone.EXTERNAL_ONLY) + "\tipv4");
 			});
 		}
-
-		// Do we want an autoguest network? Build its zone if so
-		if (getNetworkModel().getData().buildAutoGuest()) {
-			zones.appendLine(cleanZone(ParentZone.GUESTS) + "\tipv4");
-		}
-
+		
 		return zones;
 	}
 
