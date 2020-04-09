@@ -316,9 +316,15 @@ public class ShorewallFirewall extends AFirewallProfile {
 		hosts.add("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
 		hosts.add("#zone\thosts\toptions");
 
-		hostMap.forEach((zone, machines) -> {
-			hosts.addAll(machines2Host(zone, machines));
-		});
+		if (this.vlans != null) {
+			this.vlans.forEach((vlan, type) -> { 
+				Map<String, AMachineModel> machines = getNetworkModel().getMachines(type);
+			
+				machines.forEach((label, machine) -> {
+					hosts.addAll(machines2Host(type, machines.values()));
+				});
+			});
+		}
 
 		return hosts;
 	}
