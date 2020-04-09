@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,6 +35,7 @@ import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
 import core.model.machine.ServerModel;
+import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
@@ -564,38 +566,41 @@ public class ShorewallFirewall extends AFirewallProfile {
 		// First work out our Internet-facing NICs
 		try {
 			if (getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
-				getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)
-						.forEach((iface, nic) -> {
-							String line = "";
-							line += ParentZone.INTERNET;
-							line += "\t" + iface;
-							line += "\t-\t";
-							line += (nic.getInet().equals(Inet.DHCP)) ? "dhcp," : "";
-							line += "routefilter,arp_filter";
-							interfaces.appendLine(line);
+					getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach((iface, nicData) -> {
+						List<NetworkInterfaceModel> nicModels = me.getNetworkInterfaces()
+								.stream()
+								.filter((model) -> model.getIface().equals(iface))
+								.collect(Collectors.toList());
+
+						nicModels.forEach(nicModel -> {
+							interfaces.appendLine(buildInterfaceLine(nicModel, MachineType.INTERNET));
 						});
+					});
 			}
 		} catch (JsonParsingException | ADataException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
-		// Then, declare our various interface:zone mapping
-		Map<ParentZone, MachineType> zoneMappings = Map.of(ParentZone.SERVERS, MachineType.SERVER, ParentZone.USERS,
-				MachineType.USER, ParentZone.ADMINS, MachineType.ADMIN, ParentZone.INTERNAL_ONLY,
-				MachineType.INTERNAL_ONLY, ParentZone.EXTERNAL_ONLY, MachineType.EXTERNAL_ONLY, ParentZone.VPN,
-				MachineType.USER);
-
-		if (getNetworkModel().getData().buildAutoGuest()) {
-			zoneMappings = new HashMap<>(zoneMappings);
-			zoneMappings.put(ParentZone.GUESTS, MachineType.GUEST);
+		// Then do everything else
+		if (this.vlans != null) {
+			this.vlans.forEach((nic, type) -> {
+				interfaces.appendLine(buildInterfaceLine(nic, type));
+			});
 		}
 
-		zoneMappings.forEach((zone, type) -> {
-			interfaces.appendLine(cleanZone(zone) + "\t" + type.toString() + "\t-\tdhcp,routefilter,arp_filter");
-		});
-
 		return interfaces;
+	}
+
+	private String buildInterfaceLine(NetworkInterfaceModel nic, MachineType type) {
+		String line = "";
+		line += cleanZone(type.toString());
+		line += "\t" + nic.getIface();
+		line += "\t-\t";
+		//If it's explicitly DHCP or it's on our LAN, it must talk DHCP
+		line += (nic.getInet().equals(Inet.DHCP) || ParentZone.lanZone.stream().anyMatch(zone -> zone.parentZone.equals(type))) ? "dhcp," : "";
+		line += "routefilter,arp_filter";
+		return line;
 	}
 
 	private FileUnit getMasqFile() {
