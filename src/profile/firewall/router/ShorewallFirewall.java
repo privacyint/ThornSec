@@ -701,11 +701,11 @@ public class ShorewallFirewall extends AFirewallProfile {
 	/**
 	 * Turns a zone and an array of AMachineModels into the Shorewall hosts file format
 	 *
-	 * @param zone the zone
+	 * @param type the zone
 	 * @param machines the machines
 	 * @return the hosts file contents
 	 */
-	private Collection<String> machines2Host(ParentZone zone, Collection<AMachineModel> machines) {
+	private Collection<String> machines2Host(MachineType type, Collection<AMachineModel> machines) {
 		final Collection<String> hosts = new ArrayList<>();
 
 		for (final AMachineModel machine : machines) {
@@ -718,7 +718,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 				//As you were. This is not the droid you're looking for.
 			}
 			
-			hosts.add(cleanZone(machine.getLabel()) + "\t" + zone.toString() + ":"
+			hosts.add(cleanZone(machine.getLabel()) + "\t" + type.toString() + ":"
 					+ getAddresses(machine) + "\tmaclist");
 		}
 
