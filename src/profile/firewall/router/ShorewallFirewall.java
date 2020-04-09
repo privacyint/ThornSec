@@ -621,8 +621,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 			if (getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
 				getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)
 						.forEach((iface, nic) -> {
-							ParentZone.lanZone.forEach(zone -> {
-								final String line = iface + "\t" + zone.toString();
+							this.vlans.forEach((vlan, zone) -> {
+								final String line = iface + "\t" + vlan.getIface();
 
 								if (!masq.containsLine(line)) {
 									masq.appendLine(line);
