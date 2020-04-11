@@ -314,9 +314,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 			this.vlans.forEach((vlan, type) -> { 
 				Map<String, AMachineModel> machines = getNetworkModel().getMachines(type);
 			
-				machines.forEach((label, machine) -> {
-					hosts.addAll(machines2Host(type, machines.values()));
-				});
+				hosts.addAll(machines2Host(type, machines.values()));
 			});
 		}
 
