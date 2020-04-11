@@ -222,6 +222,20 @@ public class ShorewallFirewall extends AFirewallProfile {
 		}
 	}
 
+	private class Comment extends Rule {
+		
+		private final String comment;
+		
+		public Comment(String comment) {
+			this.comment = comment;
+		}
+		
+		@Override
+		public String getRule() {
+			return "# " + this.comment;
+		}
+	}
+
 	public ShorewallFirewall(String label, NetworkModel networkModel) throws InvalidServerModelException {
 		super(label, networkModel);
 		this.rules = new ArrayList<>();
