@@ -271,7 +271,7 @@ public class HyperVisor extends AStructuredProfile {
 			units.addAll(getUserPasswordUnits(service));
 
 			try {
-				units.addAll(this.hypervisor.buildIso(service, this.hypervisor.preseed(service, true)));
+				units.addAll(this.hypervisor.buildIso(service));
 			} catch (InvalidServerException | MalformedURLException | URISyntaxException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

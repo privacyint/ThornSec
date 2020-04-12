@@ -80,7 +80,7 @@ public class Virtualisation extends AStructuredProfile {
 		return units;
 	}
 
-	public Collection<IUnit> buildIso(String service, String preseed) throws InvalidServerException {
+	public Collection<IUnit> buildIso(String service) throws InvalidServerException, InvalidServerModelException, NoValidUsersException, MalformedURLException, URISyntaxException {
 
 		final Collection<IUnit> units = new ArrayList<>();
 
@@ -98,12 +98,10 @@ public class Virtualisation extends AStructuredProfile {
 		}
 
 		units.add(new DirUnit("iso_dir_" + service, "proceed", isoDir));
-		FileUnit preseedUnit = new FileUnit("preseed_" + service, cleanedFilename + "_downloaded", isoDir + "/preseed.cfg");
-		preseedUnit.appendLine(preseed);
-		units.add(preseedUnit);
+
+		units.add(getPreseedFile(new FileUnit("preseed_" + service, cleanedFilename + "_downloaded", isoDir + "/preseed.cfg"), service, true));
 		units.add(new FileOwnUnit("preseed_" + service, "preseed_" + service, isoDir + "/preseed.cfg", "root"));
-		units.add(new FilePermsUnit("preseed_" + service, "preseed_" + service + "_chowned", isoDir + "/preseed.cfg",
-				"700"));
+		units.add(new FilePermsUnit("preseed_" + service, "preseed_" + service + "_chowned", isoDir + "/preseed.cfg", "700"));
 
 		String buildIso = "\n";
 		buildIso += "\tsudo bash -c '\n";
@@ -142,7 +140,7 @@ public class Virtualisation extends AStructuredProfile {
 		return units;
 	}
 
-	public String preseed(String service, Boolean expirePasswords) throws InvalidServerModelException, NoValidUsersException, MalformedURLException, URISyntaxException {
+	public FileUnit getPreseedFile(FileUnit preseed, String service, Boolean expirePasswords) throws InvalidServerModelException, NoValidUsersException, MalformedURLException, URISyntaxException {
 
 		String user            = getNetworkModel().getData().getUser();
 		String sshDir          = "/home/" + user + "/.ssh";
@@ -153,71 +151,69 @@ public class Virtualisation extends AStructuredProfile {
 		String debianMirror    = getNetworkModel().getData().getDebianMirror(service).getHost();
 		String debianDirectory = getNetworkModel().getData().getDebianDirectory(service);
 
-		String preseed = "";
 		//Set up new box before rebooting. Sometimes you need to echo out in chroot;
 		//in-target just doesn't work reliably for many things (most likely due to the shell it uses) :(
-		preseed += "d-i preseed/late_command string";
+		preseed.appendLine("d-i preseed/late_command string", false);
 		//Echo out public keys, make sure it's all secured properly
-		preseed += "\tin-target mkdir " + sshDir + ";";
-		preseed += "\tin-target touch " + sshDir + "/authorized_keys;";
-		preseed += "\techo \\\"echo '" + pubKey + "' >> " + sshDir + "/authorized_keys; \\\" | chroot /target /bin/bash;";
+		preseed.appendLine("\tin-target mkdir " + sshDir + ";", false);
+		preseed.appendLine("\tin-target touch " + sshDir + "/authorized_keys;", false);
+		preseed.appendLine("\techo \\\"echo '" + pubKey + "' >> " + sshDir + "/authorized_keys; \\\" | chroot /target /bin/bash;", false);
 		
-		preseed += "\tin-target chmod 700 " + sshDir + ";";
-		preseed += "\tin-target chmod 400 " + sshDir + "/authorized_keys;";
-		preseed += "\tin-target chown -R " + user + ":" + user + " " + sshDir + ";";
+		preseed.appendLine("\tin-target chmod 700 " + sshDir + ";", false);
+		preseed.appendLine("\tin-target chmod 400 " + sshDir + "/authorized_keys;", false);
+		preseed.appendLine("\tin-target chown -R " + user + ":" + user + " " + sshDir + ";", false);
 		
 		if (expirePasswords) {
 			//Force the user to change their passphrase on first login if they haven't set a passwd
-			preseed += "\tin-target passwd -e " + user + ";";
+			preseed.appendLine("\tin-target passwd -e " + user + ";", false);
 		}
 		
 		//Lock the root account
-		preseed += "\tin-target passwd -l root;";
+		preseed.appendLine("\tin-target passwd -l root;", false);
 		
 		//Change the SSHD to be on the expected port
-		preseed += "\tin-target sed -i 's/#Port 22/Port " + getNetworkModel().getData().getSSHPort(service) + "/g' /etc/ssh/sshd_config;";
+		preseed.appendLine("\tin-target sed -i 's/#Port 22/Port " + getNetworkModel().getData().getSSHPort(service) + "/g' /etc/ssh/sshd_config;");
 		
 		//Debian installer options.
-		preseed += "\n";
-		preseed += "d-i debian-installer/locale string en_GB.UTF-8\n";
-		preseed += "d-i keyboard-configuration/xkb-keymap select gb\n";
-		preseed += "d-i netcfg/target_network_config select ifupdown\n";
-		preseed += "d-i netcfg/choose_interface select auto\n";
-		preseed += "d-i netcfg/get_hostname string " + hostname + "\n";
-		preseed += "d-i netcfg/get_domain string " + domain + "\n";
-		preseed += "d-i netcfg/hostname string " + hostname + "\n";
-		preseed += "d-i mirror/country string manual\n";
-		preseed += "d-i mirror/http/hostname string " + debianMirror + "\n";
-		preseed += "d-i mirror/http/directory string " + debianDirectory + "\n";
-		preseed += "d-i mirror/http/proxy string \n";
-		preseed += "d-i passwd/root-password-crypted password ${" + service.toUpperCase() + "_PASSWORD}\n";
-		preseed += "d-i passwd/user-fullname string " + fullName + "\n";
-		preseed += "d-i passwd/username string " + user + "\n";
-		preseed += "d-i passwd/user-password-crypted password ${" + service.toUpperCase() + "_PASSWORD}\n";
-		preseed += "d-i passwd/user-default-groups string sudo\n";
-		preseed += "d-i clock-setup/utc boolean true\n";
-		preseed += "d-i time/zone string Europe/London\n";
-		preseed += "d-i clock-setup/ntp boolean true\n";
-		preseed += "d-i partman-auto/disk string /dev/sda\n";
-		preseed += "d-i grub-installer/bootdev string /dev/sda\n";
-		preseed += "d-i partman-auto/method string regular\n";
-		preseed += "d-i partman-auto/choose_recipe select atomic\n";
-		preseed += "d-i partman-partitioning/confirm_write_new_label boolean true\n";
-		preseed += "d-i partman/choose_partition select finish\n";
-		preseed += "d-i partman/confirm boolean true\n";
-		preseed += "d-i partman/confirm_nooverwrite boolean true\n";
-		preseed += "iptasksel tasksel/first multiselect none\n";
-		preseed += "d-i apt-setup/cdrom/set-first boolean false\n";
-		preseed += "d-i apt-setup/cdrom/set-next boolean false\n";
-		preseed += "d-i apt-setup/cdrom/set-failed boolean false\n";
-		preseed += "d-i pkgsel/include string sudo openssh-server dkms gcc bzip2\n";
-		preseed += "openssh-server openssh-server/permit-root-login boolean false\n";
-		preseed += "discover discover/install_hw_packages multiselect virtualbox-ose-guest-x11\n";
-		preseed += "popularity-contest popularity-contest/participate boolean false\n";
-		preseed += "d-i grub-installer/only_debian boolean true\n";
-		preseed += "d-i grub-installer/with_other_os boolean false\n";
-		preseed += "d-i grub-installer/bootdev string default\n";
-		preseed += "d-i finish-install/reboot_in_progress note";
+		preseed.appendLine("d-i debian-installer/locale string en_GB.UTF-8");
+		preseed.appendLine("d-i keyboard-configuration/xkb-keymap select gb");
+		preseed.appendLine("d-i netcfg/target_network_config select ifupdown");
+		preseed.appendLine("d-i netcfg/choose_interface select auto");
+		preseed.appendLine("d-i netcfg/get_hostname string " + hostname);
+		preseed.appendLine("d-i netcfg/get_domain string " + domain);
+		preseed.appendLine("d-i netcfg/hostname string " + hostname);
+		preseed.appendLine("d-i mirror/country string manual");
+		preseed.appendLine("d-i mirror/http/hostname string " + debianMirror);
+		preseed.appendLine("d-i mirror/http/directory string " + debianDirectory);
+		preseed.appendLine("d-i mirror/http/proxy string ");
+		preseed.appendLine("d-i passwd/root-password-crypted password ${" + service.toUpperCase() + "_PASSWORD}");
+		preseed.appendLine("d-i passwd/user-fullname string " + fullName);
+		preseed.appendLine("d-i passwd/username string " + user);
+		preseed.appendLine("d-i passwd/user-password-crypted password ${" + service.toUpperCase() + "_PASSWORD}");
+		preseed.appendLine("d-i passwd/user-default-groups string sudo");
+		preseed.appendLine("d-i clock-setup/utc boolean true");
+		preseed.appendLine("d-i time/zone string Europe/London");
+		preseed.appendLine("d-i clock-setup/ntp boolean true");
+		preseed.appendLine("d-i partman-auto/disk string /dev/sda");
+		preseed.appendLine("d-i grub-installer/bootdev string /dev/sda");
+		preseed.appendLine("d-i partman-auto/method string regular");
+		preseed.appendLine("d-i partman-auto/choose_recipe select atomic");
+		preseed.appendLine("d-i partman-partitioning/confirm_write_new_label boolean true");
+		preseed.appendLine("d-i partman/choose_partition select finish");
+		preseed.appendLine("d-i partman/confirm boolean true");
+		preseed.appendLine("d-i partman/confirm_nooverwrite boolean true");
+		preseed.appendLine("iptasksel tasksel/first multiselect none");
+		preseed.appendLine("d-i apt-setup/cdrom/set-first boolean false");
+		preseed.appendLine("d-i apt-setup/cdrom/set-next boolean false");
+		preseed.appendLine("d-i apt-setup/cdrom/set-failed boolean false");
+		preseed.appendLine("d-i pkgsel/include string sudo openssh-server dkms gcc bzip2");
+		preseed.appendLine("openssh-server openssh-server/permit-root-login boolean false");
+		preseed.appendLine("discover discover/install_hw_packages multiselect virtualbox-ose-guest-x11");
+		preseed.appendLine("popularity-contest popularity-contest/participate boolean false");
+		preseed.appendLine("d-i grub-installer/only_debian boolean true");
+		preseed.appendLine("d-i grub-installer/with_other_os boolean false");
+		preseed.appendLine("d-i grub-installer/bootdev string default");
+		preseed.appendLine("d-i finish-install/reboot_in_progress note");
 
 		return preseed;
 	}
