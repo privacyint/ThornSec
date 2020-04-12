@@ -332,83 +332,99 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		return hosts;
 	}
+	
+	private boolean hasRealUsers() {
+		return getNetworkModel().getUserDevices() != null 
+				&&
+			getNetworkModel().getUserDevices()
+				.values()
+				.stream()
+				.filter((dev) -> dev.getNetworkInterfaces() != null) //Only if there are any interfaces, though
+				.count() > 0;
+	}
 
+	private Collection<Rule> getDNSRules() throws InvalidServerModelException {
+		Collection<Rule> rules = new ArrayList<>();
+
+		if (me.isRouter()) {
+			Comment dnsComment = new Comment("DNS rules");
+			rules.add(dnsComment);
+	
+			//Router always needs to talk DNS to itself.
+			Rule routerRule = new Rule();
+			routerRule.setMacro("DNS");
+			routerRule.setAction(Action.ACCEPT);
+			routerRule.setSourceZone(ParentZone.ROUTER.toString());
+			routerRule.setDestinationZone(ParentZone.ROUTER.toString());
+			rules.add(routerRule);
+			
+			if (this.vlans != null) {
+				vlans.forEach((vlan, type) -> {
+					Rule lanDnsRule = new Rule();
+					lanDnsRule.setMacro("DNS");
+					lanDnsRule.setAction(Action.ACCEPT);
+					lanDnsRule.setSourceZone(type.toString());
+					lanDnsRule.setDestinationZone(ParentZone.ROUTER.toString());
+					lanDnsRule.setDestinationSubZone("&" + vlan.getIface());
+					
+					rules.add(lanDnsRule);
+				});
+			}
+		}
+		else {
+			;; //TODO
+		}
+		
+		return rules;
+	}
+	
+	/**
+	 * Builds the default rules for its host.
+	 * 
+	 * If your machine is a Router, it builds the various inter-zone communications
+	 * (as we disallow everything by policy).
+	 * 
+	 * @return A collection of Rules
+	 */
+	private Collection<Rule> getDefaultRules() {
+		Collection<Rule> rules = new ArrayList<>();
+		
+		if (me.isRouter()) {
+			if (this.hasRealUsers()) {
+				Rule userEgress = new Rule();
+				userEgress.setAction(Action.ACCEPT);
+				userEgress.setSourceZone(ParentZone.USERS.toString());
+				userEgress.setDestinationZone(ParentZone.INTERNET.toString());
+				
+				rules.add(userEgress);
+			}
+			
+			if (getNetworkModel().getExternalOnlyDevices().size() > 0) {
+				Rule externalOnlyEgress = new Rule();
+				externalOnlyEgress.setAction(Action.ACCEPT);
+				externalOnlyEgress.setSourceZone(ParentZone.EXTERNAL_ONLY.toString());
+				externalOnlyEgress.setDestinationZone(ParentZone.INTERNET.toString());
+				
+				rules.add(externalOnlyEgress);
+			}
+		}
+		
+		return rules;
+	}
+	
 	private Collection<Rule> getRulesFile() throws InvalidServerException, InvalidServerModelException {
 		Collection<Rule> rules = new ArrayList<>();
 		
 		if (getNetworkModel().getServerModel(getLabel()).isRouter()) {
 			
-			String routerZone = ParentZone.ROUTER.toString();
-			
-			//Router always needs to talk DNS to itself.
-			Rule dnsRule = new Rule();
-			dnsRule.setMacro("DNS");
-			dnsRule.setAction(Action.ACCEPT);
-			dnsRule.setSourceZone(routerZone);
-			dnsRule.setDestinationZone(routerZone);
-	
-			rules.add(dnsRule);
-			
-			vlans.forEach((vlan, type) -> {
-				Rule lanDnsRule = new Rule();
-				lanDnsRule.setMacro("DNS");
-				lanDnsRule.setAction(Action.ACCEPT);
-				lanDnsRule.setSourceZone(type.toString());
-				lanDnsRule.setDestinationZone(routerZone);
-				lanDnsRule.setDestinationSubZone("&" + vlan.getIface());
-				
-				rules.add(lanDnsRule);
-			});
-			
-			getNetworkModel().getServerModel(getLabel()).getNetworkInterfaces().forEach(nic -> {
-				ParentZone sourceZone = null;
-				
-				try {
-					sourceZone = ParentZone.valueOf(nic.getIface());
-				}
-				catch (IllegalArgumentException e) {
-					//This is not the zone you're looking for
-					;;
-				}
-				
-				if (sourceZone != null && sourceZone.direction.equals(Arm.LAN)) {
-					Rule lanDnsRule = new Rule();
-					lanDnsRule.setMacro("DNS");
-					lanDnsRule.setAction(Action.ACCEPT);
-					lanDnsRule.setSourceZone(sourceZone.toString());
-					lanDnsRule.setDestinationZone(routerZone);
-					lanDnsRule.setDestinationSubZone("&" + nic.getIface());
-					
-					rules.add(lanDnsRule);
-				}
-			});
-			
-			Rule sshRule = new Rule();
-			sshRule.setAction(Action.ACCEPT);
-			sshRule.setSourceZone(ParentZone.USERS.toString());
-			sshRule.setProto(Encapsulation.TCP);
-			sshRule.setDPorts(Arrays.asList(getNetworkModel().getData().getSSHPort(getLabel())));
-			sshRule.setDestinationZone(getLabel());
-			
-			rules.add(sshRule);
-			
-			//Whitelist Users & External-only, because they need 'net access
-			Rule userEgress = new Rule();
-			userEgress.setAction(Action.ACCEPT);
-			userEgress.setSourceZone(ParentZone.USERS.toString());
-			userEgress.setDestinationZone(ParentZone.INTERNET.toString());
-			
-			rules.add(userEgress);
-			
-			Rule externalOnlyEgress = new Rule();
-			externalOnlyEgress.setAction(Action.ACCEPT);
-			externalOnlyEgress.setSourceZone(ParentZone.EXTERNAL_ONLY.toString());
-			externalOnlyEgress.setDestinationZone(ParentZone.INTERNET.toString());
-			
-			rules.add(externalOnlyEgress);
+			rules.addAll(getDNSRules());
+			rules.addAll(getDefaultRules());
 			
 			// Iterate over every machine to build all of its rules
 			getNetworkModel().getUniqueMachines().values().forEach(machine -> {
+				Comment machineComment = new Comment(machine.getLabel());
+				rules.add(machineComment);
+				
 				machine.getEgresses().forEach(egress -> {
 					Rule machineEgressRule = new Rule();
 					machineEgressRule.setAction(Action.ACCEPT);
