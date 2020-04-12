@@ -689,11 +689,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		machine.getNetworkInterfaces().forEach(nic -> {
 			if (nic.getAddresses() != null) {
-				nic.getAddresses().forEach(address -> {
-					if (address != null) {
-						addresses.add(address.getLowerNonZeroHost().withoutPrefixLength().toCompressedString() + "/32");
-					}
-				});
+				addresses.add(getAddresses(nic.getAddresses()));
 			}
 		});
 
