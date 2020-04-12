@@ -696,6 +696,11 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return String.join(",", addresses);
 	}
 
+	/**
+	 * Returns a comma-delimited string of given IP addresses, with hardcoded /32 subnet
+	 * @param ips
+	 * @return 
+	 */
 	private String getAddresses(Collection<IPAddress> ips) {
 		final Collection<String> addresses = new ArrayList<>();
 
@@ -718,6 +723,9 @@ public class ShorewallFirewall extends AFirewallProfile {
 	private Collection<String> machines2Host(MachineType type, Collection<AMachineModel> machines) {
 		final Collection<String> hosts = new ArrayList<>();
 
+		hosts.add("");
+		hosts.add("#" + type.toString());
+		
 		for (final AMachineModel machine : machines) {
 			
 			try {
@@ -744,6 +752,9 @@ public class ShorewallFirewall extends AFirewallProfile {
 	 */
 	private Collection<String> machines2Maclist(MachineType type, Collection<AMachineModel> machines) {
 		final Collection<String> maclist = new ArrayList<>();
+
+		maclist.add("");
+		maclist.add("#" + type.toString());
 
 		for (final AMachineModel machine : machines) {
 			
