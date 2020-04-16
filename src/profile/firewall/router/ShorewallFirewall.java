@@ -522,7 +522,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 				
 				if (!getNetworkModel().getMachines(type).isEmpty()) {
 					getNetworkModel().getMachines(type).forEach((label, machine) -> {
-						zones.appendLine(cleanZone(vlan.getIface()) + ":" + cleanZone(label) + "\tipv4" + "\t#" + label);
+						zones.appendLine(cleanZone(cleanZone(label) + ":" + vlan.getIface()) + "\tipv4" + "\t#" + label);
 					});
 				}
 				zones.appendCarriageReturn();
