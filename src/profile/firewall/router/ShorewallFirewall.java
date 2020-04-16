@@ -11,11 +11,8 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,11 +37,8 @@ import core.model.network.NetworkModel;
 import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
-import inet.ipaddr.AddressStringException;
 import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
-import inet.ipaddr.IPAddress.IPVersion;
-import inet.ipaddr.IPAddressString;
 import inet.ipaddr.IncompatibleAddressException;
 import profile.firewall.AFirewallProfile;
 
@@ -96,7 +90,6 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	private static String CONFIG_BASEDIR = "/etc/shorewall";
-	private final Collection<Rule> rules;
 	
 	private final ServerModel me;
 	
@@ -123,7 +116,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 			macro = null;
 			action = null;
 			
-			this.invertSource = false;
+			invertSource = false;
 			sourceSubZone = null;
 			sPorts = null;
 
@@ -238,7 +231,6 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 	public ShorewallFirewall(String label, NetworkModel networkModel) throws InvalidServerModelException {
 		super(label, networkModel);
-		this.rules = new ArrayList<>();
 		this.vlans = null;
 		this.me = getNetworkModel().getServerModel(getLabel());
 	}

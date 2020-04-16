@@ -242,9 +242,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		// Now let's create our subnet/groups!
 		subnetConfig.appendCarriageReturn();
 		subnetConfig.appendLine("group " + net.toLowerCase() + " {");
-		subnetConfig.appendLine("\tserver-name \\\"" + net.toLowerCase() + "." + getLabel() + "."
-				+ getNetworkModel().getData().getDomain() + "\\\";");
-		// wait, wut?
+		subnetConfig.appendLine("\tserver-name \\\"" + net.toLowerCase() + "." + getLabel() + "." + getNetworkModel().getData().getDomain() + "\\\";");
 		subnetConfig.appendLine("\toption routers " + gateway + ";");
 		subnetConfig.appendLine("\toption domain-name-servers " + gateway + ";");
 		subnetConfig.appendCarriageReturn();
