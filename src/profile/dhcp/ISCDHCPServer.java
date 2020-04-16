@@ -234,7 +234,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		final IPAddress subnet = getSubnet(net);
 		final Integer prefix = getSubnet(net).getNetworkPrefixLength();
 		final IPAddress netmask = getSubnet(net).getNetwork().getNetworkMask(prefix, false);
-		final String gateway = subnet.getLower().withoutPrefixLength().toCompressedString();
+		final String gateway = subnet.getLowerNonZeroHost().withoutPrefixLength().toCompressedString();
 
 		// Start by telling our DHCP Server about this subnet.
 		subnetConfig.appendLine("subnet " + gateway + " netmask " + netmask + " {}");
