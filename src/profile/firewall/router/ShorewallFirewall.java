@@ -346,10 +346,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 	private Collection<Rule> getDNSRules() throws InvalidServerModelException {
 		Collection<Rule> rules = new ArrayList<>();
 
+		Comment dnsComment = new Comment("DNS rules");
+		rules.add(dnsComment);
+		
 		if (me.isRouter()) {
-			Comment dnsComment = new Comment("DNS rules");
-			rules.add(dnsComment);
-	
 			//Router always needs to talk DNS to itself.
 			Rule routerRule = new Rule();
 			routerRule.setMacro("DNS");
