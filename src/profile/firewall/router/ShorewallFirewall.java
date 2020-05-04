@@ -342,9 +342,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 		rules.add(dnsComment);
 		
 		if (me.isRouter()) {
-			//Router always needs to talk DNS to itself.
+			//Router always needs to talk to itself.
 			Rule routerRule = new Rule();
-			routerRule.setMacro("DNS");
 			routerRule.setAction(Action.ACCEPT);
 			routerRule.setSourceZone(ParentZone.ROUTER.toString());
 			routerRule.setDestinationZone(ParentZone.ROUTER.toString());
