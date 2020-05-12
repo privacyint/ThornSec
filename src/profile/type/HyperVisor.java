@@ -8,7 +8,9 @@
 package profile.type;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,6 +29,7 @@ import core.data.machine.configuration.DiskData.Medium;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.AThornSecException;
 import core.exception.data.ADataException;
+import core.exception.data.NoValidUsersException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
 import core.exception.runtime.InvalidMachineModelException;
@@ -286,7 +289,7 @@ public class HyperVisor extends AStructuredProfile {
 
 			try {
 				units.addAll(this.hypervisor.buildIso(service));
-			} catch (InvalidServerException | MalformedURLException | URISyntaxException e) {
+			} catch (InvalidServerException | InvalidServerModelException | NoValidUsersException | MalformedURLException | URISyntaxException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
