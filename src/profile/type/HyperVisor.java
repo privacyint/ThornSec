@@ -52,7 +52,7 @@ import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import inet.ipaddr.IPAddress;
 import profile.HypervisorScripts;
-import profile.stack.Virtualisation;
+import profile.stack.Virtualbox;
 
 /**
  * This is the representation of your HyperVisor itself.
@@ -62,7 +62,7 @@ import profile.stack.Virtualisation;
  */
 public class HyperVisor extends AStructuredProfile {
 
-	private final Virtualisation hypervisor;
+	private final Virtualbox hypervisor;
 	private final HypervisorScripts scripts;
 	
 	private Map<String, ServerModel> services;
@@ -132,7 +132,7 @@ public class HyperVisor extends AStructuredProfile {
 			}
 		}
 		
-		this.hypervisor = new Virtualisation(label, networkModel);
+		this.hypervisor = new Virtualbox(label, networkModel);
 		this.scripts = new HypervisorScripts(label, networkModel);
 		this.services = null;
 	}
