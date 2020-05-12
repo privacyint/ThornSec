@@ -8,9 +8,7 @@
 package profile.type;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,7 +46,6 @@ import core.unit.fs.DirUnit;
 import core.unit.fs.FileChecksumUnit;
 import core.unit.fs.FileChecksumUnit.Checksum;
 import core.unit.fs.FileDownloadUnit;
-import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import inet.ipaddr.IPAddress;
 import profile.HypervisorScripts;
