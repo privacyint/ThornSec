@@ -54,6 +54,12 @@ import inet.ipaddr.IPAddress;
 import profile.HypervisorScripts;
 import profile.stack.Virtualisation;
 
+/**
+ * This is the representation of your HyperVisor itself.
+ * 
+ * These are things which should be done on a HyperVisor machine, regardless of
+ * what hypervisor layer it's actually running
+ */
 public class HyperVisor extends AStructuredProfile {
 
 	private final Virtualisation hypervisor;
@@ -61,6 +67,16 @@ public class HyperVisor extends AStructuredProfile {
 	
 	private Map<String, ServerModel> services;
 
+	/**
+	 * Create a new HyperVisor box, with initialised NICs, and initialise the
+	 * virtualisation layer itself, including the building of Service machines
+	 * 
+	 * @param label
+	 * @param networkModel
+	 * @throws InvalidServerModelException
+	 * @throws JsonParsingException
+	 * @throws ADataException
+	 */
 	public HyperVisor(String label, NetworkModel networkModel) throws InvalidServerModelException, JsonParsingException, ADataException {
 		super(label, networkModel);
 
@@ -121,6 +137,11 @@ public class HyperVisor extends AStructuredProfile {
 		this.services = null;
 	}
 
+	/**
+	 * Add a Service to this HyperVisor
+	 * @param label the Service's label
+	 * @param service the Service model to add
+	 */
 	public void addService(String label, ServerModel service) {
 		if (this.services == null) {
 			this.services = new LinkedHashMap<>();
