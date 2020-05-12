@@ -153,10 +153,6 @@ public class HyperVisor extends AStructuredProfile {
 	public Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		final FileUnit fuseConf = new FileUnit("fuse", "proceed", "/etc/fuse.conf");
-		units.add(fuseConf);
-		fuseConf.appendLine("#user_allow_other");
-
 		units.addAll(this.hypervisor.getPersistentConfig());
 		units.addAll(this.scripts.getPersistentConfig());
 
