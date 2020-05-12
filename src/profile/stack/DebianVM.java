@@ -63,7 +63,7 @@ public class DebianVM extends Virtualbox{
 		return units;
 	}
 
-	private Collection<IUnit> buildIso(String service) throws InvalidServerException, InvalidServerModelException, NoValidUsersException, MalformedURLException, URISyntaxException {
+	public Collection<IUnit> buildIso(String service) throws InvalidServerException, InvalidServerModelException, NoValidUsersException, MalformedURLException, URISyntaxException {
 
 		final Collection<IUnit> units = new ArrayList<>();
 
