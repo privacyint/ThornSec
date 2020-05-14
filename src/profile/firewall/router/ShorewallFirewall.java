@@ -450,15 +450,20 @@ public class ShorewallFirewall extends AFirewallProfile {
 						dnatRule.setProto(encapsulation);
 						dnatRule.setInvertSource(true);
 						
-						try {
-							dnatRule.setOrigDest(getNetworkModel().getMachineModel(destination).getIPs());
-						} catch (InvalidMachineModelException | IncompatibleAddressException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+					try {
+						Collection<IPAddress> origIPs = getNetworkModel().getMachineModel(destination).getIPs();
+						
+						if (machine.getExternalIPs() != null) {
+							origIPs.addAll(machine.getExternalIPs());
 						}
 						
-						rules.add(dnatRule);
-					});
+						dnatRule.setOrigDest(origIPs);
+					} catch (InvalidMachineModelException | IncompatibleAddressException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+					rules.add(dnatRule);
 				});
 			});
 		}
