@@ -447,7 +447,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 								machine.getIPs().stream().map(dest -> dest.withoutPrefixLength().toCompressedString())
 										.collect(Collectors.joining(",")));
 					dnatRule.setDPorts(dnatPorts);
-						dnatRule.setProto(encapsulation);
+					dnatRule.setProto(Encapsulation.TCP); //TODO: FIX THIS
 						dnatRule.setInvertSource(true);
 						
 					try {
