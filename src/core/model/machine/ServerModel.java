@@ -12,9 +12,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-
+import java.util.HashMap;
+import java.util.Map;
 import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
 
@@ -43,15 +42,14 @@ import profile.service.machine.SSH;
 import profile.type.Dedicated;
 import profile.type.HyperVisor;
 import profile.type.Router;
-import profile.type.Service;
 
 /**
  * This Class represents a Server. It is either used directly, or is called via
  * one of its children.
  */
 public class ServerModel extends AMachineModel {
-	private Collection<AStructuredProfile> types;
-	private Collection<AProfile> profiles;
+	private Map<MachineType, AStructuredProfile> types;
+	private Map<String, AProfile> profiles;
 
 	// Server-specific
 	private AFirewallProfile firewall;
@@ -91,12 +89,15 @@ public class ServerModel extends AMachineModel {
 		this.bindMounts = new BindFS(getLabel(), this.networkModel);
 		this.aptSources = new AptSources(getLabel(), this.networkModel);
 		this.users = new UserAccounts(getLabel(), this.networkModel);
+		
+		//init();
 	}
 
 	@Override
 	public void init() throws AThornSecException {
 		// TODO: Probably a cleaner way of doing the below
-		this.types = new HashSet<>();
+		this.profiles = new HashMap<>();
+		this.types = new HashMap<>();
 		this.firewall = new ShorewallFirewall(getLabel(), this.networkModel);
 
 		for (final MachineType type : getNetworkModel().getData().getTypes(getLabel())) {
@@ -105,13 +106,13 @@ public class ServerModel extends AMachineModel {
 				case ROUTER:
 //				if (this.firewall == null) {
 //				}
-					this.types.add(new Router(getLabel(), this.networkModel));
+					this.types.put(MachineType.ROUTER, new Router(getLabel(), this.networkModel));
 					break;
 				case HYPERVISOR:
 //				if (this.firewall == null) {
 //					this.firewall = new CSFFirewall(getLabel(), this.networkModel);
 //				}
-					this.types.add(new HyperVisor(getLabel(), this.networkModel));
+					this.types.put(MachineType.HYPERVISOR, new HyperVisor(getLabel(), this.networkModel));
 					break;
 				case SERVICE:
 //				if (this.firewall == null) {
@@ -124,7 +125,7 @@ public class ServerModel extends AMachineModel {
 //
 //				break;
 				case DEDICATED:
-					this.types.add(new Dedicated(getLabel(), this.networkModel));
+					this.types.put(MachineType.DEDICATED, new Dedicated(getLabel(), this.networkModel));
 					break;
 				default:
 					break;
@@ -135,43 +136,41 @@ public class ServerModel extends AMachineModel {
 			}
 		}
 
-		this.profiles = new HashSet<>();
-
-		getNetworkModel().getData().getProfiles(getLabel()).forEach(profile -> {
-			try {
-				addProfile(profile);
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-					| InvocationTargetException | NoSuchMethodException | SecurityException | ClassNotFoundException
-					| IOException | InvalidProfileException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		});
+		try {
+			addProfile(getNetworkModel().getData().getProfiles(getLabel()).toArray(String[]::new));
+		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+				| InvocationTargetException | NoSuchMethodException | SecurityException | ClassNotFoundException
+				| IOException | InvalidProfileException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void addProfile(String... profiles) throws IOException, InvalidProfileException, InstantiationException, IllegalAccessException, IllegalArgumentException,
 			InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
-		if (this.profiles == null) {
-			this.profiles = new LinkedHashSet<>();
-		}
-
-		for (final String profile : profiles) {
-			if (profile.equals("")) {
+		for (final String profileName : profiles) {
+			if (profileName.equals("")) {
 				continue;
 			}
 
-			final Collection<Class<?>> classes = new ClassesInPackageScanner().setResourceNameFilter((packageName, fileName) -> fileName.equals(profile + ".class"))
+			final Collection<Class<?>> classes = new ClassesInPackageScanner().setResourceNameFilter((packageName, fileName) -> fileName.equals(profileName + ".class"))
 					.scan("profile");
 
 			if (classes.isEmpty()) {
-				throw new InvalidProfileException("I can't find profile " + profile);
+				throw new InvalidProfileException("I can't find profile " + profileName);
 			}
 
-			for (final Class<?> profileClass : classes) {
-				final AProfile theProfile = (AProfile) Class.forName(profileClass.getName()).getDeclaredConstructor(String.class, NetworkModel.class).newInstance(getLabel(),
-						getNetworkModel());
-				this.profiles.add(theProfile);
-			}
+			classes.forEach((profileClass) -> {
+				try {
+					this.profiles.put(profileName,
+							(AProfile) Class.forName(profileClass.getName()).getDeclaredConstructor(String.class, NetworkModel.class).newInstance(getLabel(),
+							getNetworkModel()));
+				} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException
+						| ClassNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			});
 		}
 	}
 
@@ -223,11 +222,11 @@ public class ServerModel extends AMachineModel {
 		units.add(new InstalledUnit("htop", "proceed", "htop"));
 
 		final Collection<IUnit> typesAndProfileUnits = new ArrayList<>();
-		for (final AStructuredProfile type : this.types) {
+		for (final AStructuredProfile type : this.types.values()) {
 			typesAndProfileUnits.addAll(type.getUnits());
 		}
 
-		for (final AProfile profile : this.profiles) {
+		for (final AProfile profile : getProfiles().values()) {
 			typesAndProfileUnits.addAll(profile.getUnits());
 		}
 
@@ -260,6 +259,15 @@ public class ServerModel extends AMachineModel {
 				"", "fail"));
 
 		return units;
+	}
+
+	/**
+	 * Get the profiles associated with this Server
+	 * 
+	 * @return a Map of the profile name and the profile itself
+	 */
+	public Map<String, AProfile> getProfiles() {
+		return this.profiles;
 	}
 
 	private Collection<IUnit> serverConfig() throws InvalidMachineException {
@@ -392,7 +400,7 @@ public class ServerModel extends AMachineModel {
 		return units;
 	}
 
-	public Collection<AStructuredProfile> getTypes() {
+	public Map<MachineType, AStructuredProfile> getTypes() {
 		return this.types;
 	}
 
