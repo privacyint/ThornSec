@@ -346,8 +346,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 			//Router always needs to talk to itself.
 			Rule routerRule = new Rule();
 			routerRule.setAction(Action.ACCEPT);
-			routerRule.setSourceZone(ParentZone.ROUTER.toString());
-			routerRule.setDestinationZone(ParentZone.ROUTER.toString());
+			routerRule.setSourceZone("$FW");
+			routerRule.setDestinationZone("$FW");
 			rules.add(routerRule);
 			
 			if (this.vlans != null) {
