@@ -95,7 +95,7 @@ public class Router extends AMachineProfile {
 
 		if (!getNetworkModel().getMachines(MachineType.SERVER).isEmpty()) {
 			NetworkInterfaceModel serversNic = new MACVLANModel(MachineType.SERVER.toString(), trunk,
-					getNetworkModel().getData().getServerSubnet(), getNetworkModel().getData().getServerSubnet());
+					getNetworkModel().getData().getSubnet(MachineType.SERVER), getNetworkModel().getData().getSubnet(MachineType.SERVER));
 			
 			me.addNetworkInterface(serversNic);
 			this.addVLAN(serversNic, MachineType.SERVER);
@@ -104,7 +104,7 @@ public class Router extends AMachineProfile {
 		if (!me.isHyperVisor()) {
 			if (!getNetworkModel().getMachines(MachineType.ADMIN).isEmpty()) {
 				NetworkInterfaceModel adminsNic = new MACVLANModel(MachineType.ADMIN.toString(), trunk,
-						getNetworkModel().getData().getAdminSubnet(), getNetworkModel().getData().getAdminSubnet());
+						getNetworkModel().getData().getSubnet(MachineType.ADMIN), getNetworkModel().getData().getSubnet(MachineType.ADMIN));
 				
 				me.addNetworkInterface(adminsNic);
 				this.addVLAN(adminsNic, MachineType.ADMIN);
@@ -117,7 +117,7 @@ public class Router extends AMachineProfile {
 						.count() > 0) {
 				
 					NetworkInterfaceModel usersNic = new MACVLANModel(MachineType.USER.toString(), trunk,
-							getNetworkModel().getData().getUserSubnet(), getNetworkModel().getData().getUserSubnet());
+							getNetworkModel().getData().getSubnet(MachineType.USER), getNetworkModel().getData().getSubnet(MachineType.USER));
 					
 					me.addNetworkInterface(usersNic);
 					this.addVLAN(usersNic, MachineType.USER);
@@ -126,8 +126,8 @@ public class Router extends AMachineProfile {
 
 			if (!getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).isEmpty()) {
 				NetworkInterfaceModel extOnlyNic = new MACVLANModel(MachineType.EXTERNAL_ONLY.toString(), trunk,
-						getNetworkModel().getData().getExternalSubnet(),
-						getNetworkModel().getData().getExternalSubnet());
+						getNetworkModel().getData().getSubnet(MachineType.EXTERNAL_ONLY),
+						getNetworkModel().getData().getSubnet(MachineType.EXTERNAL_ONLY));
 				
 				me.addNetworkInterface(extOnlyNic);
 				this.addVLAN(extOnlyNic, MachineType.EXTERNAL_ONLY);
@@ -135,8 +135,8 @@ public class Router extends AMachineProfile {
 
 			if (!getNetworkModel().getMachines(MachineType.INTERNAL_ONLY).isEmpty()) {
 				NetworkInterfaceModel intOnlyNic = new MACVLANModel(MachineType.INTERNAL_ONLY.toString(), trunk,
-						getNetworkModel().getData().getInternalSubnet(),
-						getNetworkModel().getData().getInternalSubnet());
+						getNetworkModel().getData().getSubnet(MachineType.INTERNAL_ONLY),
+						getNetworkModel().getData().getSubnet(MachineType.INTERNAL_ONLY));
 				
 				me.addNetworkInterface(intOnlyNic);
 				this.addVLAN(intOnlyNic, MachineType.INTERNAL_ONLY);
@@ -145,7 +145,7 @@ public class Router extends AMachineProfile {
 			// if we want a guest network, build one of them, too
 			if (getNetworkModel().getData().buildAutoGuest()) {
 				NetworkInterfaceModel guestNic = new MACVLANModel(MachineType.GUEST.toString(), trunk,
-						getNetworkModel().getData().getGuestSubnet(), getNetworkModel().getData().getGuestSubnet());
+						getNetworkModel().getData().getSubnet(MachineType.GUEST), getNetworkModel().getData().getSubnet(MachineType.GUEST));
 				
 				me.addNetworkInterface(guestNic);
 				this.addVLAN(guestNic, MachineType.GUEST);

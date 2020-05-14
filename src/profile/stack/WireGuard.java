@@ -13,6 +13,7 @@ import java.util.Collection;
 import javax.json.JsonObject;
 
 import core.data.machine.AMachineData.Encapsulation;
+import core.data.machine.AMachineData.MachineType;
 import core.exception.data.InvalidIPAddressException;
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
@@ -65,7 +66,7 @@ public class WireGuard extends AStructuredProfile {
 			}
 		});
 
-		nic.addAddress(getNetworkModel().getData().getVPNSubnet());
+		nic.addAddress(getNetworkModel().getData().getSubnet(MachineType.VPN));
 
 		getNetworkModel().getServerModel(getLabel()).addNetworkInterface(nic);
 

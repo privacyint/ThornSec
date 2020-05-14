@@ -175,7 +175,7 @@ public class NetworkModel {
 			this.machines = new LinkedHashMap<>();
 		}
 
-		Map<String, AMachineModel> machines = this.machines.get(type);
+		Map<String, AMachineModel> machines = getMachines(type);
 		if (machines == null) {
 			machines = new LinkedHashMap<>();
 		}

@@ -42,7 +42,7 @@ public abstract class ADNSServerProfile extends AStructuredProfile {
 	public abstract Collection<IUnit> getLiveFirewall() throws AThornSecException;
 
 	/**
-	 * add a machine to a given domain
+	 * add a machine(s) to a given domain
 	 */
-	public abstract void addRecords(AMachineModel machine);
+	public abstract void addRecord(AMachineModel... machine);
 }

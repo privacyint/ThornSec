@@ -45,15 +45,15 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf");
 	}
 
-	private void buildNet(String network, IPAddress subnet, Collection<AMachineModel> machines)
+	private void buildNet(MachineType type)
 			throws InvalidServerException {
 		// First IP belongs to this net's router, so start from there (as it's assigned)
-		IPAddress ip = subnet.getLowerNonZeroHost();
+		IPAddress ip = new IPAddressString(getNetworkModel().getData().getSubnet(type)).getAddress().getLowerNonZeroHost();
 
-		addSubnet(network, subnet);
-		addToSubnet(network, machines);
+		addSubnet(type.toString(), getSubnet(type.toString()));
+		addToSubnet(type.toString(), getNetworkModel().getMachines(type).values());
 
-		for (final AMachineModel machine : machines) {
+		for (final AMachineModel machine : getNetworkModel().getMachines(type).values()) {
 
 			try {
 				if (getNetworkModel().getServerModel(machine.getLabel()).isRouter()) {
@@ -141,6 +141,14 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 
 	private void buildPersistentNets()
 			throws InvalidServerException, IncompatibleAddressException, InvalidServerModelException {
+		
+		for (MachineType type : MachineType.values()) {
+			if (getNetworkModel().getMachines(type) != null && !getNetworkModel().getMachines(type).isEmpty()) {
+				buildNet(type);
+			}
+		}
+		
+		/*
 		if (!getNetworkModel().getMachines(MachineType.SERVER).isEmpty()) {
 			buildNet(MachineType.SERVER.toString(),
 					new IPAddressString(getNetworkModel().getData().getServerSubnet()).getAddress(),
@@ -293,7 +301,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 					"/etc/dhcp/dhcpd.conf.d/Guests.conf");
 			units.add(guestConfig);
 
-			final IPAddress subnet = new IPAddressString(getNetworkModel().getData().getGuestSubnet()).getAddress();
+			final IPAddress subnet = new IPAddressString(getNetworkModel().getData().getSubnet(MachineType.GUEST)).getAddress();
 
 			guestConfig.appendLine("group Guests {");
 			guestConfig.appendLine("\tsubnet " + subnet.getLower().withoutPrefixLength() + " netmask "

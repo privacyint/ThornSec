@@ -31,11 +31,9 @@ import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
-import inet.ipaddr.AddressStringException;
 import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
-import inet.ipaddr.IPAddressString;
-import inet.ipaddr.IncompatibleAddressException;
+import profile.type.Router;
 
 /**
  * Creates and configures an internal, recursive DNS server for your network.
@@ -48,16 +46,16 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	private static Integer DEFAULT_UPSTREAM_DNS_PORT = 853;
 
 	private final Map<HostName, Set<AMachineModel>> zones;
+	private Router myRouter;
 
 	public UnboundDNSServer(String label, NetworkModel networkModel) {
 		super(label, networkModel);
 
 		this.zones = new Hashtable<>();
-
-		for (final MachineType type : getNetworkModel().getMachines().keySet()) {
-			for (final AMachineModel machine : getNetworkModel().getMachines(type).values()) {
-				addRecords(machine);
-			}
+		try {
+			myRouter = (Router) getNetworkModel().getServerModel(getLabel()).getTypes().get(MachineType.ROUTER);
+		} catch (InvalidServerModelException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -66,38 +64,10 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		final Integer cpus = getNetworkModel().getData().getCPUs(getLabel());
 		final Collection<IUnit> units = new ArrayList<>();
 
-		final Collection<IPAddress> ips = new ArrayList<>();
-
-		try {
-			if (!getNetworkModel().getMachines(MachineType.ADMIN).isEmpty()) {
-				ips.add(new IPAddressString(getNetworkModel().getData().getAdminSubnet()).toAddress());
-			}
-
-			if (!getNetworkModel().getMachines(MachineType.SERVER).isEmpty()) {
-				ips.add(new IPAddressString(getNetworkModel().getData().getServerSubnet()).toAddress());
-			}
-
-			if (!getNetworkModel().getMachines(MachineType.USER).isEmpty()
-					&& !getNetworkModel().getServerModel(getLabel()).isHyperVisor()) {
-				ips.add(new IPAddressString(getNetworkModel().getData().getUserSubnet()).toAddress());
-			}
-
-			if (getNetworkModel().getData().buildAutoGuest()) {
-				ips.add(new IPAddressString(getNetworkModel().getData().getGuestSubnet()).toAddress());
-			}
-
-			if (!getNetworkModel().getMachines(MachineType.INTERNAL_ONLY).isEmpty()) {
-				ips.add(new IPAddressString(getNetworkModel().getData().getInternalSubnet()).toAddress());
-			}
-
-			if (!getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).isEmpty()) {
-				ips.add(new IPAddressString(getNetworkModel().getData().getExternalSubnet()).toAddress());
-			}
-		} catch (AddressStringException | IncompatibleAddressException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
+		myRouter.getVLANs().values().forEach((vlan) -> {
+			addRecord(getNetworkModel().getMachines(vlan).values().toArray(AMachineModel[]::new));
+		});
+		
 		// Config originally based on https://calomel.org/unbound_dns.html
 		// See https://linux.die.net/man/5/unbound.conf for full config file
 		final FileUnit unboundConf = new FileUnit("unbound_conf", "dns_installed", UNBOUND_CONFIG_FILE_PATH);
@@ -113,14 +83,18 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		// Listen to lan/loopback traffic
 		unboundConf.appendLine("\tinterface: 127.0.0.1");
 		unboundConf.appendLine("\taccess-control: 127.0.0.1/32 allow");
-		for (final IPAddress ip : ips) {
+		myRouter.getVLANs().forEach((nic, vlan) -> {
+			unboundConf.appendLine("\t#" + nic.getIface());
+			
+			IPAddress subnet = nic.getSubnet().getLowerNonZeroHost().withoutPrefixLength();
+		
 			// Listen on this LAN interface
-			unboundConf.appendLine("\tinterface: " + ip.getLowerNonZeroHost().withoutPrefixLength());
+			unboundConf.appendLine("\tinterface: " + subnet.toCompressedString());
 			// Allow it to receive traffic
-			unboundConf.appendLine("\taccess-control: " + ip.toCompressedString() + " allow");
+			unboundConf.appendLine("\taccess-control: " + subnet.toCompressedString() + " allow");
 			// Stop DNS Rebinding attacks, and upstream DNS must be WAN
-			unboundConf.appendLine("\tprivate-address: " + ip.toCompressedString());
-		}
+			unboundConf.appendLine("\tprivate-address: " + subnet.toCompressedString());
+		});
 		// Don't listen to anything else.
 		unboundConf.appendLine("\taccess-control: 0.0.0.0/0 refuse");
 		// Listen on :53
@@ -304,19 +278,21 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	}
 
 	@Override
-	public void addRecords(AMachineModel machine) {
+	public void addRecord(AMachineModel... machines) {
 		Map<HostName, Set<AMachineModel>> zones = this.zones;
 		if (zones == null) {
 			zones = new Hashtable<>();
 		}
 
-		Set<AMachineModel> machines = zones.get(machine.getDomain());
-		if (machines == null) {
-			machines = new HashSet<>();
+		for (AMachineModel machine : machines) {
+			Set<AMachineModel> _machines = zones.get(machine.getDomain());
+			if (_machines == null) {
+				_machines = new HashSet<>();
+			}
+	
+			_machines.add(machine);
+			this.zones.put(machine.getDomain(), _machines);
 		}
-
-		machines.add(machine);
-		this.zones.put(machine.getDomain(), machines);
 	}
 
 }

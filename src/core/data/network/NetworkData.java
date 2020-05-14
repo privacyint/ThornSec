@@ -19,6 +19,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -76,14 +77,16 @@ public class NetworkData extends AData {
 	 * To make this easier to read, please use a prefix which shows how far down the
 	 * inheritance chain we can override this
 	 */
-	private static final String NETWORK_SERVER_SUBNET = "10.0.0.0/8";
-	private static final String NETWORK_USER_SUBNET = "172.16.0.0/16";
-	private static final String NETWORK_ADMIN_SUBNET = "172.20.0.0/16";
-	private static final String NETWORK_INTERNAL_SUBNET = "172.24.0.0/16";
-	private static final String NETWORK_EXTERNAL_SUBNET = "172.28.0.0/16";
-	private static final String NETWORK_GUEST_SUBNET = "172.32.0.0/16";
-	private static final String NETWORK_VPN_SUBNET = "172.36.0.0/16";
-
+	private static final Map<MachineType, String> NETWORK_SUBNETS = Map.ofEntries(
+			new AbstractMap.SimpleEntry<MachineType, String>(MachineType.SERVER, "10.0.0.0/8"),
+			new AbstractMap.SimpleEntry<MachineType, String>(MachineType.USER, "172.16.0.0/16"),
+			new AbstractMap.SimpleEntry<MachineType, String>(MachineType.ADMIN, "172.20.0.0/16"),
+			new AbstractMap.SimpleEntry<MachineType, String>(MachineType.INTERNAL_ONLY, "172.24.0.0/16"),
+			new AbstractMap.SimpleEntry<MachineType, String>(MachineType.EXTERNAL_ONLY, "172.28.0.0/16"),
+			new AbstractMap.SimpleEntry<MachineType, String>(MachineType.GUEST, "172.32.0.0/16"),
+			new AbstractMap.SimpleEntry<MachineType, String>(MachineType.VPN, "172.36.0.0/16")
+	);
+	
 	private static final Boolean NETWORK_ADBLOCKING = false;
 	private static final Boolean NETWORK_AUTOGENPASSWDS = false;
 	private static final Boolean NETWORK_VPNONLY = false;
@@ -583,36 +586,8 @@ public class NetworkData extends AData {
 		return this.subnets;
 	}
 
-	public String getSubnet(MachineType subnet, String defaultSubnet) {
-		return this.subnets.getOrDefault(subnet.toString(), defaultSubnet);
-	}
-
-	public String getUserSubnet() {
-		return getSubnet(MachineType.USER, NETWORK_USER_SUBNET);
-	}
-
-	public String getAdminSubnet() {
-		return getSubnet(MachineType.ADMIN, NETWORK_ADMIN_SUBNET);
-	}
-
-	public String getGuestSubnet() {
-		return getSubnet(MachineType.GUEST, NETWORK_GUEST_SUBNET);
-	}
-
-	public String getServerSubnet() {
-		return getSubnet(MachineType.SERVER, NETWORK_SERVER_SUBNET);
-	}
-
-	public String getInternalSubnet() {
-		return getSubnet(MachineType.INTERNAL_ONLY, NETWORK_INTERNAL_SUBNET);
-	}
-
-	public String getExternalSubnet() {
-		return getSubnet(MachineType.EXTERNAL_ONLY, NETWORK_EXTERNAL_SUBNET);
-	}
-
-	public String getVPNSubnet() {
-		return getSubnet(MachineType.VPN, NETWORK_VPN_SUBNET);
+	public String getSubnet(MachineType subnet) {
+		return this.subnets.getOrDefault(subnet.toString(), NETWORK_SUBNETS.get(subnet));
 	}
 
 	public Integer getSSHPort(String server) {
