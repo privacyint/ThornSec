@@ -428,28 +428,28 @@ public class ShorewallFirewall extends AFirewallProfile {
 				});
 	
 				machine.getListens().forEach((encapsulation, dPorts) -> {
-						Rule listenRule = new Rule();
-						listenRule.setAction(Action.ACCEPT);
-						listenRule.setSourceZone("all+");
-						listenRule.setProto(encapsulation);
-						listenRule.setDestinationZone(machine.getLabel());
-						listenRule.setDPorts(dPorts);
-						
-						rules.add(listenRule);
+					Rule listenRule = new Rule();
+					listenRule.setAction(Action.ACCEPT);
+					listenRule.setSourceZone("all+");
+					listenRule.setProto(encapsulation);
+					listenRule.setDestinationZone(machine.getLabel());
+					listenRule.setDPorts(dPorts);
+					
+					rules.add(listenRule);
 				});
 					
-					machine.getDNAT().forEach((destination, dnatPorts)->{
-						Rule dnatRule = new Rule();
-						dnatRule.setAction(Action.DNAT);
+				machine.getDNAT().forEach((destination, dnatPorts)->{
+					Rule dnatRule = new Rule();
+					dnatRule.setAction(Action.DNAT);
 					dnatRule.setSourceZone(cleanZone(machine.getLabel()));
 					dnatRule.setDestinationZone(cleanZone(machine.getLabel()));
-						dnatRule.setDestinationSubZone(
-								machine.getIPs().stream().map(dest -> dest.withoutPrefixLength().toCompressedString())
-										.collect(Collectors.joining(",")));
+					dnatRule.setDestinationSubZone(
+							machine.getIPs().stream().map(dest -> dest.withoutPrefixLength().toCompressedString())
+									.collect(Collectors.joining(",")));
 					dnatRule.setDPorts(dnatPorts);
 					dnatRule.setProto(Encapsulation.TCP); //TODO: FIX THIS
-						dnatRule.setInvertSource(true);
-						
+					dnatRule.setInvertSource(true);
+					
 					try {
 						Collection<IPAddress> origIPs = getNetworkModel().getMachineModel(destination).getIPs();
 						
