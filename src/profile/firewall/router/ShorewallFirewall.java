@@ -356,7 +356,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 					lanDnsRule.setMacro("DNS");
 					lanDnsRule.setAction(Action.ACCEPT);
 					lanDnsRule.setSourceZone(type.toString());
-					lanDnsRule.setDestinationZone(ParentZone.ROUTER.toString());
+					lanDnsRule.setDestinationZone(cleanZone(getLabel()));
 					lanDnsRule.setDestinationSubZone("&" + vlan.getIface());
 					
 					rules.add(lanDnsRule);
