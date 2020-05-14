@@ -428,30 +428,6 @@ public class ShorewallFirewall extends AFirewallProfile {
 				});
 	
 				machine.getListens().forEach((encapsulation, dPorts) -> {
-					if (machine.getExternalIPs() != null) {
-						Rule externalDNATRule = new Rule();
-						externalDNATRule.setAction(Action.DNAT);
-						externalDNATRule.setSourceZone(ParentZone.INTERNET.toString());
-						externalDNATRule.setDestinationZone(machine.getLabel());
-						externalDNATRule.setDestinationSubZone(
-								machine.getIPs().stream().map(dest -> dest.withoutPrefixLength().toCompressedString())
-										.collect(Collectors.joining(",")));
-						externalDNATRule.setDPorts(dPorts);
-						externalDNATRule.setProto(encapsulation);
-						externalDNATRule.setOrigDest(machine.getExternalIPs());
-						externalDNATRule.setInvertSource(true);
-						
-						rules.add(externalDNATRule);
-						
-						Rule externalDNATListenRule = new Rule();
-						externalDNATListenRule.setAction(Action.ACCEPT);
-						externalDNATListenRule.setSourceZone("all+");
-						externalDNATListenRule.setProto(encapsulation);
-						externalDNATListenRule.setDestinationZone(machine.getLabel());
-						externalDNATListenRule.setDPorts(dPorts);
-						
-						rules.add(externalDNATListenRule);
-					} else {
 						Rule listenRule = new Rule();
 						listenRule.setAction(Action.ACCEPT);
 						listenRule.setSourceZone("all+");
@@ -460,7 +436,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 						listenRule.setDPorts(dPorts);
 						
 						rules.add(listenRule);
-					}
+				});
 					
 					machine.getDNAT().forEach((destination, dnatPorts)->{
 						Rule dnatRule = new Rule();
