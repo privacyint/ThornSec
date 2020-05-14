@@ -446,7 +446,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 						dnatRule.setDestinationSubZone(
 								machine.getIPs().stream().map(dest -> dest.withoutPrefixLength().toCompressedString())
 										.collect(Collectors.joining(",")));
-						dnatRule.setDPorts(dPorts);
+					dnatRule.setDPorts(dnatPorts);
 						dnatRule.setProto(encapsulation);
 						dnatRule.setInvertSource(true);
 						
