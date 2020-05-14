@@ -32,6 +32,7 @@ import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
 import core.model.machine.ServerModel;
+import core.model.machine.UserDeviceModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.unit.fs.FileEditUnit;
@@ -331,7 +332,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 			getNetworkModel().getUserDevices()
 				.values()
 				.stream()
-				.filter((dev) -> dev.getNetworkInterfaces() != null) //Only if there are any interfaces, though
+				.filter(UserDeviceModel::hasRealNICs) //Only if there are any interfaces, though
 				.count() > 0;
 	}
 

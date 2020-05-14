@@ -49,6 +49,13 @@ abstract public class ADeviceModel extends AMachineModel {
 		this.managed = managed;
 	}
 
+	final public Boolean hasRealNICs() {
+		return getNetworkInterfaces()
+				.stream()
+				.filter((nic) -> nic.getMac() != null)
+				.count() > 0;
+	}
+
 	@Override
 	public Collection<IUnit> getUnits() throws AThornSecException {
 		return this.me.getPersistentConfig();
