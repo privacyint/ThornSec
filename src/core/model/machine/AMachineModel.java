@@ -64,6 +64,8 @@ public abstract class AMachineModel extends AModel {
 	AMachineModel(String label, NetworkModel networkModel) throws AddressException, JsonParsingException, ADataException, IOException {
 		super(label, networkModel);
 
+		this.networkInterfaces = new ArrayList<>();
+		
 		this.emailAddress = getNetworkModel().getData().getEmailAddress(getLabel());
 
 		this.domain = getNetworkModel().getData().getDomain(getLabel());
@@ -106,17 +108,10 @@ public abstract class AMachineModel extends AModel {
 	}
 
 	public final void addNetworkInterface(NetworkInterfaceModel ifaceModel) {
-		if (this.networkInterfaces == null) {
-			this.networkInterfaces = new ArrayList<>();
-		}
-
 		this.networkInterfaces.add(ifaceModel);
 	}
 
 	public final Collection<NetworkInterfaceModel> getNetworkInterfaces() {
-		if (this.networkInterfaces == null) {
-			return new ArrayList<>();
-		}
 		return this.networkInterfaces;
 	}
 
