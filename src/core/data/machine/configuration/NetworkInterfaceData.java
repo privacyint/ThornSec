@@ -34,7 +34,12 @@ public class NetworkInterfaceData extends AData {
 	}
 
 	public enum Inet {
-		MANUAL("manual"), STATIC("static"), DHCP("dhcp"), MACVLAN("macvlan"), BOND("802.3ad"), PPP("PPPoE"),
+		MANUAL("manual"),
+		STATIC("static"),
+		DHCP("dhcp"),
+		MACVLAN("macvlan"),
+		BOND("802.3ad"),
+		PPP("PPPoE"),
 		DUMMY("dummy");
 
 		private String inet;
