@@ -40,7 +40,8 @@ public class NetworkInterfaceData extends AData {
 		MACVLAN("macvlan"),
 		BOND("802.3ad"),
 		PPP("PPPoE"),
-		DUMMY("dummy");
+		DUMMY("dummy"),
+		WIREGUARD("wireguard");
 
 		private String inet;
 
