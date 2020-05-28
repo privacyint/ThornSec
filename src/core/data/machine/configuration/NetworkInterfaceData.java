@@ -70,7 +70,7 @@ public class NetworkInterfaceData extends AData {
 		super(label);
 
 		this.iface = null;
-		this.inet = Inet.STATIC;
+		this.inet = null;
 		this.addresses = null;
 		this.gateway = null;
 		this.subnet = null;
