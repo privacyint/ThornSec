@@ -34,7 +34,7 @@ abstract public class ADeviceModel extends AMachineModel {
 	private final Device me;
 
 	public ADeviceModel(String label, NetworkModel networkModel)
-			throws AddressException, JsonParsingException, ADataException, IOException, InvalidServerModelException, InvalidDeviceModelException {
+			throws AThornSecException  {
 		super(label, networkModel);
 
 		this.managed = getNetworkModel().getData().isManaged(getLabel());

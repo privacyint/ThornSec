@@ -7,11 +7,7 @@
  */
 package core.data.machine;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-
 import javax.json.JsonObject;
-import javax.json.stream.JsonParsingException;
 
 import core.exception.data.ADataException;
 
@@ -30,8 +26,7 @@ public class ExternalDeviceData extends ADeviceData {
 	}
 
 	@Override
-	public void read(JsonObject data)
-	throws ADataException, JsonParsingException, IOException, URISyntaxException {
+	public void read(JsonObject data) throws ADataException {
 		super.read(data);
 	}
 }

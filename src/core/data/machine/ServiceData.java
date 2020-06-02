@@ -7,14 +7,11 @@
  */
 package core.data.machine;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.json.JsonObject;
-import javax.json.stream.JsonParsingException;
 
 import core.data.machine.configuration.DiskData;
 import core.exception.data.ADataException;
@@ -54,7 +51,7 @@ public class ServiceData extends ServerData {
 	}
 
 	@Override
-	public void read(JsonObject data) throws ADataException, JsonParsingException, IOException, URISyntaxException {
+	public void read(JsonObject data) throws ADataException {
 		super.read(data);
 
 		if (data.containsKey("disks")) {

@@ -12,10 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -35,8 +32,6 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonValue;
-import javax.json.stream.JsonParsingException;
-import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import org.apache.commons.io.FilenameUtils;
 import core.data.AData;
@@ -55,11 +50,13 @@ import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.exception.data.ADataException;
+import core.exception.data.InvalidHostException;
 import core.exception.data.InvalidIPAddressException;
+import core.exception.data.InvalidPropertyException;
 import core.exception.data.MissingPropertiesException;
 import core.exception.data.NoValidUsersException;
 import core.exception.data.machine.InvalidMachineException;
-import core.exception.data.machine.InvalidServerException;
+import core.exception.data.machine.InvalidUserException;
 import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
@@ -166,10 +163,10 @@ public class NetworkData extends AData {
 		this.machines = null;
 	}
 
-	private void readInclude(String include) throws IOException, JsonParsingException, ADataException, URISyntaxException {
+	/**
 		String rawIncludeData = null;
 
-		JsonReader jsonReader = null;
+		readIncludes();
 
 		rawIncludeData = new String(Files.readAllBytes(Paths.get(include)), StandardCharsets.UTF_8);
 		jsonReader = Json.createReader(new StringReader(rawIncludeData));

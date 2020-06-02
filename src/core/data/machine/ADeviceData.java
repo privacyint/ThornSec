@@ -7,11 +7,9 @@
  */
 package core.data.machine;
 
-import java.io.IOException;
 import java.util.Optional;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
-import javax.json.stream.JsonParsingException;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.exception.data.ADataException;
 import inet.ipaddr.MACAddressString;
@@ -33,7 +31,7 @@ public abstract class ADeviceData extends AMachineData {
 	}
 
 	@Override
-	protected void read(JsonObject data) throws ADataException, JsonParsingException, IOException, URISyntaxException {
+	protected void read(JsonObject data) throws ADataException {
 		super.read(data);
 
 		if (data.containsKey("managed")) {

@@ -8,7 +8,7 @@
 package core.data.machine;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -122,12 +122,17 @@ public class ServerData extends AMachineData {
 	}
 	
 	@Override
-	public void read(JsonObject data) throws ADataException, JsonParsingException, IOException, URISyntaxException {
+	public void read(JsonObject data) throws ADataException {
 		super.read(data);
 
 		// Build network interfaces
 		if (data.containsKey("network_interfaces")) {
-			readNICs(data);
+			try {
+				readNICs(data);
+			} catch (JsonParsingException | ADataException | IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 		if (data.containsKey("admins")) {
@@ -167,7 +172,12 @@ public class ServerData extends AMachineData {
 			this.sshConnection = SSHConnection.valueOf(data.getString("ssh_connection").toUpperCase());
 		}
 		if (data.containsKey("debian_mirror")) {
-			setDebianMirror(new URL(data.getString("debian_mirror")));
+			try {
+				setDebianMirror(new URL(data.getString("debian_mirror")));
+			} catch (MalformedURLException e) {
+				throw new InvalidPropertyException(data.getString("debian_mirror")
+						+ " is not a valid debian mirror URL");
+			}
 		}
 		if (data.containsKey("debian_directory")) {
 			setDebianDirectory(data.getString("debian_directory"));
@@ -251,7 +261,7 @@ public class ServerData extends AMachineData {
 		}
 	}
 
-	private void putAdmin(String... admins) {
+	private void putAdmin(String... admins) throws InvalidPropertyException {
 		if (this.adminUsernames == null) {
 			this.adminUsernames = new LinkedHashSet<>();
 		}
@@ -260,80 +270,85 @@ public class ServerData extends AMachineData {
 			if (!this.adminUsernames.contains(admin)) {
 				this.adminUsernames.add(admin);
 			}
+			else {
+				throw new InvalidPropertyException(admin + " is duplicated");
+			}
 		}
 	}
 
-	public final Collection<String> getAdminUsernames() {
-		return this.adminUsernames;
+	public final Optional<Collection<String>> getAdminUsernames() {
+		return Optional.ofNullable(this.adminUsernames);
 	}
 
-	public final Collection<IPAddress> getRemoteAdminIPAddresses() {
-		return this.remoteAdminIPAddresses;
+	public final Optional<Collection<IPAddress>> getRemoteAdminIPAddresses() {
+		return Optional.ofNullable(this.remoteAdminIPAddresses);
 	}
 
-	public final Integer getAdminSSHConnectPort() {
-		return this.adminSSHConnectPort;
+	public final Optional<Integer> getAdminSSHConnectPort() {
+		return Optional.ofNullable(this.adminSSHConnectPort);
 	}
 
-	public final Integer getSshListenPort() {
-		return this.sshListenPort;
+	public final Optional<Integer> getSshListenPort() {
+		return Optional.ofNullable(this.sshListenPort);
 	}
 
-	public final SSHConnection getSshConnection() {
-		return this.sshConnection;
+	public final Optional<SSHConnection> getSshConnection() {
+		return Optional.ofNullable(this.sshConnection);
 	}
 
-	public final URL getDebianMirror() {
-		return this.debianMirror;
+	@Deprecated //TODO: Move to Debian
+	public final Optional<URL> getDebianMirror() {
+		return Optional.ofNullable(this.debianMirror);
 	}
 
-	public final String getDebianDirectory() {
-		return this.debianDirectory;
+	@Deprecated //TODO: Move to Debian
+	public final Optional<String> getDebianDirectory() {
+		return Optional.ofNullable(this.debianDirectory);
 	}
 
-	public final Collection<String> getAdmins() {
-		return this.adminUsernames;
+	public final Optional<Collection<String>> getAdmins() {
+		return Optional.ofNullable(this.adminUsernames);
 	}
 
-	public final SSHConnection getConnection() {
-		return this.sshConnection;
+	public final Optional<SSHConnection> getConnection() {
+		return Optional.ofNullable(this.sshConnection);
 	}
 
-	public final Integer getAdminPort() {
-		return this.adminSSHConnectPort;
+	public final Optional<Integer> getAdminPort() {
+		return Optional.ofNullable(this.adminSSHConnectPort);
 	}
 
-	public final Integer getSSHPort() {
-		return this.sshListenPort;
+	public final Optional<Integer> getSSHPort() {
+		return Optional.ofNullable(this.sshListenPort);
 	}
 
-	public final Boolean getUpdate() {
-		return this.update;
+	public final Optional<Boolean> getUpdate() {
+		return Optional.ofNullable(this.update);
 	}
 
-	public final Collection<String> getProfiles() {
+	public final Set<String> getProfiles() {
 		return this.profiles;
 	}
 
-	public final Collection<IPAddress> getSSHSources() {
-		return this.remoteAdminIPAddresses;
+	public final Optional<Collection<IPAddress>> getSSHSources() {
+		return Optional.ofNullable(this.remoteAdminIPAddresses);
 	}
 
-	public final String getKeePassDB() {
-		return this.keePassDB;
+	public final Optional<String> getKeePassDB() {
+		return Optional.ofNullable(this.keePassDB);
 	}
 
 	/**
 	 * @return the ram in megabytes
 	 */
-	public final Integer getRAM() {
-		return this.ram;
+	public final Optional<Integer> getRAM() {
+		return Optional.ofNullable(this.ram);
 	}
 
 	/**
 	 * @return the number of CPUs assigned to this service
 	 */
-	public final Integer getCPUs() {
-		return this.cpus;
+	public final Optional<Integer> getCPUs() {
+		return Optional.ofNullable(this.cpus);
 	}
 }

@@ -8,13 +8,10 @@
 package core.data.machine;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 
 import javax.json.JsonObject;
-import javax.json.stream.JsonParsingException;
 
 import core.exception.data.ADataException;
 
@@ -40,7 +37,7 @@ public class HypervisorData extends ServerData {
 	}
 
 	@Override
-	public void read(JsonObject data) throws ADataException, JsonParsingException, IOException, URISyntaxException {
+	public void read(JsonObject data) throws ADataException {
 		super.read(data);
 
 		if (data.containsKey("vm_base")) {

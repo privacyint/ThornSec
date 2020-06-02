@@ -7,8 +7,6 @@
  */
 package core.data.machine;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -21,7 +19,6 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
-import javax.json.stream.JsonParsingException;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
@@ -32,6 +29,7 @@ import core.exception.data.ADataException;
 import core.exception.data.InvalidIPAddressException;
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidEmailAddressException;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import inet.ipaddr.AddressStringException;
 import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;

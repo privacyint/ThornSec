@@ -45,8 +45,7 @@ public abstract class AData {
 	 * @throws JsonParsingException
 	 * @throws URISyntaxException
 	 */
-	protected abstract void read(JsonObject data)
-			throws ADataException, JsonParsingException, IOException, URISyntaxException;
+	protected abstract void read(JsonObject data) throws ADataException;
 
 	/**
 	 * Gets the object label.
