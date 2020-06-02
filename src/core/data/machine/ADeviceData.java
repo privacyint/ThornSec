@@ -8,7 +8,7 @@
 package core.data.machine;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
+import java.util.Optional;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.stream.JsonParsingException;
@@ -51,7 +51,7 @@ public abstract class ADeviceData extends AMachineData {
 		}
 	}
 
-	public final Boolean isManaged() {
-		return this.managed;
+	public final Optional<Boolean> isManaged() {
+		return Optional.ofNullable(this.managed);
 	}
 }
