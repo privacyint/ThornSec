@@ -57,6 +57,7 @@ public class NetworkInterfaceData extends AData {
 	private String iface;
 	private String comment;
 
+	private Direction direction;
 	private Inet inet;
 	private MACAddress mac;
 
@@ -70,6 +71,7 @@ public class NetworkInterfaceData extends AData {
 		super(label);
 
 		this.iface = null;
+		this.direction = null;
 		this.inet = null;
 		this.addresses = null;
 		this.gateway = null;
@@ -87,6 +89,10 @@ public class NetworkInterfaceData extends AData {
 			setInet(Inet.valueOf(data.getString("inet").toUpperCase()));
 		} else {
 			setInet(Inet.STATIC);
+		}
+
+		if (data.containsKey("direction")) {
+			setDirection(Direction.valueOf(data.getString("direction").toUpperCase()));
 		}
 
 		try {
@@ -113,6 +119,10 @@ public class NetworkInterfaceData extends AData {
 		}
 	}
 
+	final private void setDirection(Direction direction) {
+		this.direction = direction;
+	}
+
 	final public Optional<Collection<IPAddress>> getAddresses() {
 		return Optional.ofNullable(this.addresses);
 	}
@@ -134,6 +144,13 @@ public class NetworkInterfaceData extends AData {
 		
 		return this.iface;
 	}
+	
+	final public Direction getDirection() {
+		assertNotNull(this.direction);
+		
+		return this.direction;
+	}
+
 	final public Inet getInet() {
 		assertNotNull(this.inet);
 		
