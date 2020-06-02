@@ -7,11 +7,11 @@
  */
 package core.data.machine.configuration;
 
-import java.io.IOException;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Optional;
 import javax.json.JsonObject;
-import javax.json.stream.JsonParsingException;
 
 import core.data.AData;
 import core.exception.data.ADataException;
@@ -79,44 +79,8 @@ public class NetworkInterfaceData extends AData {
 		this.comment = null;
 	}
 
-	final public Collection<IPAddress> getAddresses() {
-		return this.addresses;
-	}
-
-	final public IPAddress getBroadcast() {
-		return this.broadcast;
-	}
-
-	final public String getComment() {
-		return this.comment;
-	}
-
-	final public IPAddress getGateway() {
-		return this.gateway;
-	}
-
-	final public String getIface() {
-		return this.iface;
-	}
-
-	final public Inet getInet() {
-		return this.inet;
-	}
-
-	final public MACAddress getMAC() {
-		return this.mac;
-	}
-
-	final public IPAddress getNetmask() {
-		return this.netmask;
-	}
-
-	final public IPAddress getSubnet() {
-		return this.subnet;
-	}
-
 	@Override
-	public void read(JsonObject data) throws ADataException, JsonParsingException, IOException {
+	public void read(JsonObject data) throws ADataException {
 		this.iface = data.getString("iface", null);
 
 		if (data.containsKey("inet")) {
@@ -147,6 +111,45 @@ public class NetworkInterfaceData extends AData {
 		if (data.containsKey("comment")) {
 			setComment(data.getString("comment"));
 		}
+	}
+
+	final public Optional<Collection<IPAddress>> getAddresses() {
+		return Optional.ofNullable(this.addresses);
+	}
+
+	final public Optional<IPAddress> getBroadcast() {
+		return Optional.ofNullable(this.broadcast);
+	}
+
+	final public Optional<String> getComment() {
+		return Optional.ofNullable(this.comment);
+	}
+
+	final public Optional<IPAddress> getGateway() {
+		return Optional.ofNullable(this.gateway);
+	}
+
+	final public String getIface() {
+		assertNotNull(this.iface);
+		
+		return this.iface;
+	}
+	final public Inet getInet() {
+		assertNotNull(this.inet);
+		
+		return this.inet;
+	}
+
+	final public Optional<MACAddress> getMAC() {
+		return Optional.ofNullable(this.mac);
+	}
+
+	final public Optional<IPAddress> getNetmask() {
+		return Optional.ofNullable(this.netmask);
+	}
+
+	final public Optional<IPAddress> getSubnet() {
+		return Optional.ofNullable(this.subnet);
 	}
 
 	/**
