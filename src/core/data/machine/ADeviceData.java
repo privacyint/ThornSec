@@ -46,7 +46,7 @@ public abstract class ADeviceData extends AMachineData {
 				final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
 	
 				iface.setMAC(new MACAddressString(macs.getString(i)).getAddress());
-				putLANNetworkInterface(iface);
+				putNetworkInterface(iface);
 			}
 		}
 	}
