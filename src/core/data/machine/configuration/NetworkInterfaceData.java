@@ -38,7 +38,7 @@ public class NetworkInterfaceData extends AData {
 		STATIC("static"),
 		DHCP("dhcp"),
 		MACVLAN("macvlan"),
-		BOND("802.3ad"),
+		BOND("bond"),
 		PPP("PPPoE"),
 		DUMMY("dummy"),
 		WIREGUARD("wireguard");
