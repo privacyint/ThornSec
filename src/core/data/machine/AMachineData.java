@@ -47,10 +47,6 @@ import inet.ipaddr.IPAddressString;
  */
 public abstract class AMachineData extends AData {
 	// Networking
-	public enum Encapsulation {
-		UDP, TCP
-	}
-
 	// These are the only types of machine I'll recognise until I'm told
 	// otherwise...
 	public enum MachineType {
