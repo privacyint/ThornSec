@@ -7,33 +7,14 @@
  */
 package profile.type;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
-import javax.json.stream.JsonParsingException;
-
-import core.exception.data.ADataException;
-import core.exception.runtime.InvalidDeviceModelException;
-import core.exception.runtime.InvalidServerModelException;
-import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ADeviceModel;
 
 /**
  * This is a device on our network
  */
-public class Device extends AMachineProfile {
+public class Device extends AMachine {
 
-	public Device(String label, NetworkModel networkModel)
-			throws InvalidServerModelException, JsonParsingException, ADataException, InvalidDeviceModelException {
-		super(label, networkModel);
-	}
-
-	@Override
-	public Collection<IUnit> getPersistentConfig() {
-		final Collection<IUnit> units = new ArrayList<>();
-
-		super.buildNICs();
-
-		return units;
+	public Device(ADeviceModel me) {
+		super(me);
 	}
 }
