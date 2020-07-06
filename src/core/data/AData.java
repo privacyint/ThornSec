@@ -19,9 +19,8 @@ import core.exception.data.ADataException;
 /**
  * Abstract class for something representing "Data" on our network.
  * 
- * This is something which has been read() from a JSON.
- * 
- * Beware, {@code null} is valid data! 
+ * This is something which has been read() from a JSON, and for our purposes
+ * acts as a DAO.
  */
 public abstract class AData {
 
