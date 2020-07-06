@@ -12,12 +12,9 @@ import java.util.Collection;
 import core.exception.AThornSecException;
 
 /**
- * All Profiles must implement at least a method of getting their label, and
- * units.
+ * All Profiles must implement at least a method of getting their units
  */
 public interface IProfile {
-
-	String getLabel();
 
 	Collection<IUnit> getUnits() throws AThornSecException;
 
