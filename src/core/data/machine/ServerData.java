@@ -7,18 +7,17 @@
  */
 package core.data.machine;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
-import javax.json.stream.JsonParsingException;
 
 import core.StringUtils;
 import core.data.machine.configuration.NetworkInterfaceData;
@@ -54,8 +53,8 @@ public class ServerData extends AMachineData {
 
 	private SSHConnection sshConnection;
 
-	private URL debianMirror;
-	private String debianDirectory;
+	private URL packageMirror;
+	private String packageMirrorDirectory;
 
 	private String keePassDB;
 
@@ -80,8 +79,8 @@ public class ServerData extends AMachineData {
 
 		this.sshConnection = null;
 
-		this.debianDirectory = null;
-		this.debianMirror = null;
+		this.packageMirrorDirectory = null;
+		this.packageMirror = null;
 
 		this.keePassDB = null;
 
@@ -89,115 +88,253 @@ public class ServerData extends AMachineData {
 		this.cpus = null;
 	}
 
-	private NetworkInterfaceData readNIC(Direction dir, JsonObject nic) throws JsonParsingException, ADataException, IOException {
-		NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
-		iface.read(nic);
-		
-		NetworkInterfaceData existingIface = getNetworkInterface(Direction.WAN, iface.getIface());
-		if (existingIface != null) {
-			iface = existingIface;
-			iface.read(nic);
-		}
-		
-		return iface;
-	}
-	
-	
-	private void readNICs(JsonObject data) throws JsonParsingException, ADataException, IOException {
-		final JsonObject networkInterfaces = data.getJsonObject("network_interfaces");
-
-		if (networkInterfaces.containsKey("wan")) {
-			final JsonArray wanIfaces = networkInterfaces.getJsonArray("wan");
-			for (int i = 0; i < wanIfaces.size(); ++i) {
-				NetworkInterfaceData nic = readNIC(Direction.WAN, wanIfaces.getJsonObject(i));
-				putWANNetworkInterface(nic);
-			}
-		}
-
-		if (networkInterfaces.containsKey("lan")) {
-			final JsonArray lanIfaces = networkInterfaces.getJsonArray("lan");
-			for (int i = 0; i < lanIfaces.size(); ++i) {
-				NetworkInterfaceData nic = readNIC(Direction.LAN, lanIfaces.getJsonObject(i));
-				putLANNetworkInterface(nic);
-			}
-		}
-	}
-	
 	@Override
 	public void read(JsonObject data) throws ADataException {
 		super.read(data);
 
-		// Build network interfaces
-		if (data.containsKey("network_interfaces")) {
-			try {
-				readNICs(data);
-			} catch (JsonParsingException | ADataException | IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		readNICs(data);
+		readAdmins(data);
+		readSSHSources(data);
+		readTypes(data);
+		readProfiles(data);
+		readSSHSettings(data);
+		readUpdate(data);
+		readMirror(data);
+		readKeepassDbPath(data);
+		readCPUs(data);
+		readRAM(data);
+	}
+	
+	private NetworkInterfaceData readNIC(Direction dir, JsonObject nic) throws ADataException {
+		NetworkInterfaceData newIface = new NetworkInterfaceData(getLabel());
+		newIface.read(nic);
+		
+		Optional<NetworkInterfaceData> existingIface = getNetworkInterface(newIface.getIface());
+		if (existingIface.isPresent()) {
+			newIface = existingIface.get();
+			newIface.read(nic);
 		}
 		
-		if (data.containsKey("admins")) {
-			final JsonArray admins = data.getJsonArray("admins");
-			for (final JsonValue admin : admins) {
-				putAdmin(((JsonString) admin).getString());
-			}
+		return newIface;
+	}
+	
+	private Optional<NetworkInterfaceData> getNetworkInterface(String iface) {
+		try {
+			return Optional.ofNullable(
+					getNetworkInterfaces()
+					.orElseThrow()
+					.get(iface)
+			);
 		}
-		if (data.containsKey("ssh_sources")) {
-			final JsonArray sources = data.getJsonArray("ssh_sources");
-			for (final JsonValue source : sources) {
-				putSSHSource(new HostName(((JsonString) source).getString()));
-			}
+		catch (NoSuchElementException e) {
+			return null;
 		}
-		if (data.containsKey("types")) {
-			final JsonArray types = data.getJsonArray("types");
-			for (final JsonValue type : types) {
-				putType(((JsonString) type).getString());
-			}
+	}
+
+	private void readNICs(JsonObject data, String key, Direction direction) throws ADataException { 
+		if (!data.containsKey(key)) {
+			return;
 		}
-		if (data.containsKey("profiles")) {
-			final JsonArray profiles = data.getJsonArray("profiles");
-			for (final JsonValue profile : profiles) {
-				putProfile(((JsonString) profile).getString());
-			}
+		
+		final JsonArray ifaces = data.getJsonArray(key);
+		for (int i = 0; i < ifaces.size(); ++i) {
+			NetworkInterfaceData nic = readNIC(direction, ifaces.getJsonObject(i));
+			putNetworkInterface(nic);
 		}
+	}
+	
+	private void readNICs(JsonObject data) throws ADataException {
+		data = data.getJsonObject("network_interfaces");
+
+		readNICs(data, "wan", Direction.WAN);
+		readNICs(data, "lan", Direction.LAN);
+	}
+	
+	/**
+	 * @param data
+	 * @throws InvalidPropertyException
+	 */
+	private void readRAM(JsonObject data) throws InvalidPropertyException {
+		if (!data.containsKey("ram")) {
+			return;
+		}
+		
+		setRAM(data.getString("ram"));
+	}
+
+	/**
+	 * @param data
+	 * @throws InvalidPropertyException
+	 */
+	private void readCPUs(JsonObject data) throws InvalidPropertyException {
+		if (!data.containsKey("cpus")) {
+			return;
+		}
+		
+		setCPUs(data.getInt("cpus"));
+	}
+
+	/**
+	 * @param data
+	 */
+	private void readKeepassDbPath(JsonObject data) {
+		if (!data.containsKey("keepassdb")) {
+			return;
+		}
+		
+		setKeePassDB(data.getString("keepassdb"));
+	}
+
+	/**
+	 * @param data
+	 * @throws InvalidPropertyException
+	 */
+	private void readMirror(JsonObject data) throws InvalidPropertyException {
+		readMirrorURL(data);
+		readMirrorDirectory(data);
+	}
+
+	/**
+	 * @param data
+	 */
+	private void readMirrorDirectory(JsonObject data) {
+		if (!data.containsKey("mirror_directory")) {
+			return;
+		}
+		
+		setMirrorDirectory(data.getString("mirror_directory"));
+	}
+
+	/**
+	 * @param data
+	 * @throws InvalidPropertyException
+	 */
+	private void readMirrorURL(JsonObject data) throws InvalidPropertyException {
+		if (!data.containsKey("mirror")) {
+			return;
+		}
+
+		try {
+			setMirror(new URL(data.getString("mirror")));
+		} catch (MalformedURLException e) {
+			throw new InvalidPropertyException(data.getString("mirror")
+					+ " is not a valid URL");
+		}
+	}
+
+	/**
+	 * @param data
+	 */
+	private void readUpdate(JsonObject data) {
+		if (!data.containsKey("update")) {
+			return;
+		}
+		
+		this.update = data.getBoolean("update");
+	}
+
+	/**
+	 * @param data
+	 * @throws InvalidPortException
+	 */
+	private void readSSHSettings(JsonObject data) throws InvalidPortException {
+		readSSHConnectPort(data);
+		readSSHdListenPort(data);
+		readSSHConnection(data);
+	}
+
+	/**
+	 * @param data
+	 */
+	private void readSSHConnection(JsonObject data) {
+		if (!data.containsKey("ssh_connection")) {
+			return;
+		}
+		
+		String connection = data.getString("ssh_connection");
+		this.sshConnection = SSHConnection.valueOf(connection.toUpperCase());
+	}
+
+	/**
+	 * @param data
+	 * @throws InvalidPortException
+	 */
+	private void readSSHdListenPort(JsonObject data) throws InvalidPortException {
+		if (!data.containsKey("sshd_listen_port")) {
+			return;
+		}
+		
+		setSSHListenPort(data.getInt("sshd_listen_port"));
+	}
+
+	/**
+	 * @param data
+	 * @throws InvalidPortException
+	 */
+	private void readSSHConnectPort(JsonObject data) throws InvalidPortException {
 		if (data.containsKey("ssh_connect_port")) {
 			setAdminPort(data.getInt("ssh_connect_port"));
 		}
-		if (data.containsKey("sshd_listen_port")) {
-			setSSHListenPort(data.getInt("sshd_listen_port"));
+	}
+
+	/**
+	 * @param data
+	 */
+	private void readProfiles(JsonObject data) {
+		if (!data.containsKey("profiles")) {
+			return;
 		}
-		if (data.containsKey("update")) {
-			this.update = data.getBoolean("update");
+
+		data.getJsonArray("profiles").forEach(profile ->
+			putProfile(((JsonString)profile).getString())
+		);
+	}
+
+	/**
+	 * @param data
+	 */
+	private void readTypes(JsonObject data) {
+		if (!data.containsKey("types")) {
+			return;
 		}
-		if (data.containsKey("ssh_connection")) {
-			this.sshConnection = SSHConnection.valueOf(data.getString("ssh_connection").toUpperCase());
+
+		data.getJsonArray("types").forEach(type ->
+			putType(((JsonString)type).getString())
+		);
+	}
+
+	/**
+	 * @param data
+	 */
+	private void readSSHSources(JsonObject data) {
+		if (!data.containsKey("ssh_sources")) {
+			return;
 		}
-		if (data.containsKey("debian_mirror")) {
-			try {
-				setDebianMirror(new URL(data.getString("debian_mirror")));
-			} catch (MalformedURLException e) {
-				throw new InvalidPropertyException(data.getString("debian_mirror")
-						+ " is not a valid debian mirror URL");
-			}
+		
+		data.getJsonArray("ssh_sources")
+			.forEach(source ->
+				putSSHSource(new HostName(((JsonString) source).getString()))
+			);
+	}
+
+	/**
+	 * @param data
+	 * @throws InvalidPropertyException
+	 */
+	private void readAdmins(JsonObject data) throws InvalidPropertyException {
+		if (!data.containsKey("admins")) {
+			return;
 		}
-		if (data.containsKey("debian_directory")) {
-			setDebianDirectory(data.getString("debian_directory"));
-		}
-		if (data.containsKey("keepassdb")) {
-			setKeePassDB(data.getString("keepassdb"));
-		}
-		if (data.containsKey("cpus")) {
-			setCPUs(data.getInt("cpus"));
-		}
-		if (data.containsKey("ram")) {
-			setRAM(data.getString("ram"));
+
+		for (final JsonValue admin : data.getJsonArray("admins")) {
+			putAdmin(((JsonString) admin).getString());
 		}
 	}
 
 	private void setCPUs(Integer cpus) throws InvalidPropertyException {
 		if (cpus < 1) {
-			throw new InvalidPropertyException("You cannot have a machine with fewer than 1 CPUs!");
+			throw new InvalidPropertyException("You cannot have a machine with"
+					+ " fewer than 1 CPUs!");
 		}
 
 		this.cpus = cpus;
@@ -207,7 +344,8 @@ public class ServerData extends AMachineData {
 		final Integer ramAsMB = StringUtils.stringToMegaBytes(ram);
 
 		if (ramAsMB < 512) {
-			throw new InvalidPropertyException("You cannot have a machine with less than 512mb of RAM");
+			throw new InvalidPropertyException("You cannot have a machine with"
+					+ "less than 512mb of RAM");
 		}
 
 		this.ram = ramAsMB;
@@ -217,12 +355,12 @@ public class ServerData extends AMachineData {
 		this.keePassDB = keePassDB;
 	}
 
-	private void setDebianDirectory(String dir) {
-		this.debianDirectory = dir;
+	private void setMirrorDirectory(String dir) {
+		this.packageMirrorDirectory = dir;
 	}
 
-	private void setDebianMirror(URL url) {
-		this.debianMirror = url;
+	private void setMirror(URL url) {
+		this.packageMirror = url;
 	}
 
 	private void setSSHListenPort(Integer port) throws InvalidPortException {
@@ -242,14 +380,8 @@ public class ServerData extends AMachineData {
 	}
 
 	private void putProfile(String... profiles) {
-		if (this.profiles == null) {
-			this.profiles = new LinkedHashSet<>();
-		}
-
 		for (final String profile : profiles) {
-			if (!this.profiles.contains(profile)) {
-				this.profiles.add(profile);
-			}
+			this.profiles.add(profile);
 		}
 	}
 
@@ -298,14 +430,12 @@ public class ServerData extends AMachineData {
 		return Optional.ofNullable(this.sshConnection);
 	}
 
-	@Deprecated //TODO: Move to Debian
-	public final Optional<URL> getDebianMirror() {
-		return Optional.ofNullable(this.debianMirror);
+	public final Optional<URL> getPackageMirror() {
+		return Optional.ofNullable(this.packageMirror);
 	}
 
-	@Deprecated //TODO: Move to Debian
-	public final Optional<String> getDebianDirectory() {
-		return Optional.ofNullable(this.debianDirectory);
+	public final Optional<String> getPackageMirrorDirectory() {
+		return Optional.ofNullable(this.packageMirrorDirectory);
 	}
 
 	public final Optional<Collection<String>> getAdmins() {
