@@ -7,6 +7,7 @@
  */
 package core.data;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
@@ -33,6 +34,8 @@ public abstract class AData {
 	 * @param label the label for this object
 	 */
 	protected AData(String label) {
+		assertNotNull(label);
+		
 		this.label = label;
 	}
 
@@ -53,6 +56,8 @@ public abstract class AData {
 	 * @return the object label
 	 */
 	public final String getLabel() {
+		assertNotNull(this.label);
+		
 		return this.label;
 	}
 
@@ -62,15 +67,19 @@ public abstract class AData {
 	 * @return the data
 	 */
 	public final JsonObject getData() {
+		assertNotNull(this.data);
+		
 		return this.data;
 	}
 
 	/**
 	 * Sets the object's data.
 	 *
-	 * @param data the new data
+	 * @param object the new data
 	 */
-	protected final void setData(JsonObject data) {
-		this.data = data;
+	protected final void setData(Object data) {
+		assertNotNull(data);
+		
+		this.data = (JsonObject) data;
 	}
 }
