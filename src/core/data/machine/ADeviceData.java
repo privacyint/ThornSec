@@ -31,7 +31,7 @@ public abstract class ADeviceData extends AMachineData {
 	}
 
 	@Override
-	protected void read(JsonObject data) throws ADataException {
+	public void read(JsonObject data) throws ADataException {
 		super.read(data);
 
 		if (data.containsKey("managed")) {
