@@ -7,10 +7,6 @@
  */
 package core.data.machine;
 
-import javax.json.JsonObject;
-
-import core.exception.data.ADataException;
-
 /**
  * Represents an external-only device on our network.
  * 
@@ -23,10 +19,5 @@ public class ExternalDeviceData extends ADeviceData {
 		super(label);
 		
 		this.putType(MachineType.EXTERNAL_ONLY);
-	}
-
-	@Override
-	public void read(JsonObject data) throws ADataException {
-		super.read(data);
 	}
 }
