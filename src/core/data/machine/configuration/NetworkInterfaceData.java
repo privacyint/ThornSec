@@ -8,6 +8,7 @@
 package core.data.machine.configuration;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
@@ -20,6 +21,7 @@ import inet.ipaddr.AddressStringException;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddress.IPVersion;
 import inet.ipaddr.IPAddressString;
+import inet.ipaddr.IncompatibleAddressException;
 import inet.ipaddr.MACAddressString;
 import inet.ipaddr.mac.MACAddress;
 
@@ -85,38 +87,126 @@ public class NetworkInterfaceData extends AData {
 	public void read(JsonObject data) throws ADataException {
 		this.iface = data.getString("iface", null);
 
-		if (data.containsKey("inet")) {
-			setInet(Inet.valueOf(data.getString("inet").toUpperCase()));
-		} else {
-			setInet(Inet.STATIC);
-		}
+		readInet(data);
+		readDirection(data);
+		readAddress(data);
+		readSubnet(data);
+		readBroadcast(data);
+		readGateway(data);
+		readMAC(data);
+		readComment(data);
+	}
 
-		if (data.containsKey("direction")) {
-			setDirection(Direction.valueOf(data.getString("direction").toUpperCase()));
+	/**
+	 * @param data
+	 */
+	private void readComment(JsonObject data) {
+		if (!data.containsKey("comment")) {
+			return;
 		}
+		
+		setComment(data.getString("comment"));
+	}
 
+	/**
+	 * @param data
+	 */
+	private void readMAC(JsonObject data) {
+		if (!data.containsKey("mac")) {
+			return;
+		}
+		
+		setMAC(new MACAddressString(data.getString("mac")).getAddress());
+	}
+
+	/**
+	 * @param data
+	 * @throws AddressStringException
+	 * @throws IncompatibleAddressException
+	 */
+	private void readGateway(JsonObject data) throws InvalidIPAddressException {
+		if (!data.containsKey("gateway")) {
+			return;
+		}
+		
 		try {
-			if (data.containsKey("address")) {
-				addAddress(new IPAddressString(data.getString("address")).toAddress(IPVersion.IPV4));
-			}
-			if (data.containsKey("subnet")) {
-				setSubnet(new IPAddressString(data.getString("subnet")).toAddress(IPVersion.IPV4));
-			}
-			if (data.containsKey("broadcast")) {
-				setBroadcast(new IPAddressString(data.getString("broadcast")).toAddress(IPVersion.IPV4));
-			}
-			if (data.containsKey("gateway")) {
-				setGateway(new IPAddressString(data.getString("gateway")).toAddress(IPVersion.IPV4));
-			}
-		} catch (final AddressStringException e) {
-			throw new InvalidIPAddressException(e.getMessage() + " is an invalid IP address");
+			setGateway(new IPAddressString(data.getString("gateway")).toAddress(IPVersion.IPV4));
+		} catch (AddressStringException | IncompatibleAddressException e) {
+			throw new InvalidIPAddressException(data.getString("gateway"));
 		}
-		if (data.containsKey("mac")) {
-			setMAC(new MACAddressString(data.getString("mac")).getAddress());
+	}
+
+	/**
+	 * @param data
+	 * @throws AddressStringException
+	 * @throws IncompatibleAddressException
+	 */
+	private void readBroadcast(JsonObject data) throws InvalidIPAddressException {
+		if (!data.containsKey("broadcast")) {
+			return;
 		}
-		if (data.containsKey("comment")) {
-			setComment(data.getString("comment"));
+		
+		try {
+			setBroadcast(new IPAddressString(data.getString("broadcast")).toAddress(IPVersion.IPV4));
+		} catch (AddressStringException | IncompatibleAddressException e) {
+			throw new InvalidIPAddressException(data.getString("broadcast"));
 		}
+	}
+
+	/**
+	 * @param data
+	 * @throws AddressStringException
+	 * @throws IncompatibleAddressException
+	 */
+	private void readSubnet(JsonObject data) throws InvalidIPAddressException {
+		if (!data.containsKey("subnet")) {
+			return;
+		}
+		
+		try {
+			setSubnet(new IPAddressString(data.getString("subnet")).toAddress(IPVersion.IPV4));
+		} catch (AddressStringException | IncompatibleAddressException e) {
+			throw new InvalidIPAddressException(data.getString("subnet"));
+		}
+	}
+
+	/**
+	 * @param data
+	 * @throws AddressStringException
+	 * @throws IncompatibleAddressException
+	 */
+	private void readAddress(JsonObject data) throws InvalidIPAddressException {
+		if (!data.containsKey("address")) {
+			return;
+		}
+		
+		try {
+			addAddress(new IPAddressString(data.getString("address")).toAddress(IPVersion.IPV4));
+		} catch (AddressStringException | IncompatibleAddressException e) {
+			throw new InvalidIPAddressException(data.getString("address"));
+		}
+	}
+
+	/**
+	 * @param data
+	 */
+	private void readDirection(JsonObject data) {
+		if (!data.containsKey("direction")) {
+			return;
+		}
+		
+		setDirection(Direction.valueOf(data.getString("direction").toUpperCase()));
+	}
+
+	/**
+	 * @param data
+	 */
+	private void readInet(JsonObject data) {
+		if (!data.containsKey("inet")) {
+			return;
+		}
+		
+		setInet(Inet.valueOf(data.getString("inet").toUpperCase()));
 	}
 
 	final private void setDirection(Direction direction) {
@@ -172,7 +262,8 @@ public class NetworkInterfaceData extends AData {
 	/**
 	 * 
 	 * @param address
-	 * @return true if the IP address was successfully added, false if IP already exists on this interface 
+	 * @return true if the IP address was successfully added,
+	 * 		  false if IP already exists on this interface 
 	 */
 	protected final Boolean addAddress(IPAddress address) {
 		if (this.addresses == null) {
