@@ -9,16 +9,18 @@ package core.exec.network;
 
 import java.io.File;
 import java.net.URISyntaxException;
-
-import core.model.network.NetworkModel;
+import java.util.Collection;
+import core.exception.AThornSecException;
+import core.iface.IUnit;
+import core.model.machine.ServerModel;
 import de.slackspace.openkeepass.KeePassDatabase;
 
 public final class OpenKeePassPassphrase extends APassphrase {
 
 	private KeePassDatabase db;
 
-	public OpenKeePassPassphrase(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public OpenKeePassPassphrase(ServerModel me) {
+		super(me);
 
 		this.db = null;
 	}
@@ -26,7 +28,7 @@ public final class OpenKeePassPassphrase extends APassphrase {
 	@Override
 	public Boolean init() {
 		try {
-			final File keypassDB = new File(getNetworkModel().getKeePassDBPath(getLabel()));
+			final File keypassDB = new File(getNetworkModel().getKeePassDBPath(getMachineModel().getLabel()));
 			if (keypassDB.isFile()) {
 				this.db = KeePassDatabase.getInstance(keypassDB);
 				this.db.openDatabase("IAmAString");
@@ -49,6 +51,12 @@ public final class OpenKeePassPassphrase extends APassphrase {
 
 	@Override
 	protected String generatePassphrase() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Collection<IUnit> getUnits() throws AThornSecException {
 		// TODO Auto-generated method stub
 		return null;
 	}
