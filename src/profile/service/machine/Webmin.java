@@ -15,6 +15,7 @@ import core.exception.data.InvalidPortException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.pkg.InstalledUnit;
 
@@ -23,8 +24,8 @@ import core.unit.pkg.InstalledUnit;
  */
 public class Webmin extends AStructuredProfile {
 
-	public Webmin(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Webmin(ServerModel me) {
+		super(me);
 	}
 
 	@Override

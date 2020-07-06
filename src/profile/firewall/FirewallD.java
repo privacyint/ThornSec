@@ -11,15 +11,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.pkg.InstalledUnit;
 
 public class FirewallD extends AStructuredProfile {
 
-	public FirewallD(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public FirewallD(ServerModel me) {
+		super(me);
 	}
 
 	@Override

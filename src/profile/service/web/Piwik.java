@@ -14,7 +14,7 @@ import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileChecksumUnit;
@@ -30,10 +30,10 @@ public class Piwik extends AStructuredProfile {
 
 	private final LEMP lempStack;
 
-	public Piwik(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Piwik(ServerModel me) {
+		super(me);
 
-		this.lempStack = new LEMP(label, networkModel);
+		this.lempStack = new LEMP(me);
 	}
 
 	@Override

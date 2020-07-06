@@ -12,7 +12,7 @@ import java.util.Collection;
 
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileChecksumUnit;
@@ -26,8 +26,8 @@ import core.unit.pkg.InstalledUnit;
  */
 public class NodeJS extends AStructuredProfile {
 
-	public NodeJS(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public NodeJS(ServerModel me) {
+		super(me);
 	}
 
 	@Override

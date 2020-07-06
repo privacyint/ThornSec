@@ -12,6 +12,7 @@ import java.util.Collection;
 
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
+import core.model.machine.ServerModel;
 import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
@@ -19,8 +20,8 @@ import core.unit.pkg.InstalledUnit;
 
 public class Msmtp extends AStructuredProfile {
 
-	public Msmtp(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Msmtp(ServerModel me) {
+		super(me);
 	}
 
 	@Override

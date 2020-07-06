@@ -13,7 +13,7 @@ import java.util.Collection;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
@@ -34,10 +34,10 @@ public class SVN extends AStructuredProfile {
 
 	private final PHP php;
 
-	public SVN(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public SVN(ServerModel me) {
+		super(me);
 
-		this.php = new PHP(getLabel(), networkModel);
+		this.php = new PHP(me);
 	}
 
 	@Override

@@ -13,8 +13,7 @@ import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
-import core.model.machine.configuration.networking.NetworkInterfaceModel;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 
 /**
@@ -24,10 +23,8 @@ import core.profile.AStructuredProfile;
  */
 public abstract class AFirewallProfile extends AStructuredProfile {
 
-	protected Map<NetworkInterfaceModel, MachineType> vlans;
-
-	public AFirewallProfile(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public AFirewallProfile(ServerModel me) {
+		super(me);
 	}
 
 	@Override

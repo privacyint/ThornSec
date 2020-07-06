@@ -15,7 +15,7 @@ import java.util.Collection;
 
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileChecksumUnit;
 import core.unit.fs.FileChecksumUnit.Checksum;
@@ -35,8 +35,8 @@ public class CSFFirewall extends AFirewallProfile {
 
 	private static String csfHashDigest;
 
-	public CSFFirewall(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public CSFFirewall(ServerModel me) {
+		super(me);
 
 		if (getCSFHashDigest() == null) {
 			try {

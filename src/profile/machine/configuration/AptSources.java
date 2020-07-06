@@ -33,8 +33,8 @@ public class AptSources extends AStructuredProfile {
 	private final Hashtable<String, Set<String>> sources;
 	private final Hashtable<String, Set<String>> pgpKeys;
 
-	public AptSources(String label, NetworkModel networkModel) throws URISyntaxException, InvalidServerModelException, MalformedURLException {
-		super(label, networkModel);
+	public AptSources(ServerModel me) throws AThornSecException {
+		super(me);
 
 		this.debianRepo = getNetworkModel().getData().getDebianMirror(getLabel());
 		this.debianDir = getNetworkModel().getData().getDebianDirectory(getLabel());

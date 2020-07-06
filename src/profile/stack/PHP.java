@@ -14,7 +14,7 @@ import java.util.Collection;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
@@ -27,8 +27,8 @@ public class PHP extends AStructuredProfile {
 	public static final File SOCK_PATH = new File("/var/run/php/php7.0-fpm.sock");
 	public static final File CONFIG_ROOT = new File("/etc/php/7.0/fpm/");
 
-	public PHP(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public PHP(ServerModel me) {
+		super(me);
 	}
 
 	@Override

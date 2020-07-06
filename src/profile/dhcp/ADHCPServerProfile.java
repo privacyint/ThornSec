@@ -15,7 +15,8 @@ import java.util.Map;
 import core.exception.AThornSecException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
+
 import core.profile.AStructuredProfile;
 import inet.ipaddr.IPAddress;
 
@@ -35,8 +36,8 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 	 * @param label
 	 * @param networkModel
 	 */
-	public ADHCPServerProfile(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public ADHCPServerProfile(ServerModel me) {
+		super(me);
 
 		this.subnets = new LinkedHashMap<>();
 		this.subnetsMachines = new LinkedHashMap<>();

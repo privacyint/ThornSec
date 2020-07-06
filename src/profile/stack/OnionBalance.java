@@ -16,7 +16,7 @@ import core.exception.data.InvalidPropertyArrayException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirOwnUnit;
@@ -29,8 +29,8 @@ public class OnionBalance extends AStructuredProfile {
 
 	private Set<String> backends;
 
-	public OnionBalance(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public OnionBalance(ServerModel me) {
+		super(me);
 	}
 
 	@Override

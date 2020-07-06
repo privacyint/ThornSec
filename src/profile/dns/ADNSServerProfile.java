@@ -10,9 +10,12 @@ package profile.dns;
 import java.util.Collection;
 
 import core.exception.AThornSecException;
+
 import core.iface.IUnit;
+
 import core.model.machine.AMachineModel;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
+
 import core.profile.AStructuredProfile;
 
 /**
@@ -22,8 +25,8 @@ import core.profile.AStructuredProfile;
  */
 public abstract class ADNSServerProfile extends AStructuredProfile {
 
-	public ADNSServerProfile(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public ADNSServerProfile(ServerModel me) {
+		super(me);
 	}
 
 	@Override

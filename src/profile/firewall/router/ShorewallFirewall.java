@@ -21,6 +21,7 @@ import javax.json.stream.JsonParsingException;
 import core.StringUtils;
 import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
+import core.data.machine.ServerData;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.exception.AThornSecException;
@@ -91,8 +92,6 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	private static String CONFIG_BASEDIR = "/etc/shorewall";
-	
-	private final ServerModel me;
 	
 	private class Rule {
 		private String macro;
@@ -230,10 +229,11 @@ public class ShorewallFirewall extends AFirewallProfile {
 		}
 	}
 
-	public ShorewallFirewall(String label, NetworkModel networkModel) throws InvalidServerModelException {
-		super(label, networkModel);
-		this.vlans = null;
-		this.me = getNetworkModel().getServerModel(getLabel());
+	private Router myRouter;
+
+	public ShorewallFirewall(ServerModel me) {
+		super(me);
+		this.myRouter = (Router) me.getProfiles().get(MachineType.ROUTER);
 	}
 	
 	/**

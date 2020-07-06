@@ -34,10 +34,10 @@ public class TorHS extends AStructuredProfile {
 
 	private final Webproxy proxy;
 
-	public TorHS(String label, NetworkModel networkModel) throws MissingPropertiesException {
-		super(label, networkModel);
+	public TorHS(ServerModel me) throws MissingPropertiesException {
+		super(me);
 
-		this.proxy = new Webproxy(getLabel(), networkModel);
+		this.proxy = new Webproxy(me);
 	}
 
 	@Override

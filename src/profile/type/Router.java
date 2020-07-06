@@ -61,8 +61,8 @@ public class Router extends AMachineProfile {
 	private final ServerModel me;
 	private final AFirewallProfile firewall;
 
-	public Router(String label, NetworkModel networkModel) throws AThornSecException, JsonParsingException {
-		super(label, networkModel);
+	public Router(ServerModel me) throws AThornSecException, JsonParsingException {
+		super(me);
 
 		this.vlans = null;
 		this.me = getNetworkModel().getServerModel(getLabel());

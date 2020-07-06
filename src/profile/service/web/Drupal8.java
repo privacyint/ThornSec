@@ -15,6 +15,7 @@ import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileEditUnit;
@@ -31,10 +32,10 @@ public class Drupal8 extends AStructuredProfile {
 
 	private final LEMP lempStack;
 
-	public Drupal8(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Drupal8(ServerModel me) {
+		super(me);
 
-		this.lempStack = new LEMP(label, networkModel);
+		this.lempStack = new LEMP(me);
 	}
 
 	@Override

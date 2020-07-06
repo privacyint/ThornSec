@@ -14,7 +14,7 @@ import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirOwnUnit;
@@ -35,11 +35,11 @@ public class Redmine extends AStructuredProfile {
 	private final Nginx webserver;
 	private final MariaDB db;
 
-	public Redmine(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Redmine(ServerModel me) {
+		super(me);
 
-		this.webserver = new Nginx(getLabel(), networkModel);
-		this.db = new MariaDB(getLabel(), networkModel);
+		this.webserver = new Nginx(me);
+		this.db = new MariaDB(me);
 	}
 
 	@Override

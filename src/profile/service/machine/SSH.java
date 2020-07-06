@@ -15,7 +15,7 @@ import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirOwnUnit;
@@ -32,8 +32,8 @@ import core.unit.pkg.RunningUnit;
  */
 public class SSH extends AStructuredProfile {
 
-	public SSH(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public SSH(ServerModel me) {
+		super(me);
 	}
 
 	@Override

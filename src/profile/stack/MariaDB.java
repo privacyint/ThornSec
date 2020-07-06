@@ -13,7 +13,7 @@ import java.util.HashSet;
 
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileUnit;
@@ -27,18 +27,8 @@ public class MariaDB extends AStructuredProfile {
 	private String db;
 	private String privileges;
 
-	public MariaDB(String label, NetworkModel networkModel, String username, String password, String dbName,
-			String privileges) {
-		super(label, networkModel);
-
-		setUsername(username);
-		setUserPassword(password);
-		setDb(dbName);
-		setUserPrivileges(privileges);
-	}
-
-	public MariaDB(String label, NetworkModel networkModel) {
-		this(label, networkModel, null, null, null, null);
+	public MariaDB(ServerModel me) {
+		super(me);
 	}
 
 	public final String getDb() {

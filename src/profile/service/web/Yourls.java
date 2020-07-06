@@ -14,7 +14,7 @@ import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileUnit;
@@ -27,10 +27,10 @@ public class Yourls extends AStructuredProfile {
 
 	private final LEMP lempStack;
 
-	public Yourls(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Yourls(ServerModel me) {
+		super(me);
 
-		this.lempStack = new LEMP(getLabel(), networkModel);
+		this.lempStack = new LEMP(me);
 	}
 
 	@Override

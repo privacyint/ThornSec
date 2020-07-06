@@ -17,7 +17,7 @@ import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.CustomFileUnit;
@@ -31,8 +31,8 @@ public class Nginx extends AStructuredProfile {
 	public static final File CONF_D_DIRECTORY = new File("/etc/nginx/conf.d/");
 	private Collection<FileUnit> liveConfigs;
 
-	public Nginx(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Nginx(ServerModel me) {
+		super(me);
 
 		this.liveConfigs = null;
 	}

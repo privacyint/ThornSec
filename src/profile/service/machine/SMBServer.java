@@ -14,13 +14,13 @@ import core.data.machine.AMachineData.Encapsulation;
 import core.exception.data.InvalidPortException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 
 public class SMBServer extends AStructuredProfile {
 
-	public SMBServer(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public SMBServer(ServerModel me) {
+		super(me);
 	}
 
 	@Override

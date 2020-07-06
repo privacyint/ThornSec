@@ -14,7 +14,7 @@ import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 
 /**
@@ -26,12 +26,12 @@ public class LEMP extends AStructuredProfile {
 	private final PHP php;
 	private final MariaDB db;
 
-	public LEMP(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public LEMP(ServerModel me) {
+		super(me);
 
-		this.webserver = new Nginx(getLabel(), networkModel);
-		this.php = new PHP(getLabel(), networkModel);
-		this.db = new MariaDB(getLabel(), networkModel);
+		this.webserver = new Nginx(me);
+		this.php = new PHP(me);
+		this.db = new MariaDB(me);
 	}
 
 	@Override

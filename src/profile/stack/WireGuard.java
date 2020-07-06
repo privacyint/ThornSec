@@ -19,8 +19,8 @@ import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
+import core.model.machine.ServerModel;
 import core.model.machine.configuration.networking.WireGuardModel;
-import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.pkg.InstalledUnit;
@@ -34,8 +34,8 @@ public class WireGuard extends AStructuredProfile {
 	private final Integer listenPort;
 	private final String psk;
 
-	public WireGuard(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public WireGuard(ServerModel me) {
+		super(me);
 
 		final JsonObject wgSettings = getNetworkModel().getData().getProperties(getLabel(), "wireguard");
 		this.listenPort = wgSettings.getInt("listen_port", 51820);

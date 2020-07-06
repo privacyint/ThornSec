@@ -24,7 +24,6 @@ import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
 import core.model.machine.configuration.networking.ISystemdNetworkd;
-import core.model.network.NetworkModel;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirOwnUnit;
 import core.unit.fs.DirUnit;
@@ -48,8 +47,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	private final Map<HostName, Set<AMachineModel>> zones;
 	private Router myRouter;
 
-	public UnboundDNSServer(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public UnboundDNSServer(ServerModel me) {
+		super(me);
 
 		this.zones = new Hashtable<>();
 		try {

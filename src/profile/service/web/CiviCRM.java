@@ -14,7 +14,7 @@ import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
@@ -31,11 +31,11 @@ public class CiviCRM extends AStructuredProfile {
 	private final Drupal7 drupal;
 	private final MariaDB db;
 
-	public CiviCRM(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public CiviCRM(ServerModel me) {
+		super(me);
 
-		this.drupal = new Drupal7(getLabel(), networkModel);
-		this.db = new MariaDB(getLabel(), networkModel);
+		this.drupal = new Drupal7(me);
+		this.db = new MariaDB(me);
 
 		this.db.setUsername("civicrm");
 		this.db.setUserPrivileges("SUPER");

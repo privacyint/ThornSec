@@ -1,56 +1,60 @@
 package profile.type;
 
-import java.io.IOException;
-import java.util.Map;
+import inet.ipaddr.IPAddress;
 
-import javax.json.stream.JsonParsingException;
-
-import core.data.machine.configuration.NetworkInterfaceData;
-import core.data.machine.configuration.NetworkInterfaceData.Direction;
-import core.exception.data.ADataException;
+import core.exception.data.InvalidIPAddressException;
 import core.exception.runtime.InvalidMachineModelException;
+import core.data.machine.configuration.NetworkInterfaceData;
+import core.model.machine.AMachineModel;
 import core.model.machine.configuration.networking.DHCPClientInterfaceModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.machine.configuration.networking.StaticInterfaceModel;
-import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
-import inet.ipaddr.IPAddress;
 
-public abstract class AMachineProfile extends AStructuredProfile {
+public abstract class AMachine extends AStructuredProfile {
 	
-	protected AMachineProfile(String name, NetworkModel networkModel) {
-		super(name, networkModel);
+	public AMachine(AMachineModel me) {
+		super(me);
 	}
 
-	protected void buildIface(NetworkInterfaceData nic, Boolean masquerading) throws InvalidMachineModelException {
+	protected void buildIface(NetworkInterfaceData nic, Boolean masquerading) throws InvalidIPAddressException, InvalidMachineModelException {
 		NetworkInterfaceModel link = null;
 
 		switch (nic.getInet()) {
 		case STATIC:
-			link = new StaticInterfaceModel(nic.getIface());
+			link = new StaticInterfaceModel(nic, getNetworkModel());
 			break;
 		case DHCP:
-			link = new DHCPClientInterfaceModel(nic.getIface());
+			link = new DHCPClientInterfaceModel(nic, getNetworkModel());
 			// @TODO: DHCPClient is a raw socket. Fix that test.
 			break;
 		default:
+			
 		}
 
-		if (nic.getAddresses() != null) {
-			for (final IPAddress address : nic.getAddresses()) {
+		if (nic.getAddresses().isPresent()) {
+			for (IPAddress address : nic.getAddresses().get()) {
 				link.addAddress(address);
 			}
 		}
-		
-		link.setGateway(nic.getGateway());
-		link.setBroadcast(nic.getBroadcast());
-		link.setMac(nic.getMAC());
+		if (nic.getGateway().isPresent()) {
+			link.setGateway(nic.getGateway().get());
+			
+		}
+		if (nic.getBroadcast().isPresent()) {
+			link.setBroadcast(nic.getBroadcast().get());
+		}
+		if (nic.getMAC().isPresent()) {
+			link.setMac(nic.getMAC().get());
+		}
+
 		link.setIsIPMasquerading(masquerading);
 		
-		getNetworkModel().getMachineModel(getLabel()).addNetworkInterface(link);
+		getMachineModel().addNetworkInterface(link);
 	}
 
 	protected void buildNICs() {
+		/*
 		try {
 			final Map<Direction, Map<String, NetworkInterfaceData>> nics = getNetworkModel().getData()
 					.getNetworkInterfaces(getLabel());
@@ -71,5 +75,6 @@ public abstract class AMachineProfile extends AStructuredProfile {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+		*/
 	}
 }

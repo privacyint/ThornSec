@@ -14,7 +14,7 @@ import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
@@ -29,11 +29,11 @@ public class Grav extends AStructuredProfile {
 	private final Nginx webserver;
 	private final PHP php;
 
-	public Grav(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Grav(ServerModel me) {
+		super(me);
 
-		this.webserver = new Nginx(getLabel(), networkModel);
-		this.php = new PHP(getLabel(), networkModel);
+		this.webserver = new Nginx(me);
+		this.php = new PHP(me);
 	}
 
 	@Override

@@ -30,7 +30,7 @@ import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.fs.CustomFileUnit;
 import core.unit.fs.DirUnit;
@@ -48,10 +48,10 @@ public class Webproxy extends AStructuredProfile {
 	private FileUnit liveConfig;
 	private Set<String> backends;
 
-	public Webproxy(String label, NetworkModel networkModel) throws MissingPropertiesException {
-		super(label, networkModel);
+	public Webproxy(ServerModel me) throws MissingPropertiesException {
+		super(me);
 
-		this.webserver = new Nginx(getLabel(), networkModel);
+		this.webserver = new Nginx(me);
 		this.liveConfig = null;
 
 		final AMachineData data = getNetworkModel().getData().getMachine(MachineType.SERVER, getLabel());

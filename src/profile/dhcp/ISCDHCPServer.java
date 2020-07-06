@@ -39,10 +39,12 @@ import inet.ipaddr.IncompatibleAddressException;
  */
 public class ISCDHCPServer extends ADHCPServerProfile {
 
-	public ISCDHCPServer(String label, NetworkModel networkModel) throws AThornSecException {
-		super(label, networkModel);
+	
+	
+	public ISCDHCPServer(ServerModel me) throws AThornSecException {
+		super(me);
 
-		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf");
+		me.addProcessString("/usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf");
 	}
 
 	private void buildNet(MachineType type)
