@@ -7,7 +7,10 @@
  */
 package core.model.machine.configuration.networking;
 
+import java.util.Optional;
+import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
+import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
 
 /**
@@ -17,26 +20,19 @@ import core.unit.fs.FileUnit;
  * Use this interface where you need a trunk but don't have a "real" NIC spare
  */
 public class DummyModel extends NetworkInterfaceModel {
-	public DummyModel(String name) {
-		super(name);
+	public DummyModel(NetworkInterfaceData myData, NetworkModel networkModel) {
+		super(myData, networkModel);
+		
 		super.setInet(Inet.DUMMY);
+		super.setWeighting(10);
+	}
+
+	public DummyModel() {
+		this(null, null);
 	}
 
 	@Override
-	public FileUnit getNetworkFile() {
-		// Don't need a Network for a dummy interface, it's a trunk
-		return null;
-	}
-
-	@Override
-	public FileUnit getNetDevFile() {
-		final FileUnit netdev = new FileUnit(getIface() + "_netdev", "proceed",
-				"/etc/systemd/network/10-" + getIface() + ".netdev");
-
-		netdev.appendLine("[NetDev]");
-		netdev.appendLine("Name=" + getIface());
-		netdev.appendLine("Kind=" + getInet().getInet());
-
-		return netdev;
+	public Optional<FileUnit> getNetworkFile() {
+		return Optional.empty(); // Don't need a Network for a dummy interface
 	}
 }
