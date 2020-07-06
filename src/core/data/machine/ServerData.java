@@ -12,6 +12,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonString;

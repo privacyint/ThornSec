@@ -10,7 +10,7 @@ package core.data.machine;
 import java.io.File;
 import java.util.Collection;
 import java.util.LinkedHashSet;
-
+import java.util.Optional;
 import javax.json.JsonObject;
 
 import core.exception.data.ADataException;
@@ -57,11 +57,11 @@ public class HypervisorData extends ServerData {
 		this.services.add(service);
 	}
 
-	public final File getVmBase() {
-		return this.vmBase;
+	public final Optional<File> getVmBase() {
+		return Optional.ofNullable(this.vmBase);
 	}
 
-	public final Integer getBackupFrequency() {
-		return this.backupFrequency;
+	public final Optional<Integer> getBackupFrequency() {
+		return Optional.ofNullable(this.backupFrequency);
 	}
 }
