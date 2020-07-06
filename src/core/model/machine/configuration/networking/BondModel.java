@@ -7,7 +7,10 @@
  */
 package core.model.machine.configuration.networking;
 
+import java.util.Optional;
+import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
+import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
 
 /**
@@ -15,29 +18,30 @@ import core.unit.fs.FileUnit;
  * to work, of course.
  */
 public class BondModel extends NetworkInterfaceModel {
-	public BondModel(String name) {
-		super(name);
+	public BondModel(NetworkInterfaceData myData, NetworkModel networkModel) {
+		super(myData, networkModel);
+		
 		super.setInet(Inet.BOND);
+		super.setWeighting(0);
+	}
+
+	public BondModel() {
+		this(null, null);
 	}
 
 	@Override
-	public FileUnit getNetworkFile() {
-		// Don't need a Network for a Bond
-		return null;
+	public Optional<FileUnit> getNetworkFile() {
+		return Optional.empty(); // Don't need a Network for a Bond
 	}
 
 	@Override
-	public FileUnit getNetDevFile() {
-		final FileUnit netdev = new FileUnit(getIface() + "_netdev", "proceed", "/etc/systemd/network/10-" + getIface() + ".netdev");
+	public Optional<FileUnit> getNetDevFile() {
+		FileUnit netdev = super.getNetDevFile().get();
 
-		netdev.appendLine("[NetDev]");
-		netdev.appendLine("Name=" + getIface());
-		netdev.appendLine("Kind=bond");
 		netdev.appendCarriageReturn();
-
 		netdev.appendLine("[Bond]");
 		netdev.appendLine("Mode=802.3ad");
 
-		return netdev;
+		return Optional.of(netdev);
 	}
 }
