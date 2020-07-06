@@ -13,6 +13,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Optional;
+import java.util.Set;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonString;
@@ -41,10 +42,10 @@ public class ServerData extends AMachineData {
 		DIRECT, TUNNELLED
 	}
 
-	private Collection<HostName> sshSources;
-	private Collection<String> profiles;
-	private Collection<String> adminUsernames;
-	private final Collection<IPAddress> remoteAdminIPAddresses;
+	private Set<HostName> sshSources;
+	private Set<String> profiles;
+	private Set<String> adminUsernames;
+	private Set<IPAddress> remoteAdminIPAddresses;
 
 	private Integer adminSSHConnectPort;
 	private Integer sshListenPort;

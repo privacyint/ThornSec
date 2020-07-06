@@ -11,6 +11,7 @@ package core.data.machine;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import java.util.Set;
 import javax.json.JsonObject;
 
 import core.data.machine.configuration.DiskData;

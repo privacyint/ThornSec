@@ -8,9 +8,9 @@
 package core.data.machine;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Optional;
+import java.util.Set;
 import javax.json.JsonObject;
 
 import core.exception.data.ADataException;
@@ -24,14 +24,15 @@ import core.exception.data.ADataException;
 public class HypervisorData extends ServerData {
 	private File vmBase;
 	private Integer backupFrequency;
-	private Collection<ServerData> services;
+	private Set<ServerData> services;
 
 	public HypervisorData(String label) {
 		super(label);
 
+		this.services = new LinkedHashSet<>();
+		
 		this.vmBase = null;
 		this.backupFrequency = null;
-		this.services = new LinkedHashSet<>();
 		
 		this.putType(MachineType.HYPERVISOR);
 	}
@@ -49,7 +50,7 @@ public class HypervisorData extends ServerData {
 		}
 	}
 
-	public final Collection<ServerData> getServices() {
+	public final Set<ServerData> getServices() {
 		return this.services;
 	}
 
