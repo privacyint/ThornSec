@@ -7,55 +7,26 @@
  */
 package core.model.machine.configuration.networking;
 
+import java.util.Optional;
+import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
+import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
-import inet.ipaddr.IPAddress;
 
 /**
  * This model represents a statically assigned network interface
  */
 public class StaticInterfaceModel extends NetworkInterfaceModel {
-	public StaticInterfaceModel(String name) {
-		super(name);
+	public StaticInterfaceModel(NetworkInterfaceData myData, NetworkModel networkModel) {
+		super(myData, networkModel);
+		
 		super.setInet(Inet.STATIC);
+		super.setWeighting(0);
+		super.setReqdForOnline(true);
 	}
 
 	@Override
-	public FileUnit getNetworkFile() {
-		final FileUnit network = new FileUnit(getIface() + "_network", "proceed", "/etc/systemd/network/00-" + getIface() + ".network");
-		network.appendLine("[Match]");
-		network.appendLine("Name=" + getIface());
-		network.appendCarriageReturn();
-
-		network.appendLine("[Network]");
-		if (super.getAddresses() != null) {
-			// Add all of this interface's IP addresses
-			for (final IPAddress address : super.getAddresses()) {
-				network.appendLine("Address=" + address);
-			}
-		}
-
-		if (super.getGateway() != null) {
-			network.appendLine("Gateway=" + super.getGateway());
-		}
-
-		if (super.getIsIPForwarding() != null) {
-			network.appendLine("IPForward=" + super.getIsIPForwarding());
-		}
-
-		if (super.getIsIPMasquerading() != null) {
-			network.appendLine("IPMasquerade=" + super.getIsIPMasquerading());
-		}
-
-		if (super.getARP() != null) {
-			network.appendLine("ARP=" + super.getARP());
-		}
-
-		return network;
-	}
-
-	@Override
-	public FileUnit getNetDevFile() {
+	public Optional<FileUnit> getNetDevFile() {
 		return null;
 	}
 }
