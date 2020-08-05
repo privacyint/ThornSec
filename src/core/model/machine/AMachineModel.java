@@ -230,8 +230,8 @@ public abstract class AMachineModel extends AModel {
 		this.emailAddress = emailAddress;
 	}
 
-	public final Collection<String> getCNAMEs() {
-		return this.cnames;
+	public final Optional<Set<String>> getCNAMEs() {
+		return Optional.ofNullable(this.cnames);
 	}
 
 	public final void putCNAME(String... cnames) {
