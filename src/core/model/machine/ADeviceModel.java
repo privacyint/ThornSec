@@ -52,11 +52,6 @@ abstract public class ADeviceModel extends AMachineModel {
 				.count() > 0;
 	}
 
-	@Override
-	public Collection<IUnit> getUnits() throws AThornSecException {
-		return this.me.getPersistentConfig();
-	}
-
 	protected abstract Collection<IUnit> getPersistentFirewall();
 
 //	public Collection<IUnit> getPersistentConfig() throws InvalidDeviceModelException, JsonParsingException, ADataException {
