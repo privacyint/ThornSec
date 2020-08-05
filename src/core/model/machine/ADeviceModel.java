@@ -37,7 +37,7 @@ abstract public class ADeviceModel extends AMachineModel {
 		this.managed = myData.isManaged().orElse(false);
 	}
 
-	final public Boolean isManaged() throws InvalidMachineException {
+	final public Boolean isManaged() {
 		return this.managed;
 	}
 
