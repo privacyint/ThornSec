@@ -25,6 +25,11 @@ public class UserDeviceModel extends ADeviceModel {
 	public UserDeviceModel(UserDeviceData myData, NetworkModel networkModel) throws AThornSecException {
 		super(myData, networkModel);
 	}
+
+	@Override
+	public void init() throws AThornSecException {
+		// TODO Auto-generated method stub
+		
 	}
 
 	@Override
