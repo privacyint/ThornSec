@@ -6,6 +6,7 @@ import org.apache.commons.io.FilenameUtils;
 import core.data.machine.configuration.DiskData;
 import core.data.machine.configuration.DiskData.Format;
 import core.data.machine.configuration.DiskData.Medium;
+import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidDiskSizeException;
 import core.model.AModel;
 import core.model.network.NetworkModel;
@@ -121,5 +122,30 @@ public class DiskModel extends AModel {
 		this.comment = comment;
 	}
 
-
+	@Override
+	public void init() throws AThornSecException {
+		getData().getComment().ifPresent((comment) -> {
+			this.setComment(comment);
+		});
+		
+		getData().getDiffparent().ifPresent((diffParent) -> {
+			this.setDiffParent(diffParent);
+		});
+		
+		getData().getFilename().ifPresent((filename) -> {
+			this.setFilename(filename);
+		});
+		
+		getData().getFormat().ifPresent((format) -> {
+			this.setFormat(format);
+		});
+		
+		getData().getMedium().ifPresent((medium) -> {
+			this.setMedium(medium);
+		});
+		
+		getData().getSize().ifPresent((size) -> {
+			this.setSize(size);
+		});
+	}
 }
