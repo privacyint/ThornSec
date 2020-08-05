@@ -5,9 +5,11 @@ import org.apache.commons.io.FilenameUtils;
 import core.data.machine.configuration.DiskData;
 import core.data.machine.configuration.DiskData.Format;
 import core.data.machine.configuration.DiskData.Medium;
+import core.exception.data.machine.InvalidDiskSizeException;
+import core.model.AModel;
+import core.model.network.NetworkModel;
 
-public class DiskModel {
-	private String label;
+public class DiskModel extends AModel {
 	private Medium medium;
 	private Format format;
 	private File filename;
@@ -15,30 +17,19 @@ public class DiskModel {
 	private File diffParent;
 	private String comment;
 
-	public DiskModel(String label) {
-		this(label, null, null, null, null, null, null);
+	public DiskModel(DiskData myData, NetworkModel networkModel) {
+		super(myData, networkModel);
 	}
 	
-	public DiskModel(String label, Medium medium, Format format, File filename, Integer size, File diffParent, String comment) {
-		this.label = label;
+	public DiskModel(String label, Medium medium, Format format, File filename, Integer size, File diffParent, String comment, NetworkModel networkModel) throws InvalidDiskSizeException {
+		super(new DiskData(label), networkModel);
+		this.setLabel(label);
 		setMedium(medium);
 		setFormat(format);
 		setFilename(filename);
 		setSize(size);
 		setDiffParent(diffParent);
 		setComment(comment);
-	}
-	
-	public DiskModel(DiskData diskData) {
-		this(diskData.getLabel(), diskData.getMedium(), diskData.getFormat(), diskData.getFilename(), diskData.getSize(), diskData.getDiffparent(), diskData.getComment());
-	}
-
-	/**
-	 * 
-	 * @return the disk label
-	 */
-	public String getLabel() {
-		return this.label;
 	}
 	
 	/**
