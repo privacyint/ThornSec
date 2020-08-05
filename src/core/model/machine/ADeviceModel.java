@@ -10,7 +10,7 @@ package core.model.machine;
 import java.io.IOException;
 import java.util.Collection;
 
-import javax.json.stream.JsonParsingException;
+import core.data.machine.ADeviceData;
 import javax.mail.internet.AddressException;
 
 import core.exception.AThornSecException;
@@ -33,11 +33,11 @@ abstract public class ADeviceModel extends AMachineModel {
 	@SuppressWarnings("unused")
 	private final Device me;
 
-	public ADeviceModel(String label, NetworkModel networkModel)
+	public ADeviceModel(ADeviceData myData, NetworkModel networkModel)
 			throws AThornSecException  {
-		super(label, networkModel);
+		super(myData, networkModel);
 
-		this.managed = getNetworkModel().getData().isManaged(getLabel());
+		this.managed = myData.isManaged().orElse(false);
 		this.me = new Device(getLabel(), networkModel);
 	}
 

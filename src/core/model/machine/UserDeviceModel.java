@@ -10,8 +10,8 @@ package core.model.machine;
 import java.io.IOException;
 import java.util.Collection;
 
-import javax.json.stream.JsonParsingException;
-import javax.mail.internet.AddressException;
+import core.data.machine.UserDeviceData;
+import core.exception.AThornSecException;
 
 import core.exception.data.ADataException;
 import core.exception.runtime.InvalidDeviceModelException;
@@ -26,9 +26,9 @@ import core.model.network.NetworkModel;
  * with these devices!
  */
 public class UserDeviceModel extends ADeviceModel {
-	public UserDeviceModel(String label, NetworkModel networkModel)
-			throws AddressException, JsonParsingException, ADataException, IOException, InvalidServerModelException, InvalidDeviceModelException {
-		super(label, networkModel);
+	public UserDeviceModel(UserDeviceData myData, NetworkModel networkModel) throws AThornSecException {
+		super(myData, networkModel);
+	}
 	}
 
 	@Override
