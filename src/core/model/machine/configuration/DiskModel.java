@@ -148,4 +148,9 @@ public class DiskModel extends AModel {
 			this.setSize(size);
 		});
 	}
+	
+	@Override
+	public DiskData getData() {
+		return (DiskData) getData();
+	}
 }
