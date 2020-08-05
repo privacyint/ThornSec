@@ -7,181 +7,142 @@
  */
 package core.model.machine;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
-
 import com.metapossum.utils.scanner.reflect.ClassesInPackageScanner;
-
 import core.data.machine.AMachineData.MachineType;
+import core.data.machine.ServerData;
 import core.exception.AThornSecException;
-import core.exception.data.ADataException;
 import core.exception.data.machine.InvalidMachineException;
+import core.exception.data.machine.InvalidUserException;
 import core.exception.runtime.InvalidProfileException;
-import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
 import core.profile.AProfile;
-import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileAppendUnit;
-import core.unit.pkg.InstalledUnit;
 import profile.firewall.AFirewallProfile;
 import profile.firewall.router.ShorewallFirewall;
-import profile.machine.configuration.AptSources;
-import profile.machine.configuration.BindFS;
 import profile.machine.configuration.Processes;
 import profile.machine.configuration.UserAccounts;
-import profile.service.machine.SSH;
 import profile.type.Dedicated;
-import profile.type.HyperVisor;
+import profile.type.Hypervisor;
 import profile.type.Router;
+import profile.type.Server;
+import profile.type.Service;
 
 /**
  * This Class represents a Server. It is either used directly, or is called via
  * one of its children.
  */
 public class ServerModel extends AMachineModel {
-	private Map<MachineType, AStructuredProfile> types;
-	private Map<String, AProfile> profiles;
-
 	// Server-specific
+	private Processes runningProcesses;
 	private AFirewallProfile firewall;
-	private final AptSources aptSources;
-	private final Processes runningProcesses;
-	private final BindFS bindMounts;
 	// private final ConfigFiles configFiles;
-	private final UserAccounts users;
-
+	private UserAccounts users;
+	
 	private Map<String, AProfile> profiles;
 
 	public ServerModel(ServerData myData, NetworkModel networkModel) throws AThornSecException {
 		super(myData, networkModel);
 
-		// It's going to be *exceedingly* rare that this is set, but it should be
-		// customisable tbf
-		if (firewall != null) {
-			Collection<Class<?>> firewallClasses = null;
-			try {
-				firewallClasses = new ClassesInPackageScanner().setResourceNameFilter((packageName, fileName) -> fileName.equals(firewall + ".class")).scan("profile.firewall");
+		this.profiles = new LinkedHashMap<>();
 
-				if (firewallClasses.isEmpty()) {
-					throw new InvalidProfileException(firewall + " is not a valid firewall profile");
-				}
-
-				final String firewallClass = firewallClasses.iterator().next().getPackageName();
-
-				this.firewall = (AFirewallProfile) Class.forName(firewallClass).getDeclaredConstructor(String.class, NetworkModel.class).newInstance(getLabel(), networkModel);
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException
-					| ClassNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-		this.runningProcesses = new Processes(getLabel(), this.networkModel);
-		this.bindMounts = new BindFS(getLabel(), this.networkModel);
-		this.aptSources = new AptSources(getLabel(), this.networkModel);
-		this.users = new UserAccounts(getLabel(), this.networkModel);
-		
-		//init();
+		this.runningProcesses = new Processes();
+		this.users = new UserAccounts();
+		this.firewall = new ShorewallFirewall(this);
 	}
-
+	
 	@Override
-	public void init() throws AThornSecException {
-		// TODO: Probably a cleaner way of doing the below
-		this.profiles = new HashMap<>();
-		this.types = new HashMap<>();
-		this.firewall = new ShorewallFirewall(getLabel(), this.networkModel);
-
-		for (final MachineType type : getNetworkModel().getData().getTypes(getLabel())) {
-			try {
-				switch (type) {
-				case ROUTER:
-//				if (this.firewall == null) {
-//				}
-					this.types.put(MachineType.ROUTER, new Router(getLabel(), this.networkModel));
-					break;
-				case HYPERVISOR:
-//				if (this.firewall == null) {
-//					this.firewall = new CSFFirewall(getLabel(), this.networkModel);
-//				}
-					this.types.put(MachineType.HYPERVISOR, new HyperVisor(getLabel(), this.networkModel));
-					break;
-				case SERVICE:
-//				if (this.firewall == null) {
-//					this.firewall = new CSFFirewall(getLabel(), this.networkModel);
-//				}
-//				String hv = this.networkModel.getData().getService(getLabel()).getHypervisor();
-//				Service service = new Service(getLabel(), this.networkModel);
-//				service.setHypervisor(hv);
-//				this.types.add(service);
-//
-//				break;
-				case DEDICATED:
-					this.types.put(MachineType.DEDICATED, new Dedicated(getLabel(), this.networkModel));
-					break;
-				default:
-					break;
-				}
-			} catch (InvalidServerModelException | JsonParsingException | ADataException | IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-		try {
-			addProfile(getNetworkModel().getData().getProfiles(getLabel()).toArray(String[]::new));
-		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-				| InvocationTargetException | NoSuchMethodException | SecurityException | ClassNotFoundException
-				| IOException | InvalidProfileException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public ServerData getData() {
+		return (ServerData) super.getData();
 	}
-
-	private void addProfile(String... profiles) throws IOException, InvalidProfileException, InstantiationException, IllegalAccessException, IllegalArgumentException,
-			InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
-		for (final String profileName : profiles) {
-			if (profileName.equals("")) {
-				continue;
-			}
-
-			final Collection<Class<?>> classes = new ClassesInPackageScanner().setResourceNameFilter((packageName, fileName) -> fileName.equals(profileName + ".class"))
+	
+	public void init() throws AThornSecException {
+		this.addTypes();
+		this.addProfiles();
+		this.addAdmins();
+	}
+	
+	protected AProfile reflectedProfile(String profile) throws InvalidProfileException {
+		Collection<Class<?>> classes;
+		try {
+			classes = new ClassesInPackageScanner()
+					.setResourceNameFilter((packageName, fileName) ->
+							fileName.equals(profile + ".class"))
 					.scan("profile");
 
-			if (classes.isEmpty()) {
-				throw new InvalidProfileException("I can't find profile " + profileName);
-			}
-
-			classes.forEach((profileClass) -> {
-				try {
-					this.profiles.put(profileName,
-							(AProfile) Class.forName(profileClass.getName()).getDeclaredConstructor(String.class, NetworkModel.class).newInstance(getLabel(),
-							getNetworkModel()));
-				} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException
-						| ClassNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			});
+			return (AProfile) Class.forName(classes.iterator().next().getName())
+					.getDeclaredConstructor(ServerModel.class)
+					.newInstance(this);
+		} catch (Exception e) {
+			throw new InvalidProfileException("Profile " + profile + " threw an"
+					+ " exception\n\n" + e.getLocalizedMessage());
 		}
+	}
+	
+	private void addAdmins() throws InvalidUserException {
+		if (getData().getAdmins().isPresent()) {
+			addAdmins(getData().getAdmins().get());
+		}
+	}
+	
+	private void addAdmins(Collection<String> usernames) throws InvalidUserException {
+		for (String username : usernames) {
+			if (getNetworkModel().getUser(username).isPresent()) {
+				this.users.addAdmin(getNetworkModel().getUser(username).get());
+			}
+			else {
+				throw new InvalidUserException(username);
+			}
+		}
+	}
+	
+	private void addProfiles() throws InvalidProfileException {
+		if (getData().getProfiles().isEmpty()) {
+			return;
+		}
+		
+		for (String profile : getData().getProfiles().get()) {
+			addProfile(profile);
+		}
+	}
+	
+	private void addProfile(String profile) throws InvalidProfileException {
+		this.profiles.put(profile, reflectedProfile(profile));
+	}
+
+	private void addTypes() throws AThornSecException {
+		addType(MachineType.SERVER, new Server((ServerModel)this));
+		
+		for (final MachineType type : getData().getTypes()) {
+			switch (type) {
+				case DEDICATED:
+					addType(type, new Dedicated((ServerModel)this));
+					break;
+				case HYPERVISOR:
+					addType(type, new Hypervisor((HypervisorModel)this));
+					break;
+				case ROUTER:
+					addType(type, new Router((ServerModel)this));
+					break;
+				case SERVICE:
+					addType(type, new Service((ServiceModel)this));
+					break;
+				default:
+			}
+		}		
 	}
 
 	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineException {
-		if (!getNetworkModel().getData().getExternalIPs(getLabel()).isEmpty()) {
-			addIngress("*");
+		if (getData().getExternalIPs().isEmpty()) {
+		//	addIngress("*");
 		}
 
-		addEgress("cdn.debian.net:80");
-		addEgress("security-cdn.debian.org:80");
-		addEgress("prod.debian.map.fastly.net:80");
-		addEgress("cdn.debian.net:443");
-		addEgress("security-cdn.debian.org:443");
-		addEgress("prod.debian.map.fastly.net:443");
-		addEgress("*:25");
+		//addEgress("*:25");
 
 		return null;
 	}
@@ -196,74 +157,22 @@ public class ServerModel extends AMachineModel {
 				"readonly TMOUT\n" + "export TMOUT", "/etc/profile",
 				"Couldn't set the serial timeout. This means users who forget to log out won't be auto logged out after two hours."));
 
-		// Should we be autoupdating?
-		String aptCommand = "";
-		if (getNetworkModel().getData().getAutoUpdate(getLabel())) {
-			aptCommand = "sudo apt-get --assume-yes upgrade;";
-		} else {
-			aptCommand = "echo \"There are $(sudo apt-get upgrade -s | grep -P '^\\d+ upgraded'| cut -d' ' -f1) updates available, of which $(sudo apt-get upgrade -s | grep ^Inst | grep Security | wc -l) are security updates\"";
-		}
-		units.add(new SimpleUnit("update", "proceed", aptCommand,
-				"sudo apt-get update > /dev/null; sudo apt-get --assume-no upgrade | grep \"[0-9] upgraded, [0-9] newly installed, [0-9] to remove and [0-9] not upgraded.\";",
-				"0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.", "pass",
-				"There are $(sudo apt-get upgrade -s | grep -P '^\\d+ upgraded'| cut -d' ' -f1) updates available, of which $(sudo apt-get upgrade -s | grep ^Inst | grep Security | wc -l) are security updates"));
-
-		final SSH ssh = new SSH(getLabel(), getNetworkModel());
-		units.addAll(ssh.getUnits());
-
-		// Useful packages
-		units.add(new InstalledUnit("sysstat", "proceed", "sysstat"));
-		units.add(new InstalledUnit("lsof", "proceed", "lsof"));
-		units.add(new InstalledUnit("net_tools", "proceed", "net-tools"));
-		units.add(new InstalledUnit("htop", "proceed", "htop"));
-
-		final Collection<IUnit> typesAndProfileUnits = new ArrayList<>();
-		for (final AStructuredProfile type : this.types.values()) {
-			typesAndProfileUnits.addAll(type.getUnits());
-		}
+		units.addAll(super.getUnits());
 
 		for (final AProfile profile : getProfiles().values()) {
-			typesAndProfileUnits.addAll(profile.getUnits());
+			units.addAll(profile.getUnits());
 		}
-
-		units.addAll(this.aptSources.getUnits());
-
-		// Before we go any further... now the machine is at least up to date, and has a
-		// couple of useful diagnostics packages installed...
-		getNetworkInterfaces().forEach(nic -> {
-			if (nic.getNetworkFile() != null) {
-				units.add(nic.getNetworkFile());
-			}
-			if (nic.getNetDevFile() != null) {
-				units.add(nic.getNetDevFile());
-			}
-		});
-
-		units.addAll(typesAndProfileUnits);
+		
 		units.addAll(serverConfig());
 
 		if (getFirewall() != null) { // Some machines don't have firewalls for me to configure
 			units.addAll(getFirewall().getUnits());
 		}
-		if (this.bindMounts != null) {
-			units.addAll(this.bindMounts.getUnits());
-		}
-		units.addAll(this.runningProcesses.getUnits());
 		units.addAll(this.users.getUnits());
 
-		units.add(new SimpleUnit("apt_autoremove", "proceed", "sudo apt-get autoremove --purge --assume-yes", "sudo apt-get autoremove --purge --assume-no | grep \"0 to remove\"",
-				"", "fail"));
+		units.addAll(this.runningProcesses.getUnits());
 
 		return units;
-	}
-
-	/**
-	 * Get the profiles associated with this Server
-	 * 
-	 * @return a Map of the profile name and the profile itself
-	 */
-	public Map<String, AProfile> getProfiles() {
-		return this.profiles;
 	}
 
 	private Collection<IUnit> serverConfig() throws InvalidMachineException {
@@ -287,156 +196,43 @@ public class ServerModel extends AMachineModel {
 		units.add(new SimpleUnit("pam_not_tampered", "proceed", "", "find /lib/$(uname -m)-linux-gnu/security/ | xargs dpkg -S | cut -d ':' -f 1 | uniq | xargs sudo dpkg -V", "",
 				"pass", "There are unexpected/tampered PAM modules on this machine.  This is almost certainly an indicator that this machine has been compromised!"));
 
-		// Check for random SSH keys
-		// https://security.stackexchange.com/a/151581
-		String excludeKnownSSHKeys = "";
-
-		for (final String admin : getNetworkModel().getData().getAdmins(getLabel())) {
-			excludeKnownSSHKeys += " | grep -v \"" + getNetworkModel().getData().getSSHKey(admin) + "\"";
-		}
-
-		units.add(new SimpleUnit("no_additional_ssh_keys", "proceed", "",
-				"for X in $(cut -f6 -d ':' /etc/passwd |sort |uniq); do" + "   for suffix in \"\" \"2\"; do"
-						+ "       if sudo [ -s \"${X}/.ssh/authorized_keys$suffix\" ]; then"
-						+ "           cat \"${X}/.ssh/authorized_keys$suffix\";" + "       fi;" + "   done;" + "done"
-						+ excludeKnownSSHKeys,
-				"", "pass",
-				"There are unexpected SSH keys on this machine.  This is almost certainly an indicator that this machine has been compromised!"));
-
-		// Check for unexpected executables
-		// if (this.isService()) {
-		// units.add(new SimpleUnit("no_unexpected_executables", "proceed",
-		// "",
-		// "find /proc/*/exe -exec readlink {} + | xargs sudo dpkg -S 2>&1 | egrep -v
-		// \"/opt/VBoxGuestAdditions-[5-9]{1}\\\\.[0-9]{1,2}\\\\.[0-9]{1,2}/sbin/VBoxService\"
-		// | grep 'no path' | grep -v 'deleted'", "", "pass",
-		// "There are unexpected executables running on this machine. This could be
-		// innocent, but is probably a sign of compromise."));
-		// }
-		// else {
-		// units.addElement(new SimpleUnit("no_unexpected_executables", "proceed",
-		// "",
-		// "find /proc/*/exe -exec readlink {} + | xargs sudo dpkg -S 2>&1 | grep 'no
-		// path' | grep -v 'deleted'", "", "pass",
-		// "There are unexpected executables running on this machine. This could be
-		// innocent, but is probably a sign of compromise."));
-		// }
-
-		// String emailOnPAM = "";
-		// emailOnPAM += "#!/bin/bash\n";
-		// emailOnPAM += "\n";
-		// emailOnPAM += "host=\\$(hostname)\n";
-		// emailOnPAM += "domain=\\\"" +
-		// getNetworkModel().getData().getDomain(getLabel()) +
-		// "\\\"\n";
-		// emailOnPAM += "sender=\\\"" +
-		// getNetworkModel().getMachineModel(getLabel()).getEmailAddress() + "\\\"\n";
-		// emailOnPAM += "recipients=( ";
-
-		// for (String admin : getNetworkModel().getData().getAdmins()) {
-		// emailOnPAM += "\\\"" + admin + "@\\$domain\\\" ";
-		// }
-
-		// for (String admin : getNetworkModel().getData().getAdmins(getLabel())) {
-		// emailOnPAM += "\\\"" +
-		// getNetworkModel().getDeviceModel(admin).getEmailAddress() +
-		// "\\\" ";
-		// }
-
-		// emailOnPAM += ")\n";
-		// emailOnPAM += "message=\\$(env)\n";
-		// emailOnPAM += "\n";
-//		emailOnPAM += "for recipient in \\\"\\${recipients[@]}\\\"\n";
-//		emailOnPAM += "do\n";
-//		emailOnPAM += "    case \\\"\\${PAM_SERVICE}\\\" in\n";
-//		emailOnPAM += "        sshd)\n";
-//		emailOnPAM += "            if [ \\${PAM_TYPE} = \\\"open_session\\\" ] ; then\n";
-//		emailOnPAM += "                subject=\\\"SSH on \\${host}: \\${PAM_USER} has connected from \\${PAM_RHOST}\\\"\n";
-//		emailOnPAM += "            else\n";
-//		emailOnPAM += "                subject=\\\"SSH on \\${host}: \\${PAM_USER} has disconnected\\\"\n";
-//		emailOnPAM += "            fi\n";
-//		emailOnPAM += "            ;;\n";
-//		emailOnPAM += "        sudo)\n";
-//		emailOnPAM += "            if [ \\${PAM_TYPE} = \\\"open_session\\\" ] ; then\n";
-//		emailOnPAM += "                subject=\\\"SSH on \\${host}: \\${PAM_RUSER} has sudo'd to \\${PAM_USER}\\\"\n";
-//		emailOnPAM += "            else\n";
-//		emailOnPAM += "                subject=\\\"SSH on \\${host}: \\${PAM_USER} has disconnected\\\"\n";
-//		emailOnPAM += "            fi\n";
-//		emailOnPAM += "            ;;\n";
-//		emailOnPAM += "    esac\n";
-//		emailOnPAM += "\n";
-//		emailOnPAM += "    (echo \\\"\\${message}\\\") | mutt -e \\\"set realname='\\${emailFromRealName}ï¸�' from=\\${sender}\\\" -s \\${subject} -n \\${recipient}\n";
-//		//emailOnPAM += "    (echo \\\"Subject: \\$subject\\\"; echo \\\"\\$message\\\") | sendmail -f\\\"\\$sender\\\" \\\"\\$recipient\\\"\n";
-//		emailOnPAM += "done";
-//
-//		units.addElement(new FileUnit("email_on_pam_script_created", "proceed", emailOnPAM, "/etc/pamEmails.sh",
-//				"I couldn't output the file for emailing on SSH login or sudo.  This means you won't receive alerts."));
-//		units.addElement(new FilePermsUnit("email_on_pam_script_perms", "email_on_pam_script_created", "/etc/pamEmails.sh", "755"));
-
-//		String sshdPAM = "";
-//		sshdPAM += "@include common-auth\n";
-//		sshdPAM += "account    required     pam_nologin.so\n";
-//		sshdPAM += "@include common-account\n";
-//		sshdPAM += "session [success=ok ignore=ignore module_unknown=ignore default=bad]        pam_selinux.so close\n";
-//		sshdPAM += "session    required     pam_loginuid.so\n";
-//		sshdPAM += "session    optional     pam_keyinit.so force revoke\n";
-//		sshdPAM += "@include common-session\n";
-//		sshdPAM += "session    optional     pam_motd.so  motd=/run/motd.dynamic\n";
-//		sshdPAM += "session    optional     pam_motd.so noupdate\n";
-//		sshdPAM += "session    optional     pam_mail.so standard noenv\n";
-//		sshdPAM += "session    required     pam_limits.so\n";
-//		sshdPAM += "session    required     pam_env.so\n";
-//		sshdPAM += "session    required     pam_env.so user_readenv=1 envfile=/etc/default/locale\n";
-//		sshdPAM += "session [success=ok ignore=ignore module_unknown=ignore default=bad]        pam_selinux.so open\n";
-//		sshdPAM += "@include common-password\n";
-//		sshdPAM += "session optional pam_exec.so seteuid /etc/pamEmails.sh";
-//
-//		units.add(this.getConfigsModel().addConfigFile("pam_sshd_script_created", "email_on_pam_script_created", sshdPAM, "/etc/pam.d/sshd"));
-
 		return units;
 	}
 
-	public Map<MachineType, AStructuredProfile> getTypes() {
-		return this.types;
-	}
 
-	public Boolean isType(MachineType type) {
-		return getNetworkModel().getData().getTypes(getLabel()).contains(type);
-	}
-
-	public Boolean isRouter() {
-		return isType(MachineType.ROUTER);
-	}
-
-	public Boolean isHyperVisor() {
-		return isType(MachineType.HYPERVISOR);
-	}
-
-	public AFirewallProfile getFirewall() {
-		return this.firewall;
+	public final void addProcessString(String psString) {
+		getProcessModel().addProcess(psString);
 	}
 
 	protected Processes getProcessModel() {
 		return this.runningProcesses;
 	}
 
-	public BindFS getBindFsModel() {
-		return this.bindMounts;
-	}
-
-	public AptSources getAptSourcesModel() {
-		return this.aptSources;
+	public AFirewallProfile getFirewall() {
+		return this.firewall;
 	}
 
 	public UserAccounts getUserModel() {
 		return this.users;
 	}
 
-	public final void addProcessString(String psString) {
-		getProcessModel().addProcess(psString);
-	}
-
 	public final void addSystemUsername(String username) {
 		this.users.addUsername(username);
+	}
+
+	public Boolean getAutoUpdate() {
+		return getData().getUpdate().orElse(true);
+	}
+
+	public Map<String, AProfile> getProfiles() {
+		return this.profiles;
+	}
+
+	public Integer getSSHListenPort() {
+		return getData().getAdminPort().orElse(65422);
+	}
+
+	public Integer getCPUs() {
+		return getData().getCPUs().orElse(2);
 	}
 }
