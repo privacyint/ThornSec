@@ -15,36 +15,41 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import core.data.machine.AMachineData;
 import core.data.machine.AMachineData.MachineType;
+import core.data.machine.InternalDeviceData;
+import core.data.machine.ExternalDeviceData;
+import core.data.machine.HypervisorData;
+import core.data.machine.ServerData;
+import core.data.machine.ServiceData;
+import core.data.machine.UserDeviceData;
 import core.data.network.NetworkData;
 import core.exception.AThornSecException;
 import core.exception.data.InvalidIPAddressException;
+import core.exception.data.NoValidUsersException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.exec.ManageExec;
 import core.exec.network.OpenKeePassPassphrase;
 import core.iface.IUnit;
-import core.model.machine.ADeviceModel;
 import core.model.machine.AMachineModel;
 import core.model.machine.ExternalOnlyDeviceModel;
+import core.model.machine.HypervisorModel;
 import core.model.machine.InternalOnlyDeviceModel;
 import core.model.machine.ServerModel;
 import core.model.machine.ServiceModel;
 import core.model.machine.UserDeviceModel;
+import core.model.machine.configuration.networking.MACVLANModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import inet.ipaddr.AddressStringException;
 import inet.ipaddr.IPAddress;
@@ -288,8 +293,8 @@ public class NetworkModel {
 		}
 	}
 
-	public final void auditAll(OutputStream out, InputStream in, boolean quiet) throws InvalidServerModelException {
-		for (final String server : getServers().keySet()) {
+	public final void auditAll(OutputStream out, InputStream in, boolean quiet) throws InvalidMachineModelException {
+		for (final String server : getMachines(MachineType.SERVER).keySet()) {
 			ManageExec exec = null;
 			try {
 				exec = getManageExec(server, "audit", out, quiet);
@@ -303,24 +308,24 @@ public class NetworkModel {
 		}
 	}
 
-	public final void configNonBlock(String server, OutputStream out, InputStream in) throws InvalidServerModelException, IOException {
+	public final void configNonBlock(String server, OutputStream out, InputStream in) throws IOException, InvalidMachineModelException {
 		final ManageExec exec = getManageExec(server, "config", out, false);
 		if (exec != null) {
 			exec.manage();
 		}
 	}
 
-	public final void dryrunNonBlock(String server, OutputStream out, InputStream in) throws InvalidServerModelException, IOException {
+	public final void dryrunNonBlock(String server, OutputStream out, InputStream in) throws IOException, InvalidMachineModelException {
 		final ManageExec exec = getManageExec(server, "dryrun", out, false);
 		if (exec != null) {
 			exec.manage();
 		}
 	}
 
-	private final ManageExec getManageExec(String server, String action, OutputStream out, boolean quiet) throws InvalidServerModelException, IOException {
+	private final ManageExec getManageExec(String server, String action, OutputStream out, boolean quiet) throws IOException, InvalidMachineModelException {
 		// need to do a series of local checks eg known_hosts or expected
 		// fingerprint
-		final OpenKeePassPassphrase pass = new OpenKeePassPassphrase(server, this);
+		final OpenKeePassPassphrase pass = new OpenKeePassPassphrase((ServerModel)getMachineModel(server));
 
 		final String audit = getScript(server, action, quiet);
 
@@ -348,7 +353,7 @@ public class NetworkModel {
 		// ManageExec exec = new ManageExec(this.getData().getUser(),
 		// pass.getPassphrase(), serverModel.getIP(), this.getData().getSSHPort(server),
 		// audit, out);
-		final ManageExec exec = new ManageExec(getServerModel(server), this, audit, out);
+		final ManageExec exec = new ManageExec(((ServerModel)getMachineModel(server)), this, audit, out);
 		return exec;
 	}
 
