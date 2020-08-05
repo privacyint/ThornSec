@@ -28,9 +28,11 @@ public class ExternalOnlyDeviceModel extends ADeviceModel {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() {
-		addEgress("*");
-
+	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException {
+		TrafficRule egressRule = new TrafficRule();
+		egressRule.setDestination("*");
+		super.addFirewallRule(egressRule);
+		
 		return null;
 	}
 }
