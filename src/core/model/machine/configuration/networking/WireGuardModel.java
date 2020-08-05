@@ -7,6 +7,7 @@
  */
 package core.model.machine.configuration.networking;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import core.data.machine.configuration.NetworkInterfaceData;
@@ -70,6 +71,10 @@ public class WireGuardModel extends NetworkInterfaceModel {
 	}
 
 	public void addWireGuardPeer(String peer, String pubKey) {
+		if (this.peerKeys == null) {
+			this.peerKeys = new LinkedHashMap<>();
+		}
+		
 		this.peerKeys.put(peer, pubKey);
 	}
 }
