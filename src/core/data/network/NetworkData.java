@@ -242,7 +242,7 @@ public class NetworkData extends AData {
 	}
 
 	private void readServers() throws ADataException {
-		if (getData().containsKey("servers")) {
+		if (!getData().containsKey("servers")) {
 			return;
 		}
 		
