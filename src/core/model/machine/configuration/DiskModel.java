@@ -1,6 +1,7 @@
 package core.model.machine.configuration;
 
 import java.io.File;
+import java.util.Optional;
 import org.apache.commons.io.FilenameUtils;
 import core.data.machine.configuration.DiskData;
 import core.data.machine.configuration.DiskData.Format;
@@ -95,8 +96,8 @@ public class DiskModel extends AModel {
 	/**
 	 * @return the diffParent
 	 */
-	public File getDiffParent() {
-		return diffParent;
+	public Optional<File> getDiffParent() {
+		return Optional.ofNullable(diffParent);
 	}
 
 	/**
@@ -109,8 +110,8 @@ public class DiskModel extends AModel {
 	/**
 	 * @return the comment
 	 */
-	public String getComment() {
-		return comment;
+	public Optional<String> getComment() {
+		return Optional.ofNullable(comment);
 	}
 
 	/**
