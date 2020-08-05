@@ -144,6 +144,10 @@ public class ServerData extends AMachineData {
 	}
 	
 	private void readNICs(JsonObject data) throws ADataException {
+		if (!data.containsKey("network_interfaces")) {
+			return;
+		}
+		
 		data = data.getJsonObject("network_interfaces");
 
 		readNICs(data, "wan", Direction.WAN);
