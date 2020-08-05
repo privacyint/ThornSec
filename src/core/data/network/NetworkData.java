@@ -122,29 +122,31 @@ public class NetworkData extends AData {
 		readMachines();
 	}
 
-	private void readHyperVisor(String hypervisorLabel,	JsonObject hypervisorData)
+	private HypervisorData readHyperVisor(String label, JsonObject hypervisorData)
 			throws ADataException {
 		
-		HypervisorData hv = new HypervisorData(hypervisorLabel);
+		HypervisorData hv = new HypervisorData(label);
 		hv.read(getData());
 		hv.read(hypervisorData);
 		
 		// They *should* contain information about their services
 		if (!hypervisorData.containsKey("services")) {
-			throw new MissingPropertiesException(hypervisorLabel +
+			throw new MissingPropertiesException(label +
 					" doesn't contain any services. Please check your config");
 		}
 		
 		JsonObject services = hypervisorData.getJsonObject("services");
 		
 		for (final String serviceLabel : services.keySet()) {
-			readServer(serviceLabel, services.getJsonObject(serviceLabel));
-			
-			ServiceData service = (ServiceData) getMachineData(serviceLabel);
+			ServiceData service = readService(serviceLabel, services.getJsonObject(serviceLabel));
 			
 			hv.addService(service);
 			service.setHypervisor(hv);
+			
+			this.putMachine(service);
 		}
+		
+		return hv;
 	}
 	
 	private ServiceData readService(String label, JsonObject serviceData) throws ADataException {
@@ -172,15 +174,10 @@ public class NetworkData extends AData {
 		serverData.read(getData()); //Read in network-level defaults
 		serverData.read(serverDataObject); //Read in server-specific settings
 
-		// If this is a Service, read into specialised data object
-		if (serverData.isType(MachineType.SERVICE)) {
-			serverData = readService(label, serverDataObject);
-		}
-		
 		// If we've just hit a hypervisor machine, we need to dig a little,
 		// because the services are nested inside
 		if (serverData.isType(MachineType.HYPERVISOR)) {
-			readHyperVisor(label, serverDataObject);
+			serverData = readHyperVisor(label, serverDataObject);
 		}
 		
 		this.putMachine(serverData);
