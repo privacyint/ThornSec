@@ -30,6 +30,7 @@ import core.exception.data.InvalidIPAddressException;
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidEmailAddressException;
 import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
+import core.exception.runtime.InvalidTypeException;
 import inet.ipaddr.AddressStringException;
 import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
@@ -69,6 +70,15 @@ public abstract class AMachineData extends AData {
 		public String toString() {
 			return this.machineType;
 		}
+		
+	    public static MachineType fromString(String text) throws InvalidTypeException {
+	        for (MachineType type : MachineType.values()) {
+	            if (type.toString().equalsIgnoreCase(text)) {
+	                return type;
+	            }
+	        }
+	        throw new InvalidTypeException(text + " is not a valid machine type");
+	    }
 	}
 
 	public static Boolean DEFAULT_IS_THROTTLED = true;
