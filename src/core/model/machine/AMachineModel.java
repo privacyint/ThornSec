@@ -16,7 +16,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
-import javax.json.stream.JsonParsingException;
+import java.util.Optional;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
@@ -258,11 +258,11 @@ public abstract class AMachineModel extends AModel {
 		final Collection<IPAddress> ips = new ArrayList<>();
 
 		for (final NetworkInterfaceModel nic : getNetworkInterfaces()) {
-			if (nic.getAddresses() == null) {
+			if (nic.getAddresses().isEmpty()) {
 				continue;
 			}
 			
-			for (final IPAddress ip : nic.getAddresses()) {
+			for (final IPAddress ip : nic.getAddresses().get()) {
 				if ((getExternalIPs() != null) && getExternalIPs().contains(ip)) {
 					continue;
 				}
