@@ -273,6 +273,12 @@ public class NetworkInterfaceData extends AData {
 		return this.addresses.add(address);
 	}
 
+	public final void addAddress(IPAddress... addresses) {
+		for (int i = 0; i < addresses.length; i++) {
+			addAddress(addresses[i]);
+		}
+	}
+
 	protected final void setBroadcast(IPAddress broadcast) {
 		this.broadcast = broadcast;
 	}
