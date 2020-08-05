@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirMountedUnit;
@@ -20,8 +20,8 @@ import core.unit.fs.FileAppendUnit;
 
 public class media extends AStructuredProfile {
 
-	public media(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public media(ServerModel me) {
+		super(me);
 	}
 
 	@Override

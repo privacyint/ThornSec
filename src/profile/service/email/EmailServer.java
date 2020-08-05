@@ -35,9 +35,9 @@ public class EmailServer extends AStructuredProfile {
 	public EmailServer(ServerModel me) {
 		super(me);
 
-		this.webserver = new Nginx(getLabel(), networkModel);
-		this.php = new PHP(getLabel(), networkModel);
-		this.db = new MariaDB(getLabel(), networkModel);
+		this.webserver = new Nginx(me);
+		this.php = new PHP(me);
+		this.db = new MariaDB(me);
 	}
 
 	@Override

@@ -31,8 +31,8 @@ public class HypervisorScripts extends AStructuredProfile {
 	private String watchdogScriptsBase;
 	private String helperScriptsBase;
 
-	public HypervisorScripts(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public HypervisorScripts(ServerModel me) {
+		super(me);
 	}
 
 	@Override
