@@ -70,7 +70,7 @@ public class NetworkData extends AData {
 
 	private Set<HostName> upstreamDNS;
 
-	private final Map<String, String> subnets;
+	private final Map<MachineType, IPAddress> subnets;
 
 	private Map<String, AMachineData> machines;
 	private Map<String, UserData> users;
@@ -553,12 +553,12 @@ public class NetworkData extends AData {
 		return Optional.ofNullable(this.domain);
 	}
 
-	public Optional<Map<String, String>> getSubnets() {
+	public Optional<Map<MachineType, IPAddress>> getSubnets() {
 		return Optional.ofNullable(this.subnets);
 	}
 
-	public Optional<String> getSubnet(MachineType subnet) {
-		return Optional.ofNullable(this.subnets.get(subnet.toString()));
+	public Optional<IPAddress> getSubnet(MachineType subnet) {
+		return Optional.ofNullable(this.subnets.get(subnet));
 	}
 
 	public Optional<String> getProperty(String label, String property) {

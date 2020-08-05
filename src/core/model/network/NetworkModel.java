@@ -24,15 +24,15 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import javax.json.stream.JsonParsingException;
-import javax.mail.internet.AddressException;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import core.data.machine.AMachineData;
 import core.data.machine.AMachineData.MachineType;
 import core.data.network.NetworkData;
 import core.exception.AThornSecException;
-import core.exception.runtime.InvalidDeviceModelException;
+import core.exception.data.InvalidIPAddressException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.exec.ManageExec;
@@ -46,6 +46,10 @@ import core.model.machine.ServerModel;
 import core.model.machine.ServiceModel;
 import core.model.machine.UserDeviceModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
+import inet.ipaddr.AddressStringException;
+import inet.ipaddr.IPAddress;
+import inet.ipaddr.IPAddressString;
+import inet.ipaddr.IncompatibleAddressException;
 
 /**
  * Below the ThornsecModel comes the getNetworkModel().
@@ -58,64 +62,42 @@ public class NetworkModel {
 	private Map<MachineType, Map<String, AMachineModel>> machines;
 	private Map<String, Collection<IUnit>> networkUnits;
 
-	NetworkModel(String label) throws AddressException, JsonParsingException, AThornSecException, IOException, URISyntaxException {
+	private Map<MachineType, IPAddress> defaultSubnets;
+
+	NetworkModel(String label) {
 		this.label = label;
 
 		this.machines = null;
 		this.networkUnits = null;
+		
+		populateNetworkDefaults();
+	}
+
+	private void populateNetworkDefaults() {
+		buildDefaultSubnets();
+	}
+
+	private void buildDefaultSubnets() {
+		this.defaultSubnets = new LinkedHashMap<>();
+
+		try {
+			this.defaultSubnets.put(MachineType.USER, new IPAddressString("172.16.0.0/16").toAddress());
+			this.defaultSubnets.put(MachineType.SERVER, new IPAddressString("10.0.0.0/8").toAddress());
+			this.defaultSubnets.put(MachineType.ADMIN, new IPAddressString("172.20.0.0/16").toAddress());
+			this.defaultSubnets.put(MachineType.INTERNAL_ONLY, new IPAddressString("172.24.0.0/16").toAddress());
+			this.defaultSubnets.put(MachineType.EXTERNAL_ONLY, new IPAddressString("172.28.0.0/16").toAddress());
+			this.defaultSubnets.put(MachineType.GUEST, new IPAddressString("172.32.0.0/16").toAddress());
+			this.defaultSubnets.put(MachineType.VPN, new IPAddressString("172.36.0.0/16").toAddress());
+		} catch (AddressStringException | IncompatibleAddressException e) {
+			// Well done, you shouldn't have been able to get here!
+			e.printStackTrace();
+		}
+
 	}
 
 	final public String getLabel() {
 		return this.label;
 	}
-
-	/**
-	 * Initialises the various models across our network, building and initialising
-	 * all of our machines
-	 *
-	 * @throws AddressException
-	 * @throws InstantiationException
-	 * @throws IllegalAccessException
-	 * @throws IllegalArgumentException
-	 * @throws InvocationTargetException
-	 * @throws NoSuchMethodException
-	 * @throws SecurityException
-	 * @throws ClassNotFoundException
-	 * @throws URISyntaxException
-	 * @throws IOException
-	 * @throws JsonParsingException
-	 * @throws AThornSecException
-	 */
-	void init() throws AddressException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
-			SecurityException, ClassNotFoundException, URISyntaxException, IOException, JsonParsingException, AThornSecException {
-
-		// Start by building our network
-		final Map<String, AMachineData> externals = getData().getExternalOnlyDevices();
-		if (externals != null) {
-			for (final String external : externals.keySet()) {
-				final ExternalOnlyDeviceModel device = new ExternalOnlyDeviceModel(external, this);
-				addMachineToNetwork(MachineType.EXTERNAL_ONLY, external, device);
-				addMachineToNetwork(MachineType.DEVICE, external, device);
-			}
-		}
-
-		final Map<String, AMachineData> internals = getData().getInternalOnlyDevices();
-		if (internals != null) {
-			for (final String internal : internals.keySet()) {
-				final InternalOnlyDeviceModel device = new InternalOnlyDeviceModel(internal, this);
-				addMachineToNetwork(MachineType.INTERNAL_ONLY, internal, device);
-				addMachineToNetwork(MachineType.DEVICE, internal, device);
-			}
-		}
-
-		final Map<String, AMachineData> users = getData().getUserDevices();
-		if (users != null) {
-			for (final String user : users.keySet()) {
-				final UserDeviceModel device = new UserDeviceModel(user, this);
-				addMachineToNetwork(MachineType.USER, user, device);
-				addMachineToNetwork(MachineType.DEVICE, user, device);
-			}
-		}
 
 		final Map<String, AMachineData> servers = getData().getServers();
 		if (servers != null) {
@@ -679,7 +661,26 @@ public class NetworkModel {
 		return getData().getKeePassDB(server);
 	}
 
-	public String getWireGuardKey(String user) {
-		return getData().getWireGuardKey(user);
+	public IPAddress getSubnet(MachineType vlan) throws InvalidIPAddressException {
+		try {
+			return getData().getSubnet(vlan)
+					.orElse(defaultSubnets.get(vlan));
+		} catch (IncompatibleAddressException e) {
+			throw new InvalidIPAddressException(e.getLocalizedMessage());
+		}
+	}
+
+	public Map<MachineType, IPAddress> getSubnets() {
+		if (getData().getSubnets().isEmpty()) {
+			return this.defaultSubnets;
+		}
+		
+		return Stream.of(getData().getSubnets().get(), this.defaultSubnets)
+					.flatMap(map -> map.entrySet().stream())
+					.collect(Collectors.toMap(
+						Map.Entry::getKey,
+						Map.Entry::getValue,
+						(dataValue, defaultValue) -> dataValue)
+					);
 	}
 }

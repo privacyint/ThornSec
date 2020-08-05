@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import core.StringUtils;
 import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
+import core.exception.data.InvalidIPAddressException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.exception.runtime.InvalidMachineModelException;
@@ -52,8 +53,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		// First IP belongs to this net's router, so start from there (as it's assigned)
 		IPAddress ip = new IPAddressString(getNetworkModel().getData().getSubnet(type)).getAddress().getLowerNonZeroHost();
 
-		addSubnet(type.toString(), getSubnet(type.toString()));
-		addToSubnet(type.toString(), getNetworkModel().getMachines(type).values());
+		addSubnet(type, getSubnet(type));
+		addToSubnet(type, getNetworkModel().getMachines(type).values());
 
 		for (final AMachineModel machine : getNetworkModel().getMachines(type).values()) {
 
@@ -200,8 +201,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		dhcpdConf.appendLine("log-facility local7;");
 		dhcpdConf.appendCarriageReturn();
 
-		for (final String subnet : getSubnets().keySet()) {
-			dhcpdConf.appendLine("include \\\"/etc/dhcp/dhcpd.conf.d/" + subnet + ".conf\\\";");
+		for (final MachineType subnet : getSubnets().keySet()) {
+			dhcpdConf.appendLine("include \\\"/etc/dhcp/dhcpd.conf.d/" + subnet.toString() + ".conf\\\";");
 		}
 
 		if (getNetworkModel().getData().buildAutoGuest()) {
@@ -237,13 +238,14 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		return units;
 	}
 
-	private FileUnit buildSubNet(String net) throws InvalidMachineModelException {
-		final FileUnit subnetConfig = new FileUnit(net + "_dhcpd_live_config", "dhcp_installed",
-				"/etc/dhcp/dhcpd.conf.d/" + net + ".conf");
+	private FileUnit buildSubNet(MachineType type) throws InvalidIPAddressException {
+		final FileUnit subnetConfig = new FileUnit(type + "_dhcpd_live_config", "dhcp_installed",
+				"/etc/dhcp/dhcpd.conf.d/" + type + ".conf");
 
-		final IPAddress subnet = getSubnet(net);
-		final Integer prefix = getSubnet(net).getNetworkPrefixLength();
-		final IPAddress netmask = getSubnet(net).getNetwork().getNetworkMask(prefix, false);
+		final IPAddress subnet = getNetworkModel().getSubnet(type);
+		
+		final Integer prefix = subnet.getNetworkPrefixLength();
+		final IPAddress netmask = subnet.getNetwork().getNetworkMask(prefix, false);
 		final String gateway = subnet.getLowerNonZeroHost().withoutPrefixLength().toCompressedString();
 
 		// Start by telling our DHCP Server about this subnet.
@@ -251,13 +253,13 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 
 		// Now let's create our subnet/groups!
 		subnetConfig.appendCarriageReturn();
-		subnetConfig.appendLine("group " + net.toLowerCase() + " {");
-		subnetConfig.appendLine("\tserver-name \\\"" + net.toLowerCase() + "." + getLabel() + "." + getNetworkModel().getData().getDomain() + "\\\";");
+		subnetConfig.appendLine("group " + type.toString().toLowerCase() + " {");
+		subnetConfig.appendLine("\tserver-name \\\"" + type.toString().toLowerCase() + "." + getMachineModel().getLabel() + "." + getNetworkModel().getDomain() + "\\\";");
 		subnetConfig.appendLine("\toption routers " + gateway + ";");
 		subnetConfig.appendLine("\toption domain-name-servers " + gateway + ";");
 		subnetConfig.appendCarriageReturn();
 
-		for (final AMachineModel machine : getMachines(net)) {
+		if (getMachines(type) != null) {
 
 			// Skip over ourself, we're a router.
 			if (machine.equals(getNetworkModel().getMachineModel(getLabel()))) {
@@ -290,10 +292,10 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getLiveConfig() throws AThornSecException {
+	public Collection<IUnit> getLiveConfig() throws InvalidIPAddressException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		for (final String subnet : getSubnets().keySet()) {
+		for (final MachineType subnet : getSubnets().keySet()) {
 			units.add(buildSubNet(subnet));
 		}
 
@@ -303,8 +305,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 					"/etc/dhcp/dhcpd.conf.d/Guests.conf");
 			units.add(guestConfig);
 
-			final IPAddress subnet = new IPAddressString(getNetworkModel().getData().getSubnet(MachineType.GUEST)).getAddress();
-
+			IPAddress subnet = getNetworkModel().getSubnet(MachineType.GUEST);
+			
 			guestConfig.appendLine("group Guests {");
 			guestConfig.appendLine("\tsubnet " + subnet.getLower().withoutPrefixLength() + " netmask "
 					+ subnet.getNetwork().getNetworkMask(subnet.getPrefixLength(), false) + " {");
