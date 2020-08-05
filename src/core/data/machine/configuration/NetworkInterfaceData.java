@@ -285,7 +285,7 @@ public class NetworkInterfaceData extends AData {
 		this.gateway = gateway;
 	}
 
-	protected final void setIface(String iface) {
+	public final void setIface(String iface) {
 		this.iface = iface;
 	}
 
