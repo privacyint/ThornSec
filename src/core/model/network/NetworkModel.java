@@ -416,6 +416,10 @@ public class NetworkModel {
 		return getData().getKeePassDB(server);
 	}
 
+	public String getDomain() {
+		return getData().getDomain().orElse("lan");
+	}
+
 	public IPAddress getSubnet(MachineType vlan) throws InvalidIPAddressException {
 		try {
 			return getData().getSubnet(vlan)
