@@ -76,6 +76,10 @@ public class TrafficRule {
 	 * @throws InvalidPortException 
 	 */
 	public void addPorts(Integer... ports) throws InvalidPortException {
+		if (ports == null) {
+			return;
+		}
+		
 		for (Integer port : ports) {
 			if (((port < 0)) || ((port > 65535))) {
 				throw new InvalidPortException(port);
