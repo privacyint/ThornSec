@@ -7,17 +7,11 @@
  */
 package core.model.machine;
 
-import java.io.IOException;
 import java.util.Collection;
 
 import core.data.machine.ADeviceData;
-import javax.mail.internet.AddressException;
-
 import core.exception.AThornSecException;
-import core.exception.data.ADataException;
-import core.exception.data.machine.InvalidMachineException;
-import core.exception.runtime.InvalidDeviceModelException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.data.InvalidPortException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
 
@@ -54,6 +48,4 @@ abstract public class ADeviceModel extends AMachineModel {
 
 	protected abstract Collection<IUnit> getPersistentFirewall();
 
-//	public Collection<IUnit> getPersistentConfig() throws InvalidDeviceModelException, JsonParsingException, ADataException {
-//	}
 }
