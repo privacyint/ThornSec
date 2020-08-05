@@ -76,9 +76,9 @@ public abstract class AData {
 	 *
 	 * @param object the new data
 	 */
-	protected final void setData(Object data) {
+	protected final void setData(JsonObject data) {
 		assertNotNull(data);
 		
-		this.data = (JsonObject) data;
+		this.data = data;
 	}
 }
