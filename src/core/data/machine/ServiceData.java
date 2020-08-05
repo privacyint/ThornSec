@@ -9,6 +9,7 @@ package core.data.machine;
 
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -20,6 +21,7 @@ import core.data.machine.configuration.DiskData;
 import core.exception.data.ADataException;
 import core.exception.data.InvalidPropertyException;
 import core.exception.data.machine.InvalidDiskSizeException;
+import core.iface.IUnit;
 import profile.firewall.router.ShorewallFirewall.Arm;
 import profile.firewall.router.ShorewallFirewall.ParentZone;
 import profile.type.Hypervisor;
