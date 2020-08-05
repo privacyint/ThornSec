@@ -420,6 +420,10 @@ public class NetworkModel {
 		return getData().getDomain().orElse("lan");
 	}
 
+	public Optional<UserModel> getUser(String username) {
+		return Optional.ofNullable(this.users.get(username));
+	}
+
 	public IPAddress getSubnet(MachineType vlan) throws InvalidIPAddressException {
 		try {
 			return getData().getSubnet(vlan)
