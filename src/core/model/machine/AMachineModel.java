@@ -248,6 +248,10 @@ public abstract class AMachineModel extends AModel {
 		return this.domain;
 	}
 
+	public String getHostName() {
+		return StringUtils.stringToAlphaNumeric(getLabel(), "-");
+	}
+	
 	public final Boolean isThrottled() {
 		return this.throttled;
 	}
