@@ -7,15 +7,11 @@
  */
 package core.model.machine;
 
-import java.io.IOException;
 import java.util.Collection;
 
 import core.data.machine.UserDeviceData;
 import core.exception.AThornSecException;
-
-import core.exception.data.ADataException;
-import core.exception.runtime.InvalidDeviceModelException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.data.InvalidPortException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
 
