@@ -8,6 +8,7 @@
 package core.data.machine;
 
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -362,6 +363,10 @@ public abstract class AMachineData extends AData {
 	 * @throws InvalidNetworkInterfaceException
 	 */
 	protected void putNetworkInterface(NetworkInterfaceData... ifaces) throws InvalidNetworkInterfaceException {
+		if (this.networkInterfaces == null) {
+			this.networkInterfaces = new LinkedHashMap<>();
+		}
+		
 		for (final NetworkInterfaceData iface : ifaces) {
 			if (this.networkInterfaces.containsKey(iface.getIface())) {
 				throw new InvalidNetworkInterfaceException("Interfaces can only be declared once");
