@@ -8,24 +8,32 @@
 package core.profile;
 
 import core.iface.IProfile;
+import core.model.machine.AMachineModel;
 import core.model.network.NetworkModel;
 
 public abstract class AProfile implements IProfile {
+	private final AMachineModel me;
 
-	private final String label;
-	private final NetworkModel networkModel;
-
-	protected AProfile(String label, NetworkModel networkModel) {
-		this.label = label;
-		this.networkModel = networkModel;
+	protected AProfile(AMachineModel me) {
+//		//assertNotNull(me);
+		
+		this.me = me;
 	}
 
-	@Override
-	public final String getLabel() {
-		return this.label;
-	}
-
+	/**
+	 * Get the network in which this Profile exists
+	 * @return
+	 */
 	public final NetworkModel getNetworkModel() {
-		return this.networkModel;
+		return me.getNetworkModel();
+	}
+
+	/**
+	 * Get the Machine on which this Profile exists
+	 * 
+	 * @return AMachineModel representation of this Profile's machine
+	 */
+	public AMachineModel getMachineModel() {
+		return me;
 	}
 }

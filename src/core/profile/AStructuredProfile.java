@@ -9,10 +9,10 @@ package core.profile;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
 import core.exception.AThornSecException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.AMachineModel;
+import core.model.machine.ServerModel;
 import inet.ipaddr.AddressStringException;
 import inet.ipaddr.IncompatibleAddressException;
 
@@ -29,8 +29,8 @@ import inet.ipaddr.IncompatibleAddressException;
  */
 public abstract class AStructuredProfile extends AProfile {
 
-	protected AStructuredProfile(String name, NetworkModel networkModel) {
-		super(name, networkModel);
+	protected AStructuredProfile(AMachineModel me) {
+		super(me);
 	}
 
 	/**

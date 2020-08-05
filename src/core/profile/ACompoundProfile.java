@@ -13,7 +13,9 @@ import java.util.Set;
 
 import core.iface.IChildUnit;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+
+import core.model.machine.ServerModel;
+
 import core.unit.ComplexUnit;
 
 public abstract class ACompoundProfile extends AProfile {
@@ -21,8 +23,9 @@ public abstract class ACompoundProfile extends AProfile {
 	private final String precondition;
 	private final String config;
 
-	public ACompoundProfile(String name, NetworkModel model, String precondition, String config) {
-		super(name, model);
+	public ACompoundProfile(ServerModel me, String precondition, String config) {
+		super(me);
+		
 		this.precondition = precondition;
 		this.config = config;
 	}
