@@ -13,6 +13,7 @@ import java.util.Collection;
 import core.data.machine.AMachineData.Encapsulation;
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidMachineException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
@@ -57,7 +58,7 @@ public class SSH extends AStructuredProfile {
 		final FileUnit sshdConf = new FileUnit("sshd_config", "sshd_installed", "/etc/ssh/sshd_config");
 		units.add(sshdConf);
 
-		sshdConf.appendLine("Port " + getNetworkModel().getData().getSSHPort(getLabel()));
+		sshdConf.appendLine("Port " + getServerModel().getSSHListenPort());
 		// sshdConf.appendLine((((ServerModel)me).isRouter()) ? "ListenAddress " +
 		// networkModel.getData().getIP().getHostAddress() + "\n" : "";
 		sshdConf.appendLine("Protocol 2");
@@ -182,7 +183,7 @@ public class SSH extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP,

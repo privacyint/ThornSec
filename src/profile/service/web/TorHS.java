@@ -41,13 +41,13 @@ public class TorHS extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() throws InvalidMachineModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("tor_keyring", "tor_pgp", "deb.torproject.org-keyring"));
 		units.add(new InstalledUnit("tor", "tor_keyring_installed", "tor"));
 
-		((ServerModel)getNetworkModel().getMachineModel(getLabel())).getUserModel().addUsername("debian-tor");
+		getServerModel().getUserModel().addUsername("debian-tor");
 
 		units.addAll(this.proxy.getInstalled());
 
@@ -202,7 +202,7 @@ public class TorHS extends AStructuredProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new RunningUnit("tor", "tor", "/usr/bin/tor"));
-		((ServerModel)getNetworkModel().getMachineModel(getLabel())).addProcessString(
+		getServerModel().addProcessString(
 				"/usr/bin/tor --defaults-torrc /usr/share/tor/tor-service-defaults-torrc -f /etc/tor/torrc --RunAsDaemon 0$");
 		units.addAll(this.proxy.getLiveConfig());
 

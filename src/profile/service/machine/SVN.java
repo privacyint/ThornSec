@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import core.exception.data.machine.InvalidServerException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
@@ -41,14 +41,14 @@ public class SVN extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.php.getInstalled());
 
 		units.add(new InstalledUnit("apache", "proceed", "apache2"));
 		units.add(new RunningUnit("apache", "apache2", "apache2"));
-		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/sbin/apache2 -k start$");
+		getServerModel().addProcessString("/usr/sbin/apache2 -k start$");
 
 		units.add(new InstalledUnit("svn", "proceed", "subversion"));
 		units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
@@ -60,7 +60,7 @@ public class SVN extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.php.getPersistentConfig());
@@ -213,7 +213,7 @@ public class SVN extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addEgress("kent.dl.sourceforge.net:443");

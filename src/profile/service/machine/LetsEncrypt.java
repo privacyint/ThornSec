@@ -9,7 +9,7 @@ package profile.service.machine;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
+import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
@@ -30,7 +30,7 @@ public class LetsEncrypt extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() {
+	public Collection<IUnit> getInstalled() {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("certbot", "proceed", "certbot"));
@@ -39,12 +39,12 @@ public class LetsEncrypt extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		String config = "";
 		config += "rsa-key-size = 4096\n";
-		config += "email = " + getNetworkModel().getServerModel(getLabel()).getEmailAddress();
+		config += "email = " + getMachineModel().getEmailAddress();
 
 		units.add(new FileUnit("certbot_default_config", "certbot_installed", config, "/etc/letsencrypt/cli.ini"));
 
@@ -76,7 +76,7 @@ public class LetsEncrypt extends AStructuredProfile {
 //	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addEgress("acme-v01.api.letsencrypt.org");

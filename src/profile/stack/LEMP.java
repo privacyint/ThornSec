@@ -12,6 +12,7 @@ import java.util.Collection;
 
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
@@ -35,7 +36,7 @@ public class LEMP extends AStructuredProfile {
 	}
 
 	@Override
-	public final Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public final Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getWebserver().getInstalled());
@@ -46,7 +47,7 @@ public class LEMP extends AStructuredProfile {
 	}
 
 	@Override
-	public final Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+	public final Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getWebserver().getPersistentConfig());
@@ -57,7 +58,7 @@ public class LEMP extends AStructuredProfile {
 	}
 
 	@Override
-	public final Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public final Collection<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getWebserver().getLiveConfig());
@@ -68,7 +69,7 @@ public class LEMP extends AStructuredProfile {
 	}
 
 	@Override
-	public final Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+	public final Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException, InvalidPortException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getWebserver().getPersistentFirewall());

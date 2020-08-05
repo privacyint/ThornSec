@@ -108,7 +108,7 @@ public class CSFFirewall extends AFirewallProfile {
 		csfConf.appendLine("RESTRICT_SYSLOG_GROUP = \\\"restricted-syslog\\\"");
 		csfConf.appendLine("RESTRICT_UI = \\\"1\\\"");
 		csfConf.appendLine(
-				"AUTO_UPDATES = \\\"" + (getNetworkModel().getData().getAutoUpdate(getLabel()) ? "1" : "0") + "\\\"");
+				"AUTO_UPDATES = \\\"" + (getServerModel().getAutoUpdate() ? "1" : "0") + "\\\"");
 		csfConf.appendLine("LF_SPI = \\\"1\\\"");
 		csfConf.appendLine("ICMP_IN = \\\"1\\\"");
 		csfConf.appendLine("ICMP_IN_RATE = \\\"1/s\\\"");

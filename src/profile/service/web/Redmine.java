@@ -12,7 +12,7 @@ import java.util.Collection;
 
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
@@ -43,7 +43,7 @@ public class Redmine extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getInstalled());
@@ -53,8 +53,7 @@ public class Redmine extends AStructuredProfile {
 		units.add(new InstalledUnit("thin", "redmine_installed", "thin"));
 		units.add(new InstalledUnit("sendmail", "proceed", "sendmail"));
 
-		getNetworkModel().getServerModel(getLabel())
-				.addProcessString("thin server \\(/var/run/thin/sockets/thin.[0-3].sock\\)$");
+		getServerModel().addProcessString("thin server \\(/var/run/thin/sockets/thin.[0-3].sock\\)$");
 
 		return units;
 	}
@@ -211,7 +210,7 @@ public class Redmine extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getLiveConfig());
@@ -221,7 +220,7 @@ public class Redmine extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getPersistentFirewall());

@@ -17,10 +17,9 @@ import core.StringUtils;
 import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
 import core.exception.data.InvalidPortException;
-import core.exception.data.machine.InvalidMachineException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
 import core.model.machine.configuration.networking.ISystemdNetworkd;
@@ -59,8 +58,9 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
-		final Integer cpus = getNetworkModel().getData().getCPUs(getLabel());
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidMachineModelException {
+		final Integer cpus = getServerModel().getCPUs();
+		
 		final Collection<IUnit> units = new ArrayList<>();
 
 		myRouter.getVLANs().values().forEach((vlan) -> {
@@ -166,14 +166,15 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("dns", "proceed", "unbound"));
-		getNetworkModel().getServerModel(getLabel()).addSystemUsername("unbound");
-		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/sbin/unbound -d$");
+		getServerModel().addSystemUsername("unbound");
+		getServerModel().addProcessString("/usr/sbin/unbound -d$");
 
-		if (getNetworkModel().getData().adBlocking()) {
+		if (getNetworkModel().getData().doAdBlocking().isPresent()
+				&& getNetworkModel().getData().doAdBlocking().get()) {
 			units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
 			units.add(new InstalledUnit("wget", "proceed", "wget"));
 		}
@@ -182,7 +183,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getLiveConfig() throws InvalidMachineException, InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		// Start by updating the ad block list (if req'd)
@@ -227,7 +228,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		final FileUnit resolvConf = new FileUnit("dns_resolv_conf", "dns_running", "/etc/resolv.conf",
 				"Unable to change your DNS to point at the local one.  This will probably cause VM building to fail, amongst other problems");
 		units.add(resolvConf);
-		resolvConf.appendLine("search " + getNetworkModel().getData().getDomain(getLabel()));
+		resolvConf.appendLine("search " + getMachineModel().getDomain().getHost());
 		resolvConf.appendLine("nameserver 127.0.0.1");
 
 		return units;

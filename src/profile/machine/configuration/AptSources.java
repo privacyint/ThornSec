@@ -15,10 +15,10 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
-
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.AThornSecException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileUnit;
@@ -44,19 +44,19 @@ public class AptSources extends AStructuredProfile {
 	}
 
 	@Override
-	public final Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public final Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("dirmngr", "proceed", "dirmngr", "Couldn't install dirmngr.  Anything which requires a PGP key to be downloaded and installed won't work. "
 				+ "You can possibly fix this by running a configuration again."));
 
-		getNetworkModel().getServerModel(getLabel()).addProcessString("dirmngr --daemon --homedir /tmp/apt-key-gpghome.[a-zA-Z0-9]*$");
+		((ServerModel) getMachineModel()).addProcessString("dirmngr --daemon --homedir /tmp/apt-key-gpghome.[a-zA-Z0-9]*$");
 
 		return units;
 	}
 
 	@Override
-	public final Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+	public final Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException {
 		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName(this.debianRepo.getHost()));
 		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName("security-cdn.debian.org"));
 
@@ -110,7 +110,7 @@ public class AptSources extends AStructuredProfile {
 		return units;
 	}
 
-	public final void addAptSource(String name, String sourceLine, String keyserver, String fingerprint) throws InvalidServerModelException {
+	public final void addAptSource(String name, String sourceLine, String keyserver, String fingerprint) throws InvalidMachineModelException {
 		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName(keyserver + ":11371"));
 
 		this.addAptSource(name, sourceLine);

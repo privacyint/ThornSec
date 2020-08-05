@@ -69,7 +69,7 @@ public class Webproxy extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("openssl", "proceed", "openssl"));
@@ -81,15 +81,13 @@ public class Webproxy extends AStructuredProfile {
 
 	@Override
 	public Collection<IUnit> getPersistentConfig()
-			throws InvalidPropertyException, InvalidServerException, InvalidServerModelException {
+			throws InvalidPropertyException, InvalidServerException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getPersistentConfig());
 
 		// Should we pass through real IPs?
-		final Boolean passThroughIps = Boolean
-				.parseBoolean(getNetworkModel().getData().getProperty(getLabel(), "passrealips")); // Defaults false
-
+		final Boolean passThroughIps = getServerModel().getData().getData().getBoolean("passrealips"); // Defaults false
 		// First, build our ssl config
 		units.add(new DirUnit("nginx_ssl_include_dir", "proceed", "/etc/nginx/includes"));
 		final FileUnit sslConf = new FileUnit("nginx_ssl", "proceed", "/etc/nginx/includes/ssl_params");

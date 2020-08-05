@@ -59,10 +59,10 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		for (final AMachineModel machine : getNetworkModel().getMachines(type).values()) {
 
 			try {
-				if (getNetworkModel().getServerModel(machine.getLabel()).isRouter()) {
+				if (getNetworkModel().getMachineModel(machine.getLabel()).isType(MachineType.ROUTER)) {
 					continue;
 				}
-			} catch (final InvalidServerModelException e) {
+			} catch (final InvalidMachineModelException e) {
 				// It's not a server, so can't possibly be a Router
 			}
 
@@ -102,27 +102,27 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 
 	@Override
 	protected void distributeMACs() throws AThornSecException {
-		final Boolean isRouterHV = getNetworkModel().getServerModel(getLabel()).isHyperVisor();
+		final Boolean isRouterHV = getMachineModel().isType(MachineType.HYPERVISOR);
 
 		// Start by checking all of the devices have a MAC address provided, as these
 		// are physical devices!
-		for (final ADeviceModel device : getNetworkModel().getDevices().values()) {
+		for (final AMachineModel device : getNetworkModel().getMachines(MachineType.DEVICE).values()) {
 			checkMACs(device, !isRouterHV);
 		}
 
 		// Iterate through our dedi machines, these are also physical machines
-		for (final ServerModel server : getNetworkModel().getServers(MachineType.DEDICATED).values()) {
+		for (final AMachineModel server : getNetworkModel().getMachines(MachineType.DEDICATED).values()) {
 			checkMACs(server, !isRouterHV);
 		}
 
 		// Iterate through our HyperVisor machines, these are also physical machines
-		for (final ServerModel server : getNetworkModel().getServers(MachineType.HYPERVISOR).values()) {
+		for (final AMachineModel server : getNetworkModel().getMachines(MachineType.HYPERVISOR).values()) {
 			checkMACs(server, !isRouterHV);
 		}
 
 		// Finally, iterate through our services, filling in any gaps.
 		// TODO: tidy up this loopy mess?
-		for (final ServerModel server : getNetworkModel().getServers(MachineType.SERVICE).values()) {
+		for (final AMachineModel server : getNetworkModel().getMachines(MachineType.SERVICE).values()) {
 			if (checkMACs(server, false) == false) {
 				for (final NetworkInterfaceModel nic : server.getNetworkInterfaces()) {
 					if (nic.getMac() == null) {
@@ -156,9 +156,9 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 			buildNet(MachineType.SERVER.toString(),
 					new IPAddressString(getNetworkModel().getData().getServerSubnet()).getAddress(),
 					getNetworkModel().getMachines(MachineType.SERVER).values());
-		}
+	}
 
-		if (!getNetworkModel().getMachines(MachineType.USER).isEmpty()
+	private FileUnit getDHCPConf() throws InvalidMachineModelException {
 				&& !getNetworkModel().getServerModel(getLabel()).isHyperVisor()) {
 			buildNet(MachineType.USER.toString(),
 					new IPAddressString(getNetworkModel().getData().getUserSubnet()).getAddress(),
@@ -184,16 +184,14 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		}
 	}
 
-	private FileUnit getDHCPConf() throws InvalidServerModelException {
 		final FileUnit dhcpdConf = new FileUnit("dhcpd_conf", "dhcp_installed", "/etc/dhcp/dhcpd.conf");
 
 		dhcpdConf.appendLine("#Options here are set globally across your whole network(s)");
 		dhcpdConf.appendLine("#Please see https://www.systutorials.com/docs/linux/man/5-dhcpd.conf/");
 		dhcpdConf.appendLine("#for more details");
 		dhcpdConf.appendLine("ddns-update-style none;");
-		dhcpdConf.appendLine("option domain-name \\\"" + getNetworkModel().getData().getDomain() + "\\\";");
-		dhcpdConf.appendLine("option domain-name-servers " + getLabel() + "."
-				+ getNetworkModel().getServerModel(getLabel()).getDomain() + ";");
+		dhcpdConf.appendLine("option domain-name \\\"" + getNetworkModel().getDomain() + "\\\";");
+		dhcpdConf.appendLine("option domain-name-servers " + getMachineModel().getLabel() + "." + getMachineModel().getDomain() + ";");
 		dhcpdConf.appendLine("default-lease-time 600;");
 		dhcpdConf.appendLine("max-lease-time 1800;");
 		dhcpdConf.appendLine("get-lease-hostnames true;");
@@ -260,30 +258,31 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		subnetConfig.appendCarriageReturn();
 
 		if (getMachines(type) != null) {
-
-			// Skip over ourself, we're a router.
-			if (machine.equals(getNetworkModel().getMachineModel(getLabel()))) {
-				continue;
-			}
-
-			for (final NetworkInterfaceModel iface : machine.getNetworkInterfaces()) {
-				// We check the requirement elsewhere. Don't try and build non-machine leases
-				if (iface.getMac() == null) {
+			for (final AMachineModel machine : getMachines(type)) {
+				// Skip over ourself, we're a router.
+				if (machine.equals(getMachineModel())) {
 					continue;
 				}
-
-				assert (iface.getAddresses().size() == 1);
-				final IPAddress ip = (IPAddress) iface.getAddresses().toArray()[0];
-
-				subnetConfig
-						.appendLine("\thost " + StringUtils.stringToAlphaNumeric(machine.getLabel().toLowerCase(), "-")
-								+ "-" + iface.getMac().toHexString(false) + " {");
-				subnetConfig.appendLine("\t\thardware ethernet " + iface.getMac().toColonDelimitedString() + ";");
-
-				subnetConfig.appendLine("\t\tfixed-address " + ip.withoutPrefixLength().toCompressedString() + ";");
-				subnetConfig.appendLine("\t}");
-				subnetConfig.appendCarriageReturn();
-
+	
+				for (final NetworkInterfaceModel iface : machine.getNetworkInterfaces()) {
+					// We check the requirement elsewhere. Don't try and build non-machine leases
+					if (iface.getMac() == null) {
+						continue;
+					}
+	
+					if (iface.getAddresses().isPresent()) {
+						final IPAddress ip = (IPAddress) iface.getAddresses().get().toArray()[0];
+	
+						subnetConfig
+								.appendLine("\thost " + StringUtils.stringToAlphaNumeric(machine.getLabel().toLowerCase(), "-")
+										+ "-" + iface.getMac().get().toHexString(false) + " {");
+						subnetConfig.appendLine("\t\thardware ethernet " + iface.getMac().get().toColonDelimitedString() + ";");
+		
+						subnetConfig.appendLine("\t\tfixed-address " + ip.withoutPrefixLength().toCompressedString() + ";");
+						subnetConfig.appendLine("\t}");
+						subnetConfig.appendCarriageReturn();
+					}
+				}
 			}
 		}
 		subnetConfig.appendLine("}");

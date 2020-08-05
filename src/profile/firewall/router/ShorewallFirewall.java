@@ -326,23 +326,13 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return hosts;
 	}
 	
-	private boolean hasRealUsers() {
-		return getNetworkModel().getUserDevices() != null 
-				&&
-			getNetworkModel().getUserDevices()
-				.values()
-				.stream()
-				.filter(UserDeviceModel::hasRealNICs) //Only if there are any interfaces, though
-				.count() > 0;
-	}
-
-	private Collection<Rule> getDNSRules() throws InvalidServerModelException {
+	private Collection<Rule> getDNSRules() throws InvalidMachineModelException {
 		Collection<Rule> rules = new ArrayList<>();
 
 		Comment dnsComment = new Comment("DNS rules");
 		rules.add(dnsComment);
 		
-		if (me.isRouter()) {
+		if (getMachineModel().isType(MachineType.ROUTER)) {
 			//Router always needs to talk to itself.
 			Rule routerRule = new Rule();
 			routerRule.setAction(Action.ACCEPT);
@@ -381,7 +371,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 	private Collection<Rule> getDefaultRules() {
 		Collection<Rule> rules = new ArrayList<>();
 		
-		if (me.isRouter()) {
+		if (getMachineModel().isType(MachineType.ROUTER)) {
 			if (this.hasRealUsers()) {
 				Rule userEgress = new Rule();
 				userEgress.setAction(Action.ACCEPT);
@@ -391,7 +381,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 				rules.add(userEgress);
 			}
 			
-			if (getNetworkModel().getExternalOnlyDevices().size() > 0) {
+			if (getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).size() > 0) {
 				Rule externalOnlyEgress = new Rule();
 				externalOnlyEgress.setAction(Action.ACCEPT);
 				externalOnlyEgress.setSourceZone(ParentZone.EXTERNAL_ONLY.toString());
@@ -404,16 +394,16 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return rules;
 	}
 	
-	private Collection<Rule> getRulesFile() throws InvalidServerException, InvalidServerModelException {
+	private Collection<Rule> getRulesFile() throws InvalidServerException, InvalidMachineModelException {
 		Collection<Rule> rules = new ArrayList<>();
 		
-		if (getNetworkModel().getServerModel(getLabel()).isRouter()) {
+		if (getMachineModel().isType(MachineType.ROUTER)) {
 			
 			rules.addAll(getDNSRules());
 			rules.addAll(getDefaultRules());
 			
 			// Iterate over every machine to build all of its rules
-			getNetworkModel().getUniqueMachines().values().forEach(machine -> {
+			getNetworkModel().getMachines().values().forEach((machine) -> {
 				Comment machineComment = new Comment(machine.getLabel());
 				rules.add(machineComment);
 				
@@ -488,8 +478,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zones.appendLine("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
 		zones.appendLine("#zone\ttype");
 		
-		if (this.vlans != null) {
-			this.vlans.forEach((vlan, type) -> {
+		if (getMachineModel().isType(MachineType.ROUTER)) {
+			myRouter.getVLANTrunk().getVLANs().forEach((vlan) -> {
 				zones.appendLine("#" + vlan.getIface());
 				zones.appendLine(cleanZone(vlan.getIface()) + "\tipv4");
 				
@@ -588,9 +578,9 @@ public class ShorewallFirewall extends AFirewallProfile {
 		}
 
 		// Then do everything else
-		if (this.vlans != null) {
-			this.vlans.forEach((nic, type) -> {
-				interfaces.appendLine(buildInterfaceLine(nic, type));
+		if (getMachineModel().isType(MachineType.ROUTER)) {
+			myRouter.getVLANTrunk().getVLANs().forEach((vlan) -> {
+				interfaces.appendLine(buildInterfaceLine(vlan));
 			});
 		}
 
@@ -702,10 +692,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 		for (final AMachineModel machine : machines) {
 			
 			try {
-				if (getNetworkModel().getServerModel(machine.getLabel()).isRouter()) {
+				if (getNetworkModel().getMachineModel(machine.getLabel()).isType(MachineType.ROUTER)) {
 					continue;
 				}
-			} catch (InvalidServerModelException e) {
+			} catch (InvalidMachineModelException e) {
 				//As you were. This is not the droid you're looking for.
 			}
 			
@@ -732,10 +722,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 		for (final AMachineModel machine : machines) {
 			
 			try {
-				if (getNetworkModel().getServerModel(machine.getLabel()).isRouter()) {
+				if (getNetworkModel().getMachineModel(machine.getLabel()).isType(MachineType.ROUTER)) {
 					continue;
 				}
-			} catch (InvalidServerModelException e) {
+			} catch (InvalidMachineModelException e) {
 				//As you were. This is not the droid you're looking for.
 			}
 			

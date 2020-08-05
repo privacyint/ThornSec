@@ -28,6 +28,6 @@ public abstract class AHypervisorProfile extends AStructuredProfile {
 	 */
 	@Override
 	public HypervisorModel getServerModel() {
-		return (HypervisorModel) getServerModel();
+		return (HypervisorModel) getMachineModel();
 	}
 }
