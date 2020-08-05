@@ -29,11 +29,11 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonValue;
-
+import inet.ipaddr.AddressStringException;
 import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
-
+import inet.ipaddr.IncompatibleAddressException;
 import core.data.AData;
 import core.data.machine.AMachineData;
 import core.data.machine.AMachineData.MachineType;
@@ -51,6 +51,7 @@ import core.exception.data.MissingPropertiesException;
 import core.exception.data.NoValidUsersException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.data.machine.InvalidUserException;
+import core.exception.runtime.InvalidTypeException;
 
 /**
  * This class represents the state of our network *AS DEFINED IN THE JSON*
@@ -257,16 +258,31 @@ public class NetworkData extends AData {
 
 	/**
 	 * Read in any Subnet declarations made in the JSON
+	 * @throws InvalidIPAddressException 
+	 * @throws InvalidTypeException 
+	 * @throws InvalidPropertyException 
 	 */
-	private void readSubnets() {
+	private void readSubnets() throws InvalidIPAddressException, InvalidPropertyException {
 		if (!getData().containsKey("subnets")) {
 			return;
 		}
 
 		final JsonObject jsonSubnets = getData().getJsonObject("subnets");
-		jsonSubnets.forEach((label, subnet) -> {
-			this.subnets.put(label, ((JsonString)subnet).getString());
-		});
+		
+		for (final String label : jsonSubnets.keySet()) {
+			String ip = ((JsonString)jsonSubnets.getJsonString(label)).getString();
+			readSubnet(label, ip);
+		}
+	}
+	
+	private void readSubnet(String label, String ip) throws InvalidIPAddressException, InvalidPropertyException {
+		try {
+			this.subnets.put(MachineType.fromString(label), new IPAddressString(ip).toAddress());
+		} catch (AddressStringException | IncompatibleAddressException e) {
+			throw new InvalidIPAddressException(ip + " is an invalid subnet");
+		} catch (InvalidTypeException e) {
+			throw new InvalidPropertyException(label + " is not a valid Machine Type");
+		}
 	}
 
 	@Deprecated //TODO: This is a property of a Router
