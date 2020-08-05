@@ -462,8 +462,8 @@ public class ServerData extends AMachineData {
 		return Optional.ofNullable(this.update);
 	}
 
-	public final Set<String> getProfiles() {
-		return this.profiles;
+	public final Optional<Set<String>> getProfiles() {
+		return Optional.ofNullable(this.profiles);
 	}
 
 	public final Optional<Collection<IPAddress>> getSSHSources() {
