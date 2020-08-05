@@ -256,7 +256,15 @@ public abstract class AMachineModel extends AModel {
 		this.throttled = throttled;
 	}
 
-	public abstract Collection<IUnit> getUnits() throws AThornSecException;
+	public Collection<IUnit> getUnits() throws AThornSecException {
+		final Collection<IUnit> typesUnits = new ArrayList<>();
+
+		for (final AProfile type : getTypes().values()) {
+			typesUnits.addAll(type.getUnits());
+		}
+
+		return typesUnits;
+	}
 
 	public Collection<IPAddress> getIPs() {
 		final Collection<IPAddress> ips = new ArrayList<>();
