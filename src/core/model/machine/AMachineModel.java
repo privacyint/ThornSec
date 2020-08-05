@@ -320,4 +320,24 @@ public abstract class AMachineModel extends AModel {
 		return null;
 	}
 
+	public final void addType(MachineType type, AProfile profile) {
+		if (this.types == null) {
+			this.types = new LinkedHashMap<>();
+		}
+
+		this.types.put(type, profile);
+	}
+	
+	public final Map<MachineType, AProfile> getTypes() {
+		return this.types;
+	}
+
+	public final Boolean isType(MachineType type) {
+		return getType(type) != null;
+	}
+
+	public AProfile getType(MachineType type) {
+		return this.types.getOrDefault(type, null);
+	}
+	
 }
