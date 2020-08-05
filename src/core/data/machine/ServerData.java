@@ -138,8 +138,18 @@ public class ServerData extends AMachineData {
 		
 		final JsonArray ifaces = data.getJsonArray(key);
 		for (int i = 0; i < ifaces.size(); ++i) {
-			NetworkInterfaceData nic = readNIC(direction, ifaces.getJsonObject(i));
-			putNetworkInterface(nic);
+			NetworkInterfaceData nicData = readNIC(direction, ifaces.getJsonObject(i));
+			
+			if (getNetworkInterface(nicData.getIface()).isEmpty()) {
+				putNetworkInterface(nicData);
+			}
+			else {
+				nicData.getAddresses().ifPresent(addresses -> {
+					getNetworkInterface(nicData.getIface())
+						.get()
+						.addAddress(addresses.toArray(IPAddress[]::new));
+				});
+			}
 		}
 	}
 	
