@@ -235,6 +235,10 @@ public abstract class AMachineModel extends AModel {
 	}
 
 	public final void putCNAME(String... cnames) {
+		if (this.cnames == null) {
+			this.cnames = new LinkedHashSet<>();
+		}
+		
 		for (final String cname : cnames) {
 			this.cnames.add(cname);
 		}
