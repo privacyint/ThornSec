@@ -7,15 +7,11 @@
  */
 package core.model.machine;
 
-import java.io.IOException;
 import java.util.Collection;
 
-import javax.json.stream.JsonParsingException;
-import javax.mail.internet.AddressException;
-
-import core.exception.data.ADataException;
-import core.exception.runtime.InvalidDeviceModelException;
-import core.exception.runtime.InvalidServerModelException;
+import core.data.machine.InternalDeviceData;
+import core.exception.AThornSecException;
+import core.exception.data.InvalidPortException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
 
@@ -26,14 +22,19 @@ import core.model.network.NetworkModel;
  * with no access to the wider net.
  */
 public class InternalOnlyDeviceModel extends ADeviceModel {
-	public InternalOnlyDeviceModel(String label, NetworkModel networkModel)
-			throws AddressException, JsonParsingException, ADataException, IOException, InvalidServerModelException, InvalidDeviceModelException {
-		super(label, networkModel);
+	public InternalOnlyDeviceModel(InternalDeviceData internalDeviceData, NetworkModel networkModel) throws AThornSecException {
+		super(internalDeviceData, networkModel);
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() {
+	protected Collection<IUnit> getPersistentFirewall() throws InvalidPortException {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public void init() throws AThornSecException {
+		// TODO Auto-generated method stub
+		
 	}
 }

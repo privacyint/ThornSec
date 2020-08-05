@@ -7,15 +7,11 @@
  */
 package core.model.machine;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import javax.json.stream.JsonParsingException;
-import javax.mail.internet.AddressException;
 
 import com.metapossum.utils.scanner.reflect.ClassesInPackageScanner;
 
@@ -59,10 +55,10 @@ public class ServerModel extends AMachineModel {
 	// private final ConfigFiles configFiles;
 	private final UserAccounts users;
 
-	public ServerModel(String label, NetworkModel networkModel) throws AThornSecException, AddressException, JsonParsingException, IOException, URISyntaxException {
-		super(label, networkModel);
+	private Map<String, AProfile> profiles;
 
-		final String firewall = getNetworkModel().getData().getFirewallProfile(getLabel());
+	public ServerModel(ServerData myData, NetworkModel networkModel) throws AThornSecException {
+		super(myData, networkModel);
 
 		// It's going to be *exceedingly* rare that this is set, but it should be
 		// customisable tbf
