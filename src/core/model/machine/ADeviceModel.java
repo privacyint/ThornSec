@@ -20,7 +20,6 @@ import core.exception.runtime.InvalidDeviceModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
-import profile.type.Device;
 
 /**
  * This model represents a device on our network.
@@ -30,15 +29,12 @@ import profile.type.Device;
  */
 abstract public class ADeviceModel extends AMachineModel {
 	private Boolean managed;
-	@SuppressWarnings("unused")
-	private final Device me;
 
 	public ADeviceModel(ADeviceData myData, NetworkModel networkModel)
 			throws AThornSecException  {
 		super(myData, networkModel);
 
 		this.managed = myData.isManaged().orElse(false);
-		this.me = new Device(getLabel(), networkModel);
 	}
 
 	final public Boolean isManaged() throws InvalidMachineException {
