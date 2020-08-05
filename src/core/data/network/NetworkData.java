@@ -209,7 +209,9 @@ public class NetworkData extends AData {
 			final UserDeviceData device = new UserDeviceData(jsonDevice);
 			device.read(jsonDevices.getJsonObject(jsonDevice));
 
-			putMachine(device);
+			if (device.getNetworkInterfaces().isPresent()) {
+				putMachine(device);
+			}
 		}
 	}
 	
