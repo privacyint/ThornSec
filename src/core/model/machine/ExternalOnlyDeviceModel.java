@@ -35,4 +35,9 @@ public class ExternalOnlyDeviceModel extends ADeviceModel {
 		
 		return null;
 	}
+
+	@Override
+	public void init() throws AThornSecException {
+		// TODO Auto-generated method stub
+	}
 }
