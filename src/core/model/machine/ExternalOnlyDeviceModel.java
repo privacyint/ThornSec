@@ -7,15 +7,12 @@
  */
 package core.model.machine;
 
-import java.io.IOException;
 import java.util.Collection;
 
-import javax.json.stream.JsonParsingException;
-import javax.mail.internet.AddressException;
-
-import core.exception.data.ADataException;
-import core.exception.runtime.InvalidDeviceModelException;
-import core.exception.runtime.InvalidServerModelException;
+import core.data.machine.ExternalDeviceData;
+import core.data.machine.configuration.TrafficRule;
+import core.exception.AThornSecException;
+import core.exception.data.InvalidPortException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
 
@@ -26,9 +23,8 @@ import core.model.network.NetworkModel;
  * not allowed to access internal services.
  */
 public class ExternalOnlyDeviceModel extends ADeviceModel {
-	public ExternalOnlyDeviceModel(String label, NetworkModel networkModel)
-			throws AddressException, JsonParsingException, ADataException, IOException, InvalidServerModelException, InvalidDeviceModelException {
-		super(label, networkModel);
+	public ExternalOnlyDeviceModel(ExternalDeviceData myData, NetworkModel networkModel) throws AThornSecException {
+		super(myData, networkModel);
 	}
 
 	@Override
