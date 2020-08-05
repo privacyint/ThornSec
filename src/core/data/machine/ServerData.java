@@ -380,6 +380,10 @@ public class ServerData extends AMachineData {
 	}
 
 	private void putProfile(String... profiles) {
+		if (this.profiles == null) {
+			this.profiles = new LinkedHashSet<>();
+		}
+		
 		for (final String profile : profiles) {
 			this.profiles.add(profile);
 		}
