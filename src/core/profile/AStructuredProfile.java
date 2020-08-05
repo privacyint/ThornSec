@@ -99,4 +99,12 @@ public abstract class AStructuredProfile extends AProfile {
 	protected Collection<IUnit> getLiveFirewall() throws AThornSecException {
 		return new ArrayList<>();
 	}
+	
+	/**
+	 * Get the ServerModel on which this profile resides
+	 * @return
+	 */
+	public ServerModel getServerModel() {
+		return (ServerModel)getMachineModel();
+	}
 }
