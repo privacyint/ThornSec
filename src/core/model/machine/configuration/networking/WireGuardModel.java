@@ -35,8 +35,8 @@ public class WireGuardModel extends NetworkInterfaceModel {
 		this.listenPort = null;
 	}
 
-	public WireGuardModel() {
-		this(null, null);
+	public WireGuardModel(NetworkModel networkModel) {
+		this(new NetworkInterfaceData("wg"), networkModel);
 	}
 
 	public void setListenPort(Integer listenPort) {

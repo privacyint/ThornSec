@@ -38,7 +38,7 @@ public class MACVLANTrunkModel extends NetworkInterfaceModel {
 	}
 	
 	public MACVLANTrunkModel() {
-		this(null, null);
+		this(new NetworkInterfaceData("MACVLANTrunk"), null);
 	}
 
 	@Override

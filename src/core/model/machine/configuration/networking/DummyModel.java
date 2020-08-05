@@ -28,7 +28,7 @@ public class DummyModel extends NetworkInterfaceModel {
 	}
 
 	public DummyModel() {
-		this(null, null);
+		this(new NetworkInterfaceData("dummy"), null);
 	}
 
 	@Override

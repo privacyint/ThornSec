@@ -30,7 +30,7 @@ public class MACVLANModel extends NetworkInterfaceModel {
 	}
 
 	public MACVLANModel() {
-		this(null, null);
+		this(new NetworkInterfaceData("MACVLAN"), null);
 	}
 	
 	public void setType(MachineType type) {
