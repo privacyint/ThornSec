@@ -24,6 +24,7 @@ public class UserData extends AData {
 	private String homeDir;
 	private String defaultPassword;
 	private String wireguardKey;
+	private String wireguardIP;
 	
 
 	/**
@@ -39,6 +40,7 @@ public class UserData extends AData {
 		this.homeDir = null;
 		this.defaultPassword = null;
 		this.wireguardKey = null;
+		this.wireguardIP = null;
 	}
 
 	@Override
@@ -48,7 +50,19 @@ public class UserData extends AData {
 		this.sshKey = data.getString("ssh", null);
 		this.homeDir = data.getString("home_dir", null);
 		this.defaultPassword = data.getString("defaultpw", null);
-		this.wireguardKey = data.getString("wireguard", null);
+		
+		readWireguard(data);
+	}
+
+	private void readWireguard(JsonObject data) {
+		if (!data.containsKey("wireguard")) {
+			return;
+		}
+		
+		JsonObject wireguardData = data.getJsonObject("wireguard");
+		
+		this.wireguardKey = wireguardData.getString("key", null);
+		this.wireguardIP = wireguardData.getString("ip", null);
 	}
 
 	/**
@@ -72,6 +86,14 @@ public class UserData extends AData {
 	 */
 	public final Optional<String> getWireGuardKey() {
 		return Optional.ofNullable(this.wireguardKey);
+	}
+
+	/**
+	 * Get a User's WireGuard IP address, if set
+	 * @return
+	 */
+	public final Optional<String> getWireGuardIP() {
+		return Optional.ofNullable(this.wireguardIP);
 	}
 
 	/**
