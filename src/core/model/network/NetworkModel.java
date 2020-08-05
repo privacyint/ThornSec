@@ -59,7 +59,8 @@ import inet.ipaddr.IncompatibleAddressException;
 public class NetworkModel {
 	private final String label;
 	private NetworkData data;
-	private Map<MachineType, Map<String, AMachineModel>> machines;
+	private Map<String, UserModel> users;
+	private Map<String, AMachineModel> machines;
 	private Map<String, Collection<IUnit>> networkUnits;
 
 	private Map<MachineType, IPAddress> defaultSubnets;
@@ -67,6 +68,8 @@ public class NetworkModel {
 	NetworkModel(String label) {
 		this.label = label;
 
+		this.users = new LinkedHashMap<>();
+		
 		this.machines = null;
 		this.networkUnits = null;
 		
@@ -99,14 +102,14 @@ public class NetworkModel {
 		return this.label;
 	}
 
-		final Map<String, AMachineData> servers = getData().getServers();
-		if (servers != null) {
+	final public Map<String, UserModel> getUsers() {
+		return this.users;
 			for (final String serverLabel : servers.keySet()) {
 				ServerModel server = null;
 				
 				if (this.getData().getTypes(serverLabel).contains(MachineType.SERVICE)) {
 					server = new ServiceModel(serverLabel, this);
-				}
+	}
 				else {
 					server = new ServerModel(serverLabel, this);
 				}
