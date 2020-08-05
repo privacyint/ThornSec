@@ -66,6 +66,10 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 				// It's not a server, so can't possibly be a Router
 			}
 
+			if (machine.getNetworkInterfaces() == null) {
+				continue;
+			}
+
 			for (final NetworkInterfaceModel nic : machine.getNetworkInterfaces()) {
 				// DHCP servers distribute IP addresses, correct? :)
 				if (nic.getAddresses() == null) {
