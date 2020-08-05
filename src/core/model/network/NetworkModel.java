@@ -104,38 +104,37 @@ public class NetworkModel {
 
 	final public Map<String, UserModel> getUsers() {
 		return this.users;
-			for (final String serverLabel : servers.keySet()) {
-				ServerModel server = null;
-				
-				if (this.getData().getTypes(serverLabel).contains(MachineType.SERVICE)) {
-					server = new ServiceModel(serverLabel, this);
 	}
-				else {
-					server = new ServerModel(serverLabel, this);
-				}
-				
-				addMachineToNetwork(MachineType.SERVER, serverLabel, server);
-				for (final MachineType type : getData().getTypes(serverLabel)) {
-					addMachineToNetwork(type, serverLabel, server);
-				}
-			}
-		}
 
+	/**
+	 * Initialises the various models across our network, building and initialising
+	 * all of our machines
+	 *
+	 * @throws AThornSecException
+	 */
+	void init() throws AThornSecException {
+
+		buildExternalOnlyDevices();
+		buildInternalOnlyDevices();
+		buildUserDevices();
+		buildUsers();
+		buildServers();
+		
 		// Now, step through our devices, initialise them, and run through their units.
-		for (final ADeviceModel device : getDevices().values()) {
+		for (final AMachineModel device : getMachines(MachineType.DEVICE).values()) {
 			device.init();
-			putUnits(device.getLabel(), device.getUnits());
+			putUnits(label, device.getUnits());
 		}
 
 		// We want to initialise the whole network first before we start getting units
-		for (final ServerModel server : getServers().values()) {
+		for (final AMachineModel server : getMachines(MachineType.SERVER).values()) {
 			server.init();
 		}
 
 		// We want to separate the Routers out; they need to be the very last thing, as
 		// it relies on everythign else being inited & configured
-		for (final ServerModel server : getServers().values()) {
-			if (!server.isRouter()) {
+		for (final AMachineModel server : getMachines(MachineType.SERVER).values()) {
+			if (!server.isType(MachineType.ROUTER)) {
 				putUnits(server.getLabel(), server.getUnits());
 			}
 		}
@@ -144,7 +143,81 @@ public class NetworkModel {
 		for (final AMachineModel router : getMachines(MachineType.ROUTER).values()) {
 			putUnits(router.getLabel(), router.getUnits());
 		}
+	}
 
+	final public UserModel getConfigUserModel() throws NoValidUsersException {
+		return this.users.get(getData().getUser());
+	}
+		}
+	private void buildUsers() throws AThornSecException {
+		for (String username : getData().getUsers().keySet()) {
+			this.users.put(username, new UserModel(getData().getUsers().get(username)));
+		}
+	}
+
+	private void buildInternalOnlyDevices() throws AThornSecException {
+		final Optional<Map<String, AMachineData>> internals = getData().getMachines(MachineType.INTERNAL_ONLY);
+		if (internals.isPresent()) {
+			for (String label : internals.get().keySet()) {
+				addMachine(new InternalOnlyDeviceModel((InternalDeviceData)getData().getMachineData(label), this));
+			}
+		}
+	}
+
+	private void buildUserDevices() throws AThornSecException {
+		final Optional<Map<String, AMachineData>> users = getData().getMachines(MachineType.USER);
+		if (users.isPresent()) {
+			for (String label : users.get().keySet()) {
+				addMachine(new UserDeviceModel((UserDeviceData)getData().getMachineData(label), this));
+			}
+		}
+	}
+
+	private void buildServers() throws AThornSecException {
+		final Optional<Map<String, AMachineData>> servers = getData().getMachines(MachineType.SERVER);
+		if (servers.isEmpty()) {
+			return;
+		}
+
+		for (AMachineData serverData : servers.get().values()) {
+			if (serverData.isType(MachineType.SERVICE)) {
+				addMachine(new ServiceModel((ServiceData)serverData, this));
+			}
+			else if (serverData.isType(MachineType.HYPERVISOR)) {
+				addMachine(new HypervisorModel((HypervisorData)serverData, this));
+			}
+			else {
+				addMachine(new ServerModel((ServerData)serverData, this));
+			}
+		}
+
+
+
+		for (AMachineModel service : getMachines(MachineType.SERVICE).values()) {
+			String hypervisorLabel = ((ServiceData)getData().getMachineData(service.getLabel()))
+										.getHypervisor()
+										.getLabel();
+			
+			((ServiceModel)service).setHypervisor((HypervisorModel) getMachineModel(hypervisorLabel));
+		}
+	}
+
+	private void buildExternalOnlyDevices() throws AThornSecException {
+		final Optional<Map<String, AMachineData>> externals = getData().getMachines(MachineType.EXTERNAL_ONLY);
+		if (externals.isEmpty()) {
+			return;
+		}
+
+		for (String label : externals.get().keySet()) {
+			addMachine(new ExternalOnlyDeviceModel((ExternalDeviceData)getData().getMachineData(label), this));
+		}
+	}
+
+	private void addMachine(AMachineModel machine) {
+		if (this.machines == null) {
+			this.machines = new LinkedHashMap<>();
+		}
+		this.machines.put(machine.getLabel(), machine);
 	}
 
 	private void putUnits(String label, Collection<IUnit> units) {
@@ -153,21 +226,6 @@ public class NetworkModel {
 		}
 
 		this.networkUnits.put(label, units);
-	}
-
-	private void addMachineToNetwork(MachineType type, String label, AMachineModel machine) {
-		if (this.machines == null) {
-			this.machines = new LinkedHashMap<>();
-		}
-
-		Map<String, AMachineModel> machines = getMachines(type);
-		if (machines == null) {
-			machines = new LinkedHashMap<>();
-		}
-
-		machines.put(label, machine);
-
-		this.machines.put(type, machines);
 	}
 
 	public Collection<NetworkInterfaceModel> getNetworkInterfaces(String machine) throws InvalidMachineModelException {
@@ -185,22 +243,8 @@ public class NetworkModel {
 	 *         from this method; you are far better to use one of the specialised
 	 *         methods
 	 */
-	public final Map<MachineType, Map<String, AMachineModel>> getMachines() {
+	public final Map<String, AMachineModel> getMachines() {
 		return this.machines;
-	}
-
-	/**
-	 * @return the whole network. Be aware that you will have to cast the values
-	 *         from this method; you are far better to use one of the specialised
-	 *         methods
-	 */
-	public final Map<String, AMachineModel> getUniqueMachines() {
-		final Map<String, AMachineModel> machines = new LinkedHashMap<>();
-
-		machines.putAll(getServers());
-		machines.putAll(getDevices());
-
-		return machines;
 	}
 
 	/**
@@ -208,184 +252,30 @@ public class NetworkModel {
 	 * @return A map of all machines of a given type
 	 */
 	public Map<String, AMachineModel> getMachines(MachineType type) {
-		return getMachines().getOrDefault(type, new LinkedHashMap<>());
+		Map<String, AMachineModel> machines = getMachines().entrySet()
+				.stream()
+				.filter(kvp -> kvp.getValue().isType(type))
+				.collect(Collectors.toMap(
+						kvp -> kvp.getKey(),
+						kvp -> kvp.getValue()
+				));
+	
+		return machines;
 	}
 
-	/**
-	 * @param type
-	 * @return A map of all servers of a given type
-	 */
-	public Map<String, ServerModel> getServers(MachineType type) {
-		final Map<String, ServerModel> servers = new LinkedHashMap<>();
-
-		if ((getMachines() != null) && (getMachines().get(type) != null)) {
-			for (final AMachineModel server : getMachines(type).values()) {
-				servers.put(server.getLabel(), (ServerModel) server);
-			}
-		}
-
-		return servers;
-	}
-
-	/**
-	 * @return A linked map containing all server models for this network. Because
-	 *         it is a linked map, it has predictable iteration meaning we can use
-	 *         it to e.g. generate IP Addresses
-	 */
-	public final Map<String, ServerModel> getServers() {
-		return getServers(MachineType.SERVER);
-	}
-
-	/**
-	 * @return A linked map containing all server models for this network, without
-	 *         any Routers. Because it is a linked map, it has predictable iteration
-	 *         meaning we can use it to e.g. generate IP Addresses
-	 */
-	public final Map<String, ServerModel> getNonRouterServers() {
-		final Map<String, ServerModel> servers = new HashMap<>();
-
-		getServers(MachineType.SERVER).forEach((label, server) -> {
-			if (!server.isRouter()) {
-				servers.put(label, server);
-			}
-		});
-
-		return servers;
-	}
-
-	/**
-	 * @return A linked map containing all admin machines for this network. Because
-	 *         it is a linked map, it has predictable iteration meaning we can use
-	 *         it to e.g. generate IP Addresses
-	 */
-	public final Map<String, ADeviceModel> getAdminDevices() {
-		return getDevices(MachineType.ADMIN);
-	}
-
-	/**
-	 * @return A linked map containing all device models *of a particular type* for
-	 *         this network. Because it is a linked map, it has predictable
-	 *         iteration meaning we can use it to e.g. generate IP Addresses
-	 */
-	public final Map<String, ADeviceModel> getDevices(MachineType type) {
-		final Map<String, ADeviceModel> devices = new LinkedHashMap<>();
-
-		if (getMachines().get(type) != null) {
-			for (final AMachineModel device : getMachines(type).values()) {
-				devices.put(device.getLabel(), (ADeviceModel) device);
-			}
-		}
-
-		return devices;
-	}
-
-	/**
-	 * @return a linked map of all devices (e.g. non-servers) on our network.
-	 *         Because it is a linked map, it has predictable iteration meaning we
-	 *         can use it to e.g. generate IP Addresses
-	 */
-	public final Map<String, ADeviceModel> getDevices() {
-		return getDevices(MachineType.DEVICE);
-	}
-
-	/**
-	 * @return A linked map containing all server models for this network. Because
-	 *         it is a linked map, it has predictable iteration meaning we can use
-	 *         it to e.g. generate IP Addresses
-	 */
-	public final Map<String, UserDeviceModel> getUserDevices() {
-		final Map<String, UserDeviceModel> userDevices = new LinkedHashMap<>();
-
-		for (final ADeviceModel device : getDevices(MachineType.USER).values()) {
-			userDevices.put(device.getLabel(), (UserDeviceModel) device);
-		}
-
-		return userDevices;
-	}
-
-	/**
-	 * @return A linked map containing all internal-only device models for this
-	 *         network. Because it is a linked map, it has predictable iteration
-	 *         meaning we can use it to e.g. generate IP Addresses
-	 */
-	public final Map<String, InternalOnlyDeviceModel> getInternalOnlyDevices() {
-		final Map<String, InternalOnlyDeviceModel> internalOnlyDevices = new LinkedHashMap<>();
-
-		for (final ADeviceModel device : getDevices(MachineType.INTERNAL_ONLY).values()) {
-			internalOnlyDevices.put(device.getLabel(), (InternalOnlyDeviceModel) device);
-		}
-
-		return internalOnlyDevices;
-	}
-
-	/**
-	 * @return A linked map containing all external-only device models for this
-	 *         network. Because it is a linked map, it has predictable iteration
-	 *         meaning we can use it to e.g. generate IP Addresses
-	 */
-	public final Map<String, ExternalOnlyDeviceModel> getExternalOnlyDevices() {
-		final Map<String, ExternalOnlyDeviceModel> externalOnlyDevices = new LinkedHashMap<>();
-
-		for (final ADeviceModel device : getDevices(MachineType.EXTERNAL_ONLY).values()) {
-			externalOnlyDevices.put(device.getLabel(), (ExternalOnlyDeviceModel) device);
-		}
-
-		return externalOnlyDevices;
-	}
 
 	/**
 	 * @return A specific machine model.
 	 */
 	public final AMachineModel getMachineModel(String machine) throws InvalidMachineModelException {
-		for (final Map<String, AMachineModel> machines : getMachines().values()) {
-			if (machines.containsKey(machine)) {
-				return machines.get(machine);
-			}
+		if (getMachines().containsKey(machine)) {
+			return machines.get(machine);
 		}
 
 		throw new InvalidMachineModelException(machine + " is not a machine on your network");
 	}
 
-	/**
-	 * @return A specific server model.
-	 */
-	public final ServerModel getServerModel(String server) throws InvalidServerModelException {
-		if (getServers().containsKey(server)) {
-			return getServers().get(server);
-		}
-
-		throw new InvalidServerModelException(server + " is not a server on your network");
-	}
-
-	/**
-	 * @param serviceLabel
-	 * @return a given ServiceModel
-	 * @throws InvalidMachineModelException 
-	 */
-	public final ServiceModel getServiceModel(String serviceLabel) throws InvalidMachineModelException  {
-		AMachineModel service = null;
-
-		service = getMachineModel(serviceLabel);
-
-		if (service instanceof ServiceModel) {
-			return (ServiceModel)service;
-		}
-
-		throw new InvalidServerModelException(serviceLabel + " isn't a service");
-	}
-	
-	/**
-	 * @return A specific device model.
-	 */
-	public final ADeviceModel getDeviceModel(String device) throws InvalidDeviceModelException {
-		if (getDevices(MachineType.DEVICE).containsKey(device)) {
-			return getDevices(MachineType.DEVICE).get(device);
-		}
-
-		throw new InvalidDeviceModelException(device + " is not a device on your network");
-	}
-
-	public final void auditNonBlock(String server, OutputStream out, InputStream in, boolean quiet) throws InvalidServerModelException {
+	public final void auditNonBlock(String server, OutputStream out, InputStream in, boolean quiet) throws InvalidMachineModelException {
 		ManageExec exec = null;
 		try {
 			exec = getManageExec(server, "audit", out, quiet);
