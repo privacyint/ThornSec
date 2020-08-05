@@ -277,7 +277,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		this.netmask = netmask;
 	}
 
-	protected void setSubnet(IPAddress subnet) {
+	public void setSubnet(IPAddress subnet) {
 		assertNotNull(subnet);
 		
 		this.subnet = subnet;
