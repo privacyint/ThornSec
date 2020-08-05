@@ -52,7 +52,7 @@ public abstract class AStructuredProfile extends AProfile {
 	/**
 	 * This is units relating to installing software for this profile
 	 */
-	protected Collection<IUnit> getInstalled() throws AThornSecException {
+	public Collection<IUnit> getInstalled() throws AThornSecException {
 		return new ArrayList<>();
 	}
 
