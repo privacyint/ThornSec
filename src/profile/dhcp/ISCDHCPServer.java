@@ -9,10 +9,12 @@ package profile.dhcp;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import core.StringUtils;
 import core.data.machine.AMachineData.MachineType;
+import core.data.machine.ServerData;
 import core.exception.AThornSecException;
 import core.exception.data.InvalidIPAddressException;
 import core.exception.data.machine.InvalidServerException;
@@ -166,39 +168,9 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 			}
 		}
 		
-		/*
-		if (!getNetworkModel().getMachines(MachineType.SERVER).isEmpty()) {
-			buildNet(MachineType.SERVER.toString(),
-					new IPAddressString(getNetworkModel().getData().getServerSubnet()).getAddress(),
-					getNetworkModel().getMachines(MachineType.SERVER).values());
 	}
 
 	private FileUnit getDHCPConf() throws InvalidMachineModelException {
-				&& !getNetworkModel().getServerModel(getLabel()).isHyperVisor()) {
-			buildNet(MachineType.USER.toString(),
-					new IPAddressString(getNetworkModel().getData().getUserSubnet()).getAddress(),
-					getNetworkModel().getMachines(MachineType.USER).values());
-		}
-
-		if (!getNetworkModel().getMachines(MachineType.ADMIN).isEmpty()) {
-			buildNet(MachineType.ADMIN.toString(),
-					new IPAddressString(getNetworkModel().getData().getAdminSubnet()).getAddress(),
-					getNetworkModel().getMachines(MachineType.ADMIN).values());
-		}
-
-		if (!getNetworkModel().getMachines(MachineType.INTERNAL_ONLY).isEmpty()) {
-			buildNet(MachineType.INTERNAL_ONLY.toString(),
-					new IPAddressString(getNetworkModel().getData().getInternalSubnet()).getAddress(),
-					getNetworkModel().getMachines(MachineType.INTERNAL_ONLY).values());
-		}
-
-		if (!getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).isEmpty()) {
-			buildNet(MachineType.EXTERNAL_ONLY.toString(),
-					new IPAddressString(getNetworkModel().getData().getExternalSubnet()).getAddress(),
-					getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).values());
-		}
-	}
-
 		final FileUnit dhcpdConf = new FileUnit("dhcpd_conf", "dhcp_installed", "/etc/dhcp/dhcpd.conf");
 
 		dhcpdConf.appendLine("#Options here are set globally across your whole network(s)");
