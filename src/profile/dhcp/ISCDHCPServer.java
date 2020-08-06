@@ -80,6 +80,14 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		}
 	}
 
+	private Boolean isAssigned(IPAddress ip) {
+		return getNetworkModel().getMachines()
+						 .values()
+						 .stream()
+						 .filter(machine -> machine.getIPs().contains(ip))
+						 .count() > 0;
+	}
+	
 	/**
 	 * Check whether a given machine has a MAC address set for each of its
 	 * interfaces.
