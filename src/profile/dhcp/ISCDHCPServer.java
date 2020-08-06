@@ -160,7 +160,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 
 	private void buildPersistentNets() throws InvalidIPAddressException, InvalidServerException {
 		
-		for (MachineType type : MachineType.values()) {
+		for (MachineType type : getNetworkModel().getSubnets().keySet()) {
 			if (getNetworkModel().getMachines(type) != null && !getNetworkModel().getMachines(type).isEmpty()) {
 				buildNet(type);
 			}
