@@ -153,7 +153,7 @@ public class NetworkModel {
 	final public UserModel getConfigUserModel() throws NoValidUsersException {
 		return this.users.get(getData().getUser());
 	}
-		}
+
 	private void buildUsers() throws AThornSecException {
 		for (String username : getData().getUsers().keySet()) {
 			this.users.put(username, new UserModel(getData().getUsers().get(username)));
