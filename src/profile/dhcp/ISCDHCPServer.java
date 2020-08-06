@@ -91,7 +91,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	 */
 	private Boolean checkMACs(AMachineModel machine, Boolean isRequired) throws InvalidNetworkInterfaceException {
 		for (final NetworkInterfaceModel nic : machine.getNetworkInterfaces()) {
-			if (nic.getMac() == null) {
+			if (nic.getMac().isEmpty()) {
 				if (isRequired) {
 					throw new InvalidNetworkInterfaceException("Network interface " + nic.getIface() + " on "
 							+ machine.getLabel() + " requires a MAC address to be set.");
@@ -129,7 +129,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		for (final AMachineModel server : getNetworkModel().getMachines(MachineType.SERVICE).values()) {
 			if (checkMACs(server, false) == false) {
 				for (final NetworkInterfaceModel nic : server.getNetworkInterfaces()) {
-					if (nic.getMac() == null) {
+					if (nic.getMac().isEmpty()) {
 						nic.setMac(server.generateMAC(nic.getIface()));
 					}
 				}
