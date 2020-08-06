@@ -158,8 +158,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		return units;
 	}
 
-	private void buildPersistentNets()
-			throws InvalidServerException, IncompatibleAddressException, InvalidServerModelException {
+	private void buildPersistentNets() throws InvalidIPAddressException, InvalidServerException {
 		
 		for (MachineType type : MachineType.values()) {
 			if (getNetworkModel().getMachines(type) != null && !getNetworkModel().getMachines(type).isEmpty()) {
@@ -346,12 +345,12 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
+	public Collection<IUnit> getPersistentFirewall() {
 		return new ArrayList<>();
 	}
 
 	@Override
-	public Collection<IUnit> getLiveFirewall() throws AThornSecException {
+	public Collection<IUnit> getLiveFirewall() {
 		// There aren't any :)
 		return new ArrayList<>();
 	}
