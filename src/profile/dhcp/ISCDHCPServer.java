@@ -49,9 +49,9 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	}
 
 	private void buildNet(MachineType type)
-			throws InvalidServerException {
+			throws InvalidServerException, InvalidIPAddressException {
 		// First IP belongs to this net's router, so start from there (as it's assigned)
-		IPAddress ip = new IPAddressString(getNetworkModel().getData().getSubnet(type)).getAddress().getLowerNonZeroHost();
+		IPAddress ip = getNetworkModel().getSubnet(type).getLowerNonZeroHost();
 
 		addSubnet(type, getSubnet(type));
 		addToSubnet(type, getNetworkModel().getMachines(type).values());
@@ -72,8 +72,12 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 
 			for (final NetworkInterfaceModel nic : machine.getNetworkInterfaces()) {
 				// DHCP servers distribute IP addresses, correct? :)
-				if (nic.getAddresses() == null) {
-					ip = ip.increment(1);
+				if (nic.getAddresses().isEmpty()) {
+					do {
+						ip = ip.increment(1);
+					}
+					while (isAssigned(ip));
+						
 					nic.addAddress(ip);
 				}
 			}
