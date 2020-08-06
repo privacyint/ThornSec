@@ -72,10 +72,6 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 		return this.subnetsMachines.get(type);
 	}
 
-	protected final IPAddress getGateway(String subnetName) {
-		return this.subnets.get(subnetName);
-	}
-
 	/**
 	 *
 	 * @param subnetName
