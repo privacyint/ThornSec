@@ -33,7 +33,8 @@ public class UserDeviceModel extends ADeviceModel {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() {
+	protected Collection<IUnit> getPersistentFirewall() throws InvalidPortException {
+		// TODO Auto-generated method stub
 		return null;
 	}
 }
