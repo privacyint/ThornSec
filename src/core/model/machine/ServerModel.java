@@ -139,10 +139,7 @@ public class ServerModel extends AMachineModel {
 
 	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineException {
 		if (getData().getExternalIPs().isEmpty()) {
-		//	addIngress("*");
 		}
-
-		//addEgress("*:25");
 
 		return null;
 	}

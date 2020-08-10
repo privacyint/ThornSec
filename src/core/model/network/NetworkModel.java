@@ -49,7 +49,6 @@ import core.model.machine.InternalOnlyDeviceModel;
 import core.model.machine.ServerModel;
 import core.model.machine.ServiceModel;
 import core.model.machine.UserDeviceModel;
-import core.model.machine.configuration.networking.MACVLANModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import inet.ipaddr.AddressStringException;
 import inet.ipaddr.IPAddress;

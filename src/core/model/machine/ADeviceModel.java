@@ -15,14 +15,9 @@ import core.exception.AThornSecException;
 import core.exception.data.InvalidPortException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
-import profile.type.Dedicated;
 import profile.type.Device;
 import profile.type.ExternalOnly;
-import profile.type.Hypervisor;
 import profile.type.InternalOnly;
-import profile.type.Router;
-import profile.type.Server;
-import profile.type.Service;
 import profile.type.User;
 
 /**
