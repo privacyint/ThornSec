@@ -46,6 +46,6 @@ abstract public class ADeviceModel extends AMachineModel {
 				.count() > 0;
 	}
 
-	protected abstract Collection<IUnit> getPersistentFirewall();
+	protected abstract Collection<IUnit> getPersistentFirewall() throws InvalidPortException;
 
 }
