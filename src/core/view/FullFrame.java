@@ -31,6 +31,7 @@ import core.data.machine.ServerData;
 import core.exception.runtime.InvalidDeviceModelException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
+import core.model.machine.AMachineModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.model.network.ThornsecModel;
@@ -230,8 +231,8 @@ public class FullFrame {
 		final JPanel serverPanel = getNewPanel();
 		final DefaultMutableTreeNode serverRoot = new DefaultMutableTreeNode(model.getLabel());
 
-		for (final String server : model.getMachines(MachineType.SERVER).keySet()) {
-			serverRoot.add(new DefaultMutableTreeNode(server));
+		for (final AMachineModel server : model.getMachines(MachineType.SERVER)) {
+			serverRoot.add(new DefaultMutableTreeNode(server.getLabel()));
 //		for (ServerModel router : model.getRouterServers()) {
 //			if (!router.isMetal()) {
 //				serverRoot.add(new DefaultMutableTreeNode(router.getLabel()));

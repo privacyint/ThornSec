@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import core.data.machine.AMachineData;
@@ -126,26 +127,26 @@ public class NetworkModel {
 		buildServers();
 		
 		// Now, step through our devices, initialise them, and run through their units.
-		for (final AMachineModel device : getMachines(MachineType.DEVICE).values()) {
+		for (final AMachineModel device : getMachines(MachineType.DEVICE)) {
 			device.init();
 			putUnits(label, device.getUnits());
 		}
 
 		// We want to initialise the whole network first before we start getting units
-		for (final AMachineModel server : getMachines(MachineType.SERVER).values()) {
+		for (final AMachineModel server : getMachines(MachineType.SERVER)) {
 			server.init();
 		}
 
 		// We want to separate the Routers out; they need to be the very last thing, as
 		// it relies on everythign else being inited & configured
-		for (final AMachineModel server : getMachines(MachineType.SERVER).values()) {
+		for (final AMachineModel server : getMachines(MachineType.SERVER)) {
 			if (!server.isType(MachineType.ROUTER)) {
 				putUnits(server.getLabel(), server.getUnits());
 			}
 		}
 
 		// Finally, let's build our Routers
-		for (final AMachineModel router : getMachines(MachineType.ROUTER).values()) {
+		for (final AMachineModel router : getMachines(MachineType.ROUTER)) {
 			putUnits(router.getLabel(), router.getUnits());
 		}
 	}
@@ -198,7 +199,7 @@ public class NetworkModel {
 
 
 
-		for (AMachineModel service : getMachines(MachineType.SERVICE).values()) {
+		for (AMachineModel service : getMachines(MachineType.SERVICE)) {
 			String hypervisorLabel = ((ServiceData)getData().getMachineData(service.getLabel()))
 										.getHypervisor()
 										.getLabel();
@@ -256,14 +257,11 @@ public class NetworkModel {
 	 * @param type
 	 * @return A map of all machines of a given type
 	 */
-	public Map<String, AMachineModel> getMachines(MachineType type) {
-		Map<String, AMachineModel> machines = getMachines().entrySet()
+	public Set<AMachineModel> getMachines(MachineType type) {
+		Set<AMachineModel> machines = getMachines().values()
 				.stream()
-				.filter(kvp -> kvp.getValue().isType(type))
-				.collect(Collectors.toMap(
-						kvp -> kvp.getKey(),
-						kvp -> kvp.getValue()
-				));
+				.filter(machine -> machine.isType(type))
+				.collect(Collectors.toSet());
 	
 		return machines;
 	}
@@ -294,10 +292,10 @@ public class NetworkModel {
 	}
 
 	public final void auditAll(OutputStream out, InputStream in, boolean quiet) throws InvalidMachineModelException {
-		for (final String server : getMachines(MachineType.SERVER).keySet()) {
+		for (final AMachineModel server : getMachines(MachineType.SERVER)) {
 			ManageExec exec = null;
 			try {
-				exec = getManageExec(server, "audit", out, quiet);
+				exec = getManageExec(server.getLabel(), "audit", out, quiet);
 			} catch (InvalidServerModelException | IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

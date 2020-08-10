@@ -125,23 +125,23 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 
 		// Start by checking all of the devices have a MAC address provided, as these
 		// are physical devices!
-		for (final AMachineModel device : getNetworkModel().getMachines(MachineType.DEVICE).values()) {
+		for (final AMachineModel device : getNetworkModel().getMachines(MachineType.DEVICE)) {
 			checkMACs(device, !isRouterHV);
 		}
 
 		// Iterate through our dedi machines, these are also physical machines
-		for (final AMachineModel server : getNetworkModel().getMachines(MachineType.DEDICATED).values()) {
+		for (final AMachineModel server : getNetworkModel().getMachines(MachineType.DEDICATED)) {
 			checkMACs(server, !isRouterHV);
 		}
 
 		// Iterate through our HyperVisor machines, these are also physical machines
-		for (final AMachineModel server : getNetworkModel().getMachines(MachineType.HYPERVISOR).values()) {
+		for (final AMachineModel server : getNetworkModel().getMachines(MachineType.HYPERVISOR)) {
 			checkMACs(server, !isRouterHV);
 		}
 
 		// Finally, iterate through our services, filling in any gaps.
 		// TODO: tidy up this loopy mess?
-		for (final AMachineModel server : getNetworkModel().getMachines(MachineType.SERVICE).values()) {
+		for (final AMachineModel server : getNetworkModel().getMachines(MachineType.SERVICE)) {
 			if (checkMACs(server, false) == false) {
 				for (final NetworkInterfaceModel nic : server.getNetworkInterfaces()) {
 					if (nic.getMac().isEmpty()) {
@@ -246,7 +246,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		subnetConfig.appendCarriageReturn();
 
 		if (getMachines(type) != null) {
-			for (final AMachineModel machine : getMachines(type)) {
+			for (final AMachineModel machine : getNetworkModel().getMachines(type)) {
 				// Skip over ourself, we're a router.
 				if (machine.equals(getMachineModel())) {
 					continue;
