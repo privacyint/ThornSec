@@ -7,7 +7,7 @@
  */
 package core.model.machine;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+//import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -207,6 +207,8 @@ public abstract class AMachineModel extends AModel {
 	}
 
 	public final void setEmailAddress(InternetAddress emailAddress) {
+		//assertNotNull(emailAddress);
+		
 		this.emailAddress = emailAddress;
 	}
 
@@ -215,6 +217,8 @@ public abstract class AMachineModel extends AModel {
 	}
 
 	public final void putCNAME(String... cnames) {
+		//assertNotNull(cnames);
+		
 		if (this.cnames == null) {
 			this.cnames = new LinkedHashSet<>();
 		}
@@ -225,6 +229,8 @@ public abstract class AMachineModel extends AModel {
 	}
 
 	public HostName getDomain() {
+		//assertNotNull(this.domain);
+		
 		return this.domain;
 	}
 
@@ -233,10 +239,14 @@ public abstract class AMachineModel extends AModel {
 	}
 	
 	public final Boolean isThrottled() {
+		//assertNotNull(this.throttled);
+		
 		return this.throttled;
 	}
 
 	public final void setIsThrottled(Boolean throttled) {
+		//assertNotNull(throttled);
+		
 		this.throttled = throttled;
 	}
 

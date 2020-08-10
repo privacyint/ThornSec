@@ -7,7 +7,7 @@
  */
 package core.data.machine.configuration;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+//import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -230,19 +230,19 @@ public class NetworkInterfaceData extends AData {
 	}
 
 	final public String getIface() {
-		assertNotNull(this.iface);
+		////assertNotNull(this.iface);
 		
 		return this.iface;
 	}
 	
 	final public Direction getDirection() {
-		assertNotNull(this.direction);
+		////assertNotNull(this.direction);
 		
 		return this.direction;
 	}
 
 	final public Inet getInet() {
-		assertNotNull(this.inet);
+		////assertNotNull(this.inet);
 		
 		return this.inet;
 	}

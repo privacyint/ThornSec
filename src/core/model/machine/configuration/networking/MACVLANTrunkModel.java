@@ -59,7 +59,7 @@ public class MACVLANTrunkModel extends NetworkInterfaceModel {
 	}
 
 	public final void addVLAN(MACVLANModel vlan) {
-		assertNotNull(vlan);
+		//assertNotNull(vlan);
 
 		this.vlans.add(vlan);
 	}

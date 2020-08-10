@@ -121,13 +121,13 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	}
 
 	public Integer getWeighting() {
-		assertNotNull(this.weighting);
+		//assertNotNull(this.weighting);
 		
 		return this.weighting;
 	}
 
 	public void setWeighting(Integer weighting) {
-		assertNotNull(weighting);
+		//assertNotNull(weighting);
 		
 		this.weighting = weighting;
 	}
@@ -156,7 +156,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	 * @return interface's name
 	 */
 	public final String getIface() {
-		assertNotNull(this.iface);
+		//assertNotNull(this.iface);
 		
 		return this.iface;
 	}
@@ -179,19 +179,19 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	}
 
 	public final IPAddress getNetmask() {
-		assertNotNull(this.netmask);
+		//assertNotNull(this.netmask);
 		
 		return this.netmask;
 	}
 
 	public final IPAddress getSubnet() {
-		assertNotNull(this.subnet);
+		//assertNotNull(this.subnet);
 		
 		return this.subnet;
 	}
 
 	public Inet getInet() {
-		assertNotNull(this.inet);
+		//assertNotNull(this.inet);
 		
 		return this.inet;
 	}
@@ -218,79 +218,79 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	}
 
 	public final void setBroadcast(IPAddress broadcast) {
-		assertNotNull(broadcast);
+		//assertNotNull(broadcast);
 		
 		this.broadcast = broadcast;
 	}
 
 	protected final void setComment(String comment) {
-		assertNotNull(comment);
+		//assertNotNull(comment);
 		
 		this.comment = comment;
 	}
 
 	public final void setGateway(IPAddress gateway) {
-		assertNotNull(gateway);
+		//assertNotNull(gateway);
 		
 		this.gateway = gateway;
 	}
 
 	public void setIface(String iface) {
-		assertNotNull(iface);
+		//assertNotNull(iface);
 		
 		this.iface = iface;
 	}
 
 	public final void setARP(Boolean value) {
-		assertNotNull(value);
+		//assertNotNull(value);
 		
 		this.arp = value;
 	}
 
 	public final void setIsIPForwarding(Boolean value) {
-		assertNotNull(value);
+		//assertNotNull(value);
 		
 		this.ipForwarding = value;
 	}
 
 	public final void setIsIPMasquerading(Boolean ipMasquerading) {
-		assertNotNull(ipMasquerading);
+		//assertNotNull(ipMasquerading);
 		
 		this.ipMasquerading = ipMasquerading;
 	}
 
 	public final void setMac(MACAddress mac) {
-		assertNotNull(mac);
+		//assertNotNull(mac);
 		
 		this.mac = mac;
 	}
 
 	public final void setInet(Inet inet) {
-		assertNotNull(inet);
+		//assertNotNull(inet);
 		
 		this.inet = inet;
 	}
 
 	protected final void setNetmask(IPAddress netmask) {
-		assertNotNull(netmask);
+		//assertNotNull(netmask);
 		
 		this.netmask = netmask;
 	}
 
 	public void setSubnet(IPAddress subnet) {
-		assertNotNull(subnet);
+		//assertNotNull(subnet);
 		
 		this.subnet = subnet;
 	}
 
 	private void setDirection(Direction direction) {
-		assertNotNull(direction);
+		//assertNotNull(direction);
 		
 		this.direction = direction;
 	}
 	
 	public Direction getDirection() {
-		assertNotNull(this.direction);
+		//assertNotNull(this.direction);
 		
 		return this.direction;
 	}
@@ -341,7 +341,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	}
 
 	public void setReqdForOnline(Boolean reqdForOnline) {
-		assertNotNull(reqdForOnline);
+		//assertNotNull(reqdForOnline);
 		
 		this.reqdForOnline = reqdForOnline;
 	}
@@ -351,7 +351,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	}
 
 	public void setConfigureWithoutCarrier(Boolean configureWithoutCarrier) {
-		assertNotNull(configureWithoutCarrier);
+		//assertNotNull(configureWithoutCarrier);
 		
 		this.configureWithoutCarrier = configureWithoutCarrier;
 	}

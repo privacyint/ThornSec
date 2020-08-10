@@ -223,7 +223,7 @@ public class ServiceData extends ServerData {
 	 * @return the {@code label} of this service's HyperVisor
 	 */
 	public final HypervisorData getHypervisor() {
-		assertNotNull(this.hypervisor);
+		//assertNotNull(this.hypervisor);
 		
 		return this.hypervisor;
 	}
@@ -235,7 +235,7 @@ public class ServiceData extends ServerData {
 	 * @param hv The label of the hypervisor machine
 	 */
 	public final void setHypervisor(HypervisorData hv) {
-		assertNotNull(hv);
+		//assertNotNull(hv);
 		
 		this.hypervisor = hv;
 	}

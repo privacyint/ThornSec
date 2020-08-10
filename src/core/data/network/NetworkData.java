@@ -585,7 +585,7 @@ public class NetworkData extends AData {
 	}
 
 	public Map<String, AMachineData> getMachines() {
-		assertNotNull(this.machines);
+		////assertNotNull(this.machines);
 		
 		return this.machines;
 	}

@@ -93,19 +93,19 @@ public class TrafficRule {
 	 * @return the destination
 	 */
 	public String getDestination() {
-		assertNotNull(this.destination);
+		//assertNotNull(this.destination);
 		
 		return this.destination;
 	}
 	
 	public Table getTable() {
-		assertNotNull(this.table);
+		//assertNotNull(this.table);
 
 		return this.table;
 	}
 
 	public void setTable(Table table) {
-		assertNotNull(table);
+		//assertNotNull(table);
 		
 		this.table = table;
 	}

@@ -48,7 +48,7 @@ public class BondInterfaceModel extends NetworkInterfaceModel {
 	}
 	
 	public void setBond(BondModel bond) {
-		assertNotNull(bond);
+		//assertNotNull(bond);
 		
 		this.bond = bond;
 	}
