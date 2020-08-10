@@ -9,7 +9,6 @@ package profile.dhcp;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import core.StringUtils;
@@ -57,9 +56,9 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		IPAddress ip = getNetworkModel().getSubnet(type).getLowerNonZeroHost();
 
 		addSubnet(type, getSubnet(type));
-		addToSubnet(type, getNetworkModel().getMachines(type).values());
+		addToSubnet(type, getNetworkModel().getMachines(type));
 
-		for (final AMachineModel machine : getNetworkModel().getMachines(type).values()) {
+		for (final AMachineModel machine : getNetworkModel().getMachines(type)) {
 
 			try {
 				if (getNetworkModel().getMachineModel(machine.getLabel()).isType(MachineType.ROUTER)) {
