@@ -59,7 +59,8 @@ import inet.ipaddr.IncompatibleAddressException;
 /**
  * Below the ThornsecModel comes the getNetworkModel().
  *
- * This model represents a given network;
+ * This model represents a given network; at its simplest, it just
+ * holds information representing which machines are around.
  */
 public class NetworkModel {
 	private final String label;

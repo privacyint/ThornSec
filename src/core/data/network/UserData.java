@@ -104,10 +104,18 @@ public class UserData extends AData {
 		return Optional.ofNullable(this.sshKey);
 	}
 
+	/**
+	 * Get a User's default passphrase, if set
+	 * @return
+	 */
 	public final Optional<String> getDefaultPassphrase() {
 		return Optional.ofNullable(this.defaultPassword);
 	}
 
+	/**
+	 * Get a User's username, if set
+	 * @return
+	 */
 	public Optional<String> getUsername() {
 		return Optional.ofNullable(this.username);
 	}

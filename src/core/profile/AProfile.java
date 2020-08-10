@@ -11,6 +11,8 @@ import core.iface.IProfile;
 import core.model.machine.AMachineModel;
 import core.model.network.NetworkModel;
 
+/**
+ */
 public abstract class AProfile implements IProfile {
 	private final AMachineModel me;
 

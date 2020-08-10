@@ -34,7 +34,7 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 	/**
 	 * In your constructor, you will need
 	 *
-	 * @param label
+	 * @param myData
 	 * @param networkModel
 	 */
 	public ADHCPServerProfile(ServerModel me) {

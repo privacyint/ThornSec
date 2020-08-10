@@ -80,10 +80,19 @@ public class ThornsecModel {
 		}
 	}
 
+	/**
+	 * Returns the labels of our various networks
+	 * @return
+	 */
 	public Collection<String> getNetworkLabels() {
 		return this.networks.keySet();
 	}
 
+	/**
+	 * Get a specific network by its label
+	 * @param label
+	 * @return
+	 */
 	public NetworkModel getNetwork(String label) {
 		return this.networks.get(label);
 	}

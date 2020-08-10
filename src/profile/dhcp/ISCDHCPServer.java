@@ -39,6 +39,7 @@ import inet.ipaddr.IncompatibleAddressException;
 /**
  * Configure and set up our various different networks, and offer IP addresses
  * across (some of) them.
+ * https://linux.die.net/man/8/dhcpd
  */
 public class ISCDHCPServer extends ADHCPServerProfile {
 
