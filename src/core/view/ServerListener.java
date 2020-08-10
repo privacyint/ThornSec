@@ -35,7 +35,9 @@ public class ServerListener implements ActionListener {
 			else if (action.equals("Audit All"))
 				network.auditAll(out, in, false);
 		}
-		catch (Exception ex) { }
+		catch (Exception ex) {
+			System.out.println(ex.getLocalizedMessage());
+		}
  	}
 
 }
