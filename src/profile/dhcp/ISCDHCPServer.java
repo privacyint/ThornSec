@@ -187,7 +187,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		dhcpdConf.appendLine("log-facility local7;");
 		dhcpdConf.appendCarriageReturn();
 
-		for (final MachineType subnet : getSubnets().keySet()) {
+		for (final MachineType subnet : getNetworkModel().getSubnets().keySet()) {
 			dhcpdConf.appendLine("include \\\"/etc/dhcp/dhcpd.conf.d/" + subnet.toString() + ".conf\\\";");
 		}
 
@@ -202,7 +202,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		final FileUnit dhcpdListen = new FileUnit("dhcpd_defiface", "dhcp_installed", "/etc/default/isc-dhcp-server");
 
 		dhcpdListen.appendText("INTERFACESv4=\\\"");
-		dhcpdListen.appendText(getSubnets().keySet().stream().map(Object::toString).collect(Collectors.joining(" ")));
+		dhcpdListen.appendText(getNetworkModel().getSubnets().keySet().stream().map(Object::toString).collect(Collectors.joining(" ")));
 		dhcpdListen.appendText("\\\"");
 
 		return dhcpdListen;
@@ -245,7 +245,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		subnetConfig.appendLine("\toption domain-name-servers " + gateway + ";");
 		subnetConfig.appendCarriageReturn();
 
-		if (getMachines(type) != null) {
+		if (getNetworkModel().getMachines(type) != null) {
 			for (final AMachineModel machine : getNetworkModel().getMachines(type)) {
 				// Skip over ourself, we're a router.
 				if (machine.equals(getMachineModel())) {
@@ -282,7 +282,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	public Collection<IUnit> getLiveConfig() throws InvalidIPAddressException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		for (final MachineType subnet : getSubnets().keySet()) {
+		for (final MachineType subnet : getNetworkModel().getSubnets().keySet()) {
 			units.add(buildSubNet(subnet));
 		}
 

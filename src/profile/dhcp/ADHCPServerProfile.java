@@ -51,12 +51,8 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 		this.subnetsMachines.putIfAbsent(subnetName, new LinkedHashSet<>());
 	}
 
-	protected final Map<MachineType, IPAddress> getSubnets() {
-		return getNetworkModel().getSubnets();
-	}
-
 	protected final IPAddress getSubnet(MachineType subnet) {
-		return getSubnets().get(subnet);
+		return getNetworkModel().getSubnets().get(subnet);
 	}
 
 	private final void putMachines(MachineType subnetName, Collection<AMachineModel> machines) {
