@@ -60,15 +60,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 
 		for (final AMachineModel machine : getNetworkModel().getMachines(type)) {
 
-			try {
-				if (getNetworkModel().getMachineModel(machine.getLabel()).isType(MachineType.ROUTER)) {
-					continue;
-				}
-			} catch (final InvalidMachineModelException e) {
-				// It's not a server, so can't possibly be a Router
-			}
-
-			if (machine.getNetworkInterfaces() == null) {
+			if (machine.isType(MachineType.ROUTER) ||
+				machine.getNetworkInterfaces() == null) {
 				continue;
 			}
 
