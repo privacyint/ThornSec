@@ -68,8 +68,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 				"I was unable to create Unbound's config file. Your DNS server will fail to boot.");
 		units.add(unboundConf);
 		unboundConf.appendLine("server:");
-		// Force dropping user post-invocation
-		unboundConf.appendLine("\tusername: unbound");
+		dropUserPostInvocation(unboundConf, "unbound");
+
 		unboundConf.appendLine("\tverbosity: 1");
 		unboundConf.appendLine("\tdirectory: \\\"/etc/unbound\\\"");
 		// Stick it in a chroot. DNS is dangerous.
@@ -164,6 +164,20 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.add(unboundConfD);
 
 		return units;
+	}
+
+	/**
+	 * If given, after binding the port the user privileges are dropped.
+	 * Default user is "unbound".
+	 * 
+	 * @param unboundConf Config FileUnit
+	 * @param user pass specific username to drop to, null to use the default,
+	 * 				or empty string for no user change
+	 */
+	private void dropUserPostInvocation(FileUnit unboundConf, String user) {
+		if (user == null) { user = "unbound"; }
+
+		unboundConf.appendLine("\tusername: \\\"" + user + "\\\"");
 	}
 
 	/**
