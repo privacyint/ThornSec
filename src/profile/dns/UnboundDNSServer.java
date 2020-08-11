@@ -85,23 +85,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		setChroot(unboundConf, ""); // TODO: implement  
 		setPIDFile(unboundConf, UNBOUND_PIDFILE);
 
-		// Listen to lan/loopback traffic
-		unboundConf.appendLine("\tinterface: 127.0.0.1");
-		unboundConf.appendLine("\taccess-control: 127.0.0.1/32 allow");
-		myRouter.getVLANTrunk().getVLANs().forEach(vlan -> {
-			unboundConf.appendLine("\t#" + vlan.getIface());
-			
-			IPAddress subnet = vlan.getSubnet().getLowerNonZeroHost().withoutPrefixLength();
-		
-			// Listen on this LAN interface
-			unboundConf.appendLine("\tinterface: " + subnet.toCompressedString());
-			// Allow it to receive traffic
-			unboundConf.appendLine("\taccess-control: " + subnet.toCompressedString() + " allow");
-			// Stop DNS Rebinding attacks, and upstream DNS must be WAN
-			unboundConf.appendLine("\tprivate-address: " + subnet.toCompressedString());
-		});
-		// Don't listen to anything else.
-		unboundConf.appendLine("\taccess-control: 0.0.0.0/0 refuse");
+		buildListeningIfaces(unboundConf);
+
 		// Listen on :53
 		unboundConf.appendLine("\tport: 53");
 		// Do TCP/UDP, IPv4 only
@@ -174,6 +159,22 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.add(unboundConfD);
 
 		return units;
+	}
+
+	/**
+	 * Listen on the various LAN IP addresses (including loopback) assigned to
+	 * this machine
+	 *  
+	 * @param unboundConf Config FileUnit
+	 */
+	private void buildListeningIfaces(FileUnit unboundConf) {
+		// Listen to lan/loopback traffic
+		unboundConf.appendLine("\tinterface: 127.0.0.1");
+
+		getServerModel().getIPs().forEach(ip -> {
+			IPAddress subnet = ip.getLowerNonZeroHost().withoutPrefixLength();
+			unboundConf.appendLine("\tinterface: " + subnet.toCompressedString());
+		});
 	}
 
 	/**
