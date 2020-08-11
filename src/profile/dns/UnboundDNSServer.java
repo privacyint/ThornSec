@@ -49,6 +49,10 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 	private final Map<HostName, Set<AMachineModel>> zones;
 
+	/**
+	 * Initialise an Unbound DNS Server on this machine
+	 * @param me Our ServerModel
+	 */
 	public UnboundDNSServer(ServerModel me) {
 		super(me);
 
