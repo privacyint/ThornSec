@@ -58,8 +58,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getRootHints());
-		units.addAll(populateZones());
-		
+		units.addAll(populateInternalZones());
+
 		// Config originally based on https://calomel.org/unbound_dns.html
 		// See https://linux.die.net/man/5/unbound.conf for full config file
 		final FileUnit unboundConf = new FileUnit("unbound_conf", "dns_installed",
@@ -162,6 +162,18 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		final DirUnit unboundConfD = new DirUnit("unbound_conf_d", "dns_installed", UNBOUND_CONFIG_FILE_PATH + ".d", "unbound", "unbound", 0660, "");
 
 		units.add(unboundConfD);
+
+		return units;
+	}
+
+	/**
+	 * Build our internal DNS zones from the whole network
+	 * @return
+	 */
+	private Collection<IUnit> populateInternalZones() {
+		final Collection<IUnit> units = new ArrayList<>();
+
+		addRecord(getNetworkModel().getMachines().values());
 
 		return units;
 	}
