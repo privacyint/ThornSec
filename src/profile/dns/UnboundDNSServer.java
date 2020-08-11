@@ -63,9 +63,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		
 		final Collection<IUnit> units = new ArrayList<>();
 
-		myRouter.getVLANs().values().forEach((vlan) -> {
-			addRecord(getNetworkModel().getMachines(vlan).values().toArray(AMachineModel[]::new));
-		});
+		units.addAll(getRootHints());
+		units.addAll(populateZones());
 		
 		// Config originally based on https://calomel.org/unbound_dns.html
 		// See https://linux.die.net/man/5/unbound.conf for full config file
@@ -128,7 +127,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		unboundConf.appendLine("\tmsg-cache-size: " + (cpus / 8) + "m");
 		unboundConf.appendLine("\tso-rcvbuf: 1m");
 		// Only switch on blocking if the user actually wants it...
-		if (getNetworkModel().getData().adBlocking()) {
+		if (getNetworkModel().getData().doAdBlocking().orElse(false)) {
 			unboundConf.appendLine("\tinclude: \\\"/etc/unbound/unbound.conf.d/adblock.zone\\\"");
 		}
 		// Zone related stuff
@@ -187,7 +186,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		// Start by updating the ad block list (if req'd)
-		if (getNetworkModel().getData().adBlocking()) {
+		if (getNetworkModel().getData().doAdBlocking().isPresent()
+				&& getNetworkModel().getData().doAdBlocking().get()) {
 			units.add(new SimpleUnit("adblock_up_to_date", "proceed",
 					"sudo wget -O /etc/unbound/rawhosts https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
 							+ " && cat /etc/unbound/rawhosts | grep '^0\\.0\\.0\\.0'"
