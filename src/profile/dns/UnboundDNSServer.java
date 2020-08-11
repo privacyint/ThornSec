@@ -130,10 +130,16 @@ public class UnboundDNSServer extends ADNSServerProfile {
 			unboundConf.appendLine("\tinclude: \\\"/etc/unbound/unbound.conf.d/" + zone.getHost() + ".zone\\\"");
 		}
 		// rDNS
-		// unboundConf.appendLine("\tlocal-zone: \\\"10.in-addr.arpa.\\\" nodefault");
-		// unboundConf.appendLine("\tstub-zone:");
-		// unboundConf.appendLine("\t\tname: \\\"10.in-addr.arpa.\\\"");
-		// unboundConf.appendLine("\t\tstub-addr: 10.0.0.1");
+		myRouter.getVLANTrunk().getVLANs().forEach(vlan -> {
+			unboundConf.appendLine("\t#" + vlan.getIface());
+			
+			IPAddress subnet = vlan.getSubnet().getLowerNonZeroHost().withoutPrefixLength();
+		
+			unboundConf.appendLine("\tlocal-zone: \\\"" + subnet.toReverseDNSLookupString() + "\\\" nodefault");
+			unboundConf.appendLine("\tstub-zone:");
+			unboundConf.appendLine("\t\tname: \\\"" + subnet.toReverseDNSLookupString() + "\\\"");
+			unboundConf.appendLine("\t\tstub-addr: " + subnet.toCompressedString());
+		});
 		// Upstream DNS servers
 		unboundConf.appendLine("\tforward-zone:");
 		unboundConf.appendLine("\t\tname: \\\".\\\"");
