@@ -40,7 +40,9 @@ import profile.type.Router;
  */
 public class UnboundDNSServer extends ADNSServerProfile {
 
-	private static String UNBOUND_CONFIG_FILE_PATH = "/etc/unbound/unbound.conf";
+	private static String UNBOUND_CONFIG_DIR = "/etc/unbound/";
+	private static String UNBOUND_CONFIG_DROPIN_DIR = UNBOUND_CONFIG_DIR + "unbound.conf.d/";
+	private static String UNBOUND_CONFIG_FILE = UNBOUND_CONFIG_DIR + "unbound.conf";
 	private static Integer DEFAULT_UPSTREAM_DNS_PORT = 853;
 
 	private final Map<HostName, Set<AMachineModel>> zones;
@@ -68,7 +70,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.addAll(populateInternalZones());
 
 		final FileUnit unboundConf = new FileUnit("unbound_conf", "dns_installed",
-				UNBOUND_CONFIG_FILE_PATH,
+				UNBOUND_CONFIG_FILE,
 				"root", "root", 644,
 				"I was unable to create Unbound's config file. Your DNS server will fail to boot.");
 		units.add(unboundConf);
