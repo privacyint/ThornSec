@@ -49,6 +49,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 	private final Map<HostName, Set<AMachineModel>> zones;
 
+	private FileUnit unboundConf;
+
 	/**
 	 * Initialise an Unbound DNS Server on this machine
 	 * @param me Our ServerModel
@@ -57,6 +59,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		super(me);
 
 		this.zones = new Hashtable<>();
+		this.unboundConf = null;
 	}
 
 	/**
@@ -75,28 +78,30 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.addAll(getRootHints());
 		units.addAll(populateInternalZones());
 
-		final FileUnit unboundConf = new FileUnit("unbound_conf", "dns_installed",
+		this.unboundConf = new FileUnit("unbound_conf", "dns_installed",
 				UNBOUND_CONFIG_FILE,
 				"root", "root", 644,
 				"I was unable to create Unbound's config file. Your DNS server will fail to boot.");
 		units.add(unboundConf);
 
 		unboundConf.appendLine("server:");
-		dropUserPostInvocation(unboundConf, "unbound");
-		setLogVerbosity(unboundConf, 1);
-		setWorkingDirectory(unboundConf, UNBOUND_CONFIG_DIR);
-		setChroot(unboundConf, ""); // TODO: implement  
-		setPIDFile(unboundConf, UNBOUND_PIDFILE);
 
-		buildListeningIfaces(unboundConf);
-		doIfacesAccessControl(unboundConf);
-		setPrivateAddresses(unboundConf);
+		dropUserPostInvocation("unbound");
+		setLogVerbosity(1);
+		setWorkingDirectory(UNBOUND_CONFIG_DIR);
+		setChroot(""); // TODO: implement  
+		setPIDFile(UNBOUND_PIDFILE);
 
-		setListeningPort(unboundConf);
-		setListenTCP(unboundConf, "yes");
-		setListenUDP(unboundConf, "yes");
-		setListenIPv4(unboundConf, "yes");
-		setListenIPv6(unboundConf, "no");
+		buildListeningIfaces();
+		doIfacesAccessControl();
+		setPrivateAddresses();
+
+		setListeningPort(DEFAULT_LISTEN_PORT);
+		setListenTCP("yes");
+		setListenUDP("yes");
+		setListenIPv4("yes");
+		setListenIPv6("no");
+
 		// Add some DNS hardening
 		unboundConf.appendLine("\thide-identity: yes");
 		unboundConf.appendLine("\thide-version: yes");
@@ -168,49 +173,42 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	 * 
 	 * If disabled, queries are not answered on IPv6, and queries are not sent
 	 * on IPv6 to the upstream nameservers. 
-	 * @param unboundConf Config FileUnit
 	 * @param value "yes" or "no"
 	 */
-	private void setListenIPv6(FileUnit unboundConf, String value) {
+	private void setListenIPv6(String value) {
 		unboundConf.appendLine("\tdo-ip6: " + value);		
 	}
 
 	/**
 	 * Enable or disable whether ip4 queries are answered or issued
-	 * @param unboundConf Config FileUnit
 	 * @param value "yes" or "no"
 	 */
-	private void setListenIPv4(FileUnit unboundConf, String value) {
+	private void setListenIPv4(String value) {
 		unboundConf.appendLine("\tdo-ip4: " + value);
 	}
 
 	/**
 	 * Enable or disable whether UDP queries are answered or issued
-	 * @param unboundConf Config FileUnit
 	 * @param value "yes" or "no"
 	 */
-	private void setListenUDP(FileUnit unboundConf, String value) {
+	private void setListenUDP(String value) {
 		unboundConf.appendLine("\tdo-udp: " + value);
 	}
 
 	/**
 	 * Enable or disable whether TCP queries are answered or issued
-	 * @param unboundConf Config FileUnit
 	 * @param value "yes" or "no"
 	 */
-	private void setListenTCP(FileUnit unboundConf, String value) {
+	private void setListenTCP(String value) {
 		unboundConf.appendLine("\tdo-tcp: " + value);
 	}
 
 	/**
 	 * Set port number on which the server responds to queries.
-	 * 
-	 * We use the default of port 53.
-	 *  
-	 * @param unboundConf Config FileUnit
+	 * @param port the port to listen on
 	 */
-	private void setListeningPort(FileUnit unboundConf) {
-		unboundConf.appendLine("\tport: " + DEFAULT_LISTEN_PORT);
+	private void setListeningPort(Integer port) {
+		unboundConf.appendLine("\tport: " + port);
 	}
 
 	/**
@@ -220,9 +218,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	 * answers bogus. This protects against so-called DNS Rebinding, where a
 	 * user browser is turned into a network proxy, allowing remote access
 	 * through the browser to other parts of your private network.
-	 * @param unboundConf Config FileUnit
 	 */
-	private void setPrivateAddresses(FileUnit unboundConf) {
+	private void setPrivateAddresses() {
 		getServerModel().getIPs().forEach(ip -> {
 			IPAddress subnet = ip.getLowerNonZeroHost().withoutPrefixLength();
 			unboundConf.appendLine("\tprivate-address: " + subnet.toCompressedString());
@@ -231,10 +228,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 	/**
 	 * Allow DNS queries, but only from LAN, not the wider Internet.
-	 * 
-	 * @param unboundConf Config FileUnit
 	 */
-	private void doIfacesAccessControl(FileUnit unboundConf) {
+	private void doIfacesAccessControl() {
 		/**
 		 * The allow action does allow nonrecursive queries to access the
 		 * local-data that is configured. The reason is that this does not
@@ -263,10 +258,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	/**
 	 * Listen on the various LAN IP addresses (including loopback) assigned to
 	 * this machine
-	 *  
-	 * @param unboundConf Config FileUnit
 	 */
-	private void buildListeningIfaces(FileUnit unboundConf) {
+	private void buildListeningIfaces() {
 		// Listen to lan/loopback traffic
 		unboundConf.appendLine("\tinterface: 127.0.0.1");
 
@@ -278,36 +271,32 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 	/**
 	 * The process id is written to the file
-	 * @param unboundConf Config FileUnit
 	 * @param path path to the PID file
 	 */
-	private void setPIDFile(FileUnit unboundConf, String path) {
+	private void setPIDFile(String path) {
 		unboundConf.appendLine("\tpidfile: \\\"" + path + "\\\"");
 	}
 
 	/**
 	 * Puts the Unbound daemon in a chroot (https://en.wikipedia.org/wiki/Chroot)
 	 * This is not a foolproof security measure, but every obstacle is positive
-	 * @param unboundConf Config FileUnit
 	 * @param chrootDir chroot directory for the program, or empty string to not
 	 * 					perform a chroot
 	 */
-	private void setChroot(FileUnit unboundConf, String chrootDir) {
+	private void setChroot(String chrootDir) {
 		unboundConf.appendLine("\tchroot: \\\"" + chrootDir + "\\\"");
 	}
 
 	/**
 	 * Sets the working directory for the program
-	 * @param unboundConf Config FileUnit
 	 * @param workingDir working directory for the program
 	 */
-	private void setWorkingDirectory(FileUnit unboundConf, String workingDir) {
+	private void setWorkingDirectory(String workingDir) {
 		unboundConf.appendLine("\tdirectory: \\\"" + workingDir + "\\\"");
 	}
 
 	/**
 	 * Bigger the number, the noisier the logs
-	 * @param unboundConf Config FileUnit
 	 * @param verbosity 0 means no verbosity, only errors.
 	 * 					1 for operational information.
 	 * 					2 for detailed operational information.
@@ -315,19 +304,17 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	 * 					4 for algorithm level information.
 	 * 					5 logs client identification for cache misses 
 	 */
-	private void setLogVerbosity(FileUnit unboundConf, int verbosity) {
+	private void setLogVerbosity(int verbosity) {
 		unboundConf.appendLine("\tverbosity: " + verbosity);
 	}
 
 	/**
 	 * If given, after binding the port the user privileges are dropped.
 	 * Default user is "unbound".
-	 * 
-	 * @param unboundConf Config FileUnit
 	 * @param user pass specific username to drop to, null to use the default,
 	 * 				or empty string for no user change
 	 */
-	private void dropUserPostInvocation(FileUnit unboundConf, String user) {
+	private void dropUserPostInvocation(String user) {
 		if (user == null) { user = "unbound"; }
 
 		unboundConf.appendLine("\tusername: \\\"" + user + "\\\"");
