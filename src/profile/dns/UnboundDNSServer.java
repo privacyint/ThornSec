@@ -89,8 +89,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		doIfacesAccessControl(unboundConf);
 		setPrivateAddresses(unboundConf);
 
-		// Listen on :53
-		unboundConf.appendLine("\tport: 53");
+		setListeningPort(unboundConf);
 		// Do TCP/UDP, IPv4 only
 		unboundConf.appendLine("\tdo-tcp: yes");
 		unboundConf.appendLine("\tdo-udp: yes");
@@ -161,6 +160,17 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.add(unboundConfD);
 
 		return units;
+	}
+
+	/**
+	 * Set port number on which the server responds to queries.
+	 * 
+	 * We use the default of port 53.
+	 *  
+	 * @param unboundConf Config FileUnit
+	 */
+	private void setListeningPort(FileUnit unboundConf) {
+		unboundConf.appendLine("\tport: " + DEFAULT_LISTEN_PORT);
 	}
 
 	/**

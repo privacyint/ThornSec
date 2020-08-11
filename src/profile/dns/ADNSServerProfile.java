@@ -25,6 +25,8 @@ import core.profile.AStructuredProfile;
  */
 public abstract class ADNSServerProfile extends AStructuredProfile {
 
+	protected static Integer DEFAULT_LISTEN_PORT = 53;
+
 	public ADNSServerProfile(ServerModel me) {
 		super(me);
 	}
