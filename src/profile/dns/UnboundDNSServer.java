@@ -124,6 +124,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		if (getNetworkModel().getData().doAdBlocking().orElse(false)) {
 			unboundConf.appendLine("\tinclude: \\\"/etc/unbound/unbound.conf.d/adblock.zone\\\"");
 		}
+		// Root hints
+		unboundConf.appendLine("\troot-hints: \\\"/etc/unbound/root.hints\\\"");
 		// Zone related stuff
 		for (final HostName zone : this.zones.keySet()) {
 			unboundConf.appendLine("\tprivate-domain: \\\"" + zone.getHost() + "\\\"");
