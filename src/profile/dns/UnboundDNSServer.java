@@ -17,7 +17,6 @@ import core.StringUtils;
 import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
 import core.exception.data.InvalidPortException;
-import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
@@ -64,7 +63,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	 * @return Units for unbound.conf and the drop-in directory
 	 */
 	@Override
-	public Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidMachineModelException {
+	public Collection<IUnit> getPersistentConfig() {
 		final Integer cpus = getServerModel().getCPUs();
 		
 		final Collection<IUnit> units = new ArrayList<>();
