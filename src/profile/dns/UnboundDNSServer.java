@@ -87,6 +87,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 		buildListeningIfaces(unboundConf);
 		doIfacesAccessControl(unboundConf);
+		setPrivateAddresses(unboundConf);
 
 		// Listen on :53
 		unboundConf.appendLine("\tport: 53");
@@ -160,6 +161,22 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.add(unboundConfD);
 
 		return units;
+	}
+
+	/**
+	 * Set addresses on your private network so they are not allowed to be
+	 * returned for public internet names. Any occurence of such addresses are
+	 * removed from DNS answers. Additionally, the DNSSEC validator may mark the
+	 * answers bogus. This protects against so-called DNS Rebinding, where a
+	 * user browser is turned into a network proxy, allowing remote access
+	 * through the browser to other parts of your private network.
+	 * @param unboundConf Config FileUnit
+	 */
+	private void setPrivateAddresses(FileUnit unboundConf) {
+		getServerModel().getIPs().forEach(ip -> {
+			IPAddress subnet = ip.getLowerNonZeroHost().withoutPrefixLength();
+			unboundConf.appendLine("\tprivate-address: " + subnet.toCompressedString());
+		});
 	}
 
 	/**
