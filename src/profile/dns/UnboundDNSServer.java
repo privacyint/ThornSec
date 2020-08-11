@@ -95,10 +95,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		setListeningPort(unboundConf);
 		setListenTCP(unboundConf, "yes");
 		setListenUDP(unboundConf, "yes");
-		// IPv4 only
-		unboundConf.appendLine("\tdo-ip4: yes");
-		// No IPv6, please.
-		unboundConf.appendLine("\tdo-ip6: no");
+		setListenIPv4(unboundConf, "yes");
+		setListenIPv6(unboundConf, "no");
 		// Add some DNS hardening
 		unboundConf.appendLine("\thide-identity: yes");
 		unboundConf.appendLine("\thide-version: yes");
@@ -163,6 +161,27 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.add(unboundConfD);
 
 		return units;
+	}
+
+	/**
+	 * Enable or disable whether ip6 queries are answered or issued.
+	 * 
+	 * If disabled, queries are not answered on IPv6, and queries are not sent
+	 * on IPv6 to the upstream nameservers. 
+	 * @param unboundConf Config FileUnit
+	 * @param value "yes" or "no"
+	 */
+	private void setListenIPv6(FileUnit unboundConf, String value) {
+		unboundConf.appendLine("\tdo-ip6: " + value);		
+	}
+
+	/**
+	 * Enable or disable whether ip4 queries are answered or issued
+	 * @param unboundConf Config FileUnit
+	 * @param value "yes" or "no"
+	 */
+	private void setListenIPv4(FileUnit unboundConf, String value) {
+		unboundConf.appendLine("\tdo-ip4: " + value);
 	}
 
 	/**
