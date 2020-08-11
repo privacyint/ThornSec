@@ -103,7 +103,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		setListenIPv6("no");
 
 		// Add some DNS hardening
-		unboundConf.appendLine("\thide-identity: yes");
+		hideIdentity("yes");
 		unboundConf.appendLine("\thide-version: yes");
 		unboundConf.appendLine("\tharden-glue: yes");
 		unboundConf.appendLine("\tharden-dnssec-stripped: yes");
@@ -166,6 +166,14 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.add(unboundConfD);
 
 		return units;
+	}
+
+	/**
+	 * If enabled id.server and hostname.bind queries are refused. 
+	 * @param value "yes" or "no"
+	 */
+	private void hideIdentity(String value) {
+		unboundConf.appendLine("\thide-identity: " + value);		
 	}
 
 	/**
