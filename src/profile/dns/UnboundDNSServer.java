@@ -86,6 +86,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		setPIDFile(unboundConf, UNBOUND_PIDFILE);
 
 		buildListeningIfaces(unboundConf);
+		doIfacesAccessControl(unboundConf);
 
 		// Listen on :53
 		unboundConf.appendLine("\tport: 53");
@@ -159,6 +160,37 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.add(unboundConfD);
 
 		return units;
+	}
+
+	/**
+	 * Allow DNS queries, but only from LAN, not the wider Internet.
+	 * 
+	 * @param unboundConf Config FileUnit
+	 */
+	private void doIfacesAccessControl(FileUnit unboundConf) {
+		/**
+		 * The allow action does allow nonrecursive queries to access the
+		 * local-data that is configured. The reason is that this does not
+		 * involve the unbound server recursive lookup algorithm, and static
+		 * data is served in the reply. This supports normal operations where
+		 * nonrecursive queries are made for the authoritative data. For
+		 * nonrecursive queries any replies from the dynamic cache are refused. 
+		 */
+		unboundConf.appendLine("\taccess-control: 127.0.0.1/32 allow");
+
+		getServerModel().getIPs().forEach(ip -> {
+			IPAddress subnet = ip.getLowerNonZeroHost().withoutPrefixLength();
+			unboundConf.appendLine("\taccess-control: " + subnet.toCompressedString() + " allow");
+		});
+
+		/*
+		 * Refuse stops queries, but sends a DNS rcode REFUSED error message back
+		 * 
+		 * We use refused not drop, because it's protocol-friendly. The DNS
+		 * protocol is not designed to handle dropped packets due to policy,
+		 * and dropping may result in (possibly excessive) retried queries. 
+		 */
+		unboundConf.appendLine("\taccess-control: 0.0.0.0/0 refuse");
 	}
 
 	/**
