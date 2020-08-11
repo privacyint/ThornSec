@@ -145,7 +145,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		// Upstream DNS servers
 		unboundConf.appendLine("\tforward-zone:");
 		unboundConf.appendLine("\t\tname: \\\".\\\"");
-		for (final HostName upstream : getNetworkModel().getData().getUpstreamDNSServers()) {
+		for (final HostName upstream : getNetworkModel().getUpstreamDNSServers()) {
 			Integer port = upstream.getPort();
 			if (port == null) {
 				port = DEFAULT_UPSTREAM_DNS_PORT;

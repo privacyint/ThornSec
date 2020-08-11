@@ -505,9 +505,8 @@ public class NetworkData extends AData {
 	/**
 	 * @return the upstream DNS server addresses
 	 */
-	@Deprecated //TODO: this is a property of a Router
-	public final Collection<HostName> getUpstreamDNSServers() {
-		return this.upstreamDNS;
+	public final Optional<Collection<HostName>> getUpstreamDNSServers() {
+		return Optional.ofNullable(this.upstreamDNS);
 	}
 
 	/**

@@ -18,6 +18,7 @@ import java.io.Writer;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -52,6 +53,7 @@ import core.model.machine.ServiceModel;
 import core.model.machine.UserDeviceModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import inet.ipaddr.AddressStringException;
+import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
 import inet.ipaddr.IncompatibleAddressException;
@@ -443,5 +445,18 @@ public class NetworkModel {
 						Map.Entry::getValue,
 						(dataValue, defaultValue) -> dataValue)
 					);
+	}
+
+	/**
+	 * Get this network's upstream DNS servers
+	 * @return as set in the data, or defaults
+	 */
+	public Collection<HostName> getUpstreamDNSServers() {
+		return getData().getUpstreamDNSServers()
+						.orElseGet(() ->
+							Arrays.asList(new HostName("1.1.1.1:853"),
+										new HostName("8.8.8.8:853")
+							)
+						);
 	}
 }
