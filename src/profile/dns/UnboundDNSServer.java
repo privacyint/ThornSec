@@ -44,17 +44,11 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	private static Integer DEFAULT_UPSTREAM_DNS_PORT = 853;
 
 	private final Map<HostName, Set<AMachineModel>> zones;
-	private Router myRouter;
 
 	public UnboundDNSServer(ServerModel me) {
 		super(me);
 
 		this.zones = new Hashtable<>();
-		try {
-			myRouter = (Router) getNetworkModel().getServerModel(getLabel()).getTypes().get(MachineType.ROUTER);
-		} catch (InvalidServerModelException e) {
-			e.printStackTrace();
-		}
 	}
 
 	@Override
