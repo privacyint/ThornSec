@@ -79,9 +79,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		dropUserPostInvocation(unboundConf, "unbound");
 		setLogVerbosity(unboundConf, 1);
 		setWorkingDirectory(unboundConf, UNBOUND_CONFIG_DIR);
+		setChroot(unboundConf, ""); // TODO: implement  
 
-		// Stick it in a chroot. DNS is dangerous.
-		// unboundConf.appendLine("\tchroot: \\\"/etc/unbound\\\"");
 		unboundConf.appendLine("\tpidfile: \\\"/var/run/unbound.pid\\\"");
 		// Listen to lan/loopback traffic
 		unboundConf.appendLine("\tinterface: 127.0.0.1");
@@ -172,6 +171,17 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.add(unboundConfD);
 
 		return units;
+	}
+
+	/**
+	 * Puts the Unbound daemon in a chroot (https://en.wikipedia.org/wiki/Chroot)
+	 * This is not a foolproof security measure, but every obstacle is positive
+	 * @param unboundConf Config FileUnit
+	 * @param chrootDir chroot directory for the program, or empty string to not
+	 * 					perform a chroot
+	 */
+	private void setChroot(FileUnit unboundConf, String chrootDir) {
+		unboundConf.appendLine("\tchroot: \\\"" + chrootDir + "\\\"");
 	}
 
 	/**
