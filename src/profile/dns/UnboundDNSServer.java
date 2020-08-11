@@ -93,8 +93,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		setPrivateAddresses(unboundConf);
 
 		setListeningPort(unboundConf);
-		// Do TCP/UDP, IPv4 only
-		unboundConf.appendLine("\tdo-tcp: yes");
+		setListenTCP(unboundConf, "yes");
+		// Do UDP, IPv4 only
 		unboundConf.appendLine("\tdo-udp: yes");
 		unboundConf.appendLine("\tdo-ip4: yes");
 		// No IPv6, please.
@@ -163,6 +163,15 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.add(unboundConfD);
 
 		return units;
+	}
+
+	/**
+	 * Enable or disable whether TCP queries are answered or issued
+	 * @param unboundConf Config FileUnit
+	 * @param value "yes" or "no"
+	 */
+	private void setListenTCP(FileUnit unboundConf, String value) {
+		unboundConf.appendLine("\tdo-tcp: " + value);
 	}
 
 	/**
