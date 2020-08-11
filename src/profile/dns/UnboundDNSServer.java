@@ -43,6 +43,9 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	private static String UNBOUND_CONFIG_DIR = "/etc/unbound/";
 	private static String UNBOUND_CONFIG_DROPIN_DIR = UNBOUND_CONFIG_DIR + "unbound.conf.d/";
 	private static String UNBOUND_CONFIG_FILE = UNBOUND_CONFIG_DIR + "unbound.conf";
+
+	private static String UNBOUND_PIDFILE = "/var/run/unbound/unbound.pid";
+
 	private static Integer DEFAULT_UPSTREAM_DNS_PORT = 853;
 
 	private final Map<HostName, Set<AMachineModel>> zones;
@@ -80,8 +83,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		setLogVerbosity(unboundConf, 1);
 		setWorkingDirectory(unboundConf, UNBOUND_CONFIG_DIR);
 		setChroot(unboundConf, ""); // TODO: implement  
+		setPIDFile(unboundConf, UNBOUND_PIDFILE);
 
-		unboundConf.appendLine("\tpidfile: \\\"/var/run/unbound.pid\\\"");
 		// Listen to lan/loopback traffic
 		unboundConf.appendLine("\tinterface: 127.0.0.1");
 		unboundConf.appendLine("\taccess-control: 127.0.0.1/32 allow");
@@ -171,6 +174,15 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.add(unboundConfD);
 
 		return units;
+	}
+
+	/**
+	 * The process id is written to the file
+	 * @param unboundConf Config FileUnit
+	 * @param path path to the PID file
+	 */
+	private void setPIDFile(FileUnit unboundConf, String path) {
+		unboundConf.appendLine("\tpidfile: \\\"" + path + "\\\"");
 	}
 
 	/**
