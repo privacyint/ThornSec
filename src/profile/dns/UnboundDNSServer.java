@@ -156,12 +156,9 @@ public class UnboundDNSServer extends ADNSServerProfile {
 			unboundConf.appendLine("\t\tforward-addr: " + upstream.getHost() + "@" + port);
 		}
 
-		final DirUnit unboundConfD = new DirUnit("unbound_conf_d", "dns_installed", UNBOUND_CONFIG_FILE_PATH + ".d");
-		final DirOwnUnit unboundConfDOwner = new DirOwnUnit("unbound_conf_d", "unbound_conf_d_created",
-				UNBOUND_CONFIG_FILE_PATH + ".d", "unbound", "unbound");
+		final DirUnit unboundConfD = new DirUnit("unbound_conf_d", "dns_installed", UNBOUND_CONFIG_FILE_PATH + ".d", "unbound", "unbound", 0660, "");
 
 		units.add(unboundConfD);
-		units.add(unboundConfDOwner);
 
 		return units;
 	}
