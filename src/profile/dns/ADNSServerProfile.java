@@ -48,4 +48,12 @@ public abstract class ADNSServerProfile extends AStructuredProfile {
 	 * add a machine(s) to a given domain
 	 */
 	public abstract void addRecord(AMachineModel... machine);
+	
+	/**
+	 * Add the required DNS records for a Collection of Machines
+	 * @param machines The machines to build DNS records for
+	 */
+	public final void addRecord(Collection<AMachineModel> machines) {
+		addRecord((AMachineModel[]) machines.toArray());
+	}
 }
