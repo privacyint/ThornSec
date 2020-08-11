@@ -78,8 +78,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		unboundConf.appendLine("server:");
 		dropUserPostInvocation(unboundConf, "unbound");
 		setLogVerbosity(unboundConf, 1);
+		setWorkingDirectory(unboundConf, UNBOUND_CONFIG_DIR);
 
-		unboundConf.appendLine("\tdirectory: \\\"/etc/unbound\\\"");
 		// Stick it in a chroot. DNS is dangerous.
 		// unboundConf.appendLine("\tchroot: \\\"/etc/unbound\\\"");
 		unboundConf.appendLine("\tpidfile: \\\"/var/run/unbound.pid\\\"");
@@ -172,6 +172,15 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.add(unboundConfD);
 
 		return units;
+	}
+
+	/**
+	 * Sets the working directory for the program
+	 * @param unboundConf Config FileUnit
+	 * @param workingDir working directory for the program
+	 */
+	private void setWorkingDirectory(FileUnit unboundConf, String workingDir) {
+		unboundConf.appendLine("\tdirectory: \\\"" + workingDir + "\\\"");
 	}
 
 	/**
