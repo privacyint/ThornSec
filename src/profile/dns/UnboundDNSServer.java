@@ -72,10 +72,11 @@ public class UnboundDNSServer extends ADNSServerProfile {
 				"root", "root", 644,
 				"I was unable to create Unbound's config file. Your DNS server will fail to boot.");
 		units.add(unboundConf);
+
 		unboundConf.appendLine("server:");
 		dropUserPostInvocation(unboundConf, "unbound");
+		setLogVerbosity(unboundConf, 1);
 
-		unboundConf.appendLine("\tverbosity: 1");
 		unboundConf.appendLine("\tdirectory: \\\"/etc/unbound\\\"");
 		// Stick it in a chroot. DNS is dangerous.
 		// unboundConf.appendLine("\tchroot: \\\"/etc/unbound\\\"");
@@ -169,6 +170,20 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.add(unboundConfD);
 
 		return units;
+	}
+
+	/**
+	 * Bigger the number, the noisier the logs
+	 * @param unboundConf Config FileUnit
+	 * @param verbosity 0 means no verbosity, only errors.
+	 * 					1 for operational information.
+	 * 					2 for detailed operational information.
+	 * 					3 for query level information, output per query.
+	 * 					4 for algorithm level information.
+	 * 					5 logs client identification for cache misses 
+	 */
+	private void setLogVerbosity(FileUnit unboundConf, int verbosity) {
+		unboundConf.appendLine("\tverbosity: " + verbosity);
 	}
 
 	/**
