@@ -170,19 +170,34 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	}
 
 	/**
+	 * Add a setting to unbound's conf
+	 * @param setting The name of the setting, as per man(5)
+	 * @param value "yes" or "no"
+	 * @throws InvalidProfileException if value is invalid 
+	 */
+	private void addSettingToConfig(String setting, String value) throws InvalidProfileException {
+		if (!"yes".equals(value) && !"no".equals(value)) {
+			throw new InvalidProfileException("value may only be \\\"yes\\\" or \\\"no\\\"");
+		}
+		unboundConf.appendLine("\t" + setting + ": " + value);
+	}
+
+	/**
 	 * If enabled version.server and version.bind queries are refused. 
 	 * @param value "yes" or "no"
+	 * @throws InvalidProfileException if value is invalid 
 	 */
-	private void hideVersion(String value) {
-		unboundConf.appendLine("\thide-version: " + value);		
+	private void hideVersion(String value) throws InvalidProfileException {
+		addSettingToConfig("hide-version", value);
 	}
 
 	/**
 	 * If enabled id.server and hostname.bind queries are refused. 
 	 * @param value "yes" or "no"
+	 * @throws InvalidProfileException if value is invalid 
 	 */
-	private void hideIdentity(String value) {
-		unboundConf.appendLine("\thide-identity: " + value);		
+	private void hideIdentity(String value) throws InvalidProfileException {
+		addSettingToConfig("hide-identity", value);		
 	}
 
 	/**
@@ -191,33 +206,37 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	 * If disabled, queries are not answered on IPv6, and queries are not sent
 	 * on IPv6 to the upstream nameservers. 
 	 * @param value "yes" or "no"
+	 * @throws InvalidProfileException if value is invalid 
 	 */
-	private void setListenIPv6(String value) {
-		unboundConf.appendLine("\tdo-ip6: " + value);		
+	private void setListenIPv6(String value) throws InvalidProfileException {
+		addSettingToConfig("do-ipv6", value);		
 	}
 
 	/**
 	 * Enable or disable whether ip4 queries are answered or issued
 	 * @param value "yes" or "no"
+	 * @throws InvalidProfileException if value is invalid 
 	 */
-	private void setListenIPv4(String value) {
-		unboundConf.appendLine("\tdo-ip4: " + value);
+	private void setListenIPv4(String value) throws InvalidProfileException {
+		addSettingToConfig("do-ipv4", value);		
 	}
 
 	/**
 	 * Enable or disable whether UDP queries are answered or issued
 	 * @param value "yes" or "no"
+	 * @throws InvalidProfileException if value is invalid 
 	 */
-	private void setListenUDP(String value) {
-		unboundConf.appendLine("\tdo-udp: " + value);
+	private void setListenUDP(String value) throws InvalidProfileException {
+		addSettingToConfig("do-udp", value);		
 	}
 
 	/**
 	 * Enable or disable whether TCP queries are answered or issued
 	 * @param value "yes" or "no"
+	 * @throws InvalidProfileException 
 	 */
-	private void setListenTCP(String value) {
-		unboundConf.appendLine("\tdo-tcp: " + value);
+	private void setListenTCP(String value) throws InvalidProfileException {
+		addSettingToConfig("do-tcp", value);		
 	}
 
 	/**
