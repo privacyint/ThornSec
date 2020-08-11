@@ -11,13 +11,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import core.StringUtils;
 import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
 import core.exception.data.InvalidIPAddressException;
-import core.exception.data.machine.InvalidServerException;
 import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
-import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
 import core.model.machine.ServerModel;
@@ -37,16 +34,24 @@ import inet.ipaddr.IncompatibleAddressException;
  */
 public class ISCDHCPServer extends ADHCPServerProfile {
 
-	
-	
+	/**
+	 * Initialise a new ISC DHCP Server	on a given Server
+	 * @param me The ServerModel which is to be offering IP addresses (generally
+	 * 			 assumed to be our Router, but that's not *necessarily* true
+	 * @throws AThornSecException
+	 */
 	public ISCDHCPServer(ServerModel me) throws AThornSecException {
 		super(me);
 
 		me.addProcessString("/usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf");
 	}
 
-	private void buildNet(MachineType type)
-			throws InvalidServerException, InvalidIPAddressException {
+	/**
+	 * Builds a given subnet
+	 * @param type The Machine type you're building the subnet for
+	 * @throws InvalidIPAddressException if an invalid IP address is assigned
+	 */
+	private void buildNet(MachineType type) throws InvalidIPAddressException {
 		// First IP belongs to this net's router, so start from there (as it's assigned)
 		IPAddress ip = getNetworkModel().getSubnet(type).getLowerNonZeroHost();
 
@@ -74,6 +79,13 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		}
 	}
 
+	/**
+	 * Checks whether a given IP address is already assigned somewhere on our
+	 * network.
+	 * 
+	 * @param ip the IP address to check
+	 * @return true if assigned, false otherwise 
+	 */
 	private Boolean isAssigned(IPAddress ip) {
 		return getNetworkModel().getMachines()
 						 .values()
@@ -97,7 +109,8 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 				if (isRequired) {
 					throw new InvalidNetworkInterfaceException("Network interface " + nic.getIface() + " on "
 							+ machine.getLabel() + " requires a MAC address to be set.");
-				} else {
+				}
+				else {
 					return false;
 				}
 			}
@@ -130,11 +143,11 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		// TODO: tidy up this loopy mess?
 		for (final AMachineModel server : getNetworkModel().getMachines(MachineType.SERVICE)) {
 			if (checkMACs(server, false) == false) {
-				for (final NetworkInterfaceModel nic : server.getNetworkInterfaces()) {
+				server.getNetworkInterfaces().forEach(nic -> {
 					if (nic.getMac().isEmpty()) {
 						nic.setMac(server.generateMAC(nic.getIface()));
 					}
-				}
+				});
 			}
 		}
 	}
@@ -148,17 +161,26 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		return units;
 	}
 
-	private void buildPersistentNets() throws InvalidIPAddressException, InvalidServerException {
-		
+	/**
+	 * Build our subnets where they have machines in them
+	 * @throws InvalidIPAddressException if attempting to assign an invalid IP
+	 */
+	private void buildPersistentNets() throws InvalidIPAddressException {
 		for (MachineType type : getNetworkModel().getSubnets().keySet()) {
-			if (!getNetworkModel().getMachines(type).isEmpty()) {
-				buildNet(type);
+			if (getNetworkModel().getMachines(type).isEmpty()) {
+				continue;
 			}
+			
+			buildNet(type);
 		}
-		
 	}
 
-	private FileUnit getDHCPConf() throws InvalidMachineModelException {
+	/**
+	 * Build our /etc/dhcp/dhcpd.conf file, including all subnet files
+	 * 
+	 * @return FileUnit for DHCPd.conf
+	 */
+	private FileUnit getDHCPConf() {
 		final FileUnit dhcpdConf = new FileUnit("dhcpd_conf", "dhcp_installed", "/etc/dhcp/dhcpd.conf");
 
 		dhcpdConf.appendLine("#Options here are set globally across your whole network(s)");
@@ -175,6 +197,10 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		dhcpdConf.appendCarriageReturn();
 
 		for (final MachineType subnet : getNetworkModel().getSubnets().keySet()) {
+			if (getNetworkModel().getMachines(subnet).isEmpty()) {
+				continue;
+			}
+
 			dhcpdConf.appendLine("include \\\"/etc/dhcp/dhcpd.conf.d/" + subnet.toString() + ".conf\\\";");
 		}
 
@@ -211,6 +237,12 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		return units;
 	}
 
+	/**
+	 * Build the configuration for a given subnet
+	 * @param type
+	 * @return
+	 * @throws InvalidIPAddressException
+	 */
 	private FileUnit buildSubNet(MachineType type) throws InvalidIPAddressException {
 		final FileUnit subnetConfig = new FileUnit(type + "_dhcpd_live_config", "dhcp_installed",
 				"/etc/dhcp/dhcpd.conf.d/" + type + ".conf");
@@ -227,36 +259,33 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		// Now let's create our subnet/groups!
 		subnetConfig.appendCarriageReturn();
 		subnetConfig.appendLine("group " + type.toString().toLowerCase() + " {");
-		subnetConfig.appendLine("\tserver-name \\\"" + type.toString().toLowerCase() + "." + getMachineModel().getLabel() + "." + getNetworkModel().getDomain() + "\\\";");
+		subnetConfig.appendLine("\tserver-name \\\"" + type.toString().toLowerCase() + "." + getMachineModel().getHostName() + "." + getNetworkModel().getDomain() + "\\\";");
 		subnetConfig.appendLine("\toption routers " + gateway + ";");
 		subnetConfig.appendLine("\toption domain-name-servers " + gateway + ";");
 		subnetConfig.appendCarriageReturn();
 
-		if (getNetworkModel().getMachines(type) != null) {
-			for (final AMachineModel machine : getNetworkModel().getMachines(type)) {
-				// Skip over ourself, we're a router.
-				if (machine.equals(getMachineModel())) {
+		for (final AMachineModel machine : getNetworkModel().getMachines(type)) {
+			// Skip over ourself, we're a router.
+			if (machine.equals(getMachineModel())) {
+				continue;
+			}
+
+			for (final NetworkInterfaceModel iface : machine.getNetworkInterfaces()) {
+				// We check the requirement elsewhere. Don't try and build non-machine leases
+				if (iface.getMac().isEmpty()) {
 					continue;
 				}
+
+				if (iface.getAddresses().isPresent()) {
+					final IPAddress ip = (IPAddress) iface.getAddresses().get().toArray()[0];
+
+					subnetConfig
+							.appendLine("\thost " + machine.getHostName() + "-" + iface.getMac().get().toHexString(false) + " {");
+					subnetConfig.appendLine("\t\thardware ethernet " + iface.getMac().get().toColonDelimitedString() + ";");
 	
-				for (final NetworkInterfaceModel iface : machine.getNetworkInterfaces()) {
-					// We check the requirement elsewhere. Don't try and build non-machine leases
-					if (iface.getMac() == null) {
-						continue;
-					}
-	
-					if (iface.getAddresses().isPresent()) {
-						final IPAddress ip = (IPAddress) iface.getAddresses().get().toArray()[0];
-	
-						subnetConfig
-								.appendLine("\thost " + StringUtils.stringToAlphaNumeric(machine.getLabel().toLowerCase(), "-")
-										+ "-" + iface.getMac().get().toHexString(false) + " {");
-						subnetConfig.appendLine("\t\thardware ethernet " + iface.getMac().get().toColonDelimitedString() + ";");
-		
-						subnetConfig.appendLine("\t\tfixed-address " + ip.withoutPrefixLength().toCompressedString() + ";");
-						subnetConfig.appendLine("\t}");
-						subnetConfig.appendCarriageReturn();
-					}
+					subnetConfig.appendLine("\t\tfixed-address " + ip.withoutPrefixLength().toCompressedString() + ";");
+					subnetConfig.appendLine("\t}");
+					subnetConfig.appendCarriageReturn();
 				}
 			}
 		}
