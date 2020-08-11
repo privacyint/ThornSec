@@ -75,10 +75,10 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		// Listen to lan/loopback traffic
 		unboundConf.appendLine("\tinterface: 127.0.0.1");
 		unboundConf.appendLine("\taccess-control: 127.0.0.1/32 allow");
-		myRouter.getVLANs().forEach((nic, vlan) -> {
-			unboundConf.appendLine("\t#" + nic.getIface());
+		myRouter.getVLANTrunk().getVLANs().forEach(vlan -> {
+			unboundConf.appendLine("\t#" + vlan.getIface());
 			
-			IPAddress subnet = nic.getSubnet().getLowerNonZeroHost().withoutPrefixLength();
+			IPAddress subnet = vlan.getSubnet().getLowerNonZeroHost().withoutPrefixLength();
 		
 			// Listen on this LAN interface
 			unboundConf.appendLine("\tinterface: " + subnet.toCompressedString());
