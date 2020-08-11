@@ -197,6 +197,24 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		return units;
 	}
 
+	/**
+	 * Downloads a root hints file from InterNIC. This is used as authoritative
+	 * records for the "." zone.
+	 * 
+	 * See https://kb.isc.org/docs/aa-01309 for a little more info
+	 * @return a unit which downloads InterNIC's root hints file to /etc/unbound
+	 */
+	private Collection<IUnit> getRootHints() {
+		final Collection<IUnit> units = new ArrayList<>();
+
+		units.add(new SimpleUnit("root_hints", "proceed",
+				"sudo wget -O /etc/unbound/root.hints https://www.internic.net/domain/named.root",
+				"[ ! -f /etc/unbound/root.hints ] && echo fail",
+				"", "pass"));
+
+		return units;
+	}
+
 	@Override
 	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
