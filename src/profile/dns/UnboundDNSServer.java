@@ -51,6 +51,13 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		this.zones = new Hashtable<>();
 	}
 
+	/**
+	 * Builds our unbound config file, see 
+	 * https://linux.die.net/man/5/unbound.conf for full config file
+	 * 
+	 * Config originally based on https://calomel.org/unbound_dns.html
+	 * @return Units for unbound.conf and the drop-in directory
+	 */
 	@Override
 	public Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidMachineModelException {
 		final Integer cpus = getServerModel().getCPUs();
@@ -60,8 +67,6 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.addAll(getRootHints());
 		units.addAll(populateInternalZones());
 
-		// Config originally based on https://calomel.org/unbound_dns.html
-		// See https://linux.die.net/man/5/unbound.conf for full config file
 		final FileUnit unboundConf = new FileUnit("unbound_conf", "dns_installed",
 				UNBOUND_CONFIG_FILE_PATH,
 				"root", "root", 644,
