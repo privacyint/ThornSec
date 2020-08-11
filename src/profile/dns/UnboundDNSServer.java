@@ -104,6 +104,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 		// Add some DNS hardening
 		hideIdentity("yes");
+		hideVersion("yes");
 		unboundConf.appendLine("\thide-version: yes");
 		unboundConf.appendLine("\tharden-glue: yes");
 		unboundConf.appendLine("\tharden-dnssec-stripped: yes");
@@ -166,6 +167,14 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.add(unboundConfD);
 
 		return units;
+	}
+
+	/**
+	 * If enabled version.server and version.bind queries are refused. 
+	 * @param value "yes" or "no"
+	 */
+	private void hideVersion(String value) {
+		unboundConf.appendLine("\thide-version: " + value);		
 	}
 
 	/**
