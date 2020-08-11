@@ -62,7 +62,10 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		
 		// Config originally based on https://calomel.org/unbound_dns.html
 		// See https://linux.die.net/man/5/unbound.conf for full config file
-		final FileUnit unboundConf = new FileUnit("unbound_conf", "dns_installed", UNBOUND_CONFIG_FILE_PATH);
+		final FileUnit unboundConf = new FileUnit("unbound_conf", "dns_installed",
+				UNBOUND_CONFIG_FILE_PATH,
+				"root", "root", 644,
+				"I was unable to create Unbound's config file. Your DNS server will fail to boot.");
 		units.add(unboundConf);
 		unboundConf.appendLine("server:");
 		// Force dropping user post-invocation
