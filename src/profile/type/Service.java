@@ -45,8 +45,6 @@ public class Service extends AMachine {
 	public Collection<IUnit> getPersistentConfig() {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		super.buildNICs();
-
 		// Mount /media/backup
 		units.add(new FileAppendUnit("backup_fstab", "is_virtualbox_guest", "backup    /media/backup      vboxsf defaults,_netdev,ro 0 0", "/etc/fstab",
 				"Couldn't create the mount for the backup at /media/backup.  Meh."));

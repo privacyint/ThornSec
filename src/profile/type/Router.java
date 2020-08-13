@@ -44,7 +44,6 @@ import profile.firewall.AFirewallProfile;
  * If you want to make changes in here, you'll have a lot of reading to do :)!
  */
 public class Router extends AMachine {
-	private MACVLANTrunkModel vlanTrunk;
 	private final ADNSServerProfile dnsServer;
 	private final ADHCPServerProfile dhcpServer;
 	private final AFirewallProfile firewall;
@@ -53,17 +52,13 @@ public class Router extends AMachine {
 		super(me);
 
 		bondLANIfaces();
-		this.vlanTrunk = buildVLANs();
+		buildVLANs();
 
 		this.firewall = me.getFirewall();
 		this.dhcpServer = new ISCDHCPServer(me);
 		this.dnsServer = new UnboundDNSServer(me);
 	}
 
-	public MACVLANTrunkModel getVLANTrunk() {
-		return this.vlanTrunk;
-	}
-	
 	private void bondLANIfaces() {
 		NetworkInterfaceModel lanTrunk = null;
 
@@ -99,22 +94,24 @@ public class Router extends AMachine {
 		if (getNetworkModel().getData().buildAutoGuest()) {
 			vlans.add(MachineType.GUEST);
 		}
-		
+
 		final MACVLANTrunkModel trunk = new MACVLANTrunkModel();
 		trunk.setIface("LAN");
 		getMachineModel().addNetworkInterface(trunk);
-		
+
 		for (MachineType type : vlans) {
 			if (getNetworkModel().getMachines(type).isEmpty()) {
 				continue;
 			}
-			
+
 			MACVLANModel vlan = new MACVLANModel();
 			vlan.setIface(type.toString());
 			vlan.setSubnet(getNetworkModel().getSubnet(type));
+			vlan.addAddress(getNetworkModel().getSubnet(type).getLowerNonZeroHost());
 			trunk.addVLAN(vlan);
+			getMachineModel().addNetworkInterface(vlan);
 		}
-		
+
 		return trunk;
 	}
 
