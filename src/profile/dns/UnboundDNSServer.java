@@ -13,7 +13,6 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
-import core.StringUtils;
 import core.exception.data.InvalidPortException;
 import core.exception.runtime.ARuntimeException;
 import core.exception.runtime.InvalidMachineModelException;
@@ -763,8 +762,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		getServerModel().addSystemUsername("unbound");
 		getServerModel().addProcessString("/usr/sbin/unbound -d$");
 
-		if (getNetworkModel().getData().doAdBlocking().isPresent()
-				&& getNetworkModel().getData().doAdBlocking().get()) {
+		if (getNetworkModel().doAdBlocking()) {
 			units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
 			units.add(new InstalledUnit("wget", "proceed", "wget"));
 		}
@@ -772,6 +770,21 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		return units;
 	}
 
+	/**
+	 * Downloads our hosts file, and translates it into an Unbound zone
+	 * @return a unit to download & update the adblock zone
+	 */
+	private IUnit getAdBlockFileUnit() {
+		return new SimpleUnit("adblock_up_to_date", "proceed",
+				"sudo wget -O /etc/unbound/rawhosts https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
+						+ " && cat /etc/unbound/rawhosts | grep '^0\\.0\\.0\\.0'"
+						+ " | awk '{print \"local-zone: \\\"\"$2\"\\\" redirect\\nlocal-data: \\\"\"$2\" A 0.0.0.0\\\"\"}'"
+						+ " | sudo tee /etc/unbound/unbound.conf.d/adblock.zone > /dev/null"
+						+ " && sudo service unbound restart",
+				"[ ! -f /etc/unbound/rawhosts ] && echo fail || wget -O - -o /dev/null https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts | cmp /etc/unbound/rawhosts 2>&1",
+				"", "pass");
+	}
+	
 	@Override
 	public Collection<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
@@ -780,39 +793,12 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.add(unboundConfD);
 
 		// Start by updating the ad block list (if req'd)
-		if (getNetworkModel().getData().doAdBlocking().isPresent()
-				&& getNetworkModel().getData().doAdBlocking().get()) {
-			units.add(new SimpleUnit("adblock_up_to_date", "proceed",
-					"sudo wget -O /etc/unbound/rawhosts https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
-							+ " && cat /etc/unbound/rawhosts | grep '^0\\.0\\.0\\.0'"
-							+ " | awk '{print \"local-zone: \\\"\"$2\"\\\" redirect\\nlocal-data: \\\"\"$2\" A 0.0.0.0\\\"\"}'"
-							+ " | sudo tee /etc/unbound/unbound.conf.d/adblock.zone > /dev/null"
-							+ " && sudo service unbound restart",
-					"[ ! -f /etc/unbound/rawhosts ] && echo fail || wget -O - -o /dev/null https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts | cmp /etc/unbound/rawhosts 2>&1",
-					"", "pass"));
+		if (getNetworkModel().doAdBlocking()) {
+			units.add(getAdBlockFileUnit());
 		}
 
 		// Now make sure all of the various zones are there & up to date
-//		for (final HostName domain : this.zones.keySet()) {
-		this.zones.keySet().forEach((zone) -> {
-			final FileUnit zoneFile = new FileUnit(zone.getHost() + "_dns_internal_zone",
-					"dns_installed",
-					"/etc/unbound/unbound.conf.d/" + zone.getHost() + ".zone");
-			units.add(zoneFile);
-			// Typetransparent passes resolution upwards if not found locally
-			zoneFile.appendLine("\tlocal-zone: \\\"" + zone.getHost() + ".\\\" typetransparent");
-
-			this.zones.get(zone).forEach((machine) -> {
-				machine.getNetworkInterfaces().forEach((nic) -> {
-					nic.getAddresses().ifPresent((addresses) -> {
-						addresses.forEach((address) -> {
-							zoneFile.appendLine(createRecords(machine, address));
-						});
-					});
-					
-				});
-			});
-		});
+		units.addAll(buildDropinZones());
 
 		units.add(new RunningUnit("dns", "unbound", "unbound"));
 
@@ -825,26 +811,65 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		return units;
 	}
 	
-	private Collection<String> createRecords(AMachineModel machine, IPAddress ip) {
-		Collection<String> records = new ArrayList<>();
-		
-		String hostname = StringUtils.stringToAlphaNumeric(machine.getLabel(), "-").toLowerCase();
+	private Collection<IUnit> buildDropinZones() {
+		final Collection<IUnit> units = new ArrayList<>();
 
-		records.add("\tlocal-data: \\\"" + hostname + " A " + ip.getLowerNonZeroHost().withoutPrefixLength() + "\\\"");
-		records.add("\tlocal-data: \\\"" + hostname  + "." + machine.getDomain() + " A " + ip.getLowerNonZeroHost().withoutPrefixLength() + "\\\"");
-		records.add("\tlocal-data-ptr: \\\"" + ip.getLowerNonZeroHost().withoutPrefixLength() + " " + machine.getLabel().toLowerCase() + "\\\"");
-		records.add("\tlocal-data-ptr: \\\"" + ip.getLowerNonZeroHost().withoutPrefixLength() + " " + machine.getLabel().toLowerCase() + "." + machine.getDomain() + "\\\"");
-		
-		machine.getCNAMEs().ifPresent((cnames) -> {
-			cnames.forEach((cname) -> {
-				records.add("\tlocal-data: \\\"" + cname.toLowerCase() + " A " + ip.getLowerNonZeroHost().withoutPrefixLength() + "\\\"");
-				records.add("\tlocal-data: \\\"" + hostname  + "." + machine.getDomain() + " A " + ip.getLowerNonZeroHost().withoutPrefixLength() + "\\\"");
-				if (cname.equals(".")) {
-					records.add("\tlocal-data: \\\"" + machine.getDomain().getHost() + " A " + ip.withoutPrefixLength() + "\\\"");
-				}
-				else {
-					records.add("\tlocal-data: \\\"" + cname.toLowerCase() + "." + machine.getDomain().getHost() + " A " + ip.withoutPrefixLength() + "\\\"");
-				}
+		this.zones.forEach((zone, machines) -> {
+			final FileUnit zoneFile = new FileUnit(zone.getHost() + "_dns_internal_zone",
+					"dns_installed",
+					"/etc/unbound/unbound.conf.d/" + zone.getHost() + ".zone");
+			units.add(zoneFile);
+			// Typetransparent passes resolution upwards if not found locally
+			zoneFile.appendLine("\tlocal-zone: \\\"" + zone.getHost() + ".\\\" typetransparent");
+			zoneFile.appendLine(createRecords(machines));
+		});
+
+		return units;
+	}
+
+	/**
+	 * Creates the DNS records for given machines
+	 * @param machines machines to build DNS for
+	 * @return a Collection of Strings representing the DNS records
+	 */
+	private Collection<String> createRecords(Collection<AMachineModel> machines) {
+		Collection<String> records = new ArrayList<>();
+
+		machines.forEach((machine) -> {
+			records.addAll(createRecords(machine));
+		});
+
+		return records;
+	}
+
+	/**
+	 * Creates the DNS records for a given machine
+	 * @param machine machine to build DNS for
+	 * @return a Collection of Strings representing the DNS records
+	 */
+	private Collection<String> createRecords(AMachineModel machine) {
+		Collection<String> records = new ArrayList<>();
+
+		machine.getIPs().forEach((ip) -> {
+			// Add our A records for this machine, both with and without the domain
+			records.add("\tlocal-data: \\\"" + machine.getHostName() + " A " + ip.withoutPrefixLength() + "\\\"");
+			records.add("\tlocal-data: \\\"" + machine.getHostName()  + "." + machine.getDomain() + " A " + ip.withoutPrefixLength() + "\\\"");
+			// Add our reverse-DNS records for this machine, with and without domain
+			records.add("\tlocal-data-ptr: \\\"" + ip.withoutPrefixLength() + " " + machine.getHostName() + "\\\"");
+			records.add("\tlocal-data-ptr: \\\"" + ip.withoutPrefixLength() + " " + machine.getHostName() + "." + machine.getDomain() + "\\\"");
+	
+			// Add any CNAMEs configured against this machine
+			machine.getCNAMEs().ifPresent((cnames) -> {
+				cnames.forEach((cname) -> {
+					records.add("\tlocal-data: \\\"" + cname.toLowerCase() + " A " + ip.withoutPrefixLength() + "\\\"");
+					records.add("\tlocal-data: \\\"" + cname.toLowerCase() + "." + machine.getDomain() + " A " + ip.withoutPrefixLength() + "\\\"");
+					if (cname.equals(".")) {
+						records.add("\tlocal-data: \\\"" + machine.getDomain().getHost() + " A " + ip.withoutPrefixLength() + "\\\"");
+					}
+					else {
+						records.add("\tlocal-data: \\\"" + cname.toLowerCase() + "." + machine.getDomain().getHost() + " A " + ip.withoutPrefixLength() + "\\\"");
+					}
+				});
 			});
 		});
 		
@@ -853,10 +878,6 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 	@Override
 	public Collection<IUnit> getPersistentFirewall() throws ARuntimeException, InvalidPortException {
-		for (final HostName upstream : getNetworkModel().getUpstreamDNSServers()) {
-			//getMachineModel().addEgress(upstream);
-		}
-
 		return new HashSet<>();
 	}
 
