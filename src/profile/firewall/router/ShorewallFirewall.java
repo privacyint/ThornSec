@@ -729,36 +729,34 @@ public class ShorewallFirewall extends AFirewallProfile {
 	} 
 
 	/**
-	 * Parses a Machine into shorewall maclist lines
+	 * Parses machines into shorewall maclist lines
 	 *
-	 * @param machine
-	 * @param type
-	 * @return
+	 * @param type the machine type, only used for labelling
+	 * @param machines the machines to list in the maclist file
+	 * @return a Collection of Strings containing the maclist file lines
 	 */
 	private Collection<String> machines2Maclist(MachineType type, Collection<AMachineModel> machines) {
 		final Collection<String> maclist = new ArrayList<>();
 
-		maclist.add("");
 		maclist.add("#" + type.toString());
 
-		for (final AMachineModel machine : machines) {
-			
-			try {
-				if (getNetworkModel().getMachineModel(machine.getLabel()).isType(MachineType.ROUTER)) {
-					continue;
-				}
-			} catch (InvalidMachineModelException e) {
-				//As you were. This is not the droid you're looking for.
-			}
-			
-			machine.getNetworkInterfaces().forEach(nic -> {
-				if (nic.getMac() != null) {
-					maclist.add("ACCEPT\t" + type.toString() + "\t" + nic.getMac().toNormalizedString()
-							+ "\t" + getAddresses(machine) + "\t#" + machine.getLabel());
-
-				}
-			});
-		}
+		machines.forEach(machine -> {
+			machine.getNetworkInterfaces().stream()
+				.filter(nic -> nic.getMac().isPresent())
+				.filter(nic -> nic.getAddresses().isPresent())
+				.forEach(nic -> {
+					String mac = nic.getMac().get().toNormalizedString();
+					String addresses = nic.getAddresses().get().stream()
+											.map(ip -> ip.withoutPrefixLength())
+											.map(Object::toString)
+											.collect(Collectors.joining(","));
+					
+					maclist.add("ACCEPT\t" + type.toString()
+								+ "\t" + mac
+								+ "\t" + addresses
+								+ "\t#" + machine.getLabel());
+				});
+		});
 
 		return maclist;
 	}
