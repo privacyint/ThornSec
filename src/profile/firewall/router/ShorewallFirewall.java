@@ -688,26 +688,11 @@ public class ShorewallFirewall extends AFirewallProfile {
 		final Collection<String> addresses = new ArrayList<>();
 
 		machine.getNetworkInterfaces().forEach(nic -> {
-			if (nic.getAddresses() != null) {
-				addresses.add(getAddresses(nic.getAddresses()));
-			}
-		});
-
-		return String.join(",", addresses);
-	}
-
-	/**
-	 * Returns a comma-delimited string of given IP addresses, with hardcoded /32 subnet
-	 * @param ips
-	 * @return 
-	 */
-	private String getAddresses(Collection<IPAddress> ips) {
-		final Collection<String> addresses = new ArrayList<>();
-
-		ips.forEach(address -> {
-			if (address != null) {
-				addresses.add(address.getLowerNonZeroHost().withoutPrefixLength().toCompressedString() + "/32");
-			}
+			nic.getAddresses().ifPresent(nicAddresses -> {
+				nicAddresses.forEach(ip -> {
+					addresses.add(ip.withoutPrefixLength().toString());
+				});
+			});
 		});
 
 		return String.join(",", addresses);
