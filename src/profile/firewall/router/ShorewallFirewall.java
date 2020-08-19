@@ -61,9 +61,15 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	public enum ParentZone {
-		INTERNET(Arm.INTERNET, MachineType.INTERNET), ROUTER(Arm.FIREWALL, MachineType.ROUTER), USERS(Arm.LAN, MachineType.USER),
-		ADMINS(Arm.LAN, MachineType.ADMIN), SERVERS(Arm.LAN, MachineType.SERVER), INTERNAL_ONLY(Arm.LAN, MachineType.INTERNAL_ONLY),
-		EXTERNAL_ONLY(Arm.LAN, MachineType.EXTERNAL_ONLY), GUESTS(Arm.LAN, MachineType.GUEST), VPN(Arm.LAN, MachineType.VPN);
+		INTERNET(Arm.INTERNET, MachineType.INTERNET),
+		ROUTER(Arm.FIREWALL, MachineType.ROUTER),
+		USERS(Arm.LAN, MachineType.USER),
+		ADMINS(Arm.LAN, MachineType.ADMIN),
+		SERVERS(Arm.LAN, MachineType.SERVER),
+		INTERNAL_ONLY(Arm.LAN, MachineType.INTERNAL_ONLY),
+		EXTERNAL_ONLY(Arm.LAN, MachineType.EXTERNAL_ONLY),
+		GUESTS(Arm.LAN, MachineType.GUEST),
+		VPN(Arm.LAN, MachineType.VPN);
 
 		public static Set<ParentZone> internetZone = EnumSet.of(INTERNET);
 		public static Set<ParentZone> routerZone = EnumSet.of(ROUTER);
@@ -92,7 +98,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	private static String CONFIG_BASEDIR = "/etc/shorewall";
-	
+
 	private class Rule {
 		private String macro;
 		private Action action;
@@ -102,20 +108,20 @@ public class ShorewallFirewall extends AFirewallProfile {
 		private String sourceZone;
 		private String sourceSubZone;
 		private Collection<Integer> sPorts;
-		
+
 		private String destinationZone;
 		private String destinationSubZone;
 		private Encapsulation proto;
 		private Collection<Integer> dPorts;
-		
+
 		private Collection<IPAddress> origDest;
-		
+
 		private String rate;
 
 		public Rule() {
 			macro = null;
 			action = null;
-			
+
 			invertSource = false;
 			sourceSubZone = null;
 			sPorts = null;
@@ -124,52 +130,52 @@ public class ShorewallFirewall extends AFirewallProfile {
 			destinationSubZone = null;
 			proto = null;
 			dPorts = null;
-			
+
 			origDest = null;
-			
+
 			rate = null;
 		}
-		
+
 		public void setMacro(String macro) {
 			this.macro = macro;
 		}
-		
+
 		public void setAction(Action action) {
 			this.action = action;
 		}
-		
+
 		public void setSourceZone(String sourceZone) {
 			this.sourceZone = sourceZone;
 		}
-		
+
 		public void setInvertSource(Boolean val) {
 			this.invertSource = val;
 		}
-		
+
 		public void setDestinationZone(String destinationZone) {
 			this.destinationZone = destinationZone;
 		}
-		
+
 		public void setDestinationSubZone(String destinationSubZone) {
 			this.destinationSubZone = destinationSubZone;
 		}
-		
+
 		public void setProto(Encapsulation proto) {
 			this.proto = proto;
 		}
-		
+
 		public void setDPorts(Collection<Integer> dPorts) {
 			this.dPorts = dPorts;
 		}
-		
+
 		public void setOrigDest(Collection<IPAddress> origDest) {
 			this.origDest = origDest;
 		}
-		
+
 		public void setRate(String rate) {
 			this.rate = rate;
 		}
-		
+
 		public String getRule() {
 			String _action = (macro == null) ? action.toString() : macro+"("+action.toString()+")";
 			String _dPorts = null;
@@ -325,13 +331,13 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		return hosts;
 	}
-	
+
 	private Collection<Rule> getDNSRules() throws InvalidMachineModelException {
 		Collection<Rule> rules = new ArrayList<>();
 
 		Comment dnsComment = new Comment("DNS rules");
 		rules.add(dnsComment);
-		
+
 		if (getMachineModel().isType(MachineType.ROUTER)) {
 			//Router always needs to talk to itself.
 			Rule routerRule = new Rule();
@@ -339,7 +345,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 			routerRule.setSourceZone("$FW");
 			routerRule.setDestinationZone("$FW");
 			rules.add(routerRule);
-			
+
 			if (this.vlans != null) {
 				vlans.forEach((vlan, type) -> {
 					Rule lanDnsRule = new Rule();
@@ -348,15 +354,14 @@ public class ShorewallFirewall extends AFirewallProfile {
 					lanDnsRule.setSourceZone(type.toString());
 					lanDnsRule.setDestinationZone(cleanZone(getLabel()));
 					lanDnsRule.setDestinationSubZone("&" + vlan.getIface());
-					
+
 					rules.add(lanDnsRule);
 				});
 			}
-		}
 		else {
 			;; //TODO
 		}
-		
+
 		return rules;
 	}
 	
@@ -370,30 +375,30 @@ public class ShorewallFirewall extends AFirewallProfile {
 	 */
 	private Collection<Rule> getDefaultRules() {
 		Collection<Rule> rules = new ArrayList<>();
-		
+
 		if (getMachineModel().isType(MachineType.ROUTER)) {
 			if (this.hasRealUsers()) {
 				Rule userEgress = new Rule();
 				userEgress.setAction(Action.ACCEPT);
 				userEgress.setSourceZone(ParentZone.USERS.toString());
 				userEgress.setDestinationZone(ParentZone.INTERNET.toString());
-				
+
 				rules.add(userEgress);
 			}
-			
+
 			if (getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).size() > 0) {
 				Rule externalOnlyEgress = new Rule();
 				externalOnlyEgress.setAction(Action.ACCEPT);
 				externalOnlyEgress.setSourceZone(ParentZone.EXTERNAL_ONLY.toString());
 				externalOnlyEgress.setDestinationZone(ParentZone.INTERNET.toString());
-				
+
 				rules.add(externalOnlyEgress);
 			}
 		}
-		
+
 		return rules;
 	}
-	
+
 	private Collection<Rule> getRulesFile() throws InvalidServerException, InvalidMachineModelException {
 		Collection<Rule> rules = new ArrayList<>();
 		
@@ -491,7 +496,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 				zones.appendCarriageReturn();
 			});
 		}
-		
+
 		return zones;
 	}
 
@@ -518,7 +523,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 			getRulesFile().forEach(rule -> {
 				rules.appendLine(rule.getRule());
 			});
-		} catch (InvalidServerException | InvalidServerModelException e) {
+		}
+		catch (InvalidServerException | InvalidServerModelException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
