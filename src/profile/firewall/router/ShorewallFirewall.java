@@ -7,25 +7,20 @@
  */
 package profile.firewall.router;
 
-import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.json.stream.JsonParsingException;
 import core.StringUtils;
-import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
-import core.data.machine.ServerData;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
+import core.data.machine.configuration.TrafficRule.Encapsulation;
 import core.exception.AThornSecException;
-import core.exception.data.ADataException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
 import core.exception.runtime.InvalidMachineModelException;
@@ -41,7 +36,7 @@ import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
-import inet.ipaddr.IncompatibleAddressException;
+import inet.ipaddr.IPAddressString;
 import profile.firewall.AFirewallProfile;
 import profile.type.Router;
 
