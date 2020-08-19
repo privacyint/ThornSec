@@ -427,6 +427,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 				Comment machineComment = new Comment(machine.getLabel());
 				rules.add(machineComment);
 				
+				/*
 				machine.getEgresses().forEach(egress -> {
 					Rule machineEgressRule = new Rule();
 					machineEgressRule.setAction(Action.ACCEPT);
@@ -475,6 +476,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 					
 					rules.add(dnatRule);
 				});
+				*/
 			});
 		}
 		else {
