@@ -33,9 +33,9 @@ import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
 import core.model.machine.ServerModel;
-import core.model.machine.UserDeviceModel;
+import core.model.machine.configuration.networking.MACVLANModel;
+import core.model.machine.configuration.networking.MACVLANTrunkModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
-import core.model.network.NetworkModel;
 import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
@@ -301,16 +301,22 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return units;
 	}
 
+	/**
+	 * Builds our Maclist file as per http://shorewall.org/manpages/shorewall-maclist.html
+	 * @return the contents of the maclist file
+	 */
 	private Collection<String> getMaclistFile() {
 		final Collection<String> maclist = new ArrayList<>();
 
-		if (this.vlans != null) {
-			this.vlans.forEach((vlan, type) -> { 
-				Map<String, AMachineModel> machines = getNetworkModel().getMachines(type);
-			
-				maclist.addAll(machines2Maclist(type, machines.values()));
+		getServerModel().getNetworkInterfaces()
+		.stream()
+		.filter(nic -> nic instanceof MACVLANTrunkModel)
+		.forEach(nic -> {
+			((MACVLANTrunkModel)nic).getVLANs().forEach(vlan -> {
+				Set<AMachineModel> machines = getNetworkModel().getMachines(vlan.getType());
+				maclist.addAll(machines2Maclist(vlan.getType(), machines));
 			});
-		}
+		});
 
 		return maclist;
 	}
@@ -321,13 +327,16 @@ public class ShorewallFirewall extends AFirewallProfile {
 		hosts.add("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
 		hosts.add("#zone\thosts\toptions");
 
-		if (this.vlans != null) {
-			this.vlans.forEach((vlan, type) -> { 
-				Map<String, AMachineModel> machines = getNetworkModel().getMachines(type);
-			
-				hosts.addAll(machines2Host(type, machines.values()));
+		getServerModel().getNetworkInterfaces()
+		.stream()
+		.filter(nic -> nic instanceof MACVLANTrunkModel)
+		.forEach(nic -> {
+			((MACVLANTrunkModel)nic).getVLANs().forEach(vlan -> {
+				Set<AMachineModel> machines = getNetworkModel().getMachines(vlan.getType());
+
+				hosts.addAll(machines2Host(vlan.getType(), machines));
 			});
-		}
+		});
 
 		return hosts;
 	}
@@ -346,18 +355,22 @@ public class ShorewallFirewall extends AFirewallProfile {
 			routerRule.setDestinationZone("$FW");
 			rules.add(routerRule);
 
-			if (this.vlans != null) {
-				vlans.forEach((vlan, type) -> {
+			getServerModel().getNetworkInterfaces()
+			.stream()
+			.filter(nic -> nic instanceof MACVLANTrunkModel)
+			.forEach(nic -> {
+				((MACVLANTrunkModel)nic).getVLANs().forEach(vlan -> {
 					Rule lanDnsRule = new Rule();
 					lanDnsRule.setMacro("DNS");
 					lanDnsRule.setAction(Action.ACCEPT);
-					lanDnsRule.setSourceZone(type.toString());
-					lanDnsRule.setDestinationZone(cleanZone(getLabel()));
+					lanDnsRule.setSourceZone(vlan.getType().toString());
+					lanDnsRule.setDestinationZone(cleanZone(getMachineModel().getLabel()));
 					lanDnsRule.setDestinationSubZone("&" + vlan.getIface());
 
 					rules.add(lanDnsRule);
 				});
-			}
+			});
+		}
 		else {
 			;; //TODO
 		}
@@ -483,19 +496,21 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zones.appendLine("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
 		zones.appendLine("#zone\ttype");
 		
-		if (getMachineModel().isType(MachineType.ROUTER)) {
-			myRouter.getVLANTrunk().getVLANs().forEach((vlan) -> {
+		getServerModel().getNetworkInterfaces()
+		.stream()
+		.filter(nic -> nic instanceof MACVLANTrunkModel)
+		.forEach(nic -> {
+			((MACVLANTrunkModel)nic).getVLANs().forEach(vlan -> {
 				zones.appendLine("#" + vlan.getIface());
 				zones.appendLine(cleanZone(vlan.getIface()) + "\tipv4");
 				
-				if (!getNetworkModel().getMachines(type).isEmpty()) {
-					getNetworkModel().getMachines(type).forEach((label, machine) -> {
-						zones.appendLine(cleanZone(cleanZone(label) + ":" + vlan.getIface()) + "\tipv4" + "\t#" + label);
-					});
-				}
+				getNetworkModel().getMachines(vlan.getType()).forEach(machine -> {
+					zones.appendLine(cleanZone(cleanZone(machine.getLabel()) + ":" + vlan.getIface()) + "\tipv4" + "\t#" + machine.getLabel());
+				});
+
 				zones.appendCarriageReturn();
 			});
-		}
+		});
 
 		return zones;
 	}
@@ -566,64 +581,74 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		// First work out our Internet-facing NICs
 		try {
-			if (getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
-					getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach((iface, nicData) -> {
-						List<NetworkInterfaceModel> nicModels = me.getNetworkInterfaces()
-								.stream()
-								.filter((model) -> model.getIface().equals(iface))
-								.collect(Collectors.toList());
-
-						nicModels.forEach(nicModel -> {
-							interfaces.appendLine(buildInterfaceLine(nicModel, MachineType.INTERNET));
-						});
-					});
-			}
-		} catch (JsonParsingException | ADataException | IOException e) {
+//			if (getMachineModel().getNetworkInterfaces().get(Direction.WAN) != null) {
+//					getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach((iface, nicData) -> {
+//						List<NetworkInterfaceModel> nicModels = null;
+//						try {
+//							nicModels = getMachineModel().getNetworkInterfaces()
+//									.stream()
+//									.filter((model) -> model.getIface().equals(iface))
+//									.collect(Collectors.toList());
+//						} catch (InvalidMachineModelException e) {
+//							// TODO Auto-generated catch block
+//							e.printStackTrace();
+//						}
+//
+//						nicModels.forEach(nicModel -> {
+//							interfaces.appendLine(buildInterfaceLine(nicModel, MachineType.INTERNET));
+//						});
+//					});
+//			}
+		} catch (JsonParsingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 		// Then do everything else
-		if (getMachineModel().isType(MachineType.ROUTER)) {
-			myRouter.getVLANTrunk().getVLANs().forEach((vlan) -> {
+		getServerModel().getNetworkInterfaces()
+		.stream()
+		.filter(nic -> nic instanceof MACVLANTrunkModel)
+		.forEach(nic -> {
+			((MACVLANTrunkModel)nic).getVLANs().forEach(vlan -> {
 				interfaces.appendLine(buildInterfaceLine(vlan));
 			});
-		}
+		});
 
 		return interfaces;
 	}
 
-	private String buildInterfaceLine(NetworkInterfaceModel nic, MachineType type) {
+	private String buildInterfaceLine(MACVLANModel nic) {
 		String line = "";
-		line += cleanZone(type.toString());
+		line += cleanZone(nic.getType().toString());
 		line += "\t" + nic.getIface();
 		line += "\t-\t";
 		//If it's explicitly DHCP or it's on our LAN, it must talk DHCP
-		line += (nic.getInet().equals(Inet.DHCP) || ParentZone.lanZone.stream().anyMatch(zone -> zone.parentZone.equals(type))) ? "dhcp," : "";
+		line += (nic.getInet().equals(Inet.DHCP) || ParentZone.lanZone.stream().anyMatch(zone -> zone.parentZone.equals(nic.getType()))) ? "dhcp," : "";
 		line += "routefilter,arp_filter";
 		return line;
 	}
 
 	private FileUnit getMasqFile() {
 		final FileUnit masq = new FileUnit("shorewall_masquerades", "shorewall_installed", CONFIG_BASEDIR + "/masq");
-		try {
-			if (getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN) != null) {
-				getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN)
-						.forEach((iface, nic) -> {
-							this.vlans.forEach((vlan, zone) -> {
-								final String line = iface + "\t" + vlan.getIface();
 
-								if (!masq.containsLine(line)) {
-									masq.appendLine(line);
-								}
-							});
-						});
-			}
-		} catch (JsonParsingException | ADataException | IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		getMachineModel().getNetworkInterfaces()
+			.stream()
+			.filter(nic -> Direction.WAN.equals(nic.getDirection()))
+			.forEach(wanNic -> {
+				getServerModel().getNetworkInterfaces()
+				.stream()
+				.filter(_nic -> _nic instanceof MACVLANTrunkModel)
+				.forEach(macVLANTrunk -> {
+					((MACVLANTrunkModel)macVLANTrunk).getVLANs().forEach(vlan -> {
+						final String line = macVLANTrunk.getIface() + "\t" + vlan.getIface();
 
+						if (!masq.containsLine(line)) {
+							masq.appendLine(line);
+						}
+					});
+				});
+			});
+		
 		return masq;
 	}
 
@@ -631,6 +656,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 	public Collection<IUnit> getPersistentConfig() throws ARuntimeException {
 		final Collection<IUnit> units = new ArrayList<>();
 
+		if (this.myRouter == null) {
+			return units;
+		}
+		
 		final FileEditUnit shorewallConf = new FileEditUnit("shorewall_implicit_continue_on", "shorewall_installed",
 				"IMPLICIT_CONTINUE=No", "IMPLICIT_CONTINUE=Yes", "/etc/shorewall/shorewall.conf",
 				"I couldn't enable implicit continue on your firewall - this means many of our firewall configurations will fail.");
