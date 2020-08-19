@@ -386,12 +386,13 @@ public class ShorewallFirewall extends AFirewallProfile {
 	 * (as we disallow everything by policy).
 	 * 
 	 * @return A collection of Rules
+	 * @throws InvalidMachineModelException 
 	 */
-	private Collection<Rule> getDefaultRules() {
+	private Collection<Rule> getDefaultRules() throws InvalidMachineModelException {
 		Collection<Rule> rules = new ArrayList<>();
 
 		if (getMachineModel().isType(MachineType.ROUTER)) {
-			if (this.hasRealUsers()) {
+			if (getNetworkModel().getMachines(MachineType.USER).size() > 0) {
 				Rule userEgress = new Rule();
 				userEgress.setAction(Action.ACCEPT);
 				userEgress.setSourceZone(ParentZone.USERS.toString());
