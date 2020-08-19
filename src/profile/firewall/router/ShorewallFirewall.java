@@ -43,6 +43,7 @@ import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IncompatibleAddressException;
 import profile.firewall.AFirewallProfile;
+import profile.type.Router;
 
 /**
  * For more information on this Firewall, please see
@@ -239,7 +240,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 	public ShorewallFirewall(ServerModel me) {
 		super(me);
-		this.myRouter = (Router) me.getProfiles().get(MachineType.ROUTER);
+		this.myRouter = (Router) me.getProfiles().get(MachineType.ROUTER.toString());
 	}
 	
 	/**
