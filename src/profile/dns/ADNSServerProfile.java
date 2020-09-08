@@ -9,10 +9,6 @@ package profile.dns;
 
 import java.util.Collection;
 
-import core.exception.AThornSecException;
-
-import core.iface.IUnit;
-
 import core.model.machine.AMachineModel;
 import core.model.machine.ServerModel;
 
@@ -31,26 +27,11 @@ public abstract class ADNSServerProfile extends AStructuredProfile {
 		super(me);
 	}
 
-	@Override
-	public abstract Collection<IUnit> getInstalled() throws AThornSecException;
-
-	@Override
-	public abstract Collection<IUnit> getPersistentConfig() throws AThornSecException;
-
-	@Override
-	public abstract Collection<IUnit> getLiveConfig() throws AThornSecException;
-
-	@Override
-	public abstract Collection<IUnit> getPersistentFirewall() throws AThornSecException;
-
-	@Override
-	public abstract Collection<IUnit> getLiveFirewall() throws AThornSecException;
-
 	/**
 	 * add a machine(s) to a given domain
 	 */
 	public abstract void addRecord(AMachineModel... machine);
-	
+
 	/**
 	 * Add the required DNS records for a Collection of Machines
 	 * @param machines The machines to build DNS records for
