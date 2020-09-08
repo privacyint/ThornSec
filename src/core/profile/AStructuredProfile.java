@@ -96,7 +96,7 @@ public abstract class AStructuredProfile extends AProfile {
 	 * If you want to do configuration of the firewall (e.g. add a Device) please
 	 * see {@link #getPersistentFirewall()}
 	 */
-	protected Collection<IUnit> getLiveFirewall() throws AThornSecException {
+	public Collection<IUnit> getLiveFirewall() throws AThornSecException {
 		return new ArrayList<>();
 	}
 	
