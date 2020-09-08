@@ -459,4 +459,12 @@ public class NetworkModel {
 							)
 						);
 	}
+
+	/**
+	 * Whether or not to do ad blocking
+	 * @return as set in the data, or false
+	 */
+	public boolean doAdBlocking() {
+		return getData().doAdBlocking().orElseGet(() -> false);
+	}
 }
