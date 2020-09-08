@@ -12,8 +12,10 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 import core.data.machine.AMachineData.MachineType;
+import core.data.machine.configuration.TrafficRule.Encapsulation;
 import core.exception.AThornSecException;
 import core.exception.data.InvalidIPAddressException;
+import core.exception.data.InvalidPortException;
 import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
@@ -334,7 +336,9 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException {
+		getMachineModel().addLANOnlyListen(Encapsulation.UDP, 67);
+
 		return new ArrayList<>();
 	}
 

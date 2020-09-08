@@ -9,8 +9,7 @@ package profile.service.web;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import core.exception.data.InvalidPortException;
+import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
@@ -19,6 +18,7 @@ import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileUnit;
 import core.unit.fs.GitCloneUnit;
+import inet.ipaddr.HostName;
 import profile.stack.LEMP;
 import profile.stack.Nginx;
 import profile.stack.PHP;
@@ -140,12 +140,12 @@ public class Yourls extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException, InvalidMachineModelException {
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getPersistentFirewall());
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
+		getMachineModel().addEgress(new HostName("github.com"));
 
 		return units;
 	}

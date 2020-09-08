@@ -18,6 +18,7 @@ import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 import profile.stack.Nginx;
 import profile.stack.PHP;
 
@@ -142,8 +143,7 @@ public class Grav extends AStructuredProfile {
 	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("www.getgrav.com:443");
-		getNetworkModel().getServerModel(getLabel()).addEgress("www.getgrav.com:80");
+		getMachineModel().addEgress(new HostName("getgrav.com"));
 
 		units.addAll(this.webserver.getPersistentFirewall());
 

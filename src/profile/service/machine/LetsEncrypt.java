@@ -9,14 +9,14 @@ package profile.service.machine;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import core.exception.data.InvalidPortException;
 import core.exception.runtime.InvalidMachineModelException;
-import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
-import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 
 /**
  * This is a profile for https://letsencrypt.org/ - a free, automated CA
@@ -76,10 +76,13 @@ public class LetsEncrypt extends AStructuredProfile {
 //	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException, InvalidPortException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("acme-v01.api.letsencrypt.org");
+		getMachineModel().addEgress(new HostName("acme-v02.api.letsencrypt.org:80"));
+		getMachineModel().addEgress(new HostName("acme-v02.api.letsencrypt.org:443"));
+		getMachineModel().addEgress(new HostName("ocsp.int-x3.letsencrypt.org:80"));
+		getMachineModel().addEgress(new HostName("ocsp.int-x3.letsencrypt.org:443"));
 
 		return units;
 	}

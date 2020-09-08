@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
+import core.data.machine.configuration.TrafficRule.Encapsulation;
 import core.exception.data.InvalidPortException;
 import core.exception.runtime.ARuntimeException;
 import core.exception.runtime.InvalidMachineModelException;
@@ -35,14 +36,13 @@ import inet.ipaddr.IPAddress;
  * Please see https://nlnetlabs.nl/projects/unbound/about/ for more details.
  */
 public class UnboundDNSServer extends ADNSServerProfile {
+	private static Integer DEFAULT_UPSTREAM_DNS_PORT = 853;
 
 	private static String UNBOUND_CONFIG_DIR = "/etc/unbound/";
 	private static String UNBOUND_CONFIG_DROPIN_DIR = UNBOUND_CONFIG_DIR + "unbound.conf.d/";
 	private static String UNBOUND_CONFIG_FILE = UNBOUND_CONFIG_DIR + "unbound.conf";
 
 	private static String UNBOUND_PIDFILE = "/var/run/unbound/unbound.pid";
-
-	private static Integer DEFAULT_UPSTREAM_DNS_PORT = 853;
 
 	private final Map<HostName, Set<AMachineModel>> zones;
 
@@ -878,12 +878,32 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 	@Override
 	public Collection<IUnit> getPersistentFirewall() throws ARuntimeException, InvalidPortException {
+		getUpstreamDNSRules();
+
+		//Our local server listens on both TCP&UDP (for now, at least)
+		getMachineModel().addLANOnlyListen(Encapsulation.UDP, 67);
+		getMachineModel().addLANOnlyListen(Encapsulation.TCP, 67);
+
 		return new HashSet<>();
 	}
 
-	@Override
-	public Collection<IUnit> getLiveFirewall() throws ARuntimeException {
-		return new HashSet<>();
+	/**
+	 * Build the firewall rules required for communicating with our upstream DNS
+	 * @throws InvalidPortException
+	 */
+	private void getUpstreamDNSRules() throws InvalidPortException {
+		for (HostName upstream : getNetworkModel().getUpstreamDNSServers()) {
+			//DNS, by default, is UDP
+			Encapsulation upstreamProto = Encapsulation.UDP;
+
+			//However, according to their RFCs, DoH(443) & DoT(853) are TCP
+			if (upstream.getPort().equals(443) ||
+					upstream.getPort().equals(853)) {
+				upstreamProto = Encapsulation.TCP;
+			}
+
+			getMachineModel().addEgress(upstreamProto, upstream);
+		}
 	}
 
 	@Override

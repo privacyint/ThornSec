@@ -9,19 +9,17 @@ package profile.service.web;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import core.exception.data.InvalidPortException;
+import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidMachineModelException;
-import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
 import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 import profile.stack.LEMP;
 import profile.stack.Nginx;
 import profile.stack.PHP;
@@ -159,14 +157,14 @@ public class Drupal8 extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException, InvalidMachineModelException {
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("drupal.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("packagist.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("api.github.com");
-		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
-		getNetworkModel().getServerModel(getLabel()).addEgress("codeload.github.com");
+		getMachineModel().addEgress(new HostName("drupal.org"));
+		getMachineModel().addEgress(new HostName("packagist.org"));
+		getMachineModel().addEgress(new HostName("api.github.com"));
+		getMachineModel().addEgress(new HostName("github.com"));
+		getMachineModel().addEgress(new HostName("codeload.github.com"));
 
 		units.addAll(this.lempStack.getPersistentFirewall());
 

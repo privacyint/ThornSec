@@ -21,6 +21,7 @@ import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
+import inet.ipaddr.HostName;
 import profile.stack.Nginx;
 
 /**
@@ -125,7 +126,7 @@ public class Git extends AStructuredProfile {
 		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("scm_manager",
 				"deb http://maven.scm-manager.org/nexus/content/repositories/releases ./", "keyserver.ubuntu.com",
 				"D742B261");
-		getNetworkModel().getServerModel(getLabel()).addEgress("maven.scm-manager.org");
+		getMachineModel().addEgress(new HostName("maven.scm-manager.org"));
 
 		units.addAll(this.webserver.getPersistentFirewall());
 

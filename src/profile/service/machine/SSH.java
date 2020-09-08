@@ -186,8 +186,7 @@ public class SSH extends AStructuredProfile {
 	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP,
-				getNetworkModel().getData().getSSHPort(getLabel()));
+		getMachineModel().addListen(Encapsulation.TCP, getServerModel().getSSHListenPort());
 
 		return units;
 	}

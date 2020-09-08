@@ -9,7 +9,7 @@ package profile.service.machine;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
+import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
@@ -25,6 +25,7 @@ import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
+import inet.ipaddr.HostName;
 import profile.stack.PHP;
 
 /**
@@ -213,10 +214,10 @@ public class SVN extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException, InvalidPortException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("kent.dl.sourceforge.net:443");
+		getMachineModel().addEgress(new HostName("kent.dl.sourceforge.net:443"));
 
 		return units;
 	}

@@ -9,14 +9,14 @@ package profile.service.email;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import core.data.machine.AMachineData.Encapsulation;
+import core.data.machine.configuration.TrafficRule.Encapsulation;
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
+import inet.ipaddr.HostName;
 import profile.stack.MariaDB;
 import profile.stack.Nginx;
 import profile.stack.PHP;
@@ -79,9 +79,9 @@ public class EmailServer extends AStructuredProfile {
 
 		units.addAll(this.webserver.getPersistentFirewall());
 
-		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 25, 465, 993);
-		getNetworkModel().getServerModel(getLabel()).addEgress("spamassassin.apache.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("sa-update.pccc.com");
+		getMachineModel().addListen(Encapsulation.TCP, 25, 465, 993);
+		getMachineModel().addEgress(new HostName("spamassassin.apache.org:443"));
+		getMachineModel().addEgress(new HostName("sa-update.pccc.com:443"));
 
 		return units;
 	}

@@ -9,8 +9,7 @@ package profile.service.web;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import core.exception.data.InvalidPortException;
+import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
@@ -19,6 +18,7 @@ import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 import profile.stack.MariaDB;
 
 /**
@@ -102,13 +102,13 @@ public class CiviCRM extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException, InvalidMachineModelException {
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("download.civicrm.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("latest.civicrm.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("www.civicrm.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("storage.googleapis.com");
+		getMachineModel().addEgress(new HostName("download.civicrm.org"));
+		getMachineModel().addEgress(new HostName("latest.civicrm.org"));
+		getMachineModel().addEgress(new HostName("www.civicrm.org"));
+		getMachineModel().addEgress(new HostName("storage.googleapis.com"));
 
 		units.addAll(this.db.getPersistentFirewall());
 		units.addAll(this.drupal.getPersistentFirewall());

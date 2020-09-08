@@ -9,8 +9,7 @@ package profile.service.web;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import core.exception.data.InvalidPortException;
+import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
@@ -23,6 +22,7 @@ import core.unit.fs.FileChecksumUnit.Checksum;
 import core.unit.fs.FileDownloadUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 import profile.stack.LEMP;
 import profile.stack.Nginx;
 import profile.stack.PHP;
@@ -234,15 +234,15 @@ public class Nextcloud extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException, InvalidMachineModelException {
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("nextcloud.com:443");
-		getNetworkModel().getServerModel(getLabel()).addEgress("apps.nextcloud.com:443");
-		getNetworkModel().getServerModel(getLabel()).addEgress("download.nextcloud.com:443");
-		getNetworkModel().getServerModel(getLabel()).addEgress("updates.nextcloud.com:443");
+		getMachineModel().addEgress(new HostName("nextcloud.com"));
+		getMachineModel().addEgress(new HostName("apps.nextcloud.com"));
+		getMachineModel().addEgress(new HostName("download.nextcloud.com"));
+		getMachineModel().addEgress(new HostName("updates.nextcloud.com"));
 		// It requires opening to the wider web anyway :(
-		getNetworkModel().getServerModel(getLabel()).addEgress("github.com:443");
+		getMachineModel().addEgress(new HostName("github.com"));
 
 		units.addAll(this.lempStack.getPersistentFirewall());
 

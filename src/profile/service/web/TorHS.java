@@ -25,6 +25,7 @@ import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
+import inet.ipaddr.HostName;
 import profile.stack.Nginx;
 
 /**
@@ -220,8 +221,9 @@ public class TorHS extends AStructuredProfile {
 				"deb http://deb.torproject.org/torproject.org buster main", "keys.gnupg.net",
 				"A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
 
-		// Allow the server to call out everywhere
-		getNetworkModel().getMachineModel(getLabel()).addEgress("255.255.255.255");
+		// Allow the server to call out everywhere on :80 & :443
+		getMachineModel().addEgress(new HostName("255.255.255.255:80"));
+		getMachineModel().addEgress(new HostName("255.255.255.255"));
 
 		return units;
 	}
