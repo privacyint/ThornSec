@@ -8,13 +8,14 @@
 package core.model.machine;
 
 import java.util.Collection;
-
+import java.util.LinkedHashSet;
 import core.data.machine.ExternalDeviceData;
-import core.data.machine.configuration.TrafficRule;
+import core.data.machine.configuration.TrafficRule.Encapsulation;
 import core.exception.AThornSecException;
 import core.exception.data.InvalidPortException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
+import inet.ipaddr.HostName;
 
 /**
  * This model represents an "External-Only" device on our network.
@@ -27,13 +28,15 @@ public class ExternalOnlyDeviceModel extends ADeviceModel {
 		super(myData, networkModel);
 	}
 
+	/**
+	 * Set up our device to access the Internet 
+	 */
 	@Override
 	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException {
-		TrafficRule egressRule = new TrafficRule();
-		egressRule.setDestination("*");
-		super.addFirewallRule(egressRule);
-		
-		return null;
+		this.addEgress(Encapsulation.UDP, new HostName("*"));
+		this.addEgress(Encapsulation.TCP, new HostName("*"));
+
+		return new LinkedHashSet<>();
 	}
 
 	@Override

@@ -8,12 +8,14 @@
 package core.model.machine;
 
 import java.util.Collection;
-
+import java.util.LinkedHashSet;
 import core.data.machine.UserDeviceData;
+import core.data.machine.configuration.TrafficRule.Encapsulation;
 import core.exception.AThornSecException;
 import core.exception.data.InvalidPortException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
+import inet.ipaddr.HostName;
 
 /**
  * This model represents a User device on our network.
@@ -29,12 +31,13 @@ public class UserDeviceModel extends ADeviceModel {
 	@Override
 	public void init() throws AThornSecException {
 		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	protected Collection<IUnit> getPersistentFirewall() throws InvalidPortException {
-		// TODO Auto-generated method stub
-		return null;
+		this.addEgress(Encapsulation.UDP, new HostName("*"));
+		this.addEgress(Encapsulation.TCP, new HostName("*"));
+
+		return new LinkedHashSet<>();
 	}
 }
