@@ -210,7 +210,7 @@ public abstract class AMachineData extends AData {
 	private void readListenRules(Encapsulation encapsulation, JsonArray ports) throws InvalidPortException {
 		TrafficRule rule = new TrafficRule();
 		rule.setEncapsulation(encapsulation);
-		rule.setDestination(getLabel());
+		rule.addDestination(new HostName(getLabel()));
 		rule.setTable(Table.INGRESS);
 		
 		for (final JsonValue port : ports) {
@@ -257,7 +257,7 @@ public abstract class AMachineData extends AData {
 
 		for (final JsonValue destination : destinations) {
 			TrafficRule egressRule = new TrafficRule();
-			egressRule.setDestination(((JsonString) destination).getString());
+			egressRule.addDestination(new HostName(((JsonString) destination).getString()));
 			egressRule.setSource(getLabel());
 			
 			this.addTrafficRule(egressRule);
@@ -273,7 +273,7 @@ public abstract class AMachineData extends AData {
 		for (final JsonValue source : sources) {
 			TrafficRule ingressRule = new TrafficRule();
 			ingressRule.setSource(((JsonString) source).getString());
-			ingressRule.setDestination(getLabel());
+			ingressRule.addDestination(new HostName(getLabel()));
 			ingressRule.setTable(Table.INGRESS);
 			
 			this.addTrafficRule(ingressRule);
@@ -289,7 +289,7 @@ public abstract class AMachineData extends AData {
 
 		for (final JsonValue destination : destinations) {
 			TrafficRule dnatRule = new TrafficRule();
-			dnatRule.setDestination(((JsonString) destination).getString());
+			dnatRule.addDestination(new HostName(((JsonString) destination).getString()));
 			dnatRule.setSource(getLabel());
 			dnatRule.setTable(Table.DNAT);
 			
@@ -303,7 +303,7 @@ public abstract class AMachineData extends AData {
 
 			for (final JsonValue forward : forwards) {
 				TrafficRule forwardRule = new TrafficRule();
-				forwardRule.setDestination(((JsonString) forward).getString());
+				forwardRule.addDestination(new HostName(((JsonString) forward).getString()));
 				forwardRule.setTable(Table.FORWARD);
 				
 				this.addTrafficRule(forwardRule);

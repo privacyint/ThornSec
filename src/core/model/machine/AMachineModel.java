@@ -25,7 +25,12 @@ import core.data.machine.AMachineData.MachineType;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.data.machine.configuration.TrafficRule;
+import core.data.machine.configuration.TrafficRule.Encapsulation;
+import core.data.machine.configuration.TrafficRule.Table;
 import core.exception.AThornSecException;
+import core.exception.data.ADataException;
+import core.exception.data.InvalidIPAddressException;
+import core.exception.data.InvalidPortException;
 import core.iface.IUnit;
 import core.model.AModel;
 import core.model.machine.configuration.networking.DHCPClientInterfaceModel;
@@ -329,5 +334,172 @@ public abstract class AMachineModel extends AModel {
 	public AProfile getType(MachineType type) {
 		return this.types.getOrDefault(type, null);
 	}
-	
+
+	public Set<TrafficRule> getFirewallRules() {
+		return this.firewallRules;
+	}
+
+	/**
+	 * Add a TCP egress (outbound/Internet) firewall rule to this machine
+	 * @param destination a HostName representing the destination as either a
+	 * 			hostname e.g. privacyinternational.org or IP address 
+	 * @throws InvalidPortException if the port you're attempting to set is
+	 * 			invalid
+	 */
+	public void addEgress(HostName destination) throws InvalidPortException {
+		addEgress(Encapsulation.TCP, destination);
+	}
+
+	/**
+	 * Add an egress (outbound/Internet) firewall rule to this machine
+	 * @param encapsulation TCP/UDP
+	 * @param destination a HostName representing the destination as either a
+	 * 			hostname e.g. privacyinternational.org or IP address, optionally
+	 * 			with a port (host:port) or defaults to 443
+	 * @throws InvalidPortException if the port you're attempting to set is
+	 * 			invalid
+	 */
+	public void addEgress(Encapsulation encapsulation, HostName destination) throws InvalidPortException {
+		TrafficRule egressRule = new TrafficRule();
+
+		egressRule.setTable(Table.EGRESS);
+
+		egressRule.setSource(getHostName());
+
+		egressRule.addDestination(destination);
+		if (destination.getPort() == null) {
+			egressRule.addPorts(443);
+		}
+		else {
+			egressRule.addPorts(destination.getPort());
+		}
+
+		this.addFirewallRule(egressRule);
+	}
+
+	/**
+	 * Set this Machine to listen to {TCP|UDP} traffic on the provided port.
+	 * 
+	 * If the machine has been given (an) external IP(s), builds an ingress rule.
+	 * 
+	 * Allows access from LAN.
+	 * @param ports port(s) to listen on
+	 * @throws InvalidPortException if trying to set an invalid port
+	 */
+	public void addListen(Integer port) throws InvalidPortException {
+		addListen(Encapsulation.TCP, port);
+	}
+
+	/**
+	 * Set this Machine to listen to {TCP|UDP} traffic *on all available interfaces*
+	 * on the provided port(s).
+	 * 
+	 * If the machine has been given (an) external IP(s), builds an ingress rule
+	 * & allows access from LAN.
+	 * 
+	 * Don't use this method if you don't want these ports to be potentially
+	 * publicly accessible.
+	 * 
+	 * @param encapsulation TCP|UDP 
+	 * @param ports port(s) to listen on
+	 * @throws InvalidPortException if trying to listen on an invalid port
+	 */
+	public void addListen(Encapsulation encapsulation, Integer... ports) throws InvalidPortException {
+		if (! this.getExternalIPs().isEmpty()) {
+			try {
+				addWANOnlyListen(encapsulation, ports);
+			}
+			catch (InvalidIPAddressException e) {
+				;; //You shouldn't be able to get here.
+				;; //Famous last words, right? :)
+				e.printStackTrace();
+			}
+		}
+
+		addLANOnlyListen(encapsulation, ports);
+	}
+
+	/**
+	 * Set this Machine to listen to {TCP|UDP} traffic from our LAN machines on
+	 * the provided port(s).
+	 * 
+	 * This method only exposes the port(s) to our LAN.
+	 * @param encapsulation TCP|UDP
+	 * @param ports port(s) to listen on
+	 * @throws InvalidPortException if trying to listen on an invalid port
+	 */
+	public void addLANOnlyListen(Encapsulation encapsulation, Integer... ports) throws InvalidPortException {
+		TrafficRule internalListenRule = new TrafficRule();
+
+		internalListenRule.setTable(Table.FORWARD);
+		internalListenRule.setEncapsulation(encapsulation);
+		internalListenRule.addPorts(ports);
+		internalListenRule.addDestination(new HostName(getHostName()));
+		internalListenRule.setSource("*");
+
+		this.addFirewallRule(internalListenRule);
+	}
+
+	/**
+	 * Set this Machine to listen to {TCP|UDP} traffic from The Internet on the
+	 * provided port(s).
+	 * 
+	 * This method makes this machine publicly accessible on its external IP
+	 * address.
+	 * @param encapsulation TCP|UDP
+	 * @param ports port(s) to listen on
+	 * @throws InvalidIPAddressException if the machine doesn't have public IPs
+	 * @throws InvalidPortException if trying to listen on an invalid port
+	 */
+	public void addWANOnlyListen(Encapsulation encapsulation, Integer... ports) throws InvalidIPAddressException, InvalidPortException {
+		if (this.getExternalIPs().isEmpty()) {
+			throw new InvalidIPAddressException("Trying to listen to WAN on "
+					+ getLabel() + " but it has no pulicly accessible IP address.");
+		}
+
+		TrafficRule externalListenRule = new TrafficRule();
+
+		externalListenRule.setTable(Table.INGRESS);
+		externalListenRule.setEncapsulation(encapsulation);
+		externalListenRule.addPorts(ports);
+		externalListenRule.addDestination(new HostName(getHostName()));
+		externalListenRule.setSource("*");
+
+		this.addFirewallRule(externalListenRule);
+	}
+
+	/**
+	 * Redirect traffic from $originalDestination:$ports to $this:$ports.
+	 * 
+	 * This is done using Destination Network Address Translation, which replaces
+	 * the $originalDestination IP address in each packet with $this
+	 * @param encapsulation TCP|UDP
+	 * @param originalDestination the original destination address
+	 * @param ports ports
+	 * @throws InvalidPortException 
+	 */
+	public void addDNAT(Encapsulation encapsulation, String originalDestination, Integer... ports) throws InvalidPortException {
+		TrafficRule dnatRule = new TrafficRule();
+
+		dnatRule.setTable(Table.DNAT);
+		dnatRule.setEncapsulation(encapsulation);
+		dnatRule.addPorts(ports);
+		dnatRule.setSource(originalDestination);
+		dnatRule.addDestination(new HostName(getHostName()));
+
+		this.addFirewallRule(dnatRule);
+	}
+
+	/**
+	 * Redirect TCP traffic from $originalDestination:$ports to $this:$ports
+	 * 
+	 * This is done using Destination Network Address Translation, which replaces
+	 * the $originalDestination IP address in each packet with $this
+	 * @param originalDestination the original destination address
+	 * @param ports ports
+	 * @throws InvalidPortException 
+	 */
+	public void addDNAT(String originalDestination, Integer... ports) throws InvalidPortException {
+		addDNAT(Encapsulation.TCP, originalDestination, ports);
+	}
 }

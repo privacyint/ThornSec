@@ -1,9 +1,13 @@
 package core.data.machine.configuration;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import core.exception.data.InvalidPortException;
+import inet.ipaddr.HostName;
 
 public class TrafficRule {
 	public enum Encapsulation {
@@ -17,16 +21,17 @@ public class TrafficRule {
 	private Encapsulation encapsulation;
 	private Table table;
 	private String source;
-	private String destination;
+	private Set<HostName> destinations;
 	private Set<Integer> ports;
 	
-	public TrafficRule(Encapsulation encapsulation, Table table, String source, String destination, Integer... ports) throws InvalidPortException {
+	public TrafficRule(Encapsulation encapsulation, Table table, String source, Set<HostName> destinations, Set<Integer> ports) throws InvalidPortException {
 		this.ports = new LinkedHashSet<>();
+		this.destinations = new LinkedHashSet<>();
 		
 		this.encapsulation = encapsulation;
 		this.setTable(table);
 		this.setSource(source);
-		this.destination = destination;
+		this.addDestinations(destinations);
 		this.addPorts(ports);
 	}
 	
@@ -35,12 +40,12 @@ public class TrafficRule {
 	 * @param destination
 	 * @throws InvalidPortException
 	 */
-	public TrafficRule(String source, String destination, Table table) throws InvalidPortException {
-		this(Encapsulation.TCP, table, source, destination, 443);
+	public TrafficRule(String source, HostName destination, Table table) throws InvalidPortException {
+		this(Encapsulation.TCP, table, source, new HashSet<>(Arrays.asList(destination)), new HashSet<>(Arrays.asList(443)));
 	}
 	
 	public TrafficRule() throws InvalidPortException {
-		this(null, null, null, null, (Integer[])null);
+		this(null, null, null, new LinkedHashSet<>(), new LinkedHashSet<>());
 	}
 
 	/**
@@ -56,12 +61,13 @@ public class TrafficRule {
 	public void setEncapsulation(Encapsulation encapsulation) {
 		this.encapsulation = encapsulation;
 	}
-	
-	/**
-	 * @param destination the destination to set
-	 */
-	public void setDestination(String destination) {
-		this.destination = destination;
+
+	public void addDestinations(Collection<HostName> collection) {
+		this.destinations.addAll(collection);
+	}
+
+	public void addDestination(HostName destination) {
+		this.destinations.add(destination);
 	}
 
 	/**
@@ -90,12 +96,20 @@ public class TrafficRule {
 	}
 
 	/**
-	 * @return the destination
+	 * @param ports the ports to set
+	 * @throws InvalidPortException 
 	 */
-	public String getDestination() {
+	public void addPorts(Set<Integer> ports) throws InvalidPortException {
+		addPorts(ports.toArray(Integer[]::new));
+	}
+
+	/**
+	 * @return the destinations
+	 */
+	public Set<HostName> getDestinations() {
 		//assertNotNull(this.destination);
 		
-		return this.destination;
+		return this.destinations;
 	}
 	
 	public Table getTable() {

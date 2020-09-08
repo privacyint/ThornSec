@@ -472,22 +472,22 @@ public class NetworkData extends AData {
 	}
 	
 	private Set<HostName> getHostNameArray(String key) throws InvalidHostException {
-		Set<HostName> hosts = null;
+		if (!getData().containsKey(key)) {
+			return null;
+		}
 
-		if (getData().containsKey(key)) {
-			hosts = new HashSet<>();
-			final JsonArray jsonHosts = getData().getJsonArray(key);
+		Set<HostName> hosts = new HashSet<>();
+		final JsonArray jsonHosts = getData().getJsonArray(key);
 
-			for (final JsonValue jsonHost : jsonHosts) {
-				HostName host = new HostName(((JsonString) jsonHost).getString());
-				
-				if (!host.isValid()) {
-					throw new InvalidHostException(((JsonString) jsonHost).getString()
-							+ " is an invalid host");
-				}
-				
-				hosts.add(host);
+		for (final JsonValue jsonHost : jsonHosts) {
+			HostName host = new HostName(((JsonString) jsonHost).getString());
+
+			if (!host.isValid()) {
+				throw new InvalidHostException(((JsonString) jsonHost).getString()
+						+ " is an invalid host");
 			}
+
+			hosts.add(host);
 		}
 
 		return hosts;
