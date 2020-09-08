@@ -24,6 +24,7 @@ import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
 import core.exception.runtime.InvalidMachineModelException;
+import core.exception.runtime.InvalidProfileException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
@@ -299,12 +300,16 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 	/**
 	 * Builds our Maclist file as per http://shorewall.org/manpages/shorewall-maclist.html
+	 * 
+	 * This maclist file reflects the whole network
+	 * 
 	 * @return the contents of the maclist file
+	 * @throws InvalidServerException if you don't have exactly 1 router on your network
 	 */
-	private Collection<String> getMaclistFile() {
+	private Collection<String> getMaclistFile() throws InvalidProfileException {
 		final Collection<String> maclist = new ArrayList<>();
 
-		getServerModel().getNetworkInterfaces()
+		getRouter().getNetworkInterfaces()
 		.stream()
 		.filter(nic -> nic instanceof MACVLANTrunkModel)
 		.forEach(nic -> {
@@ -315,6 +320,29 @@ public class ShorewallFirewall extends AFirewallProfile {
 		});
 
 		return maclist;
+	}
+
+	/**
+	 * Get this network's Router
+	 * @return the Router
+	 * @throws InvalidProfileException if the network contains <>1 router
+	 */
+	private ServerModel getRouter() throws InvalidProfileException {
+		if (getServerModel().isType(MachineType.ROUTER)) {
+			return getServerModel();
+		}
+		else {
+			Set<AMachineModel> routers = getNetworkModel().getMachines(MachineType.ROUTER);
+
+			if (routers.isEmpty()) {
+				throw new InvalidProfileException("You must have at least one router on your network!");
+			}
+			else if (routers.size() > 1) {
+				throw new InvalidProfileException("You must only have one router on your network!");
+			}
+
+			return (ServerModel) routers.iterator().next();
+		}
 	}
 
 	private Collection<String> getHostsFile() {
