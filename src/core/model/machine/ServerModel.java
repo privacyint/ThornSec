@@ -18,6 +18,7 @@ import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.data.machine.InvalidUserException;
 import core.exception.runtime.InvalidProfileException;
+import core.exception.runtime.InvalidTypeException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
 import core.profile.AProfile;
@@ -116,8 +117,6 @@ public class ServerModel extends AMachineModel {
 	}
 
 	private void addTypes() throws AThornSecException {
-		addType(MachineType.SERVER, new Server((ServerModel)this));
-		
 		for (final MachineType type : getData().getTypes()) {
 			switch (type) {
 				case DEDICATED:
@@ -132,7 +131,11 @@ public class ServerModel extends AMachineModel {
 				case SERVICE:
 					addType(type, new Service((ServiceModel)this));
 					break;
+				case SERVER:
+					addType(MachineType.SERVER, new Server((ServerModel)this));
+					break;
 				default:
+					throw new InvalidTypeException(type + " is not a valid type");
 			}
 		}		
 	}
