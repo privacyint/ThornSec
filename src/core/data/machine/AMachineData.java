@@ -210,6 +210,7 @@ public abstract class AMachineData extends AData {
 	private void readListenRules(Encapsulation encapsulation, JsonArray ports) throws InvalidPortException {
 		TrafficRule rule = new TrafficRule();
 		rule.setEncapsulation(encapsulation);
+		rule.setSource("*");
 		rule.addDestination(new HostName(getLabel()));
 		rule.setTable(Table.INGRESS);
 
