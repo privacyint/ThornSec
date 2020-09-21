@@ -65,7 +65,7 @@ public abstract class AMachineModel extends AModel {
 	private InternetAddress emailAddress;
 
 	private Map<MachineType, AProfile> types;
-	
+
 	private Boolean throttled;
 
 	private Set<TrafficRule> firewallRules;
@@ -85,19 +85,19 @@ public abstract class AMachineModel extends AModel {
 
 	private void setFirewallFromData(AMachineData myData) {
 		this.firewallRules = myData.getTrafficRules();
-		
+
 		//assertNotNull(this.firewallRules);
 	}
-	
+
 	public void addFirewallRule(TrafficRule rule) {
 		//assertNotNull(rule);
-		
+
 		this.firewallRules.add(rule);
 	}
 
 	private void setExternalIPsFromData(AMachineData myData) {
 		this.externalIPs = myData.getExternalIPs();	
-		
+
 		//assertNotNull(this.externalIPs);
 	}
 
@@ -118,7 +118,7 @@ public abstract class AMachineModel extends AModel {
 		if (myData.getNetworkInterfaces().isEmpty()) {
 			return;
 		}
-		
+
 		for (NetworkInterfaceData nicData : myData.getNetworkInterfaces().get().values()) {
 			NetworkInterfaceModel nicModel = buildNICFromData(nicData);
 			nicModel.init();
@@ -159,7 +159,7 @@ public abstract class AMachineModel extends AModel {
 
 	private void setTypesFromData(AMachineData myData) {
 		this.types = new LinkedHashMap<>();
-		
+
 		myData.getTypes().forEach(type -> {
 			addType(type);
 		});
@@ -167,7 +167,7 @@ public abstract class AMachineModel extends AModel {
 
 	public final void addType(MachineType type) {
 //		//assertNotNull(type);
-		
+
 		switch (type) {
 			case DEVICE:
 				addType(type, new Device((ADeviceModel)this));
@@ -182,7 +182,7 @@ public abstract class AMachineModel extends AModel {
 				break;
 		}
 	}
-	
+
 	public final void addType(MachineType type, AMachine profile) {
 		this.types.put(type, profile);
 	}
@@ -191,7 +191,7 @@ public abstract class AMachineModel extends AModel {
 		if (this.networkInterfaces == null) {
 			this.networkInterfaces = new LinkedHashSet<>();
 		}
-		
+
 		this.networkInterfaces.add(ifaceModel);
 	}
 
@@ -209,7 +209,7 @@ public abstract class AMachineModel extends AModel {
 
 	public final void setEmailAddress(InternetAddress emailAddress) {
 		//assertNotNull(emailAddress);
-		
+
 		this.emailAddress = emailAddress;
 	}
 
@@ -219,11 +219,11 @@ public abstract class AMachineModel extends AModel {
 
 	public final void putCNAME(String... cnames) {
 		//assertNotNull(cnames);
-		
+
 		if (this.cnames == null) {
 			this.cnames = new LinkedHashSet<>();
 		}
-		
+
 		for (final String cname : cnames) {
 			this.cnames.add(cname);
 		}
@@ -231,7 +231,7 @@ public abstract class AMachineModel extends AModel {
 
 	public HostName getDomain() {
 		//assertNotNull(this.domain);
-		
+
 		return this.domain;
 	}
 
@@ -241,13 +241,13 @@ public abstract class AMachineModel extends AModel {
 	
 	public final Boolean isThrottled() {
 		//assertNotNull(this.throttled);
-		
+
 		return this.throttled;
 	}
 
 	public final void setIsThrottled(Boolean throttled) {
 		//assertNotNull(throttled);
-		
+
 		this.throttled = throttled;
 	}
 

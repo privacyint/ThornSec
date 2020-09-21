@@ -212,14 +212,14 @@ public abstract class AMachineData extends AData {
 		rule.setEncapsulation(encapsulation);
 		rule.addDestination(new HostName(getLabel()));
 		rule.setTable(Table.INGRESS);
-		
+
 		for (final JsonValue port : ports) {
 			rule.addPorts(Integer.parseInt(port.toString()));
 		}
 
 		this.addTrafficRule(rule);
 	}
-	
+
 	/**
 	 * Read in firewall-related data
 	 * 
@@ -236,7 +236,7 @@ public abstract class AMachineData extends AData {
 		readEgresses(firewallData);
 		readExternalIPs(firewallData);
 	}
-	
+
 	/**
 	 * Read in any external IP addresses assigned to this machine
 	 * @param firewallData the
@@ -252,14 +252,14 @@ public abstract class AMachineData extends AData {
 		if (!firewallData.containsKey("allow_egress_to")) {
 			return;
 		}
-		
+
 		final JsonArray destinations = firewallData.getJsonArray("allow_egress_to");
 
 		for (final JsonValue destination : destinations) {
 			TrafficRule egressRule = new TrafficRule();
 			egressRule.addDestination(new HostName(((JsonString) destination).getString()));
 			egressRule.setSource(getLabel());
-			
+
 			this.addTrafficRule(egressRule);
 		}
 	}
@@ -275,7 +275,7 @@ public abstract class AMachineData extends AData {
 			ingressRule.setSource(((JsonString) source).getString());
 			ingressRule.addDestination(new HostName(getLabel()));
 			ingressRule.setTable(Table.INGRESS);
-			
+
 			this.addTrafficRule(ingressRule);
 		}
 	}		
@@ -292,7 +292,7 @@ public abstract class AMachineData extends AData {
 			dnatRule.addDestination(new HostName(((JsonString) destination).getString()));
 			dnatRule.setSource(getLabel());
 			dnatRule.setTable(Table.DNAT);
-			
+
 			addTrafficRule(dnatRule);
 		}
 	}
@@ -305,7 +305,7 @@ public abstract class AMachineData extends AData {
 				TrafficRule forwardRule = new TrafficRule();
 				forwardRule.addDestination(new HostName(((JsonString) forward).getString()));
 				forwardRule.setTable(Table.FORWARD);
-				
+
 				this.addTrafficRule(forwardRule);
 			}
 		}
@@ -315,7 +315,7 @@ public abstract class AMachineData extends AData {
 		if (!firewallData.containsKey("listen")) {
 			return;
 		}
-		
+
 		final JsonObject listens = firewallData.getJsonObject("listen");
 
 		if (listens.containsKey("tcp")) {
@@ -330,7 +330,7 @@ public abstract class AMachineData extends AData {
 		if (!firewallData.containsKey("throttle")) {
 			return;
 		}
-		
+
 		this.throttled = firewallData.getBoolean("throttle");		
 	}
 
