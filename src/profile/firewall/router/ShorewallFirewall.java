@@ -96,7 +96,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 	private static String CONFIG_BASEDIR = "/etc/shorewall";
 
-	private class Rule {
+	private class ShorewallRule {
 		private String macro;
 		private Action action;
 
@@ -115,7 +115,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		private String rate;
 
-		public Rule() {
+		public ShorewallRule() {
 			macro = null;
 			action = null;
 
@@ -222,7 +222,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		}
 	}
 
-	private class Comment extends Rule {
+	private class Comment extends ShorewallRule {
 		
 		private final String comment;
 		
@@ -369,15 +369,15 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return hosts;
 	}
 
-	private Collection<Rule> getDNSRules() throws InvalidMachineModelException {
-		Collection<Rule> rules = new ArrayList<>();
+	private Collection<ShorewallRule> getDNSRules() throws InvalidMachineModelException {
+		Collection<ShorewallRule> rules = new ArrayList<>();
 
 		Comment dnsComment = new Comment("DNS rules");
 		rules.add(dnsComment);
 
 		if (getMachineModel().isType(MachineType.ROUTER)) {
 			//Router always needs to talk to itself.
-			Rule routerRule = new Rule();
+			ShorewallRule routerRule = new ShorewallRule();
 			routerRule.setAction(Action.ACCEPT);
 			routerRule.setSourceZone("$FW");
 			routerRule.setDestinationZone("$FW");
@@ -388,7 +388,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 			.filter(nic -> nic instanceof MACVLANTrunkModel)
 			.forEach(nic -> {
 				((MACVLANTrunkModel)nic).getVLANs().forEach(vlan -> {
-					Rule lanDnsRule = new Rule();
+					ShorewallRule lanDnsRule = new ShorewallRule();
 					lanDnsRule.setMacro("DNS");
 					lanDnsRule.setAction(Action.ACCEPT);
 					lanDnsRule.setSourceZone(vlan.getType().toString());
@@ -415,12 +415,12 @@ public class ShorewallFirewall extends AFirewallProfile {
 	 * @return A collection of Rules
 	 * @throws InvalidMachineModelException 
 	 */
-	private Collection<Rule> getDefaultRules() throws InvalidMachineModelException {
-		Collection<Rule> rules = new ArrayList<>();
+	private Collection<ShorewallRule> getDefaultRules() throws InvalidMachineModelException {
+		Collection<ShorewallRule> rules = new ArrayList<>();
 
 		if (getMachineModel().isType(MachineType.ROUTER)) {
 			if (getNetworkModel().getMachines(MachineType.USER).size() > 0) {
-				Rule userEgress = new Rule();
+				ShorewallRule userEgress = new ShorewallRule();
 				userEgress.setAction(Action.ACCEPT);
 				userEgress.setSourceZone(ParentZone.USERS.toString());
 				userEgress.setDestinationZone(ParentZone.INTERNET.toString());
@@ -429,7 +429,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 			}
 
 			if (getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).size() > 0) {
-				Rule externalOnlyEgress = new Rule();
+				ShorewallRule externalOnlyEgress = new ShorewallRule();
 				externalOnlyEgress.setAction(Action.ACCEPT);
 				externalOnlyEgress.setSourceZone(ParentZone.EXTERNAL_ONLY.toString());
 				externalOnlyEgress.setDestinationZone(ParentZone.INTERNET.toString());
@@ -441,8 +441,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return rules;
 	}
 
-	private Collection<Rule> getRulesFile() throws InvalidServerException, InvalidMachineModelException {
-		Collection<Rule> rules = new ArrayList<>();
+	private Collection<ShorewallRule> getRulesFile() throws InvalidServerException, InvalidMachineModelException {
+		Collection<ShorewallRule> rules = new ArrayList<>();
 		
 		if (getMachineModel().isType(MachineType.ROUTER)) {
 			
