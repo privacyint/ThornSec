@@ -145,6 +145,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 			this.sourceZone = sourceZone;
 		}
 
+		public void setSourceSubZone(String sourceSubZone) {
+			this.sourceSubZone = sourceSubZone;
+		}
+
 		public void setInvertSource(Boolean val) {
 			this.invertSource = val;
 		}
