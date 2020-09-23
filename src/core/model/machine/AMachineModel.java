@@ -364,7 +364,7 @@ public abstract class AMachineModel extends AModel {
 
 		egressRule.setTable(Table.EGRESS);
 
-		egressRule.setSource(getHostName());
+		egressRule.setSource(this.getHostName());
 
 		egressRule.addDestination(destination);
 		if (destination.getPort() == null) {
@@ -434,7 +434,7 @@ public abstract class AMachineModel extends AModel {
 		internalListenRule.setTable(Table.FORWARD);
 		internalListenRule.setEncapsulation(encapsulation);
 		internalListenRule.addPorts(ports);
-		internalListenRule.addDestination(new HostName(getHostName()));
+		internalListenRule.addDestination(new HostName(this.getHostName()));
 		internalListenRule.setSource("*");
 
 		this.addFirewallRule(internalListenRule);
@@ -462,7 +462,7 @@ public abstract class AMachineModel extends AModel {
 		externalListenRule.setTable(Table.INGRESS);
 		externalListenRule.setEncapsulation(encapsulation);
 		externalListenRule.addPorts(ports);
-		externalListenRule.addDestination(new HostName(getHostName()));
+		externalListenRule.addDestination(new HostName(this.getHostName()));
 		externalListenRule.setSource("*");
 
 		this.addFirewallRule(externalListenRule);
@@ -485,7 +485,7 @@ public abstract class AMachineModel extends AModel {
 		dnatRule.setEncapsulation(encapsulation);
 		dnatRule.addPorts(ports);
 		dnatRule.setSource(originalDestination);
-		dnatRule.addDestination(new HostName(getHostName()));
+		dnatRule.addDestination(new HostName(this.getHostName()));
 
 		this.addFirewallRule(dnatRule);
 	}
