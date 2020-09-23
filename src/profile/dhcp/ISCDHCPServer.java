@@ -172,7 +172,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 			if (getNetworkModel().getMachines(type).isEmpty()) {
 				continue;
 			}
-			
+
 			buildNet(type);
 		}
 	}
@@ -250,7 +250,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 				"/etc/dhcp/dhcpd.conf.d/" + type + ".conf");
 
 		final IPAddress subnet = getNetworkModel().getSubnet(type);
-		
+
 		final Integer prefix = subnet.getNetworkPrefixLength();
 		final IPAddress netmask = subnet.getNetwork().getNetworkMask(prefix, false);
 		final String gateway = subnet.getLowerNonZeroHost().withoutPrefixLength().toCompressedString();
@@ -311,7 +311,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 			units.add(guestConfig);
 
 			IPAddress subnet = getNetworkModel().getSubnet(MachineType.GUEST);
-			
+
 			guestConfig.appendLine("group Guests {");
 			guestConfig.appendLine("\tsubnet " + subnet.getLower().withoutPrefixLength() + " netmask "
 					+ subnet.getNetwork().getNetworkMask(subnet.getPrefixLength(), false) + " {");

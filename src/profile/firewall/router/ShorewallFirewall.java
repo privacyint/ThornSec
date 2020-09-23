@@ -253,7 +253,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		if (zone == null) {
 			return null;
 		}
-		
+
 		String _zone = zone.toString();
 		String prefix = "";
 
@@ -443,12 +443,12 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 	private Collection<ShorewallRule> getRulesFile() throws InvalidServerException, InvalidMachineModelException {
 		Collection<ShorewallRule> rules = new ArrayList<>();
-		
+
 		if (getMachineModel().isType(MachineType.ROUTER)) {
 			
 			rules.addAll(getDNSRules());
 			rules.addAll(getDefaultRules());
-			
+
 			// Iterate over every machine to build all of its rules
 			getNetworkModel().getMachines().values().forEach((machine) -> {
 				Comment machineComment = new Comment(machine.getLabel());
@@ -534,7 +534,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 			((MACVLANTrunkModel)nic).getVLANs().forEach(vlan -> {
 				zones.appendLine("#" + vlan.getIface());
 				zones.appendLine(cleanZone(vlan.getIface()) + "\tipv4");
-				
+
 				getNetworkModel().getMachines(vlan.getType()).forEach(machine -> {
 					zones.appendLine(cleanZone(cleanZone(machine.getLabel()) + ":" + vlan.getIface()) + "\tipv4" + "\t#" + machine.getLabel());
 				});
@@ -690,7 +690,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		if (this.myRouter == null) {
 			return units;
 		}
-		
+
 		final FileEditUnit shorewallConf = new FileEditUnit("shorewall_implicit_continue_on", "shorewall_installed",
 				"IMPLICIT_CONTINUE=No", "IMPLICIT_CONTINUE=Yes", "/etc/shorewall/shorewall.conf",
 				"I couldn't enable implicit continue on your firewall - this means many of our firewall configurations will fail.");
@@ -779,7 +779,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 											.map(ip -> ip.withoutPrefixLength())
 											.map(Object::toString)
 											.collect(Collectors.joining(","));
-					
+
 					maclist.add("ACCEPT\t" + type.toString()
 								+ "\t" + mac
 								+ "\t" + addresses
