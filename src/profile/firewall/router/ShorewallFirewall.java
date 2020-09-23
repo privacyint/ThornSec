@@ -711,7 +711,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		policies.appendLine("#For specific rules, please look at " + CONFIG_BASEDIR + "/rules");
 		policies.appendLine("#Please see http://shorewall.net/manpages/shorewall-policy.html for more details");
 		policies.appendLine("#source\tdestination\taction");
-		policies.appendLine("Internet\tall+\tDROP"); // DROP all ingress traffic
+		policies.appendLine(ParentZone.INTERNET + "\tall+\tDROP"); // DROP all ingress traffic
 		policies.appendLine("all+\tall+\tREJECT"); // REJECT all other traffic
 
 		return policies;
