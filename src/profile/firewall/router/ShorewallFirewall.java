@@ -895,7 +895,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 											.map(Object::toString)
 											.collect(Collectors.joining(","));
 
-					maclist.add("ACCEPT\t" + type.toString()
+					maclist.add("ACCEPT"
+								+ "\t" + cleanZone(type.toString())
 								+ "\t" + mac
 								+ "\t" + addresses
 								+ "\t#" + machine.getLabel());
