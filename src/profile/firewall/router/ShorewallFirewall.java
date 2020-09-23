@@ -17,12 +17,14 @@ import java.util.stream.Collectors;
 import javax.json.stream.JsonParsingException;
 import core.StringUtils;
 import core.data.machine.AMachineData.MachineType;
+import core.data.machine.configuration.TrafficRule;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.data.machine.configuration.TrafficRule.Encapsulation;
 import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.ARuntimeException;
+import core.exception.runtime.InvalidFirewallRuleException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidProfileException;
 import core.exception.runtime.InvalidServerModelException;
@@ -131,6 +133,158 @@ public class ShorewallFirewall extends AFirewallProfile {
 			origDest = null;
 
 			rate = null;
+		}
+
+		public ShorewallRule(TrafficRule rule) throws InvalidFirewallRuleException {
+			this();
+
+			switch (rule.getTable()) {
+				case DNAT:
+					buildDNAT(rule);
+					break;
+				case EGRESS:
+					buildEgress(rule);
+					break;
+				case FORWARD:
+					buildForward(rule);
+					break;
+				case INGRESS:
+					buildIngress(rule);
+					break;
+				default:
+					throw new InvalidFirewallRuleException(rule.getTable() + " is not recognised");
+			}
+		}
+
+		/**
+		 * Ingests an Ingress TrafficRule, turning it into the Shorewall equivalent.
+		 * 
+		 * The rule's destinationZone must be a valid machine label.
+		 * 
+		 * @param rule Ingress TrafficRule
+		 */
+		private void buildIngress(TrafficRule rule) {
+			this.setAction(Action.ACCEPT);
+			this.setSourceZone(rule.getSource());
+			this.setDPorts(rule.getPorts());
+			this.setDestinationZone(
+				rule.getDestinations()
+					.stream()
+					.<String>map(destination -> cleanZone(destination.getHost()))
+					.collect(Collectors.joining(","))
+			);
+			this.setDestinationSubZone(
+				rule.getDestinations()
+					.stream()
+					.<String>map(destination -> destination.getHost())
+					.<Collection<IPAddress>>map(label -> this.getMachineModel(label).getIPs())
+					.flatMap(Collection::stream)
+					.<String>map(ip -> ip.withoutPrefixLength().toCompressedString())
+					.collect(Collectors.joining(","))
+			);
+		}
+
+		/**
+		 * This "overrides" the getMachineModel method from our NetworkModel.
+		 * 
+		 * This method is to be used on the assumption that getMachineModel
+		 * will never throw an exception.
+		 * @param label Machine's label
+		 * @return the requested AMachineModel
+		 */
+		private AMachineModel getMachineModel(String label) {
+			AMachineModel machine = null;
+
+			try {
+				machine = getNetworkModel().getMachineModel(label);
+			} catch (InvalidMachineModelException e) {
+				;; // Famous last words, as ever...
+				e.printStackTrace();
+			}
+
+			return machine;
+		}
+
+		/**
+		 * Ingests a Forward (intra-zone) TrafficRule, turning it into the Shorewall equivalent.
+		 * 
+		 * The rule's destinationZone must be a valid machine label.
+		 * 
+		 * @param rule Forward TrafficRule
+		 */
+		private void buildForward(TrafficRule rule) throws InvalidFirewallRuleException {
+			this.setAction(Action.ACCEPT);
+			this.setSourceZone(rule.getSource());
+			this.setDPorts(rule.getPorts());
+			this.setDestinationZone(
+				rule.getDestinations()
+					.stream()
+					.<String>map(destination -> cleanZone(destination.getHost()))
+					.collect(Collectors.joining(","))
+			);
+			this.setDestinationSubZone(
+				rule.getDestinations()
+					.stream()
+					.<String>map(destination -> destination.getHost())
+					.<Collection<IPAddress>>map(label -> this.getMachineModel(label).getIPs())
+					.flatMap(Collection::stream)
+					.<String>map(ip -> ip.withoutPrefixLength().toCompressedString())
+					.collect(Collectors.joining(","))
+			);
+		}
+
+		/**
+		 * Ingests an Egress TrafficRule, turning it into the Shorewall equivalent.
+		 * @param rule Egress TrafficRule
+		 */
+		private void buildEgress(TrafficRule rule) throws InvalidFirewallRuleException {
+			this.setAction(Action.ACCEPT);
+			this.setSourceZone(rule.getSource());
+			this.setDPorts(rule.getPorts());
+			this.setDestinationZone(ParentZone.INTERNET.toString());
+			this.setDestinationSubZone(
+				rule.getDestinations()
+					.stream()
+					.<String>map(destination -> destination.getHost())
+					.collect(Collectors.joining(".,"))
+			);
+		}
+
+		/**
+		 * Ingests a DNAT TrafficRule, turning it into the Shorewall equivalent.
+		 * 
+		 * The rule's sourceZone and destinationZone must be valid machine labels
+		 * 
+		 * @param rule Ingress TrafficRule
+		 */
+		private void buildDNAT(TrafficRule rule) throws InvalidFirewallRuleException {
+			this.setAction(Action.DNAT);
+			this.setInvertSource(true); //don't DNAT if we're the source
+			this.setSourceZone(cleanZone(rule.getSource())); //new destination
+			this.setSourceSubZone(
+				this.getMachineModel(rule.getSource()).getIPs()
+					.stream()
+					.<String>map(ip -> ip.withoutPrefixLength().toCompressedString())
+					.collect(Collectors.joining(","))
+			);
+			this.setDestinationZone(
+				rule.getDestinations()
+					.stream()
+					.<String>map(destination -> cleanZone(destination.getHost()))
+					.collect(Collectors.joining(","))
+			); //original destination
+			this.setDestinationSubZone(
+					rule.getDestinations()
+						.stream()
+						.<String>map(destination -> destination.getHost())
+						.<Collection<IPAddress>>map(label -> this.getMachineModel(label).getIPs())
+						.flatMap(Collection::stream)
+						.<String>map(ip -> ip.withoutPrefixLength().toCompressedString())
+						.collect(Collectors.joining(","))
+			);
+			this.setDPorts(rule.getPorts());
+			this.setProto(rule.getEncapsulation());
+			this.setOrigDest(this.getMachineModel(rule.getSource()).getIPs());
 		}
 
 		public void setMacro(String macro) {
@@ -453,57 +607,15 @@ public class ShorewallFirewall extends AFirewallProfile {
 			getNetworkModel().getMachines().values().forEach((machine) -> {
 				Comment machineComment = new Comment(machine.getLabel());
 				rules.add(machineComment);
-				
-				/*
-				machine.getEgresses().forEach(egress -> {
-					Rule machineEgressRule = new Rule();
-					machineEgressRule.setAction(Action.ACCEPT);
-					machineEgressRule.setSourceZone(machine.getLabel());
-					machineEgressRule.setDestinationZone(ParentZone.INTERNET.toString());
-					machineEgressRule.setDestinationSubZone(egress.getHost());
-					
-					rules.add(machineEgressRule);
-				});
-	
-				machine.getListens().forEach((encapsulation, dPorts) -> {
-					Rule listenRule = new Rule();
-					listenRule.setAction(Action.ACCEPT);
-					listenRule.setSourceZone("all+");
-					listenRule.setProto(encapsulation);
-					listenRule.setDestinationZone(machine.getLabel());
-					listenRule.setDPorts(dPorts);
-					
-					rules.add(listenRule);
-				});
-					
-				machine.getDNAT().forEach((destination, dnatPorts)->{
-					Rule dnatRule = new Rule();
-					dnatRule.setAction(Action.DNAT);
-					dnatRule.setSourceZone(cleanZone(machine.getLabel()));
-					dnatRule.setDestinationZone(cleanZone(machine.getLabel()));
-					dnatRule.setDestinationSubZone(
-							machine.getIPs().stream().map(dest -> dest.withoutPrefixLength().toCompressedString())
-									.collect(Collectors.joining(",")));
-					dnatRule.setDPorts(dnatPorts);
-					dnatRule.setProto(Encapsulation.TCP); //TODO: FIX THIS
-					dnatRule.setInvertSource(true);
-					
+
+				machine.getFirewallRules().forEach(rule -> {
 					try {
-						Collection<IPAddress> origIPs = getNetworkModel().getMachineModel(destination).getIPs();
-						
-						if (machine.getExternalIPs() != null) {
-							origIPs.addAll(machine.getExternalIPs());
-						}
-						
-						dnatRule.setOrigDest(origIPs);
-					} catch (InvalidMachineModelException | IncompatibleAddressException e) {
+						rules.add(new ShorewallRule(rule));
+					} catch (InvalidMachineModelException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					
-					rules.add(dnatRule);
 				});
-				*/
 			});
 		}
 		else {
