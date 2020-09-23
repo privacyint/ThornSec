@@ -523,43 +523,6 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return hosts;
 	}
 
-	private Collection<ShorewallRule> getDNSRules() throws InvalidMachineModelException {
-		Collection<ShorewallRule> rules = new ArrayList<>();
-
-		Comment dnsComment = new Comment("DNS rules");
-		rules.add(dnsComment);
-
-		if (getMachineModel().isType(MachineType.ROUTER)) {
-			//Router always needs to talk to itself.
-			ShorewallRule routerRule = new ShorewallRule();
-			routerRule.setAction(Action.ACCEPT);
-			routerRule.setSourceZone("$FW");
-			routerRule.setDestinationZone("$FW");
-			rules.add(routerRule);
-
-			getServerModel().getNetworkInterfaces()
-			.stream()
-			.filter(nic -> nic instanceof MACVLANTrunkModel)
-			.forEach(nic -> {
-				((MACVLANTrunkModel)nic).getVLANs().forEach(vlan -> {
-					ShorewallRule lanDnsRule = new ShorewallRule();
-					lanDnsRule.setMacro("DNS");
-					lanDnsRule.setAction(Action.ACCEPT);
-					lanDnsRule.setSourceZone(vlan.getType().toString());
-					lanDnsRule.setDestinationZone(cleanZone(getMachineModel().getLabel()));
-					lanDnsRule.setDestinationSubZone("&" + vlan.getIface());
-
-					rules.add(lanDnsRule);
-				});
-			});
-		}
-		else {
-			;; //TODO
-		}
-
-		return rules;
-	}
-	
 	/**
 	 * Builds the default rules for its host.
 	 * 
@@ -599,8 +562,6 @@ public class ShorewallFirewall extends AFirewallProfile {
 		Collection<ShorewallRule> rules = new ArrayList<>();
 
 		if (getMachineModel().isType(MachineType.ROUTER)) {
-			
-			rules.addAll(getDNSRules());
 			rules.addAll(getDefaultRules());
 
 			// Iterate over every machine to build all of its rules
