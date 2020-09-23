@@ -378,11 +378,13 @@ public abstract class AMachineModel extends AModel {
 	}
 
 	/**
-	 * Set this Machine to listen to {TCP|UDP} traffic on the provided port.
+	 * Set this Machine to listen to TCP traffic on the provided port.
 	 * 
-	 * If the machine has been given (an) external IP(s), builds an ingress rule.
+	 * If the machine has been given (an) external IP(s), builds an ingress rule
+	 * & allows access from LAN.
 	 * 
-	 * Allows access from LAN.
+	 * Don't use this method if you don't want these ports to be potentially
+	 * publicly accessible.
 	 * @param ports port(s) to listen on
 	 * @throws InvalidPortException if trying to set an invalid port
 	 */
