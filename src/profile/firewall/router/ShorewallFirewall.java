@@ -854,20 +854,15 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		hosts.add("");
 		hosts.add("#" + type.toString());
-		
-		for (final AMachineModel machine : machines) {
-			
-			try {
-				if (getNetworkModel().getMachineModel(machine.getLabel()).isType(MachineType.ROUTER)) {
-					continue;
-				}
-			} catch (InvalidMachineModelException e) {
-				//As you were. This is not the droid you're looking for.
-			}
-			
-			hosts.add(cleanZone(machine.getLabel()) + "\t" + type.toString() + ":"
-					+ getAddresses(machine) + "\tmaclist");
-		}
+
+		machines.stream()
+			.filter(machine -> !machine.isType(MachineType.ROUTER))
+			.forEach(machine -> {
+				hosts.add(cleanZone(machine.getLabel())
+					+ "\t" + cleanZone(type.toString())
+					+ ":" + getAddresses(machine)
+					+ "\tmaclist");
+			});
 
 		return hosts;
 	} 
