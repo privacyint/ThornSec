@@ -409,7 +409,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		String prefix = "";
 
 		if (_zone.startsWith("$")) {
-			prefix = "\\" + _zone.substring(0, 1);
+			prefix = "\\$";
 		} else if (_zone.startsWith("!")) {
 			prefix = "!";
 		}
