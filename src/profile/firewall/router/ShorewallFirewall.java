@@ -576,8 +576,15 @@ public class ShorewallFirewall extends AFirewallProfile {
 				zones.appendLine(cleanZone(vlan.getIface()) + "\tipv4");
 
 				getNetworkModel().getMachines(vlan.getType()).forEach(machine -> {
-					zones.appendText(cleanZone(machine.getLabel()) + ":" + cleanZone(vlan.getIface()));
-					zones.appendText(machine.isType(MachineType.ROUTER) ? "\tfirewall" : "\tipv4");
+					zones.appendText(cleanZone(machine.getLabel()));
+					zones.appendText(machine.isType(MachineType.ROUTER)
+										? ""
+										: ":" + cleanZone(vlan.getIface())
+					);
+					zones.appendText(machine.isType(MachineType.ROUTER)
+										? "\tfirewall"
+										: "\tipv4"
+					);
 					zones.appendText("\t#" + machine.getLabel());
 					zones.appendCarriageReturn();
 				});
