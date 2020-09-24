@@ -163,7 +163,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		 */
 		private void buildIngress(TrafficRule rule) {
 			this.setAction(Action.ACCEPT);
-			this.setSourceZone(rule.getSource());
+			this.setSourceZone(cleanZone(ParentZone.INTERNET.toString()));
 			this.setProto(rule.getEncapsulation());
 			this.setDPorts(rule.getPorts());
 			this.setDestinationZone(
