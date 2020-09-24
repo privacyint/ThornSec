@@ -164,6 +164,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		private void buildIngress(TrafficRule rule) {
 			this.setAction(Action.ACCEPT);
 			this.setSourceZone(rule.getSource());
+			this.setProto(rule.getEncapsulation());
 			this.setDPorts(rule.getPorts());
 			this.setDestinationZone(
 				rule.getDestinations()
@@ -213,6 +214,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		private void buildForward(TrafficRule rule) throws InvalidFirewallRuleException {
 			this.setAction(Action.ACCEPT);
 			this.setSourceZone(rule.getSource());
+			this.setProto(rule.getEncapsulation());
 			this.setDPorts(rule.getPorts());
 			this.setDestinationZone(
 				rule.getDestinations()
@@ -238,6 +240,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		private void buildEgress(TrafficRule rule) throws InvalidFirewallRuleException {
 			this.setAction(Action.ACCEPT);
 			this.setSourceZone(rule.getSource());
+			this.setProto(rule.getEncapsulation());
 			this.setDPorts(rule.getPorts());
 			this.setDestinationZone(ParentZone.INTERNET.toString());
 			this.setDestinationSubZone(
