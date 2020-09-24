@@ -33,13 +33,11 @@ import core.model.machine.AMachineModel;
 import core.model.machine.ServerModel;
 import core.model.machine.configuration.networking.MACVLANModel;
 import core.model.machine.configuration.networking.MACVLANTrunkModel;
-import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
-import inet.ipaddr.IPAddressString;
 import profile.firewall.AFirewallProfile;
 import profile.type.Router;
 
