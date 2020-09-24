@@ -529,6 +529,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 		if (getMachineModel().isType(MachineType.ROUTER)) {
 			// Iterate over every machine to build all of its rules
 			getNetworkModel().getMachines().values().forEach((machine) -> {
+				if (machine.getFirewallRules().isEmpty()) {
+					return;
+				}
+
 				Comment machineComment = new Comment(machine.getLabel());
 				rules.add(machineComment);
 
