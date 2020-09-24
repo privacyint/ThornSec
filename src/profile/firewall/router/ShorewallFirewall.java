@@ -377,13 +377,12 @@ public class ShorewallFirewall extends AFirewallProfile {
 	}
 
 	private class Comment extends ShorewallRule {
-		
 		private final String comment;
-		
+
 		public Comment(String comment) {
 			this.comment = comment;
 		}
-		
+
 		@Override
 		public String getRule() {
 			return "# " + this.comment;
@@ -566,7 +565,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zones.appendLine("#This is the file which creates our various zones");
 		zones.appendLine("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
 		zones.appendLine("#zone\ttype");
-		
+
 		getServerModel().getNetworkInterfaces()
 		.stream()
 		.filter(nic -> nic instanceof MACVLANTrunkModel)
@@ -722,7 +721,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 					});
 				});
 			});
-		
+
 		return masq;
 	}
 
