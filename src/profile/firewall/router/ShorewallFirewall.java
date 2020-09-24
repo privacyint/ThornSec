@@ -523,47 +523,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return hosts;
 	}
 
-	/**
-	 * Builds the default rules for its host.
-	 * 
-	 * If your machine is a Router, it builds the various inter-zone communications
-	 * (as we disallow everything by policy).
-	 * 
-	 * @return A collection of Rules
-	 * @throws InvalidMachineModelException 
-	 */
-	private Collection<ShorewallRule> getDefaultRules() throws InvalidMachineModelException {
-		Collection<ShorewallRule> rules = new ArrayList<>();
-
-		if (getMachineModel().isType(MachineType.ROUTER)) {
-			if (getNetworkModel().getMachines(MachineType.USER).size() > 0) {
-				ShorewallRule userEgress = new ShorewallRule();
-				userEgress.setAction(Action.ACCEPT);
-				userEgress.setSourceZone(ParentZone.USERS.toString());
-				userEgress.setDestinationZone(ParentZone.INTERNET.toString());
-
-				rules.add(userEgress);
-			}
-
-			if (getNetworkModel().getMachines(MachineType.EXTERNAL_ONLY).size() > 0) {
-				ShorewallRule externalOnlyEgress = new ShorewallRule();
-				externalOnlyEgress.setAction(Action.ACCEPT);
-				externalOnlyEgress.setSourceZone(ParentZone.EXTERNAL_ONLY.toString());
-				externalOnlyEgress.setDestinationZone(ParentZone.INTERNET.toString());
-
-				rules.add(externalOnlyEgress);
-			}
-		}
-
-		return rules;
-	}
-
 	private Collection<ShorewallRule> getRulesFile() throws InvalidServerException, InvalidMachineModelException {
 		Collection<ShorewallRule> rules = new ArrayList<>();
 
 		if (getMachineModel().isType(MachineType.ROUTER)) {
-			rules.addAll(getDefaultRules());
-
 			// Iterate over every machine to build all of its rules
 			getNetworkModel().getMachines().values().forEach((machine) -> {
 				Comment machineComment = new Comment(machine.getLabel());
