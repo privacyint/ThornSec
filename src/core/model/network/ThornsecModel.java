@@ -9,9 +9,10 @@ package core.model.network;
 
 import java.io.IOException;
 import java.io.StringReader;
-
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import java.util.Collection;
@@ -36,9 +37,11 @@ import core.exception.data.InvalidJSONException;
 public class ThornsecModel {
 
 	private final Map<String, NetworkModel> networks;
+	private Path configPath;
 
 	public ThornsecModel() {
 		this.networks = new LinkedHashMap<>();
+		this.configPath = null;
 	}
 
 	/**
@@ -48,10 +51,12 @@ public class ThornsecModel {
 	 */
 	public void read(String filePath) throws ADataException {
 		String rawText = null;
-		
+		Path configFilePath = Paths.get(filePath);
+
 		// Start by stripping comments out of the JSON
 		try {
-			rawText = new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8);
+			byte[] raw = Files.readAllBytes(configFilePath);
+			rawText = new String(raw, StandardCharsets.UTF_8);
 			rawText = rawText.replaceAll("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)", "");
 		}
 		catch (IOException e) {
@@ -65,7 +70,7 @@ public class ThornsecModel {
 
 		for (final Entry<String, JsonValue> network : networks.entrySet()) {
 			final NetworkData networkData = new NetworkData(network.getKey());
-			networkData.read((JsonObject) network.getValue());
+			networkData.read((JsonObject) network.getValue(), configFilePath);
 
 			final NetworkModel networkModel = new NetworkModel(network.getKey());
 			networkModel.setData(networkData);
@@ -97,4 +102,12 @@ public class ThornsecModel {
 		return this.networks.get(label);
 	}
 
+	/**
+	 * Get the path to config file this network was configured against, useful
+	 * for 
+	 * @return absolute Path
+	 */
+	public Path getConfigFilePath() {
+		return this.configPath;
+	}
 }

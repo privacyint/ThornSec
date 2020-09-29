@@ -10,7 +10,7 @@ package core.data;
 //import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.IOException;
 import java.net.URISyntaxException;
-
+import java.nio.file.Path;
 import javax.json.JsonObject;
 import javax.json.stream.JsonParsingException;
 
@@ -26,6 +26,7 @@ public abstract class AData {
 
 	private final String label;
 	private JsonObject data;
+	private Path configFilePath;
 
 	/**
 	 * Instantiates a new data object.
@@ -36,6 +37,7 @@ public abstract class AData {
 		////assertNotNull(label);
 		
 		this.label = label;
+		this.configFilePath = null;
 	}
 
 	/**
@@ -50,6 +52,22 @@ public abstract class AData {
 	protected abstract void read(JsonObject data) throws ADataException;
 
 	/**
+	 * JSON read method - must be overridden by descendants
+	 *
+	 * @param data the JSON data
+	 * @param configFilePath path to the config file the data came from
+	 * @throws ADataException
+	 * @throws IOException
+	 * @throws JsonParsingException
+	 * @throws URISyntaxException
+	 */
+	public void read(JsonObject data, Path configFilePath) throws ADataException {
+		this.configFilePath = configFilePath;
+
+		this.read(data);
+	}
+
+	/**
 	 * Gets the object label.
 	 *
 	 * @return the object label
@@ -58,6 +76,15 @@ public abstract class AData {
 		////assertNotNull(this.label);
 		
 		return this.label;
+	}
+
+	/**
+	 * Gets the path to the config file this AData was initially read() against
+	 *
+	 * @return the path, or null if not reading from a file
+	 */
+	public final Path getConfigFilePath() {
+		return this.configFilePath;
 	}
 
 	/**

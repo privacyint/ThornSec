@@ -8,12 +8,13 @@
 package core.data.network;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -26,9 +27,11 @@ import java.util.stream.Collectors;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+import javax.json.stream.JsonParsingException;
 import inet.ipaddr.AddressStringException;
 import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
@@ -47,6 +50,7 @@ import core.data.machine.UserDeviceData;
 import core.exception.data.ADataException;
 import core.exception.data.InvalidHostException;
 import core.exception.data.InvalidIPAddressException;
+import core.exception.data.InvalidJSONException;
 import core.exception.data.InvalidPropertyException;
 import core.exception.data.MissingPropertiesException;
 import core.exception.data.NoValidUsersException;
@@ -376,9 +380,10 @@ public class NetworkData extends AData {
 	 * native path style.
 	 * 
 	 * @throws InvalidPropertyException if a path is invalid
+	 * @throws InvalidJSONException if the JSON itself is invalid
 	 */
 
-	private void readIncludes() throws InvalidPropertyException {
+	private void readIncludes() throws InvalidPropertyException, InvalidJSONException {
 		if (!getData().containsKey("includes")) {
 			return;
 		}
@@ -396,22 +401,40 @@ public class NetworkData extends AData {
 	 * @param includePath Absolute path to the JSON file to be read into our
 	 * 		NetworkData
 	 * @throws InvalidPropertyException if the path to the JSON is invalid
+	 * @throws InvalidJSONException 
 	 */
-	private void readInclude(String includePath) throws InvalidPropertyException {
+	private void readInclude(String includePath) throws InvalidPropertyException, InvalidJSONException {
+		String configBase = getConfigFilePath().getParent().toString();
+		Path includeFile = Path.of(configBase, includePath);
+
 		try {
-			Path file = Path.of(includePath);
-			String rawUTF8Data = new String(Files.readAllBytes(file),
+			String rawUTF8Data = new String(Files.readAllBytes(includeFile),
 											StandardCharsets.UTF_8);
+			rawUTF8Data = rawUTF8Data.replaceAll("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)", "");
+
 			JsonReader jsonReader = Json.createReader(new StringReader(rawUTF8Data));
+
+			JsonObject currentData = getData();
 			JsonObject includeData = jsonReader.readObject();
-			JsonObject data = getData();
-			data.putAll(includeData);
-			
-			setData(data);
+
+			JsonObjectBuilder newData = Json.createObjectBuilder();
+			currentData.forEach((k,v) -> newData.add(k, v));
+			includeData.forEach((k,v) -> newData.add(k, v));
+
+			setData(newData.build());
+
+			if (includeData.containsKey("includes")) {
+				for (JsonValue path : includeData.getJsonArray("includes")) {
+					this.readInclude(((JsonString) path).getString());
+				}
+			}
 		}
 		catch (IOException e) {
 			throw new InvalidPropertyException("Invalid path to include:"
-					+ includePath);
+					+ includeFile.toString());
+		}
+		catch (JsonParsingException e) {
+			throw new InvalidJSONException("Trying to read in " + includeFile.toString() + " threw the following error " + e.getLocalizedMessage());
 		}
 	}
 
