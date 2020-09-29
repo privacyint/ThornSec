@@ -120,7 +120,7 @@ public class ServerModel extends AMachineModel {
 		for (final MachineType type : getData().getTypes()) {
 			switch (type) {
 				case DEDICATED:
-					addType(type, new Dedicated((ServerModel)this));
+					addType(type, new Dedicated((DedicatedModel)this));
 					break;
 				case HYPERVISOR:
 					addType(type, new Hypervisor((HypervisorModel)this));

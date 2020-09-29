@@ -37,6 +37,7 @@ import inet.ipaddr.IncompatibleAddressException;
 import core.data.AData;
 import core.data.machine.AMachineData;
 import core.data.machine.AMachineData.MachineType;
+import core.data.machine.DedicatedData;
 import core.data.machine.ExternalDeviceData;
 import core.data.machine.HypervisorData;
 import core.data.machine.InternalDeviceData;
@@ -159,13 +160,13 @@ public class NetworkData extends AData {
 	}
 	
 	/**
-	 * Read in a given server object, adding it to our network.
+	 * Read in a given server object, specialise and add it to our network.
 	 * 
 	 * If the object is a Hypervisor, interrogate it further for its nested
 	 * services, read those in, and add those to the network too.
 	 * 
 	 * @param label The server's label
-	 * @param serverDataObject
+	 * @param serverDataObject raw JsonObject to read in
 	 * @throws ADataException if attempting to add a machine with a duplicate label
 	 */
 	private void readServer(String label, JsonObject serverDataObject) throws ADataException {
@@ -179,6 +180,11 @@ public class NetworkData extends AData {
 		// because the services are nested inside
 		if (serverData.isType(MachineType.HYPERVISOR)) {
 			serverData = readHyperVisor(label, serverDataObject);
+		}
+		else if (serverData.isType(MachineType.DEDICATED)) {
+			serverData = new DedicatedData(label);
+			serverData.read(getData()); //Read in network-level defaults
+			serverData.read(serverDataObject); //Read in server-specific settings
 		}
 		
 		this.putMachine(serverData);
