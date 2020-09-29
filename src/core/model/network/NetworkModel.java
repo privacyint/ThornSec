@@ -451,4 +451,12 @@ public class NetworkModel {
 	public boolean doAdBlocking() {
 		return getData().doAdBlocking().orElseGet(() -> false);
 	}
+
+	/**
+	 * Whether or not to do build a Guest network that anyone can join
+	 * @return as set in the data, or false
+	 */
+	public boolean buildAutoGuest() {
+		return getData().buildAutoGuest().orElseGet(() -> false);
+	}
 }

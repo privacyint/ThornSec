@@ -539,10 +539,10 @@ public class NetworkData extends AData {
 	}
 
 	/**
-	 * Should we build an auto guest network?
+	 * Should we automatically build a guest network?
 	 */
-	public final Boolean buildAutoGuest() {
-		return this.autoGuest;
+	public final Optional<Boolean> buildAutoGuest() {
+		return Optional.ofNullable(this.autoGuest);
 	}
 
 	/**

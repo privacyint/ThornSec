@@ -91,7 +91,7 @@ public class Router extends AMachine {
 		vlans.add(MachineType.EXTERNAL_ONLY);
 		vlans.add(MachineType.USER);
 		vlans.add(MachineType.ADMIN);
-		if (getNetworkModel().getData().buildAutoGuest()) {
+		if (getNetworkModel().buildAutoGuest()) {
 			vlans.add(MachineType.GUEST);
 		}
 

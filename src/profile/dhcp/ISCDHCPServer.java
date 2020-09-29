@@ -206,7 +206,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 			dhcpdConf.appendLine("include \\\"/etc/dhcp/dhcpd.conf.d/" + subnet.toString() + ".conf\\\";");
 		}
 
-		if (getNetworkModel().getData().buildAutoGuest()) {
+		if (getNetworkModel().buildAutoGuest()) {
 			dhcpdConf.appendLine("include \\\"/etc/dhcp/dhcpd.conf.d/Guests.conf\\\";");
 		}
 
@@ -305,7 +305,7 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		}
 
 		// @TODO: guest networking
-		if (getNetworkModel().getData().buildAutoGuest()) {
+		if (getNetworkModel().buildAutoGuest()) {
 			final FileUnit guestConfig = new FileUnit("guest_dhcpd_live_config", "dhcp_installed",
 					"/etc/dhcp/dhcpd.conf.d/Guests.conf");
 			units.add(guestConfig);
