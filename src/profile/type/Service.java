@@ -22,7 +22,7 @@ import profile.guest.AGuestProfile;
 /**
  * This is a Service, which represents a VM on a HyperVisor
  */
-public class Service extends AMachine {
+public class Service extends Server {
 
 	public Service(ServiceModel me) {
 		super(me);
