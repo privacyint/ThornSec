@@ -103,7 +103,7 @@ public class ServerModel extends AMachineModel {
 	}
 
 	private void addProfiles() throws InvalidProfileException {
-		if (getData().getProfiles().isEmpty()) {
+		if (getProfiles().isEmpty()) {
 			return;
 		}
 
