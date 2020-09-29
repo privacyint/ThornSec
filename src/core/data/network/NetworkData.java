@@ -345,11 +345,11 @@ public class NetworkData extends AData {
 		if (!getData().containsKey("network_config_ip")) {
 			return;
 		}
-		
+
 		this.configIP = new IPAddressString(getData().getString("network_config_ip")
 				.replaceAll("[^\\.0-9]", ""))
 				.getAddress();
-		
+
 		if (this.configIP == null) {
 			throw new InvalidIPAddressException(getData().getString("network_config_ip"));
 		}

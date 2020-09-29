@@ -38,7 +38,7 @@ public class ThornsecModel {
 
 	private final Map<String, NetworkModel> networks;
 	private Path configPath;
-
+	
 	public ThornsecModel() {
 		this.networks = new LinkedHashMap<>();
 		this.configPath = null;

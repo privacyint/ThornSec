@@ -52,13 +52,13 @@ public class ServiceModel extends ServerModel {
 	public ServiceModel(ServiceData myData, NetworkModel networkModel)
 			throws AThornSecException {
 		super(myData, networkModel);
-		
+
 		this.addType(MachineType.SERVICE);
-		
+
 		this.setGuestOS(getOS());
 		this.iso = getData().getIsoUrl();
 		this.isoSHA512 = getData().getIsoSha512();
-		
+
 		if (this.getNetworkInterfaces() == null) {
 			StaticInterfaceModel nic = new StaticInterfaceModel(new NetworkInterfaceData("eth0"), networkModel);
 			this.addNetworkInterface(nic);
@@ -138,7 +138,7 @@ public class ServiceModel extends ServerModel {
 		}
 		return Optional.of(getDisks().get(label));
 	}
-	
+
 	@Override
 	public ServiceData getData() {
 		return (ServiceData) super.getData();
@@ -169,7 +169,7 @@ public class ServiceModel extends ServerModel {
 	public void setIsoURL(String url) {
 		this.iso = url;
 	}
-	
+
 	public void setIsoSHA512(String checksum) {
 		this.isoSHA512 = checksum;
 	}
@@ -177,7 +177,7 @@ public class ServiceModel extends ServerModel {
 	public Optional<String> getIsoSHA512() {
 		return Optional.ofNullable(this.isoSHA512);
 	}
-	
+
 	public GuestOS getOS() {
 		return getData().getOS()
 						.orElse(GuestOS.ALPINE_64);

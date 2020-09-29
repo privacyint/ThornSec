@@ -40,7 +40,7 @@ public class ServiceData extends ServerData {
 
 		public static Set<GuestOS> alpine = EnumSet.of(ALPINE_32, ALPINE_64);
 		public static Set<GuestOS> debian = EnumSet.of(DEBIAN_32, DEBIAN_64);
-		
+
 		private String guestOS;
 
 		GuestOS(String guestOS) {
@@ -103,7 +103,7 @@ public class ServiceData extends ServerData {
 		if (!getData().containsKey("os")) {
 			return;
 		}
-		
+
 		setOS(getData().getString("os"));		
 	}
 
