@@ -78,16 +78,12 @@ public class ServiceModel extends ServerModel {
 	}
 
 	@Override
-	public Collection<IUnit> getUnits() throws AThornSecException {
-		final Collection<IUnit> units = new ArrayList<>();
-		
-		units.addAll(super.getUnits());
+	public void init() throws InvalidDiskSizeException, InvalidMachineModelException {
 
-		return units;
-	}
-	
-	@Override
-	public void init() throws InvalidDiskSizeException {
+		String hypervisorLabel = getData().getHypervisor().getLabel();
+		HypervisorModel hv = (HypervisorModel) getNetworkModel().getMachineModel(hypervisorLabel); 
+		setHypervisor(hv);
+
 		getData().getDisks().ifPresent((disks) -> {
 			disks.forEach((label, diskData) -> {
 				addDisk(new DiskModel(diskData, getNetworkModel()));
