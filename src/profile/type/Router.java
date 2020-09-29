@@ -132,8 +132,8 @@ public class Router extends AMachine {
 		units.add(new InstalledUnit("traceroute", "proceed", "traceroute"));
 		units.add(new InstalledUnit("speedtest_cli", "proceed", "speedtest-cli"));
 
-		units.addAll(getDNSServer().getInstalled());
 		units.addAll(getDHCPServer().getInstalled());
+		units.addAll(getDNSServer().getInstalled());
 
 		return units;
 	}
