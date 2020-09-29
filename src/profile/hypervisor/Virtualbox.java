@@ -20,16 +20,12 @@ import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.configuration.DiskModel;
 import core.model.machine.HypervisorModel;
-import core.model.machine.ServerModel;
 import core.model.machine.ServiceModel;
-import core.data.machine.AMachineData.MachineType;
 import core.data.machine.configuration.DiskData.Medium;
-import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
-import profile.type.Hypervisor;
 
 public class Virtualbox extends AHypervisorProfile {
 

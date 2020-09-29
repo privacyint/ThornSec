@@ -56,18 +56,18 @@ public class ServerModel extends AMachineModel {
 		this.users = new UserAccounts();
 		this.firewall = new ShorewallFirewall(this);
 	}
-	
+
 	@Override
 	public ServerData getData() {
 		return (ServerData) super.getData();
 	}
-	
+
 	public void init() throws AThornSecException {
 		this.addTypes();
 		this.addProfiles();
 		this.addAdmins();
 	}
-	
+
 	protected AProfile reflectedProfile(String profile) throws InvalidProfileException {
 		Collection<Class<?>> classes;
 		try {
@@ -84,13 +84,13 @@ public class ServerModel extends AMachineModel {
 					+ " exception\n\n" + e.getLocalizedMessage());
 		}
 	}
-	
+
 	private void addAdmins() throws InvalidUserException {
 		if (getData().getAdmins().isPresent()) {
 			addAdmins(getData().getAdmins().get());
 		}
 	}
-	
+
 	private void addAdmins(Collection<String> usernames) throws InvalidUserException {
 		for (String username : usernames) {
 			if (getNetworkModel().getUser(username).isPresent()) {
@@ -101,17 +101,17 @@ public class ServerModel extends AMachineModel {
 			}
 		}
 	}
-	
+
 	private void addProfiles() throws InvalidProfileException {
 		if (getData().getProfiles().isEmpty()) {
 			return;
 		}
-		
+
 		for (String profile : getData().getProfiles().get()) {
 			addProfile(profile);
 		}
 	}
-	
+
 	private void addProfile(String profile) throws InvalidProfileException {
 		this.profiles.put(profile, reflectedProfile(profile));
 	}
@@ -162,7 +162,7 @@ public class ServerModel extends AMachineModel {
 		for (final AProfile profile : getProfiles().values()) {
 			units.addAll(profile.getUnits());
 		}
-		
+
 		units.addAll(serverConfig());
 
 		if (getFirewall() != null) { // Some machines don't have firewalls for me to configure

@@ -126,28 +126,28 @@ public class NetworkData extends AData {
 
 	private HypervisorData readHyperVisor(String label, JsonObject hypervisorData)
 			throws ADataException {
-		
+
 		HypervisorData hv = new HypervisorData(label);
 		hv.read(getData());
 		hv.read(hypervisorData);
-		
+
 		// They *should* contain information about their services
 		if (!hypervisorData.containsKey("services")) {
 			throw new MissingPropertiesException(label +
 					" doesn't contain any services. Please check your config");
 		}
-		
+
 		JsonObject services = hypervisorData.getJsonObject("services");
-		
+
 		for (final String serviceLabel : services.keySet()) {
 			ServiceData service = readService(serviceLabel, services.getJsonObject(serviceLabel));
-			
+
 			hv.addService(service);
 			service.setHypervisor(hv);
-			
+
 			this.putMachine(service);
 		}
-		
+
 		return hv;
 	}
 	
@@ -186,7 +186,7 @@ public class NetworkData extends AData {
 			serverData.read(getData()); //Read in network-level defaults
 			serverData.read(serverDataObject); //Read in server-specific settings
 		}
-		
+
 		this.putMachine(serverData);
 	}
 
@@ -591,10 +591,10 @@ public class NetworkData extends AData {
 
 	public Map<String, AMachineData> getMachines() {
 		////assertNotNull(this.machines);
-		
+
 		return this.machines;
 	}
-	
+
 	/**
 	 * Gets all machines which have a given Type declared in their Data
 	 * @param type The type of machines to get

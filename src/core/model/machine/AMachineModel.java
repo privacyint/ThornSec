@@ -28,7 +28,6 @@ import core.data.machine.configuration.TrafficRule;
 import core.data.machine.configuration.TrafficRule.Encapsulation;
 import core.data.machine.configuration.TrafficRule.Table;
 import core.exception.AThornSecException;
-import core.exception.data.ADataException;
 import core.exception.data.InvalidIPAddressException;
 import core.exception.data.InvalidPortException;
 import core.iface.IUnit;

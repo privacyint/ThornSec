@@ -33,11 +33,20 @@ public abstract class ACompoundProfile extends AProfile {
 	@Override
 	public Collection<IUnit> getUnits() {
 		final Collection<IUnit> rules = new ArrayList<>();
-		rules.add(new ComplexUnit(getLabel() + "_compound", this.precondition, "",
-				getLabel() + "_unchanged=1;\n" + getLabel() + "_compound=1;\n"));
+		rules.add(new ComplexUnit(getMachineModel().getLabel() + "_compound",
+						this.precondition,
+						"",
+						getMachineModel().getLabel() + "_unchanged=1;\n" + getMachineModel().getLabel() + "_compound=1;\n")
+		);
+		
 		rules.addAll(getChildren());
-		rules.add(new ComplexUnit(getLabel(), this.precondition, this.config + "\n" + getLabel() + "_unchanged=1;\n",
-				getLabel() + "=$" + getLabel() + "_unchanged;\n"));
+		
+		rules.add(new ComplexUnit(getMachineModel().getLabel(),
+						this.precondition,
+						this.config + "\n" + getMachineModel().getLabel() + "_unchanged=1;\n",
+						getMachineModel().getLabel() + "=$" + getMachineModel().getLabel() + "_unchanged;\n")
+		);
+		
 		return rules;
 	}
 

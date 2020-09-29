@@ -27,7 +27,7 @@ public abstract class ADeviceData extends AMachineData {
 		super(label);
 
 		this.managed = null;
-		
+
 		this.putType(MachineType.DEVICE);
 	}
 
@@ -43,10 +43,10 @@ public abstract class ADeviceData extends AMachineData {
 		if (!data.containsKey("managed")) {
 			return;
 		}
-		
+
 		this.managed = data.getBoolean("managed");
 	}
-	
+
 	private final void readNICs(JsonObject data) throws InvalidNetworkInterfaceException {
 		if (!data.containsKey("macs")) {
 			return;
