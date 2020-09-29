@@ -29,10 +29,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import core.data.machine.AMachineData;
 import core.data.machine.AMachineData.MachineType;
+import core.data.machine.DedicatedData;
 import core.data.machine.InternalDeviceData;
+import core.data.machine.ServerData;
 import core.data.machine.ExternalDeviceData;
 import core.data.machine.HypervisorData;
-import core.data.machine.ServerData;
 import core.data.machine.ServiceData;
 import core.data.machine.UserDeviceData;
 import core.data.network.NetworkData;
@@ -41,10 +42,12 @@ import core.exception.data.InvalidIPAddressException;
 import core.exception.data.NoValidUsersException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidTypeException;
 import core.exec.ManageExec;
 import core.exec.network.OpenKeePassPassphrase;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
+import core.model.machine.DedicatedModel;
 import core.model.machine.ExternalOnlyDeviceModel;
 import core.model.machine.HypervisorModel;
 import core.model.machine.InternalOnlyDeviceModel;
@@ -122,34 +125,73 @@ public class NetworkModel {
 	 */
 	void init() throws AThornSecException {
 
-		buildExternalOnlyDevices();
-		buildInternalOnlyDevices();
-		buildUserDevices();
+		buildMachines();
 		buildUsers();
-		buildServers();
-		
-		// Now, step through our devices, initialise them, and run through their units.
+
+		// We want to initialise the whole network first before we start getting units
+		for (AMachineModel machine : getMachines().values()) {
+			machine.init();
+		}
+
+		// Now, step through our devices and run through their units.
 		for (final AMachineModel device : getMachines(MachineType.DEVICE)) {
-			device.init();
 			putUnits(label, device.getUnits());
 		}
 
-		// We want to initialise the whole network first before we start getting units
+		// We want to separate the Routers out; they need to be the very last
+		// thing configured as it relies on the rest of the network being inited
+		// & configured
 		for (final AMachineModel server : getMachines(MachineType.SERVER)) {
-			server.init();
-		}
-
-		// We want to separate the Routers out; they need to be the very last thing, as
-		// it relies on everythign else being inited & configured
-		for (final AMachineModel server : getMachines(MachineType.SERVER)) {
-			if (!server.isType(MachineType.ROUTER)) {
-				putUnits(server.getLabel(), server.getUnits());
+			if (server.isType(MachineType.ROUTER)) {
+				continue;
 			}
+
+			putUnits(server.getLabel(), server.getUnits());
 		}
 
 		// Finally, let's build our Routers
 		for (final AMachineModel router : getMachines(MachineType.ROUTER)) {
 			putUnits(router.getLabel(), router.getUnits());
+		}
+	}
+
+	/**
+	 * Builds the specialised Machine models from their data.
+	 * @throws AThornSecException if something is broken
+	 */
+	private void buildMachines() throws AThornSecException {
+		for (AMachineData machineData : getData().getMachines().values()) {
+
+			AMachineModel machineModel = null;
+
+			//Switches are probably easier to read, but they don't do logic
+			if (machineData.isType(MachineType.INTERNAL_ONLY)) {
+				machineModel = new InternalOnlyDeviceModel((InternalDeviceData) machineData, this);
+			}
+			else if (machineData.isType(MachineType.EXTERNAL_ONLY)) {
+				machineModel = new ExternalOnlyDeviceModel((ExternalDeviceData) machineData, this);
+			}
+			else if (machineData.isType(MachineType.USER)) {
+				machineModel = new UserDeviceModel((UserDeviceData) machineData, this);
+			}
+			else if (machineData.isType(MachineType.DEDICATED)) {
+				machineModel = new DedicatedModel((DedicatedData) machineData, this);
+			}
+			else if (machineData.isType(MachineType.SERVICE)) {
+				machineModel = new ServiceModel((ServiceData) machineData, this);
+			}
+			else if (machineData.isType(MachineType.HYPERVISOR)) {
+				machineModel = new HypervisorModel((HypervisorData)machineData, this);
+			}
+			//We leave this down here, as Routers can potentially be Services
+			else if (machineData.isType(MachineType.ROUTER)) {
+				machineModel = new ServerModel((ServerData) machineData, this);
+			}
+			else {
+				throw new InvalidTypeException("Unknown machine type for " + machineData.getLabel());
+			}
+
+			addMachine(machineModel);
 		}
 	}
 
@@ -160,64 +202,6 @@ public class NetworkModel {
 	private void buildUsers() throws AThornSecException {
 		for (String username : getData().getUsers().keySet()) {
 			this.users.put(username, new UserModel(getData().getUsers().get(username)));
-		}
-	}
-
-	private void buildInternalOnlyDevices() throws AThornSecException {
-		final Optional<Map<String, AMachineData>> internals = getData().getMachines(MachineType.INTERNAL_ONLY);
-		if (internals.isPresent()) {
-			for (String label : internals.get().keySet()) {
-				addMachine(new InternalOnlyDeviceModel((InternalDeviceData)getData().getMachineData(label), this));
-			}
-		}
-	}
-
-	private void buildUserDevices() throws AThornSecException {
-		final Optional<Map<String, AMachineData>> users = getData().getMachines(MachineType.USER);
-		if (users.isPresent()) {
-			for (String label : users.get().keySet()) {
-				addMachine(new UserDeviceModel((UserDeviceData)getData().getMachineData(label), this));
-			}
-		}
-	}
-
-	private void buildServers() throws AThornSecException {
-		final Optional<Map<String, AMachineData>> servers = getData().getMachines(MachineType.SERVER);
-		if (servers.isEmpty()) {
-			return;
-		}
-
-		for (AMachineData serverData : servers.get().values()) {
-			if (serverData.isType(MachineType.SERVICE)) {
-				addMachine(new ServiceModel((ServiceData)serverData, this));
-			}
-			else if (serverData.isType(MachineType.HYPERVISOR)) {
-				addMachine(new HypervisorModel((HypervisorData)serverData, this));
-			}
-			else {
-				addMachine(new ServerModel((ServerData)serverData, this));
-			}
-		}
-
-
-
-		for (AMachineModel service : getMachines(MachineType.SERVICE)) {
-			String hypervisorLabel = ((ServiceData)getData().getMachineData(service.getLabel()))
-										.getHypervisor()
-										.getLabel();
-			
-			((ServiceModel)service).setHypervisor((HypervisorModel) getMachineModel(hypervisorLabel));
-		}
-	}
-
-	private void buildExternalOnlyDevices() throws AThornSecException {
-		final Optional<Map<String, AMachineData>> externals = getData().getMachines(MachineType.EXTERNAL_ONLY);
-		if (externals.isEmpty()) {
-			return;
-		}
-
-		for (String label : externals.get().keySet()) {
-			addMachine(new ExternalOnlyDeviceModel((ExternalDeviceData)getData().getMachineData(label), this));
 		}
 	}
 
