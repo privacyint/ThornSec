@@ -684,29 +684,12 @@ public class ShorewallFirewall extends AFirewallProfile {
 		interfaces.appendLine("#zone\tinterface\tbroadcast\toptions");
 
 		// First work out our Internet-facing NICs
-		try {
-//			if (getMachineModel().getNetworkInterfaces().get(Direction.WAN) != null) {
-//					getNetworkModel().getData().getNetworkInterfaces(getLabel()).get(Direction.WAN).forEach((iface, nicData) -> {
-//						List<NetworkInterfaceModel> nicModels = null;
-//						try {
-//							nicModels = getMachineModel().getNetworkInterfaces()
-//									.stream()
-//									.filter((model) -> model.getIface().equals(iface))
-//									.collect(Collectors.toList());
-//						} catch (InvalidMachineModelException e) {
-//							// TODO Auto-generated catch block
-//							e.printStackTrace();
-//						}
-//
-//						nicModels.forEach(nicModel -> {
-//							interfaces.appendLine(buildInterfaceLine(nicModel, MachineType.INTERNET));
-//						});
-//					});
-//			}
-		} catch (JsonParsingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		getServerModel().getNetworkInterfaces()
+		.stream()
+		.filter(nic -> nic.getDirection().equals(Direction.WAN))
+		.forEach(nic -> {
+			interfaces.appendLine(buildInterfaceLine(nic));
+		});
 
 		// Then do everything else
 		getServerModel().getNetworkInterfaces()
