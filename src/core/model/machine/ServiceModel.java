@@ -78,7 +78,8 @@ public class ServiceModel extends ServerModel {
 	}
 
 	@Override
-	public void init() throws InvalidDiskSizeException, InvalidMachineModelException {
+	public void init() throws AThornSecException {
+		super.init();
 
 		String hypervisorLabel = getData().getHypervisor().getLabel();
 		HypervisorModel hv = (HypervisorModel) getNetworkModel().getMachineModel(hypervisorLabel); 
