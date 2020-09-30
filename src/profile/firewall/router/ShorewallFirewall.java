@@ -488,8 +488,9 @@ public class ShorewallFirewall extends AFirewallProfile {
 		getRouter().getNetworkInterfaces()
 		.stream()
 		.filter(nic -> nic instanceof MACVLANTrunkModel)
+		.map(MACVLANTrunkModel.class::cast)
 		.forEach(nic -> {
-			((MACVLANTrunkModel)nic).getVLANs().forEach(vlan -> {
+			nic.getVLANs().forEach(vlan -> {
 				Set<AMachineModel> machines = getNetworkModel().getMachines(vlan.getType());
 				maclist.addAll(machines2Maclist(vlan.getType(), machines));
 			});
@@ -530,8 +531,9 @@ public class ShorewallFirewall extends AFirewallProfile {
 		getServerModel().getNetworkInterfaces()
 		.stream()
 		.filter(nic -> nic instanceof MACVLANTrunkModel)
+		.map(MACVLANTrunkModel.class::cast)
 		.forEach(nic -> {
-			((MACVLANTrunkModel)nic).getVLANs().forEach(vlan -> {
+			nic.getVLANs().forEach(vlan -> {
 				Set<AMachineModel> machines = getNetworkModel().getMachines(vlan.getType());
 
 				hosts.addAll(machines2Host(vlan.getType(), machines));
@@ -588,8 +590,9 @@ public class ShorewallFirewall extends AFirewallProfile {
 		getServerModel().getNetworkInterfaces()
 		.stream()
 		.filter(nic -> nic instanceof MACVLANTrunkModel)
+		.map(MACVLANTrunkModel.class::cast)
 		.forEach(nic -> {
-			((MACVLANTrunkModel)nic).getVLANs().forEach(vlan -> {
+			nic.getVLANs().forEach(vlan -> {
 				zones.appendLine("#" + vlan.getIface());
 				zones.appendLine(cleanZone(vlan.getIface()) + "\tipv4");
 
