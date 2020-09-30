@@ -306,47 +306,47 @@ public class ShorewallFirewall extends AFirewallProfile {
 			this.setOrigDest(this.getMachineModel(rule.getSource()).getIPs());
 		}
 
-		public void setMacro(String macro) {
+		private void setMacro(String macro) {
 			this.macro = macro;
 		}
 
-		public void setAction(Action action) {
+		private void setAction(Action action) {
 			this.action = action;
 		}
 
-		public void setSourceZone(String sourceZone) {
+		private void setSourceZone(String sourceZone) {
 			this.sourceZone = sourceZone;
 		}
 
-		public void setSourceSubZone(String sourceSubZone) {
+		private void setSourceSubZone(String sourceSubZone) {
 			this.sourceSubZone = sourceSubZone;
 		}
 
-		public void setInvertSource(Boolean val) {
+		private void setInvertSource(Boolean val) {
 			this.invertSource = val;
 		}
 
-		public void setDestinationZone(String destinationZone) {
+		private void setDestinationZone(String destinationZone) {
 			this.destinationZone = destinationZone;
 		}
 
-		public void setDestinationSubZone(String destinationSubZone) {
+		private void setDestinationSubZone(String destinationSubZone) {
 			this.destinationSubZone = destinationSubZone;
 		}
 
-		public void setProto(Encapsulation proto) {
+		private void setProto(Encapsulation proto) {
 			this.proto = proto;
 		}
 
-		public void setDPorts(Collection<Integer> dPorts) {
+		private void setDPorts(Collection<Integer> dPorts) {
 			this.dPorts = dPorts;
 		}
 
-		public void setOrigDest(Collection<IPAddress> origDest) {
+		private void setOrigDest(Collection<IPAddress> origDest) {
 			this.origDest = origDest;
 		}
 
-		public void setRate(String rate) {
+		private void setRate(String rate) {
 			this.rate = rate;
 		}
 
