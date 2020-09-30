@@ -293,13 +293,13 @@ public class ShorewallFirewall extends AFirewallProfile {
 					.collect(Collectors.joining(","))
 			); //original destination
 			this.setDestinationSubZone(
-					rule.getDestinations()
-						.stream()
-						.map(destination -> destination.getHost())
-						.map(label -> this.getMachineModel(label).getIPs())
-						.flatMap(Collection::stream)
-						.map(ip -> ip.withoutPrefixLength().toCompressedString())
-						.collect(Collectors.joining(","))
+				rule.getDestinations()
+					.stream()
+					.map(destination -> destination.getHost())
+					.map(label -> this.getMachineModel(label).getIPs())
+					.flatMap(Collection::stream)
+					.map(ip -> ip.withoutPrefixLength().toCompressedString())
+					.collect(Collectors.joining(","))
 			);
 			this.setDPorts(rule.getPorts());
 			this.setProto(rule.getEncapsulation());
