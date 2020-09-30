@@ -719,13 +719,24 @@ public class ShorewallFirewall extends AFirewallProfile {
 		return interfaces;
 	}
 
-	private String buildInterfaceLine(MACVLANModel nic) {
+	/**
+	 * This turns a NetworkInterfaceModel into an interface line in Shorewall's
+	 * config
+	 * @param nic
+	 * @return
+	 */
+	private String buildInterfaceLine(NetworkInterfaceModel nic) {
 		String line = "";
-		line += cleanZone(nic.getType().toString());
+		if (nic instanceof MACVLANModel) {
+			line += cleanZone(((MACVLANModel) nic).getType().toString());
+		}
+		else if (Direction.WAN.equals(nic.getDirection())) {
+			line += ParentZone.INTERNET.toString();
+		}
 		line += "\t" + nic.getIface();
 		line += "\t-\t";
 		//If it's explicitly DHCP or it's on our LAN, it must talk DHCP
-		line += (nic.getInet().equals(Inet.DHCP) || ParentZone.lanZone.stream().anyMatch(zone -> zone.parentZone.equals(nic.getType()))) ? "dhcp," : "";
+		line += (nic.getInet().equals(Inet.DHCP) || nic.getDirection().equals(Direction.LAN)) ? "dhcp," : "";
 		line += "routefilter,arp_filter";
 		return line;
 	}
