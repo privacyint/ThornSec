@@ -219,16 +219,16 @@ public class ShorewallFirewall extends AFirewallProfile {
 			this.setDestinationZone(
 				rule.getDestinations()
 					.stream()
-					.<String>map(destination -> cleanZone(destination.getHost()))
+					.map(destination -> cleanZone(destination.getHost()))
 					.collect(Collectors.joining(","))
 			);
 			this.setDestinationSubZone(
 				rule.getDestinations()
 					.stream()
-					.<String>map(destination -> destination.getHost())
-					.<Collection<IPAddress>>map(label -> this.getMachineModel(label).getIPs())
+					.map(destination -> destination.getHost())
+					.map(label -> this.getMachineModel(label).getIPs())
 					.flatMap(Collection::stream)
-					.<String>map(ip -> ip.withoutPrefixLength().toCompressedString())
+					.map(ip -> ip.withoutPrefixLength().toCompressedString())
 					.collect(Collectors.joining(","))
 			);
 		}
@@ -246,7 +246,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 			this.setDestinationSubZone(
 				rule.getDestinations()
 					.stream()
-					.<String>map(destination -> destination.getHost())
+					.map(destination -> destination.getHost())
 					.collect(Collectors.joining(".,"))
 			);
 		}
@@ -265,22 +265,22 @@ public class ShorewallFirewall extends AFirewallProfile {
 			this.setSourceSubZone(
 				this.getMachineModel(rule.getSource()).getIPs()
 					.stream()
-					.<String>map(ip -> ip.withoutPrefixLength().toCompressedString())
+					.map(ip -> ip.withoutPrefixLength().toCompressedString())
 					.collect(Collectors.joining(","))
 			);
 			this.setDestinationZone(
 				rule.getDestinations()
 					.stream()
-					.<String>map(destination -> cleanZone(destination.getHost()))
+					.map(destination -> cleanZone(destination.getHost()))
 					.collect(Collectors.joining(","))
 			); //original destination
 			this.setDestinationSubZone(
 					rule.getDestinations()
 						.stream()
-						.<String>map(destination -> destination.getHost())
-						.<Collection<IPAddress>>map(label -> this.getMachineModel(label).getIPs())
+						.map(destination -> destination.getHost())
+						.map(label -> this.getMachineModel(label).getIPs())
 						.flatMap(Collection::stream)
-						.<String>map(ip -> ip.withoutPrefixLength().toCompressedString())
+						.map(ip -> ip.withoutPrefixLength().toCompressedString())
 						.collect(Collectors.joining(","))
 			);
 			this.setDPorts(rule.getPorts());
