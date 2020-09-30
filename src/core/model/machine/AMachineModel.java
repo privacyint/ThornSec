@@ -267,16 +267,16 @@ public abstract class AMachineModel extends AModel {
 			if (nic.getAddresses().isEmpty()) {
 				continue;
 			}
-			
+
 			for (final IPAddress ip : nic.getAddresses().get()) {
 				if ((getExternalIPs() != null) && getExternalIPs().contains(ip)) {
 					continue;
 				}
-				
+
 				ips.add(ip);
 			}
 		}
-		
+
 		return ips;
 	}
 

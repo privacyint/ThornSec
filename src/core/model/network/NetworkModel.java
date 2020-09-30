@@ -252,7 +252,6 @@ public class NetworkModel {
 		return machines;
 	}
 
-
 	/**
 	 * @return A specific machine model.
 	 */
@@ -421,7 +420,7 @@ public class NetworkModel {
 		if (getData().getSubnets().isEmpty()) {
 			return this.defaultSubnets;
 		}
-		
+
 		return Stream.of(getData().getSubnets().get(), this.defaultSubnets)
 					.flatMap(map -> map.entrySet().stream())
 					.collect(Collectors.toMap(

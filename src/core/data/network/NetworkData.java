@@ -8,13 +8,11 @@
 package core.data.network;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -198,7 +196,7 @@ public class NetworkData extends AData {
 		if (!getData().containsKey("my_ssh_user")) {
 			return;
 		}
-		
+
 		this.myUser = getData().getJsonString("my_ssh_user").getString();
 	}
 
@@ -213,7 +211,7 @@ public class NetworkData extends AData {
 		if (!getData().containsKey("users")) {
 			return;
 		}
-		
+
 		final JsonObject jsonDevices = getData().getJsonObject("users");
 
 		for (final String jsonDevice : jsonDevices.keySet()) {
@@ -225,12 +223,12 @@ public class NetworkData extends AData {
 			}
 		}
 	}
-	
+
 	private void readExternalDevices() throws ADataException {
 		if (!getData().containsKey("guests")) {
 			return;
 		}
-		
+
 		final JsonObject jsonDevices = getData().getJsonObject("guests");
 
 		for (final String jsonDevice : jsonDevices.keySet()) {
@@ -258,9 +256,9 @@ public class NetworkData extends AData {
 		if (!getData().containsKey("servers")) {
 			return;
 		}
-		
+
 		final JsonObject jsonServers = getData().getJsonObject("servers");
-		
+
 		for (final String label : jsonServers.keySet()) {
 			readServer(label, jsonServers.getJsonObject(label));
 		}
@@ -278,7 +276,7 @@ public class NetworkData extends AData {
 		}
 
 		final JsonObject jsonSubnets = getData().getJsonObject("subnets");
-		
+
 		for (final String label : jsonSubnets.keySet()) {
 			String ip = ((JsonString)jsonSubnets.getJsonString(label)).getString();
 			readSubnet(label, ip);
@@ -300,7 +298,7 @@ public class NetworkData extends AData {
 		if (!getData().containsKey("guest_network")) {
 			return;
 		}
-		
+
 		this.autoGuest = getData().getBoolean("guest_network");
 	}
 
@@ -362,7 +360,7 @@ public class NetworkData extends AData {
 		if (!getData().containsKey("domain")) {
 			return;
 		}
-		
+
 		this.domain = getData().getJsonString("domain").getString();
 	}
 
@@ -370,7 +368,7 @@ public class NetworkData extends AData {
 		if (!getData().containsKey("upstream_dns")) {
 			return;
 		}
-		
+
 		this.upstreamDNS = getHostNameArray("upstream_dns");
 	}
 
@@ -382,12 +380,11 @@ public class NetworkData extends AData {
 	 * @throws InvalidPropertyException if a path is invalid
 	 * @throws InvalidJSONException if the JSON itself is invalid
 	 */
-
 	private void readIncludes() throws InvalidPropertyException, InvalidJSONException {
 		if (!getData().containsKey("includes")) {
 			return;
 		}
-		
+
 		for (JsonValue path : getData().getJsonArray("includes")) {
 			readInclude(((JsonString) path).getString());
 		}
@@ -434,7 +431,8 @@ public class NetworkData extends AData {
 					+ includeFile.toString());
 		}
 		catch (JsonParsingException e) {
-			throw new InvalidJSONException("Trying to read in " + includeFile.toString() + " threw the following error " + e.getLocalizedMessage());
+			throw new InvalidJSONException("Trying to read in " + includeFile.toString()
+					+ " threw the following error " + e.getLocalizedMessage());
 		}
 	}
 
@@ -450,13 +448,13 @@ public class NetworkData extends AData {
 			throw new NoValidUsersException("There must be at least one user on"
 					+ " your network");
 		}
-		
+
 		JsonObject jsonUsers = getData().getJsonObject("users");
-		
+
 		for (final String userLabel : jsonUsers.keySet()) {
 			UserData user = new UserData(userLabel);
 			user.read(jsonUsers.getJsonObject(userLabel));
-			
+
 			if (this.users.put(user.getLabel(), user) != null) {
 				throw new InvalidUserException("You have a duplicate user ("
 						+ user.getLabel() + ") in your network");
@@ -629,12 +627,11 @@ public class NetworkData extends AData {
 				.filter(Objects::nonNull)
 				.filter(kvp -> kvp.getValue().isType(type))
 				.collect(Collectors.toMap(kvp -> kvp.getKey(), kvp -> kvp.getValue()));
-	
+
 		return Optional.ofNullable(machines);
 	}
 
 	public Map<String, UserData> getUsers() {
 		return this.users;
 	}
-
 }

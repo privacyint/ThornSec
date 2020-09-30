@@ -8,22 +8,16 @@
 package core.data.machine;
 
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import java.util.Collection;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.json.JsonObject;
-import core.data.machine.AMachineData.MachineType;
 import core.data.machine.configuration.DiskData;
 import core.exception.data.ADataException;
 import core.exception.data.InvalidPropertyException;
 import core.exception.data.machine.InvalidDiskSizeException;
-import core.iface.IUnit;
-import profile.firewall.router.ShorewallFirewall.Arm;
-import profile.firewall.router.ShorewallFirewall.ParentZone;
 import profile.type.Hypervisor;
 
 /**
@@ -202,7 +196,7 @@ public class ServiceData extends ServerData {
 	public final Optional<DiskData> getDiskData(String label) {
 		return Optional.ofNullable(getDisks().get().get(label));
 	}
-	
+
 	/**
 	 * Get all of the disks associated with this Service
 	 * 
@@ -224,10 +218,10 @@ public class ServiceData extends ServerData {
 	 */
 	public final HypervisorData getHypervisor() {
 		//assertNotNull(this.hypervisor);
-		
+
 		return this.hypervisor;
 	}
-	
+
 	/**
 	 * Set the Hypervisor for this machine - warning, this is unchecked. You're
 	 * expected to make sure this machine exists elsewhere.
@@ -236,7 +230,7 @@ public class ServiceData extends ServerData {
 	 */
 	public final void setHypervisor(HypervisorData hv) {
 		//assertNotNull(hv);
-		
+
 		this.hypervisor = hv;
 	}
 	
@@ -264,11 +258,11 @@ public class ServiceData extends ServerData {
 	 */
 	public Optional<Integer> getDiskSize(String diskLabel) {
 		Optional<DiskData> disk = getDiskData(diskLabel);
-		
+
 		if (disk.isPresent()) {
 			return disk.get().getSize();
 		}
-		
+
 		return null;
 	}
 		/**

@@ -51,7 +51,7 @@ public abstract class AModel {
 	 */
 	public final String getLabel() {
 //		//assertNotNull(this.label);
-		
+
 		return this.label;
 	}
 
@@ -62,10 +62,10 @@ public abstract class AModel {
 	 */
 	public final NetworkModel getNetworkModel() {
 		////assertNotNull(this.networkModel);
-	
+
 		return this.networkModel;
 	}
-	
+
 	/**
 	 * Get this Model's AData. This may be useful in Profiles where you want to
 	 * get at properties without having to refactor the whole Object
@@ -74,7 +74,7 @@ public abstract class AModel {
 	 */
 	public AData getData() {
 		////assertNotNull(this.myData);
-		
+
 		return this.myData;
 	}
 

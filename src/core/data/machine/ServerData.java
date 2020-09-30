@@ -397,7 +397,7 @@ public class ServerData extends AMachineData {
 		if (this.profiles == null) {
 			this.profiles = new LinkedHashSet<>();
 		}
-		
+
 		for (final String profile : profiles) {
 			this.profiles.add(profile);
 		}

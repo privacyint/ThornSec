@@ -9,7 +9,6 @@ package core.model.network;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,7 +37,7 @@ public class ThornsecModel {
 
 	private final Map<String, NetworkModel> networks;
 	private Path configPath;
-	
+
 	public ThornsecModel() {
 		this.networks = new LinkedHashMap<>();
 		this.configPath = null;

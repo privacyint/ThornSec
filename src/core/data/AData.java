@@ -74,7 +74,7 @@ public abstract class AData {
 	 */
 	public final String getLabel() {
 		////assertNotNull(this.label);
-		
+
 		return this.label;
 	}
 
@@ -94,7 +94,7 @@ public abstract class AData {
 	 */
 	public final JsonObject getData() {
 		////assertNotNull(this.data);
-		
+
 		return this.data;
 	}
 
@@ -105,7 +105,7 @@ public abstract class AData {
 	 */
 	protected final void setData(JsonObject data) {
 		////assertNotNull(data);
-		
+
 		this.data = data;
 	}
 }
