@@ -301,6 +301,10 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		for (final MachineType subnet : getNetworkModel().getSubnets().keySet()) {
+			if (getNetworkModel().getMachines(subnet).isEmpty()) {
+				continue;
+			}
+
 			units.add(buildSubNet(subnet));
 		}
 
