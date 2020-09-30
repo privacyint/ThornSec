@@ -23,6 +23,7 @@ import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.data.machine.configuration.TrafficRule.Encapsulation;
 import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidServerException;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.exception.runtime.ARuntimeException;
 import core.exception.runtime.InvalidFirewallRuleException;
 import core.exception.runtime.InvalidMachineModelException;
@@ -33,6 +34,7 @@ import core.model.machine.AMachineModel;
 import core.model.machine.ServerModel;
 import core.model.machine.configuration.networking.MACVLANModel;
 import core.model.machine.configuration.networking.MACVLANTrunkModel;
+import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
@@ -744,23 +746,19 @@ public class ShorewallFirewall extends AFirewallProfile {
 	private FileUnit getMasqFile() {
 		final FileUnit masq = new FileUnit("shorewall_masquerades", "shorewall_installed", CONFIG_BASEDIR + "/masq");
 
-		getMachineModel().getNetworkInterfaces()
-			.stream()
-			.filter(nic -> Direction.WAN.equals(nic.getDirection()))
-			.forEach(wanNic -> {
-				getServerModel().getNetworkInterfaces()
-				.stream()
-				.filter(_nic -> _nic instanceof MACVLANTrunkModel)
-				.forEach(macVLANTrunk -> {
-					((MACVLANTrunkModel)macVLANTrunk).getVLANs().forEach(vlan -> {
-						final String line = macVLANTrunk.getIface() + "\t" + vlan.getIface();
+		getServerModel().getNetworkInterfaces()
+		.stream()
+		.filter(nic -> nic instanceof MACVLANTrunkModel)
+		.map(MACVLANTrunkModel.class::cast)
+		.forEach(macVLANTrunk -> {
+			macVLANTrunk.getVLANs().forEach(vlan -> {
+				final String line = macVLANTrunk.getIface() + "\t" + vlan.getIface();
 
-						if (!masq.containsLine(line)) {
-							masq.appendLine(line);
-						}
-					});
-				});
+				if (!masq.containsLine(line)) {
+					masq.appendLine(line);
+				}
 			});
+		});
 
 		return masq;
 	}
