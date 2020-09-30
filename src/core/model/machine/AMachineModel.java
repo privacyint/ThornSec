@@ -373,6 +373,8 @@ public abstract class AMachineModel extends AModel {
 			egressRule.addPorts(destination.getPort());
 		}
 
+		egressRule.setEncapsulation(encapsulation);
+
 		this.addFirewallRule(egressRule);
 	}
 
