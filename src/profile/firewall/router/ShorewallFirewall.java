@@ -212,8 +212,25 @@ public class ShorewallFirewall extends AFirewallProfile {
 		 * @param rule Forward TrafficRule
 		 */
 		private void buildForward(TrafficRule rule) throws InvalidFirewallRuleException {
+			Boolean destIsExternallyAccessible = rule.getDestinations()
+					.stream()
+					.map(destination -> destination.getHost())
+					.filter(label -> !this.getMachineModel(label).getExternalIPs().isEmpty())
+					.count() > 0;
+
 			this.setAction(Action.ACCEPT);
-			this.setSourceZone(rule.getSource());
+			if (destIsExternallyAccessible) {
+				this.setSourceZone("any");
+			}
+			else {
+				this.setSourceZone(
+					getNetworkModel().getSubnets().keySet()
+					 .stream()
+					 .filter(type -> !getNetworkModel().getMachines(type).isEmpty())
+					 .map(type -> cleanZone(type))
+					 .collect(Collectors.joining(","))
+				);
+			}
 			this.setProto(rule.getEncapsulation());
 			this.setDPorts(rule.getPorts());
 			this.setDestinationZone(
