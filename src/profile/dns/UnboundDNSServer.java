@@ -622,6 +622,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	 */
 	private void setPrivateAddresses() {
 		getServerModel().getIPs().forEach(ip -> {
+			if (!ip.isLocal()) { return; }
+
 			IPAddress subnet = ip.getLowerNonZeroHost().withoutPrefixLength();
 			unboundConf.appendLine("\tprivate-address: " + subnet.toCompressedString());
 		});
@@ -642,6 +644,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		unboundConf.appendLine("\taccess-control: 127.0.0.1/32 allow");
 
 		getServerModel().getIPs().forEach(ip -> {
+			if (!ip.isLocal()) { return; }
+
 			IPAddress subnet = ip.getLowerNonZeroHost();
 			unboundConf.appendLine("\taccess-control: " + subnet.toCompressedString() + " allow");
 		});
@@ -665,6 +669,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		unboundConf.appendLine("\tinterface: 127.0.0.1");
 
 		getServerModel().getIPs().forEach(ip -> {
+			if (!ip.isLocal()) { return; }
+
 			IPAddress subnet = ip.getLowerNonZeroHost().withoutPrefixLength();
 			unboundConf.appendLine("\tinterface: " + subnet.toCompressedString());
 		});
