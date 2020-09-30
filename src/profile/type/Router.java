@@ -20,6 +20,7 @@ import core.exception.data.InvalidIPAddressException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
+import core.model.machine.configuration.networking.BondInterfaceModel;
 import core.model.machine.configuration.networking.BondModel;
 import core.model.machine.configuration.networking.DummyModel;
 import core.model.machine.configuration.networking.MACVLANModel;
@@ -66,16 +67,19 @@ public class Router extends AMachine {
 			.stream()
 			.filter(nic -> Direction.LAN.equals(nic.getDirection()))
 			.collect(Collectors.toSet());
-		
+
 		if (nics.isEmpty()) {
 			lanTrunk = new DummyModel();
 		}
 		else {
 			lanTrunk = new BondModel();
-			nics.forEach(nic -> {  });
+			nics.forEach((lanNic) -> {
+				getMachineModel().addNetworkInterface(new BondInterfaceModel(lanNic.getData(), getNetworkModel()));
+			});
 		}
 
 		lanTrunk.setIface("LAN");
+		getMachineModel().addNetworkInterface(lanTrunk);
 	}
 
 	/**
@@ -161,6 +165,8 @@ public class Router extends AMachine {
 	@Override
 	public Collection<IUnit> getPersistentConfig() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
+
+		units.addAll(super.getPersistentConfig());
 
 		final FileUnit resolvConf = new FileUnit("leave_my_resolv_conf_alone", "proceed",
 				"/etc/dhcp/dhclient-enter-hooks.d/leave_my_resolv_conf_alone", 
