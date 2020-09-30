@@ -228,6 +228,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 					.map(destination -> destination.getHost())
 					.map(label -> this.getMachineModel(label).getIPs())
 					.flatMap(Collection::stream)
+					.filter(ip -> ip.isLocal())
 					.map(ip -> ip.withoutPrefixLength().toCompressedString())
 					.collect(Collectors.joining(","))
 			);
