@@ -27,6 +27,6 @@ public class StaticInterfaceModel extends NetworkInterfaceModel {
 
 	@Override
 	public Optional<FileUnit> getNetDevFile() {
-		return null;
+		return Optional.empty();
 	}
 }
