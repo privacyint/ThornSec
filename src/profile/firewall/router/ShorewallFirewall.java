@@ -248,7 +248,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 				rule.getDestinations()
 					.stream()
 					.map(destination -> destination.getHost())
-					.collect(Collectors.joining(".,"))
+					.collect(Collectors.joining(","))
 			);
 		}
 
