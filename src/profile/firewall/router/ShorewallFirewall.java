@@ -636,6 +636,9 @@ public class ShorewallFirewall extends AFirewallProfile {
 
 		units.add(maclist);
 
+		//Masquerade any internal traffic
+		units.add(getMasqFile());
+
 		// Finally, build our FW rules...
 		final FileUnit rules = new FileUnit("shorewall_rules", "shorewall_hosts", CONFIG_BASEDIR + "/rules");
 		try {
