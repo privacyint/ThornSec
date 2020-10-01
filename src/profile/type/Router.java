@@ -113,6 +113,8 @@ public class Router extends AMachine {
 			vlan.setSubnet(getNetworkModel().getSubnet(type));
 			vlan.addAddress(getNetworkModel().getSubnet(type).getLowerNonZeroHost());
 			vlan.setType(type);
+			vlan.setRoutingPolicyRuleFrom(getNetworkModel().getSubnet(type).getLower());
+			vlan.setRoutingPolicyRuleTo(getNetworkModel().getSubnet(type).getLower());
 			trunk.addVLAN(vlan);
 			getMachineModel().addNetworkInterface(vlan);
 		}
