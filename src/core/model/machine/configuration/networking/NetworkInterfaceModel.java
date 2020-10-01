@@ -359,6 +359,9 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		network.appendCarriageReturn();
 
 		network.appendLine("[Network]");
+		getConfigureWithoutCarrier().ifPresent((config) ->
+			network.appendLine("ConfigureWithoutCarrier=" + config)
+		);
 		getIsIPForwarding().ifPresent((forward) -> {
 			network.appendLine("IPForward=" + forward);
 		});
