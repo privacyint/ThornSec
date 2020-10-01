@@ -27,6 +27,8 @@ public class MACVLANModel extends NetworkInterfaceModel {
 		super.setInet(Inet.MACVLAN);
 		super.setWeighting(20);
 		super.setReqdForOnline(true);
+		super.setConfigureWithoutCarrier(true);
+		super.setGatewayOnLink(true);
 	}
 
 	public MACVLANModel() {
