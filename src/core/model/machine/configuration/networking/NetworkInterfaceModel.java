@@ -58,6 +58,9 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	private Boolean configureWithoutCarrier;
 	private Boolean gatewayOnLink;
 
+	private IPAddress routingPolicyRuleFrom;
+	private IPAddress routingPolicyRuleTo;
+
 	/**
 	 * Creates a new NetworkInterfaceModel with the given iface name.
 	 *
@@ -85,6 +88,9 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		this.reqdForOnline = null;
 		this.configureWithoutCarrier = null;
 		this.gatewayOnLink = null;
+
+		this.routingPolicyRuleFrom = null;
+		this.routingPolicyRuleTo = null;
 	}
 	
 	@Override
@@ -202,6 +208,14 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		return this.inet;
 	}
 
+	public final Optional<IPAddress> getRoutingPolicyRuleFrom() {
+		return Optional.ofNullable(this.routingPolicyRuleFrom);
+	}
+
+	public final Optional<IPAddress> getRoutingPolicyRuleTo() {
+		return Optional.ofNullable(this.routingPolicyRuleTo);
+	}
+
 	/**
 	 * Add (an) IP Address(es) to this Network Interface
 	 * 
@@ -311,6 +325,14 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		return this.direction;
 	}
 
+	public void setRoutingPolicyRuleFrom(IPAddress from) {
+		this.routingPolicyRuleFrom = from;
+	}
+
+	public void setRoutingPolicyRuleTo(IPAddress to) {
+		this.routingPolicyRuleTo = to;
+	}
+
 	public void setGatewayOnLink(Boolean onLink) {
 		this.gatewayOnLink = onLink;
 	}
@@ -357,6 +379,10 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 			network.appendLine("GatewayOnLink=" + onLink)
 		);
 		network.appendCarriageReturn();
+
+		network.appendLine("[RoutingPolicyRule]");
+		getRoutingPolicyRuleFrom().ifPresent((from) -> network.appendLine("From=" + from));
+		getRoutingPolicyRuleTo().ifPresent((to) -> network.appendLine("To=" + to));
 
 		return Optional.of(network);
 	}
