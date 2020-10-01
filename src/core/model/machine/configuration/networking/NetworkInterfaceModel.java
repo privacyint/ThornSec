@@ -56,6 +56,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	private Boolean ipMasquerading;
 	private Boolean reqdForOnline;
 	private Boolean configureWithoutCarrier;
+	private Boolean gatewayOnLink;
 
 	/**
 	 * Creates a new NetworkInterfaceModel with the given iface name.
@@ -83,6 +84,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		this.ipMasquerading = null;
 		this.reqdForOnline = null;
 		this.configureWithoutCarrier = null;
+		this.gatewayOnLink = null;
 	}
 	
 	@Override
@@ -171,6 +173,10 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 
 	protected final Optional<Boolean> getIsIPMasquerading() {
 		return Optional.ofNullable(this.ipMasquerading);
+	}
+
+	protected final Optional<Boolean> getGatewayOnLink() {
+		return Optional.ofNullable(this.gatewayOnLink);
 	}
 
 	@Override
@@ -304,7 +310,11 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		
 		return this.direction;
 	}
-	
+
+	public void setGatewayOnLink(Boolean onLink) {
+		this.gatewayOnLink = onLink;
+	}
+
 	/**
 	 * Get our Network File, as described in 
 	 * {@link https://www.freedesktop.org/software/systemd/man/systemd.network.html}
@@ -340,6 +350,13 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 			getGateway().ifPresent((gateway) -> network.appendLine("Gateway=" + gateway));
 		}
 		getIsIPMasquerading().ifPresent((masq) -> network.appendLine("IPMasquerade=" + masq));
+		network.appendCarriageReturn();
+
+		network.appendLine("[Route]");
+		getGatewayOnLink().ifPresent((onLink) ->
+			network.appendLine("GatewayOnLink=" + onLink)
+		);
+		network.appendCarriageReturn();
 
 		return Optional.of(network);
 	}
