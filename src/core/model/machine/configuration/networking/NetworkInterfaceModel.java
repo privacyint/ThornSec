@@ -339,6 +339,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 			});
 			getGateway().ifPresent((gateway) -> network.appendLine("Gateway=" + gateway));
 		}
+		getIsIPMasquerading().ifPresent((masq) -> network.appendLine("IPMasquerade=" + masq));
 
 		return Optional.of(network);
 	}
