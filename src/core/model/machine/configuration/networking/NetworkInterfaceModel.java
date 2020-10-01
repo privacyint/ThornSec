@@ -217,6 +217,16 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		}
 	}
 
+	/**
+	 * Add (an) IP Address(es) to this Network Interface
+	 * 
+	 * @param addresses The address(es) to add
+	 * @throws InvalidIPAddressException if attempting to set a null IP address
+	 */
+	public final void addAddress(Collection<IPAddress> addresses) throws InvalidIPAddressException {
+		addAddress(addresses.toArray(IPAddress[]::new));
+	}
+
 	public final void setBroadcast(IPAddress broadcast) {
 		//assertNotNull(broadcast);
 		
