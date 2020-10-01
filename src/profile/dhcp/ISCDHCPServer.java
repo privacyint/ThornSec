@@ -257,9 +257,10 @@ public class ISCDHCPServer extends ADHCPServerProfile {
 		final Integer prefix = subnet.getNetworkPrefixLength();
 		final IPAddress netmask = subnet.getNetwork().getNetworkMask(prefix, false);
 		final String gateway = subnet.getLowerNonZeroHost().withoutPrefixLength().toCompressedString();
+		final String broadcast = subnet.getLower().withoutPrefixLength().toCompressedString();
 
 		// Start by telling our DHCP Server about this subnet.
-		subnetConfig.appendLine("subnet " + gateway + " netmask " + netmask + " {}");
+		subnetConfig.appendLine("subnet " + broadcast + " netmask " + netmask + " {}");
 
 		// Now let's create our subnet/groups!
 		subnetConfig.appendCarriageReturn();
