@@ -693,7 +693,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		// First work out our Internet-facing NICs
 		getServerModel().getNetworkInterfaces()
 		.stream()
-		.filter(nic -> nic.getDirection().equals(Direction.WAN))
+		.filter(nic -> Direction.WAN.equals(nic.getDirection()))
 		.forEach(nic -> {
 			interfaces.appendLine(buildInterfaceLine(nic));
 		});
@@ -728,7 +728,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		line += "\t" + nic.getIface();
 		line += "\t-\t";
 		//If it's explicitly DHCP or it's on our LAN, it must talk DHCP
-		line += (nic.getInet().equals(Inet.DHCP) || nic.getDirection().equals(Direction.LAN)) ? "dhcp," : "";
+		line += (Inet.DHCP.equals(nic.getInet()) || Direction.LAN.equals(nic.getDirection())) ? "dhcp," : "";
 		line += "routefilter,arp_filter";
 		return line;
 	}
