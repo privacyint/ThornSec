@@ -330,6 +330,15 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		getIsIPForwarding().ifPresent((forward) -> {
 			network.appendLine("IPForward=" + forward);
 		});
+		if (Inet.DHCP.equals(getInet())) {
+			network.appendLine("DHCP=yes");
+		}
+		else {
+			getAddresses().ifPresent((addresses) -> {
+				addresses.forEach((ip) -> network.appendLine("Address=" + ip));
+			});
+			getGateway().ifPresent((gateway) -> network.appendLine("Gateway=" + gateway));
+		}
 
 		return Optional.of(network);
 	}
