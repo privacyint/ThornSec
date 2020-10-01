@@ -117,13 +117,13 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 		// Configure sensible values based on the number of CPUs in your machine
 		final Integer cpus = getServerModel().getCPUs();
-		numThreads(cpus);
-		msgCacheSlabs((cpus * 2)*(1024*1024));
-		rrsetCacheSlabs((cpus * 2)*(1024*1024));
-		infraCacheSlabs((cpus * 2)*(1024*1024));
-		keyCacheSlabs((cpus * 2)*(1024*1024));
-		rrsetCacheSize((cpus / 4)*(1024*1024));
-		msgCacheSize((cpus / 8)*(1024*1024));
+		numThreads(cpus/2);
+		msgCacheSlabs(16);
+		rrsetCacheSlabs(16);
+		infraCacheSlabs(16);
+		keyCacheSlabs(16);
+		rrsetCacheSize(100);
+		msgCacheSize(50);
 		soRCVBuffer(0);
 
 		adBlocking(getNetworkModel().doAdBlocking());
@@ -299,20 +299,20 @@ public class UnboundDNSServer extends ADNSServerProfile {
 
 	/**
 	 * Number of bytes size of the message cache
-	 * @param size size in bytes
+	 * @param megabytes size in megabytes
 	 * @throws InvalidProfileException if size is invalid
 	 */
-	private void msgCacheSize(int size) throws InvalidProfileException {
-		addSettingToConfig("msg-cache-size", size);
+	private void msgCacheSize(int megabytes) throws InvalidProfileException {
+		addSettingToConfig("msg-cache-size", megabytes + "m");
 	}
 
 	/**
-	 * Number of bytes size of the RRset cache
-	 * @param size size in bytes
+	 * Number of megabytes size of the RRset cache
+	 * @param megasize size in megabytes
 	 * @throws InvalidProfileException if size is invalid
 	 */
-	private void rrsetCacheSize(int bytes) throws InvalidProfileException {
-		addSettingToConfig("rrset-cache-size", bytes);
+	private void rrsetCacheSize(int megabytes) throws InvalidProfileException {
+		addSettingToConfig("rrset-cache-size", megabytes + "m");
 	}
 
 	/**
@@ -571,7 +571,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	 * @throws InvalidProfileException if value is invalid 
 	 */
 	private void setListenIPv6(String value) throws InvalidProfileException {
-		addSettingToConfig("do-ipv6", value);		
+		addSettingToConfig("do-ip6", value);		
 	}
 
 	/**
@@ -580,7 +580,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	 * @throws InvalidProfileException if value is invalid 
 	 */
 	private void setListenIPv4(String value) throws InvalidProfileException {
-		addSettingToConfig("do-ipv4", value);		
+		addSettingToConfig("do-ip4", value);		
 	}
 
 	/**
