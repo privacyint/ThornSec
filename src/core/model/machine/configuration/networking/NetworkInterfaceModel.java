@@ -120,15 +120,15 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		});
 	}
 
-	public Integer getWeighting() {
+	public String getWeighting() {
 		//assertNotNull(this.weighting);
-		
-		return this.weighting;
+
+		return String.format("%02d", this.weighting);
 	}
 
 	public void setWeighting(Integer weighting) {
 		//assertNotNull(weighting);
-		
+
 		this.weighting = weighting;
 	}
 
