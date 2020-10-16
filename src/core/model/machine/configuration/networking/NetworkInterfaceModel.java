@@ -9,12 +9,16 @@ package core.model.machine.configuration.networking;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.exception.AThornSecException;
 import core.exception.data.InvalidIPAddressException;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.model.AModel;
 import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
@@ -64,34 +68,30 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	private Direction direction;
 	private Integer weighting;
 
+	private Map<Section, Map<String, String>> netDevSettings;
+	private Map<Section, Map<String, String>> networkSettings;
+
 	private MACAddress mac;
 
 	private Collection<IPAddress> addresses;
-
 	private IPAddress subnet;
 	private IPAddress netmask;
 	private IPAddress broadcast;
 	private IPAddress gateway;
 
-	private Boolean arp;
-	private Boolean ipForwarding;
-	private Boolean ipMasquerading;
-	private Boolean reqdForOnline;
-	private Boolean configureWithoutCarrier;
-	private Boolean gatewayOnLink;
-
-	private IPAddress routingPolicyRuleFrom;
-	private IPAddress routingPolicyRuleTo;
-
 	/**
-	 * Creates a new NetworkInterfaceModel with the given iface name.
+	 * Creates a new NetworkInterfaceModel from the provided data
 	 *
 	 * Don't invoke me directly.
+	 * @throws InvalidNetworkInterfaceException 
 	 */
-	protected NetworkInterfaceModel(NetworkInterfaceData ifaceData, NetworkModel networkModel) {
+	protected NetworkInterfaceModel(NetworkInterfaceData ifaceData, NetworkModel networkModel) throws InvalidNetworkInterfaceException {
 		super(ifaceData, networkModel);
 
-		this.iface = getLabel();
+		this.netDevSettings = new HashMap<>();
+		this.networkSettings = new HashMap<>();
+
+		this.setIface(getLabel());
 
 		this.addresses = null;
 		this.inet = null;
@@ -103,18 +103,29 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		this.gateway = null;
 		this.mac = null;
 		this.comment = null;
-
-		this.arp = null;
-		this.ipForwarding = null;
-		this.ipMasquerading = null;
-		this.reqdForOnline = null;
-		this.configureWithoutCarrier = null;
-		this.gatewayOnLink = null;
-
-		this.routingPolicyRuleFrom = null;
-		this.routingPolicyRuleTo = null;
 	}
-	
+
+	/**
+	 * Creates a new NetworkInterfaceModel, bringing 
+	 *
+	 * Don't invoke me directly.
+	 * @throws InvalidNetworkInterfaceException 
+	 */
+	protected NetworkInterfaceModel(NetworkInterfaceModel nic) throws InvalidNetworkInterfaceException {
+		this(nic.getData(), nic.getNetworkModel());
+
+		this.netDevSettings = nic.getNetDevSettings();
+		this.networkSettings = nic.getNetworkSettings();
+	}
+
+	protected Map<Section, Map<String, String>> getNetDevSettings() {
+		return this.netDevSettings;
+	}
+
+	protected Map<Section, Map<String, String>> getNetworkSettings() {
+		return this.networkSettings;
+	}
+
 	@Override
 	public NetworkInterfaceData getData() {
 		return (NetworkInterfaceData) super.getData();
@@ -185,29 +196,9 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		return this.iface;
 	}
 
-	protected final Optional<Boolean> getARP() {
-		return Optional.ofNullable(this.arp);
-	}
-
-	protected final Optional<Boolean> getIsIPForwarding() {
-		return Optional.ofNullable(this.ipForwarding);
-	}
-
-	protected final Optional<Boolean> getIsIPMasquerading() {
-		return Optional.ofNullable(this.ipMasquerading);
-	}
-
-	protected final Optional<Boolean> getGatewayOnLink() {
-		return Optional.ofNullable(this.gatewayOnLink);
-	}
-
 	@Override
 	public final Optional<MACAddress> getMac() {
 		return Optional.ofNullable(this.mac);
-	}
-
-	public final IPAddress getNetmask() {
-		return this.netmask;
 	}
 
 	public final IPAddress getSubnet() {
@@ -216,14 +207,6 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 
 	public Inet getInet() {
 		return this.inet;
-	}
-
-	public final Optional<IPAddress> getRoutingPolicyRuleFrom() {
-		return Optional.ofNullable(this.routingPolicyRuleFrom);
-	}
-
-	public final Optional<IPAddress> getRoutingPolicyRuleTo() {
-		return Optional.ofNullable(this.routingPolicyRuleTo);
 	}
 
 	/**
@@ -259,88 +242,163 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 
 	public final void setBroadcast(IPAddress broadcast) {
 		this.broadcast = broadcast;
+
+		addToNetwork(Section.ADDRESS, "Broadcast", broadcast.toCompressedString());
 	}
 
 	protected final void setComment(String comment) {
 		//assertNotNull(comment);
-		
+
 		this.comment = comment;
 	}
 
+	/**
+	 * The gateway for this NIC
+	 * @param gateway
+	 */
 	public final void setGateway(IPAddress gateway) {
 		this.gateway = gateway;
+
+		addToNetwork(Section.ROUTE, "Gateway", gateway.toCompressedString());
 	}
 
-	public void setIface(String iface) {
-		//assertNotNull(iface);
-		
+	public void setIface(String iface) throws InvalidNetworkInterfaceException {
+		if (null == iface || iface.isBlank()) {
+			throw new InvalidNetworkInterfaceException("Your interface cannot be null or empty!");
+		}
+
 		this.iface = iface;
+
+		addToNetDev(Section.NETDEV, "Name", iface);
+		addToNetwork(Section.MATCH, "Name", iface);
 	}
 
+	protected void addToNetwork(Section section, String key, String value) {
+		Map<String, String> sectionSettings = getNetworkSection(section);
+
+		sectionSettings.put(key, value);
+
+		setNetworkSection(section, sectionSettings);
+	}
+
+	protected void addToNetDev(Section section, String key, String value) {
+		Map<String, String> sectionSettings = getNetDevSection(section);
+
+		sectionSettings.put(key, value);
+
+		setNetDevSection(section, sectionSettings);
+	}
+
+	/**
+	 * If set true, the ARP (low-level Address Resolution Protocol) for this
+	 * interface is enabled. When unset, the kernel's default will be used.
+	 * 
+	 * Disabling ARP is useful when creating multiple MACVLAN or VLAN virtual
+	 * interfaces atop a single lower-level physical interface, which will then
+	 * only serve as a link/"bridge" device aggregating traffic to the same
+	 * physical link and not participate in the network otherwise.
+	 * 
+	 * https://www.freedesktop.org/software/systemd/man/systemd.network.html#ARP=
+	 * @param value whether or not ARP is enabled for this interface
+	 */
 	public final void setARP(Boolean value) {
-		//assertNotNull(value);
-		
-		this.arp = value;
+		addToNetwork(Section.LINK, "ARP", value);
 	}
 
+	protected void addToNetwork(Section section, String key, Boolean value) {
+		addToNetwork(section, key, value ? "yes" : "no");
+	}
+
+	protected void addToNetDev(Section section, String key, Boolean value) {
+		addToNetDev(section, key, value ? "yes" : "no");
+	}
+
+	/**
+	 * Configures IP packet forwarding for the system.
+	 * 
+	 * If enabled, incoming packets on any network interface will be forwarded
+	 * to any other interfaces according to the routing table.
+	 * 
+	 * This controls the net.ipv4.ip_forward and net.ipv6.conf.all.forwarding
+	 * sysctl options of the network interface
+	 * 
+	 * Defaults to "no".
+	 * 
+	 * Note: this setting controls a global kernel option, and does so one way
+	 * only: if a network that has this setting enabled is set up the global
+	 * setting is turned on. However, it is never turned off again, even after
+	 * all networks with this setting enabled are shut down again.
+	 * https://www.freedesktop.org/software/systemd/man/systemd.network.html#IPForward=
+	 * @param value
+	 */
 	public final void setIsIPForwarding(Boolean value) {
 		addToNetwork(Section.NETWORK, "IPForward", value.toString());
-		
-		this.ipForwarding = value;
 	}
 
+	/**
+	 * Configures IP masquerading for the network interface.
+	 * 
+	 * If enabled, packets forwarded from this network interface will be appear
+	 * as coming from the local host.
+	 * 
+	 * Implies IPForward=ipv4.
+	 * 
+	 * Defaults to "no".
+	 * @param ipMasquerading
+	 */
 	public final void setIsIPMasquerading(Boolean ipMasquerading) {
 		addToNetwork(Section.NETWORK, "IPMasquerade", ipMasquerading.toString());
-		
-		this.ipMasquerading = ipMasquerading;
 	}
 
 	public final void setMac(MACAddress mac) {
-		//assertNotNull(mac);
-		
 		this.mac = mac;
 	}
 
 	public final void setInet(Inet inet) {
-		//assertNotNull(inet);
-		
+		if (null == inet) {
+			return;
+		}
+
 		this.inet = inet;
+
+		addToNetDev(Section.NETDEV, "Kind", inet.toString());
 	}
 
+	
 	protected final void setNetmask(IPAddress netmask) {
 		//assertNotNull(netmask);
-		
+
 		this.netmask = netmask;
 	}
 
 	public void setSubnet(IPAddress subnet) {
 		//assertNotNull(subnet);
-		
+
 		this.subnet = subnet;
 	}
 
 	private void setDirection(Direction direction) {
 		//assertNotNull(direction);
-		
+
 		this.direction = direction;
 	}
 	
 	public Direction getDirection() {
 		//assertNotNull(this.direction);
-		
+
 		return this.direction;
 	}
 
 	public void setRoutingPolicyRuleFrom(IPAddress from) {
-		this.routingPolicyRuleFrom = from;
+		addToNetwork(Section.ROUTINGPOLICYRULE, "From", from.toCompressedString());
 	}
 
 	public void setRoutingPolicyRuleTo(IPAddress to) {
-		this.routingPolicyRuleTo = to;
+		addToNetwork(Section.ROUTINGPOLICYRULE, "To", to.toCompressedString());
 	}
 
 	public void setGatewayOnLink(Boolean onLink) {
-		this.gatewayOnLink = onLink;
+		addToNetwork(Section.ROUTE, "GatewayOnLink", onLink);
 	}
 
 	/**
@@ -348,83 +406,107 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	 * {@link https://www.freedesktop.org/software/systemd/man/systemd.network.html}
 	 */
 	public Optional<FileUnit> getNetworkFile() {
-		final FileUnit network = new FileUnit(getIface() + "_network", "proceed",
+		final FileUnit networkFile = new FileUnit(getIface() + "_network", "proceed",
 				"/etc/systemd/network/" + getWeighting() + "-" + getIface() + ".network");
 
-		network.appendLine("[Match]");
-		network.appendLine("Name=" + getIface());
-		network.appendCarriageReturn();
+		if ( !this.networkSettings.isEmpty() ) {
+			networkSettings.forEach((section, settings) -> {
+				networkFile.appendLine("[" + section.toString() + "]");
 
-		network.appendLine("[Link]");
-		getReqdForOnline().ifPresent((required) -> {
-			network.appendLine("RequiredForOnline=" + required);
-		});
-		getARP().ifPresent((arp) -> {
-			network.appendLine("ARP=" + arp);
-		});
-		network.appendCarriageReturn();
+				//This is a special case, so handle it.
+				if (section.equals(Section.NETWORK)) {
+					getAddresses().ifPresent((addresses) ->	
+						addresses.forEach((address) ->
+							networkFile.appendLine("Address=" + address.withoutPrefixLength().toCompressedString())
+						)
+					);
+				}
 
-		network.appendLine("[Network]");
-		getConfigureWithoutCarrier().ifPresent((config) ->
-			network.appendLine("ConfigureWithoutCarrier=" + config)
-		);
-		getIsIPForwarding().ifPresent((forward) -> {
-			network.appendLine("IPForward=" + forward);
-		});
-		if (Inet.DHCP.equals(getInet())) {
-			network.appendLine("DHCP=yes");
-		}
-		else {
-			getAddresses().ifPresent((addresses) -> {
-				addresses.forEach((ip) -> network.appendLine("Address=" + ip));
+				settings.forEach((key, value) ->
+					networkFile.appendLine(key + "=" + value)
+				);
 			});
-			getGateway().ifPresent((gateway) -> network.appendLine("Gateway=" + gateway));
 		}
-		getIsIPMasquerading().ifPresent((masq) -> network.appendLine("IPMasquerade=" + masq));
-		network.appendCarriageReturn();
-
-		network.appendLine("[Route]");
-		getGatewayOnLink().ifPresent((onLink) ->
-			network.appendLine("GatewayOnLink=" + onLink)
-		);
-		network.appendCarriageReturn();
-
-		network.appendLine("[RoutingPolicyRule]");
-		getRoutingPolicyRuleFrom().ifPresent((from) -> network.appendLine("From=" + from));
-		getRoutingPolicyRuleTo().ifPresent((to) -> network.appendLine("To=" + to));
-
-		return Optional.of(network);
+		return Optional.of(networkFile);
 	}
 	
 	public Optional<FileUnit> getNetDevFile() {
-		final FileUnit netdev = new FileUnit(getIface() + "_netdev", "proceed",
+		final FileUnit netDevFile = new FileUnit(getIface() + "_netdev", "proceed",
 				"/etc/systemd/network/" + getWeighting() + "-" + getIface() + ".netdev");
 
-		netdev.appendLine("[NetDev]");
-		netdev.appendLine("Name=" + getIface());
-		netdev.appendLine("Kind=" + getInet().toString().toLowerCase());
-		netdev.appendCarriageReturn();
-		
-		return Optional.of(netdev);
+		if ( !this.netDevSettings.isEmpty() ) {
+			netDevSettings.forEach((section, settings) -> {
+				netDevFile.appendLine("[" + section.toString() + "]");
+
+				settings.forEach((key, value) ->
+					netDevFile.appendLine(key + "=" + value));
+			});
+		}
+		return Optional.of(netDevFile);
 	}
 
-	public Optional<Boolean> getReqdForOnline() {
-		return Optional.ofNullable(this.reqdForOnline);
+	private Map<String, String> getNetworkSection(Section section) {
+		return networkSettings.getOrDefault(section, new LinkedHashMap<>());
 	}
 
+	private Map<String, String> getNetDevSection(Section section) {
+		return netDevSettings.getOrDefault(section, new LinkedHashMap<>());
+	}
+
+	private boolean setNetworkSection(Section section, Map<String, String> settings) {
+		return ( null == this.networkSettings.put(section, settings) );
+	}
+	
+	private boolean setNetDevSection(Section section, Map<String, String> settings) {
+		return ( null == this.netDevSettings.put(section, settings) );
+	}
+
+	protected boolean putNetworkSetting(Section section, String key, String value) {
+		if (null == value) {
+			return false;
+		}
+
+		Map<String, String> settings = getNetworkSection(section);
+		settings.put(key, value);
+		return setNetworkSection(section, settings);
+	}
+
+	protected boolean putNetDevSetting(Section section, String key, String value) {
+		Map<String, String> settings = getNetDevSection(section);
+		settings.put(key, value);
+		return setNetDevSection(section, settings);
+	}
+
+	/**
+	 * When true, this network will be deemed required when determining whether
+	 * the system is online when running systemd-networkd-wait-online.
+	 * 
+	 * When false, this network is ignored when checking for online state.
+	 * 
+	 * The network will be brought up normally in either case, but in the event
+	 * no address is assigned by DHCP or the cable is not plugged in, the link
+	 * will simply remain offline and be skipped automatically when set false
+	 * 
+	 * Defaults to true if not explicitly set.
+	 * 
+	 * https://www.freedesktop.org/software/systemd/man/systemd.network.html#RequiredForOnline=
+	 * @param reqdForOnline Sets whether link is required for its host to come
+	 * "online". Defaults true.
+	 */
 	public void setReqdForOnline(Boolean reqdForOnline) {
-		//assertNotNull(reqdForOnline);
-		
-		this.reqdForOnline = reqdForOnline;
+		putNetworkSetting(Section.LINK, "RequiredForOnline", reqdForOnline.toString());
 	}
 
-	public Optional<Boolean> getConfigureWithoutCarrier() {
-		return Optional.ofNullable(configureWithoutCarrier);
-	}
-
+	/**
+	 * Tell networkd to configure a specific link even if it has no carrier.
+	 * 
+	 * Defaults to false.
+	 * If IgnoreCarrierLoss= is not explicitly set, it will default to this value
+	 * 
+	 * https://www.freedesktop.org/software/systemd/man/systemd.network.html#ConfigureWithoutCarrier=
+	 * @param configureWithoutCarrier
+	 */
 	public void setConfigureWithoutCarrier(Boolean configureWithoutCarrier) {
-		//assertNotNull(configureWithoutCarrier);
-		
-		this.configureWithoutCarrier = configureWithoutCarrier;
+		putNetworkSetting(Section.NETWORK, "ConfigureWithoutCarrier", configureWithoutCarrier.toString());
 	}
 }
