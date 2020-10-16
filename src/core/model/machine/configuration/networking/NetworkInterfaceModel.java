@@ -161,10 +161,22 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		});
 	}
 
+	/**
+	 * Files in systemd drop-in directories are loaded in lexicographic order
+	 * by adding a double-digit weighting to the file, we can control the order
+	 * in which they're read in.
+	 * @return
+	 */
 	public String getWeighting() {
 		return String.format("%02d", this.weighting);
 	}
 
+	/**
+	 * Files in systemd drop-in directories are loaded in lexicographic order
+	 * by adding a double-digit weighting to the file, we can control the order
+	 * in which they're read in.
+	 * @return
+	 */
 	public void setWeighting(Integer weighting) {
 		this.weighting = weighting;
 	}
