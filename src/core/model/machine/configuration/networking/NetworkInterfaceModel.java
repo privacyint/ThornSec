@@ -7,7 +7,6 @@
  */
 package core.model.machine.configuration.networking;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
@@ -129,14 +128,10 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	}
 
 	public String getWeighting() {
-		//assertNotNull(this.weighting);
-
 		return String.format("%02d", this.weighting);
 	}
 
 	public void setWeighting(Integer weighting) {
-		//assertNotNull(weighting);
-
 		this.weighting = weighting;
 	}
 
@@ -164,8 +159,6 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	 * @return interface's name
 	 */
 	public final String getIface() {
-		//assertNotNull(this.iface);
-		
 		return this.iface;
 	}
 
@@ -191,20 +184,14 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	}
 
 	public final IPAddress getNetmask() {
-		//assertNotNull(this.netmask);
-		
 		return this.netmask;
 	}
 
 	public final IPAddress getSubnet() {
-		//assertNotNull(this.subnet);
-		
 		return this.subnet;
 	}
 
 	public Inet getInet() {
-		//assertNotNull(this.inet);
-		
 		return this.inet;
 	}
 
@@ -248,8 +235,6 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	}
 
 	public final void setBroadcast(IPAddress broadcast) {
-		//assertNotNull(broadcast);
-		
 		this.broadcast = broadcast;
 	}
 
@@ -260,8 +245,6 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	}
 
 	public final void setGateway(IPAddress gateway) {
-		//assertNotNull(gateway);
-		
 		this.gateway = gateway;
 	}
 
@@ -278,13 +261,13 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	}
 
 	public final void setIsIPForwarding(Boolean value) {
-		//assertNotNull(value);
+		addToNetwork(Section.NETWORK, "IPForward", value.toString());
 		
 		this.ipForwarding = value;
 	}
 
 	public final void setIsIPMasquerading(Boolean ipMasquerading) {
-		//assertNotNull(ipMasquerading);
+		addToNetwork(Section.NETWORK, "IPMasquerade", ipMasquerading.toString());
 		
 		this.ipMasquerading = ipMasquerading;
 	}
