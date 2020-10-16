@@ -127,21 +127,13 @@ public abstract class AMachineModel extends AModel {
 
 	private NetworkInterfaceModel buildNICFromData(NetworkInterfaceData ifaceData) throws AThornSecException {
 		NetworkInterfaceModel nicModel = null;
-		switch ((ifaceData.getInet() != null)
-					? ifaceData.getInet()
-					: Inet.STATIC)
-		{
-			case STATIC:
-				nicModel = new StaticInterfaceModel(ifaceData, getNetworkModel());
-				break;
-			case DHCP:
-				nicModel = new DHCPClientInterfaceModel(ifaceData, getNetworkModel());
-				break;
-//			case PPP:
-//				nicModel = new PPPClientInterfaceModel(label);
-//				break;
-			default:
-				break;
+		
+		if (null == ifaceData.getInet()
+				|| ifaceData.getInet().equals(Inet.STATIC)) {
+			nicModel = new StaticInterfaceModel(ifaceData, getNetworkModel());
+		}
+		else {
+			nicModel = new DHCPClientInterfaceModel(ifaceData, getNetworkModel());
 		}
 
 		return nicModel;
