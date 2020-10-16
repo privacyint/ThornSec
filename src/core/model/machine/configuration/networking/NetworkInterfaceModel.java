@@ -35,6 +35,29 @@ import inet.ipaddr.mac.MACAddress;
  */
 public abstract class NetworkInterfaceModel extends AModel implements ISystemdNetworkd {
 
+	protected enum Section {
+		MATCH("Match"),
+		LINK("Link"),
+		NETWORK("Network"),
+		ROUTE("Route"),
+		ROUTINGPOLICYRULE("RoutingPolicyRule"),
+		NETDEV("NetDev"),
+		ADDRESS("Address"),
+		MACVLAN("MACVLAN"),
+		BOND("Bond");
+
+		private String section;
+
+		Section(String section) {
+			this.section = section;
+		}
+
+		@Override
+		public String toString() {
+			return this.section;
+		}
+	}
+
 	private String comment;
 	private String iface;
 	private Inet inet;
