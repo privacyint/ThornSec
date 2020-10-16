@@ -7,13 +7,13 @@
  */
 package core.model.machine.configuration.networking;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
 
@@ -24,9 +24,9 @@ import core.unit.fs.FileUnit;
 public class MACVLANTrunkModel extends NetworkInterfaceModel {
 	private Set<MACVLANModel> vlans;
 
-	public MACVLANTrunkModel(NetworkInterfaceData myData, NetworkModel networkModel) {
+	public MACVLANTrunkModel(NetworkInterfaceData myData, NetworkModel networkModel) throws InvalidNetworkInterfaceException {
 		super(myData, networkModel);
-		
+
 		super.setInet(Inet.MACVLAN);
 		super.setWeighting(10);
 		super.setARP(false);
@@ -36,14 +36,14 @@ public class MACVLANTrunkModel extends NetworkInterfaceModel {
 
 		vlans = new LinkedHashSet<>();
 	}
-	
-	public MACVLANTrunkModel() {
+
+	public MACVLANTrunkModel() throws InvalidNetworkInterfaceException {
 		this(new NetworkInterfaceData("MACVLANTrunk"), null);
 	}
 
 	@Override
 	public Optional<FileUnit> getNetworkFile() {
-		
+		//TODO: fix this, it's a hack
 		final FileUnit network = super.getNetworkFile().get();
 
 		getVLANs().forEach(vlan -> {
@@ -59,8 +59,6 @@ public class MACVLANTrunkModel extends NetworkInterfaceModel {
 	}
 
 	public final void addVLAN(MACVLANModel vlan) {
-		//assertNotNull(vlan);
-
 		this.vlans.add(vlan);
 	}
 

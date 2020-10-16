@@ -7,12 +7,11 @@
  */
 package core.model.machine.configuration.networking;
 
-import java.util.Optional;
 import core.data.machine.AMachineData.MachineType;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.model.network.NetworkModel;
-import core.unit.fs.FileUnit;
 
 /**
  * This model represents a MACVLAN. You have to stack this on top of a Trunk for
@@ -20,37 +19,27 @@ import core.unit.fs.FileUnit;
  */
 public class MACVLANModel extends NetworkInterfaceModel {
 	private MachineType type;
-	
-	public MACVLANModel(NetworkInterfaceData myData, NetworkModel networkModel) {
+
+	public MACVLANModel(NetworkInterfaceData myData, NetworkModel networkModel) throws InvalidNetworkInterfaceException {
 		super(myData, networkModel);
-		
+
 		super.setInet(Inet.MACVLAN);
 		super.setWeighting(20);
 		super.setReqdForOnline(true);
 		super.setConfigureWithoutCarrier(true);
 		super.setGatewayOnLink(true);
+		super.addToNetDev(Section.MACVLAN, "Mode", "bridge");
 	}
 
-	public MACVLANModel() {
+	public MACVLANModel() throws InvalidNetworkInterfaceException {
 		this(new NetworkInterfaceData("MACVLAN"), null);
 	}
-	
+
 	public void setType(MachineType type) {
 		this.type = type;
 	}
-	
+
 	public MachineType getType() {
 		return this.type;
-	}
-
-	@Override
-	public Optional<FileUnit> getNetDevFile() {
-		FileUnit netDev = super.getNetDevFile().get();
-		
-		netDev.appendCarriageReturn();
-		netDev.appendLine("[MACVLAN]");
-		netDev.appendLine("Mode=bridge");
-
-		return Optional.of(netDev);
 	}
 }

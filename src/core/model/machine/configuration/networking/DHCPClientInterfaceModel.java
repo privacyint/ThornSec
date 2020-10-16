@@ -10,6 +10,7 @@ package core.model.machine.configuration.networking;
 import java.util.Optional;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
 
@@ -18,21 +19,13 @@ import core.unit.fs.FileUnit;
  */
 public class DHCPClientInterfaceModel extends NetworkInterfaceModel {
 
-	public DHCPClientInterfaceModel(NetworkInterfaceData myData, NetworkModel networkModel) {
+	public DHCPClientInterfaceModel(NetworkInterfaceData myData, NetworkModel networkModel) throws InvalidNetworkInterfaceException {
 		super(myData, networkModel);
-		
+
 		super.setInet(Inet.DHCP);
 		super.setWeighting(10);
-	}
 
-	@Override
-	public Optional<FileUnit> getNetworkFile() {
-		FileUnit network = super.getNetworkFile().get();
-
-		network.appendCarriageReturn();
-		network.appendLine("DHCP=true");
-
-		return Optional.of(network);
+		super.addToNetwork(Section.NETWORK, "DHCP", true);
 	}
 
 	@Override

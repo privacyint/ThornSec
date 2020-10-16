@@ -10,6 +10,7 @@ package core.model.machine.configuration.networking;
 import java.util.Optional;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
 
@@ -20,14 +21,14 @@ import core.unit.fs.FileUnit;
  * Use this interface where you need a trunk but don't have a "real" NIC spare
  */
 public class DummyModel extends NetworkInterfaceModel {
-	public DummyModel(NetworkInterfaceData myData, NetworkModel networkModel) {
+	public DummyModel(NetworkInterfaceData myData, NetworkModel networkModel) throws InvalidNetworkInterfaceException {
 		super(myData, networkModel);
-		
+
 		super.setInet(Inet.DUMMY);
 		super.setWeighting(10);
 	}
 
-	public DummyModel() {
+	public DummyModel() throws InvalidNetworkInterfaceException {
 		this(new NetworkInterfaceData("dummy"), null);
 	}
 

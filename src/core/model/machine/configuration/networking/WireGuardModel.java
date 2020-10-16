@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Optional;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
+import core.exception.data.InvalidIPAddressException;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
 
@@ -26,33 +28,43 @@ public class WireGuardModel extends NetworkInterfaceModel {
 	private String psk;
 	private Integer listenPort;
 
-	public WireGuardModel(NetworkInterfaceData myData, NetworkModel networkModel) {
+	public WireGuardModel(NetworkInterfaceData myData, NetworkModel networkModel) throws InvalidNetworkInterfaceException {
 		super(myData, networkModel);
-		
+
 		super.setInet(Inet.WIREGUARD);
-		
+
 		this.peerKeys = null;
 		this.psk = null;
 		this.listenPort = null;
 	}
 
-	public WireGuardModel(NetworkModel networkModel) {
+	public WireGuardModel(NetworkInterfaceModel nic) throws InvalidIPAddressException, InvalidNetworkInterfaceException {
+		super(nic);
+
+		super.setInet(Inet.WIREGUARD);
+
+		this.peerKeys = null;
+		this.psk = null;
+		this.listenPort = null;
+	}
+
+	public WireGuardModel(NetworkModel networkModel) throws InvalidNetworkInterfaceException {
 		this(new NetworkInterfaceData("wg"), networkModel);
 	}
 
 	public void setListenPort(Integer listenPort) {
 		this.listenPort = listenPort;
 	}
-	
+
 	public void setPSK(String psk) {
 		this.psk = psk;
 	}
-	
+
 	@Override
 	public Optional<FileUnit> getNetDevFile() {
 		FileUnit netdev = super.getNetDevFile().get();
 
-		netdev.appendCarriageReturn();
+		//Todo: fix this hack
 		netdev.appendCarriageReturn();
 		netdev.appendLine("[WireGuard]");
 		netdev.appendLine("PrivateKey=$(cat /etc/wireguard/private.key)");
@@ -74,7 +86,7 @@ public class WireGuardModel extends NetworkInterfaceModel {
 		if (this.peerKeys == null) {
 			this.peerKeys = new LinkedHashMap<>();
 		}
-		
+
 		this.peerKeys.put(peer, pubKey);
 	}
 }

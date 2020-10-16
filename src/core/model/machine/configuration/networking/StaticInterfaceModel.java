@@ -10,6 +10,7 @@ package core.model.machine.configuration.networking;
 import java.util.Optional;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
 
@@ -17,9 +18,9 @@ import core.unit.fs.FileUnit;
  * This model represents a statically assigned network interface
  */
 public class StaticInterfaceModel extends NetworkInterfaceModel {
-	public StaticInterfaceModel(NetworkInterfaceData myData, NetworkModel networkModel) {
+	public StaticInterfaceModel(NetworkInterfaceData myData, NetworkModel networkModel) throws InvalidNetworkInterfaceException {
 		super(myData, networkModel);
-		
+
 		super.setInet(Inet.STATIC);
 		super.setWeighting(0);
 		super.setReqdForOnline(true);
