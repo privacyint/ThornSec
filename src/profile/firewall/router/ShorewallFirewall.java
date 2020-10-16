@@ -589,6 +589,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 		zones.appendLine("#Please see http://shorewall.net/manpages/shorewall-zones.html for more details");
 		zones.appendLine("#zone\ttype");
 
+		zones.appendLine(ParentZone.INTERNET + "\tipv4");
+
 		getServerModel().getNetworkInterfaces()
 		.stream()
 		.filter(nic -> nic instanceof MACVLANTrunkModel)
