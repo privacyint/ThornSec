@@ -17,6 +17,7 @@ import core.data.machine.AMachineData.MachineType;
 import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.exception.AThornSecException;
 import core.exception.data.InvalidIPAddressException;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
@@ -52,6 +53,7 @@ public class Router extends AMachine {
 	public Router(ServerModel me) throws AThornSecException, JsonParsingException {
 		super(me);
 
+		masqueradeWANIfaces();
 		bondLANIfaces();
 		buildVLANs();
 
@@ -60,7 +62,19 @@ public class Router extends AMachine {
 		this.dnsServer = new UnboundDNSServer(me);
 	}
 
-	private void bondLANIfaces() {
+	private void masqueradeWANIfaces() {
+		getMachineModel().getNetworkInterfaces()
+				.stream()
+				.filter(nic ->
+					Direction.WAN.equals(nic.getDirection())
+				)
+				.collect(Collectors.toSet())
+				.forEach(nic ->
+					nic.setIsIPMasquerading(true)
+				);
+	}
+
+	private void bondLANIfaces() throws InvalidNetworkInterfaceException {
 		NetworkInterfaceModel lanTrunk = null;
 
 		Set<NetworkInterfaceModel> nics = getMachineModel().getNetworkInterfaces()
