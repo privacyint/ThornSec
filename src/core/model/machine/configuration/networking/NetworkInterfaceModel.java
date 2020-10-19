@@ -423,6 +423,10 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 
 		if ( !this.networkSettings.isEmpty() ) {
 			networkSettings.forEach((section, settings) -> {
+				if ( ! networkFile.getLines().isEmpty() ) {
+					networkFile.appendCarriageReturn();
+				}
+
 				networkFile.appendLine("[" + section.toString() + "]");
 
 				//This is a special case, so handle it.
