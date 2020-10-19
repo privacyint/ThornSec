@@ -28,8 +28,8 @@ public class BondModel extends NetworkInterfaceModel {
 		super.addToNetDev(Section.BOND, "Mode", "802.3ad");
 	}
 
-	public BondModel() throws InvalidNetworkInterfaceException {
-		this(null, null);
+	public BondModel(NetworkModel networkModel) throws InvalidNetworkInterfaceException {
+		this(new NetworkInterfaceData("bond"), networkModel);
 	}
 
 	@Override

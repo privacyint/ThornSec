@@ -28,8 +28,8 @@ public class DummyModel extends NetworkInterfaceModel {
 		super.setWeighting(10);
 	}
 
-	public DummyModel() throws InvalidNetworkInterfaceException {
-		this(new NetworkInterfaceData("dummy"), null);
+	public DummyModel(NetworkModel networkModel) throws InvalidNetworkInterfaceException {
+		this(new NetworkInterfaceData("dummy"), networkModel);
 	}
 
 	@Override
