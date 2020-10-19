@@ -344,7 +344,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	 * @param value
 	 */
 	public final void setIsIPForwarding(Boolean value) {
-		addToNetwork(Section.NETWORK, "IPForward", value.toString());
+		addToNetwork(Section.NETWORK, "IPForward", value);
 	}
 
 	/**
@@ -359,7 +359,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	 * @param ipMasquerading
 	 */
 	public final void setIsIPMasquerading(Boolean ipMasquerading) {
-		addToNetwork(Section.NETWORK, "IPMasquerade", ipMasquerading.toString());
+		addToNetwork(Section.NETWORK, "IPMasquerade", ipMasquerading);
 	}
 
 	public final void setMac(MACAddress mac) {
@@ -506,7 +506,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	 * "online". Defaults true.
 	 */
 	public void setReqdForOnline(Boolean reqdForOnline) {
-		putNetworkSetting(Section.LINK, "RequiredForOnline", reqdForOnline.toString());
+		addToNetwork(Section.LINK, "RequiredForOnline", reqdForOnline);
 	}
 
 	/**
@@ -519,6 +519,6 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	 * @param configureWithoutCarrier
 	 */
 	public void setConfigureWithoutCarrier(Boolean configureWithoutCarrier) {
-		putNetworkSetting(Section.NETWORK, "ConfigureWithoutCarrier", configureWithoutCarrier.toString());
+		addToNetwork(Section.NETWORK, "ConfigureWithoutCarrier", configureWithoutCarrier);
 	}
 }
