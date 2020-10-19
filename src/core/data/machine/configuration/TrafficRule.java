@@ -1,6 +1,5 @@
 package core.data.machine.configuration;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -13,7 +12,7 @@ public class TrafficRule {
 	public enum Encapsulation {
 		UDP, TCP
 	}
-	
+
 	public enum Table {
 		DNAT, FORWARD, INGRESS, EGRESS
 	}
@@ -23,18 +22,18 @@ public class TrafficRule {
 	private String source;
 	private Set<HostName> destinations;
 	private Set<Integer> ports;
-	
+
 	public TrafficRule(Encapsulation encapsulation, Table table, String source, Set<HostName> destinations, Set<Integer> ports) throws InvalidPortException {
 		this.ports = new LinkedHashSet<>();
 		this.destinations = new LinkedHashSet<>();
-		
+
 		this.encapsulation = encapsulation;
 		this.setTable(table);
 		this.setSource(source);
 		this.addDestinations(destinations);
 		this.addPorts(ports);
 	}
-	
+
 	/**
 	 * Deafult traffic rule to destination, on TCP port 443
 	 * @param destination
@@ -43,7 +42,7 @@ public class TrafficRule {
 	public TrafficRule(String source, HostName destination, Table table) throws InvalidPortException {
 		this(Encapsulation.TCP, table, source, new HashSet<>(Arrays.asList(destination)), new HashSet<>(Arrays.asList(443)));
 	}
-	
+
 	public TrafficRule() throws InvalidPortException {
 		this(null, null, null, new LinkedHashSet<>(), new LinkedHashSet<>());
 	}
@@ -85,7 +84,7 @@ public class TrafficRule {
 		if (ports == null) {
 			return;
 		}
-		
+
 		for (Integer port : ports) {
 			if (((port < 0)) || ((port > 65535))) {
 				throw new InvalidPortException(port);
@@ -107,20 +106,14 @@ public class TrafficRule {
 	 * @return the destinations
 	 */
 	public Set<HostName> getDestinations() {
-		//assertNotNull(this.destination);
-		
 		return this.destinations;
 	}
-	
-	public Table getTable() {
-		//assertNotNull(this.table);
 
+	public Table getTable() {
 		return this.table;
 	}
 
 	public void setTable(Table table) {
-		//assertNotNull(table);
-		
 		this.table = table;
 	}
 

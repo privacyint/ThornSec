@@ -109,13 +109,13 @@ public class ServerData extends AMachineData {
 		NetworkInterfaceData newIface = new NetworkInterfaceData(getLabel());
 		newIface.read(nic);
 		newIface.setDirection(dir);
-		
+
 		Optional<NetworkInterfaceData> existingIface = getNetworkInterface(newIface.getIface());
 		if (existingIface.isPresent()) {
 			newIface = existingIface.get();
 			newIface.read(nic);
 		}
-		
+
 		return newIface;
 	}
 	
@@ -136,11 +136,11 @@ public class ServerData extends AMachineData {
 		if (!data.containsKey(key)) {
 			return;
 		}
-		
+
 		final JsonArray ifaces = data.getJsonArray(key);
 		for (int i = 0; i < ifaces.size(); ++i) {
 			NetworkInterfaceData nicData = readNIC(direction, ifaces.getJsonObject(i));
-			
+
 			if (getNetworkInterface(nicData.getIface()).isEmpty()) {
 				putNetworkInterface(nicData);
 			}

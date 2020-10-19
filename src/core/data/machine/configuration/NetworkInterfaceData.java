@@ -104,7 +104,7 @@ public class NetworkInterfaceData extends AData {
 		if (!data.containsKey("comment")) {
 			return;
 		}
-		
+
 		setComment(data.getString("comment"));
 	}
 
@@ -115,7 +115,7 @@ public class NetworkInterfaceData extends AData {
 		if (!data.containsKey("mac")) {
 			return;
 		}
-		
+
 		setMAC(new MACAddressString(data.getString("mac")).getAddress());
 	}
 
@@ -128,7 +128,7 @@ public class NetworkInterfaceData extends AData {
 		if (!data.containsKey("gateway")) {
 			return;
 		}
-		
+
 		try {
 			setGateway(new IPAddressString(data.getString("gateway")).toAddress(IPVersion.IPV4));
 		} catch (AddressStringException | IncompatibleAddressException e) {
@@ -145,7 +145,7 @@ public class NetworkInterfaceData extends AData {
 		if (!data.containsKey("broadcast")) {
 			return;
 		}
-		
+
 		try {
 			setBroadcast(new IPAddressString(data.getString("broadcast")).toAddress(IPVersion.IPV4));
 		} catch (AddressStringException | IncompatibleAddressException e) {
@@ -162,7 +162,7 @@ public class NetworkInterfaceData extends AData {
 		if (!data.containsKey("subnet")) {
 			return;
 		}
-		
+
 		try {
 			setSubnet(new IPAddressString(data.getString("subnet")).toAddress(IPVersion.IPV4));
 		} catch (AddressStringException | IncompatibleAddressException e) {
@@ -179,7 +179,7 @@ public class NetworkInterfaceData extends AData {
 		if (!data.containsKey("address")) {
 			return;
 		}
-		
+
 		try {
 			addAddress(new IPAddressString(data.getString("address")).toAddress(IPVersion.IPV4));
 		} catch (AddressStringException | IncompatibleAddressException e) {
@@ -194,7 +194,7 @@ public class NetworkInterfaceData extends AData {
 		if (!data.containsKey("direction")) {
 			return;
 		}
-		
+
 		setDirection(Direction.valueOf(data.getString("direction").toUpperCase()));
 	}
 
@@ -205,7 +205,7 @@ public class NetworkInterfaceData extends AData {
 		if (!data.containsKey("inet")) {
 			return;
 		}
-		
+
 		setInet(Inet.valueOf(data.getString("inet").toUpperCase()));
 	}
 
@@ -230,20 +230,14 @@ public class NetworkInterfaceData extends AData {
 	}
 
 	final public String getIface() {
-		////assertNotNull(this.iface);
-		
 		return this.iface;
 	}
 	
 	final public Direction getDirection() {
-		////assertNotNull(this.direction);
-		
 		return this.direction;
 	}
 
 	final public Inet getInet() {
-		////assertNotNull(this.inet);
-		
 		return this.inet;
 	}
 

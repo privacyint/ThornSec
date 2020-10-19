@@ -140,7 +140,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		if (getData().getAddresses().isPresent()) {
 			this.addAddress(getData().getAddresses().get().toArray(IPAddress[]::new));
 		}
-		
+
 		getData().getBroadcast().ifPresent((broadcast) -> {
 			this.setBroadcast(broadcast);
 		});
@@ -231,7 +231,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		if (this.addresses == null) {
 			this.addresses = new ArrayList<>();
 		}
-		
+
 		for (final IPAddress address : addresses) {
 			if (address == null) {
 				throw new InvalidIPAddressException("One of your IP addresses "
@@ -259,8 +259,6 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	}
 
 	protected final void setComment(String comment) {
-		//assertNotNull(comment);
-
 		this.comment = comment;
 	}
 
@@ -376,16 +374,11 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		addToNetDev(Section.NETDEV, "Kind", inet.toString());
 	}
 
-	
 	protected final void setNetmask(IPAddress netmask) {
-		//assertNotNull(netmask);
-
 		this.netmask = netmask;
 	}
 
 	public void setSubnet(IPAddress subnet) {
-		//assertNotNull(subnet);
-
 		this.subnet = subnet;
 	}
 
@@ -396,8 +389,6 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	}
 	
 	public Direction getDirection() {
-		//assertNotNull(this.direction);
-
 		return this.direction;
 	}
 
@@ -472,7 +463,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	private boolean setNetworkSection(Section section, Map<String, String> settings) {
 		return ( null == this.networkSettings.put(section, settings) );
 	}
-	
+
 	private boolean setNetDevSection(Section section, Map<String, String> settings) {
 		return ( null == this.netDevSettings.put(section, settings) );
 	}

@@ -157,7 +157,7 @@ public abstract class AMachineData extends AData {
 		if (!getData().containsKey("domain")) {
 			return;
 		}
-		
+
 		setDomain(new HostName(getData().getString("domain")));
 	}
 
@@ -170,7 +170,7 @@ public abstract class AMachineData extends AData {
 		if (!getData().containsKey("email")) {
 			return;
 		}
-		
+
 		setEmailAddress(getData().getString("email"));
 	}
 
@@ -377,7 +377,7 @@ public abstract class AMachineData extends AData {
 		if (this.networkInterfaces == null) {
 			this.networkInterfaces = new LinkedHashMap<>();
 		}
-		
+
 		for (final NetworkInterfaceData iface : ifaces) {
 			if (this.networkInterfaces.containsKey(iface.getIface())) {
 				throw new InvalidNetworkInterfaceException("Interfaces can only be declared once");
