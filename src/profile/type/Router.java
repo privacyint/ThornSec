@@ -83,12 +83,17 @@ public class Router extends AMachine {
 			.collect(Collectors.toSet());
 
 		if (nics.isEmpty()) {
-			lanTrunk = new DummyModel();
+			lanTrunk = new DummyModel(getNetworkModel());
 		}
 		else {
-			lanTrunk = new BondModel();
+			lanTrunk = new BondModel(getNetworkModel());
 			nics.forEach((lanNic) -> {
-				getMachineModel().addNetworkInterface(new BondInterfaceModel(lanNic.getData(), getNetworkModel()));
+				try {
+					getMachineModel().addNetworkInterface(new BondInterfaceModel(lanNic.getData(), getNetworkModel()));
+				} catch (InvalidNetworkInterfaceException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			});
 		}
 
