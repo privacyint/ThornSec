@@ -108,6 +108,7 @@ public class ServerData extends AMachineData {
 	private NetworkInterfaceData readNIC(Direction dir, JsonObject nic) throws ADataException {
 		NetworkInterfaceData newIface = new NetworkInterfaceData(getLabel());
 		newIface.read(nic);
+		newIface.setDirection(dir);
 		
 		Optional<NetworkInterfaceData> existingIface = getNetworkInterface(newIface.getIface());
 		if (existingIface.isPresent()) {
