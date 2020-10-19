@@ -51,7 +51,7 @@ public class NetworkInterfaceData extends AData {
 			this.inet = inet;
 		}
 
-		public String getInet() {
+		public String toString() {
 			return this.inet;
 		}
 	}
