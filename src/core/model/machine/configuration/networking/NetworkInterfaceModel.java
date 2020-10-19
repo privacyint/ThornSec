@@ -255,7 +255,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	public final void setBroadcast(IPAddress broadcast) {
 		this.broadcast = broadcast;
 
-		addToNetwork(Section.ADDRESS, "Broadcast", broadcast.toCompressedString());
+//		addToNetwork(Section.ADDRESS, "Broadcast", broadcast.toCompressedString());
 	}
 
 	protected final void setComment(String comment) {
