@@ -271,7 +271,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 	public final void setGateway(IPAddress gateway) {
 		this.gateway = gateway;
 
-		addToNetwork(Section.ROUTE, "Gateway", gateway.toCompressedString());
+		addToNetwork(Section.NETWORK, "Gateway", gateway.toCompressedString());
 	}
 
 	public void setIface(String iface) throws InvalidNetworkInterfaceException {
