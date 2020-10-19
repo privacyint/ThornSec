@@ -209,7 +209,7 @@ public class NetworkInterfaceData extends AData {
 		setInet(Inet.valueOf(data.getString("inet").toUpperCase()));
 	}
 
-	final private void setDirection(Direction direction) {
+	final public void setDirection(Direction direction) {
 		this.direction = direction;
 	}
 
