@@ -441,6 +441,10 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 
 		if ( !this.netDevSettings.isEmpty() ) {
 			netDevSettings.forEach((section, settings) -> {
+				if ( ! netDevFile.getLines().isEmpty() ) {
+					netDevFile.appendCarriageReturn();
+				}
+
 				netDevFile.appendLine("[" + section.toString() + "]");
 
 				settings.forEach((key, value) ->
