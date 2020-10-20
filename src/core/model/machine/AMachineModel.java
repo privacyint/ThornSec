@@ -477,17 +477,17 @@ public abstract class AMachineModel extends AModel {
 	 * This is done using Destination Network Address Translation, which replaces
 	 * the $originalDestination IP address in each packet with $this
 	 * @param encapsulation TCP|UDP
-	 * @param originalDestination the original destination address
+	 * @param originalDestination the original destination machine
 	 * @param ports ports
 	 * @throws InvalidPortException 
 	 */
-	public void addDNAT(Encapsulation encapsulation, String originalDestination, Integer... ports) throws InvalidPortException {
+	public void addDNAT(Encapsulation encapsulation, AMachineModel originalDestination, Integer... ports) throws InvalidPortException {
 		TrafficRule dnatRule = new TrafficRule();
 
 		dnatRule.setTable(Table.DNAT);
 		dnatRule.setEncapsulation(encapsulation);
 		dnatRule.addPorts(ports);
-		dnatRule.setSource(originalDestination);
+		dnatRule.setSource(originalDestination.getHostName());
 		dnatRule.addDestination(new HostName(this.getHostName()));
 
 		this.addFirewallRule(dnatRule);
@@ -502,7 +502,7 @@ public abstract class AMachineModel extends AModel {
 	 * @param ports ports
 	 * @throws InvalidPortException 
 	 */
-	public void addDNAT(String originalDestination, Integer... ports) throws InvalidPortException {
+	public void addDNAT(AMachineModel originalDestination, Integer... ports) throws InvalidPortException {
 		addDNAT(Encapsulation.TCP, originalDestination, ports);
 	}
 }
