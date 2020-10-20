@@ -369,7 +369,7 @@ public class NetworkModel {
 		String line = "#!/bin/bash\n";
 		line += "\n";
 		line += "hostname=$(hostname);\n";
-		line += "proceed=1;\n";
+		line += "proceed_audit_passed=0;\n";
 		line += "\n";
 		line += "echo \"Started " + action + " ${hostname} with config label: " + server + "\"\n";
 		line += "pass=0; fail=0; fail_string=;";

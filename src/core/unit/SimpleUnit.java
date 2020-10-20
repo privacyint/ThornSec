@@ -47,17 +47,22 @@ public class SimpleUnit extends ComplexUnit {
 
 	@Override
 	protected final String getAudit() {
-		String auditString = "out=$(" + super.getAudit() + ");\n";
-		auditString += "test=\"" + getTest() + "\";\n";
-		
-		if (getResult().equals("fail"))
-			auditString += "if [ \"${out}\" = \"${test}\" ] ; then\n";
-		else
-			auditString += "if [ \"${out}\" != \"${test}\" ] ; then\n";
-		auditString += "\t" + getLabel() + "=0;\n";
+		String operator = (getResult().equals("fail")) ? "!=" : "=" ;
+
+		String auditString = "";
+
+		auditString += getLabel() + "_expected=\"" + getTest() + "\";\n";		
+		auditString += "\n";
+		auditString += getLabel() + "_actual=$(" + super.getAudit() + ");\n";
+		auditString += "\n";
+		auditString += getLabel() + "_audit() {\n";
+		auditString += "\tif [ \"${" +getLabel() + "_expected}\" "+operator+" \"${"+getLabel() + "_actual}\" ] ; then\n";
+		auditString += "\t\treturn 0\n";
 		auditString += "else\n";
-		auditString += "\t" + getLabel() + "=1;\n";
-		auditString += "fi ;\n";
+		auditString += "\t\treturn 1\n";
+		auditString += "\tfi ;\n";
+		auditString += "}\n";
+
 		return auditString;
 	}
 
