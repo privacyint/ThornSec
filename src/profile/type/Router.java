@@ -202,7 +202,9 @@ public class Router extends AMachine {
 		// As per https://wiki.archlinux.org/index.php/Network_configuration#Promiscuous_mode
 		final FileUnit promiscuousService = new FileUnit("promiscuous_service", "proceed",
 				"/etc/systemd/system/promiscuous@.service",
-				"I failed at creating a SystemD service to set the trunk (LAN) Network Interface card to promiscuous mode. Your Router will not be able to route any internal traffic.");
+				"I failed at creating a SystemD service to set the trunk (LAN)"
+				+ "Network Interface card to promiscuous mode. Your Router will"
+				+ "not be able to route any internal traffic.");
 		units.add(promiscuousService);
 
 		promiscuousService.appendLine("[Unit]");

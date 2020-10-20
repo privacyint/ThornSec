@@ -685,7 +685,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 	/**
 	 * This is where we build our default rules
 	 *
-	 * @return
+	 * @return a FileUnit with default blocking policies
 	 */
 	private FileUnit getPoliciesFile() {
 		final FileUnit policies = new FileUnit("shorewall_policies", "shorewall_installed", CONFIG_BASEDIR + "/policy");

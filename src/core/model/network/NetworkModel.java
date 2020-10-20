@@ -241,7 +241,7 @@ public class NetworkModel {
 
 	/**
 	 * @param type
-	 * @return A map of all machines of a given type
+	 * @return A map of all machines of a given type, or an empty Set
 	 */
 	public Set<AMachineModel> getMachines(MachineType type) {
 		Set<AMachineModel> machines = getMachines().values()
@@ -416,6 +416,10 @@ public class NetworkModel {
 		}
 	}
 
+	/**
+	 * Get the various subnets for our network.
+	 * @return 
+	 */
 	public Map<MachineType, IPAddress> getSubnets() {
 		if (getData().getSubnets().isEmpty()) {
 			return this.defaultSubnets;
