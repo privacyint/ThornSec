@@ -753,19 +753,21 @@ public class ShorewallFirewall extends AFirewallProfile {
 	private FileUnit getMasqFile() {
 		final FileUnit masq = new FileUnit("shorewall_masquerades", "shorewall_installed", CONFIG_BASEDIR + "/masq");
 
-		getServerModel().getNetworkInterfaces()
-		.stream()
-		.filter(nic -> nic instanceof MACVLANTrunkModel)
-		.map(MACVLANTrunkModel.class::cast)
-		.forEach(macVLANTrunk -> {
-			macVLANTrunk.getVLANs().forEach(vlan -> {
-				final String line = macVLANTrunk.getIface() + "\t" + vlan.getIface();
+		getMachineModel().getNetworkInterfaces()
+			.stream()
+			.filter(nic -> Direction.WAN.equals(nic.getDirection()))
+			.forEach(wanNIC -> {
+				getServerModel().getNetworkInterfaces()
+					.stream()
+					.filter(n -> n instanceof MACVLANModel)
+					.forEach(macVLAN -> {
+						final String line = macVLAN.getIface() + "\t" + wanNIC.getIface();
 
-				if (!masq.containsLine(line)) {
-					masq.appendLine(line);
-				}
+						if (!masq.containsLine(line)) {
+							masq.appendLine(line);
+						}
+					});
 			});
-		});
 
 		return masq;
 	}
