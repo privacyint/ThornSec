@@ -9,6 +9,7 @@ package core.model.machine.configuration.networking;
 
 import core.data.machine.AMachineData.MachineType;
 import core.data.machine.configuration.NetworkInterfaceData;
+import core.data.machine.configuration.NetworkInterfaceData.Direction;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.model.network.NetworkModel;
@@ -29,6 +30,7 @@ public class MACVLANModel extends NetworkInterfaceModel {
 		super.setConfigureWithoutCarrier(true);
 		super.setGatewayOnLink(true);
 		super.addToNetDev(Section.MACVLAN, "Mode", "bridge");
+		super.setDirection(Direction.LAN);
 	}
 
 	public MACVLANModel() throws InvalidNetworkInterfaceException {
