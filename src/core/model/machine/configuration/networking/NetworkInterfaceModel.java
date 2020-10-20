@@ -382,9 +382,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 		this.subnet = subnet;
 	}
 
-	private void setDirection(Direction direction) {
-		//assertNotNull(direction);
-
+	protected void setDirection(Direction direction) {
 		this.direction = direction;
 	}
 	
