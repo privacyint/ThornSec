@@ -372,11 +372,11 @@ public class ShorewallFirewall extends AFirewallProfile {
 			String _dPorts = null;
 			String _sPorts = null;
 			String _origDest = null;
-			String _sourceZone = cleanZone(sourceZone);
-			String _destinationZone = cleanZone(destinationZone);
+			String _sourceZone = sourceZone;
+			String _destinationZone = destinationZone;
 			
 			if (this.invertSource) {
-				_sourceZone = "all!" + _sourceZone;
+				_sourceZone = "all!" + sourceZone;
 			}
 
 			String _egress = this.destinationSubZone;
