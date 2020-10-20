@@ -280,20 +280,32 @@ public class ShorewallFirewall extends AFirewallProfile {
 		 */
 		private void buildDNAT(TrafficRule rule) throws InvalidFirewallRuleException {
 			this.setAction(Action.DNAT);
-			this.setInvertSource(true); //don't DNAT if we're the source
-			this.setSourceZone(cleanZone(rule.getSource())); //new destination
-			this.setSourceSubZone(
-				this.getMachineModel(rule.getSource()).getIPs()
+
+			//don't DNAT to us if we're the source!
+			this.setInvertSource(true);
+			this.setSourceZone(
+				rule.getDestinations()
 					.stream()
+					.map(destination -> cleanZone(destination.getHost()))
+					.collect(Collectors.joining(","))
+			);
+			this.setSourceSubZone(
+				rule.getDestinations()
+					.stream()
+					.map(destination -> destination.getHost())
+					.map(label -> this.getMachineModel(label).getIPs())
+					.flatMap(Collection::stream)
 					.map(ip -> ip.withoutPrefixLength().toCompressedString())
 					.collect(Collectors.joining(","))
 			);
+
+			//Traffic's now coming to us
 			this.setDestinationZone(
 				rule.getDestinations()
 					.stream()
 					.map(destination -> cleanZone(destination.getHost()))
 					.collect(Collectors.joining(","))
-			); //original destination
+			);
 			this.setDestinationSubZone(
 				rule.getDestinations()
 					.stream()
@@ -305,7 +317,10 @@ public class ShorewallFirewall extends AFirewallProfile {
 			);
 			this.setDPorts(rule.getPorts());
 			this.setProto(rule.getEncapsulation());
-			this.setOrigDest(this.getMachineModel(rule.getSource()).getIPs());
+			this.setOrigDest(
+				this.getMachineModel(rule.getSource())
+					.getIPs(true)
+			);
 		}
 
 		private void setMacro(String macro) {
