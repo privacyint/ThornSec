@@ -252,21 +252,29 @@ public abstract class AMachineModel extends AModel {
 		return typesUnits;
 	}
 
+	/**
+	 * Get all LAN IP addresses relating to this machine. 
+	 * @return
+	 */
 	public Collection<IPAddress> getIPs() {
+		return getIPs(false);
+	}
+
+	/**
+	 * Returns all IP addresses related to this machine, optionally including
+	 * external IP addresses as set from the data.
+	 * @param includeExternalIPs
+	 * @return
+	 */
+	public Collection<IPAddress> getIPs(boolean includeExternalIPs) {
 		final Collection<IPAddress> ips = new ArrayList<>();
 
-		for (final NetworkInterfaceModel nic : getNetworkInterfaces()) {
-			if (nic.getAddresses().isEmpty()) {
-				continue;
-			}
+		getNetworkInterfaces().forEach(nic -> {
+			nic.getAddresses().ifPresent(addresses -> ips.addAll(addresses));
+		});
 
-			for (final IPAddress ip : nic.getAddresses().get()) {
-				if ((getExternalIPs() != null) && getExternalIPs().contains(ip)) {
-					continue;
-				}
-
-				ips.add(ip);
-			}
+		if (includeExternalIPs) {
+			ips.addAll(this.getExternalIPs());
 		}
 
 		return ips;
