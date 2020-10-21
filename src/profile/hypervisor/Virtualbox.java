@@ -28,6 +28,8 @@ import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 
 public class Virtualbox extends AHypervisorProfile {
+	final static String USER_PREFIX = "vboxuser_";
+	final static String GROUP = "vboxusers";
 
 	public Virtualbox(HypervisorModel me) {
 		super(me);
@@ -48,110 +50,131 @@ public class Virtualbox extends AHypervisorProfile {
 			buildVM(service);
 		}
 	}
-	
-	private void buildVM(ServiceModel service) {
+
+	private final IUnit createVMUser(ServiceModel service) {
+		return new SimpleUnit(service.getHypervisorLabel() + "_virtualbox_" + service.getLabel() + "_user", "virtualbox_installed",
+				"sudo adduser " + USER_PREFIX + service.getLabel()
+					+ " --system" //create with no aging information in /etc/shadow
+					+ " --shell=/bin/false" //force no login shell
+					+ " --disabled-login" //deactivate ability to log in as account
+					+ " --ingroup " + GROUP,
+				"id -u " + USER_PREFIX + service.getLabel() + " 2>&1 | grep 'no such user'", "", "pass",
+				"Couldn't create the user for " + service.getLabel()
+						+ " on its HyperVisor.  This is fatal, "
+						+ service.getLabel() + " will not be installed.");
+	}
+
+	private final IUnit createVM(ServiceModel service) {
+		return new SimpleUnit(service.getLabel() + "_exists", service.getHypervisorLabel() + "_virtualbox_" + service.getLabel() + "_user",
+				"sudo -u " + USER_PREFIX + service.getLabel() + " VBoxManage createvm"
+						+ "--name " + service.getLabel()
+						+ " --ostype \"" + GROUP + "\""
+						+ " --register;"
+						+ "sudo -u " + USER_PREFIX + service.getLabel() + " VBoxManage modifyvm " + service.getLabel()
+						+ " --description \"" + service.getLabel() + "." + service.getDomain() + "\n"
+						+ "ThornSec guest machine\n"
+						+ "Built with profile(s): "	+ String.join(", ", service.getProfiles().keySet()) + "\n"
+						+ "Built at $(date)" + "\"",
+				"sudo -u " + USER_PREFIX + service.getLabel() + " VBoxManage list vms | grep " + service.getLabel(), "", "fail", "Couldn't create " + service.getLabel()
+						+ " on its HyperVisor.  This is fatal, " + service.getLabel() + " will not exist on your network.");
+	}
+
+	private final Collection<IUnit> createSockets(ServiceModel service) {
+		final Collection<IUnit> units = new ArrayList<>();
+		final String ttySocketDir = getServerModel().getVMBase().getPath() + "/sockets/" + service.getLabel();
+
+		units.add(new DirUnit("socket_dir_" + service.getLabel(), "proceed", ttySocketDir, USER_PREFIX + service.getLabel(), GROUP, 0750, ""));
+		// tty0 socket
+		units.add(new SimpleUnit(service.getLabel() + "_tty0_com_port", service.getLabel() + "_exists",
+				"sudo -u " + USER_PREFIX + service.getLabel() + " VBoxManage modifyvm " + service.getLabel() + " --uart1 0x3F8 4",
+				"sudo -u " + USER_PREFIX + service.getLabel() + " VBoxManage showvminfo " + service.getLabel() + " --machinereadable | grep ^uart1=",
+				"uart1=\\\"0x03f8,4\\\"", "pass"));
+
+		units.add(new SimpleUnit(service.getLabel() + "_tty0_socket", service.getLabel() + "_tty0_com_port",
+				"sudo -u " + USER_PREFIX + service.getLabel() + " VBoxManage modifyvm " + service.getLabel() + " --uartmode1 server " + ttySocketDir
+						+ "/vboxttyS0",
+				"sudo -u " + USER_PREFIX + service.getLabel() + " VBoxManage showvminfo " + service.getLabel() + " --machinereadable | grep ^uartmode1=",
+				"uartmode1=\\\"server," + ttySocketDir + "/vboxttyS0\\\"", "pass"));
+
+		units.add(new SimpleUnit(service.getLabel() + "_tty1_com_port", service.getLabel() + "_exists",
+				"sudo -u " + USER_PREFIX + service.getLabel() + " VBoxManage modifyvm " + service.getLabel() + " --uart2 0x2F8 3",
+				"sudo -u " + USER_PREFIX + service.getLabel() + " VBoxManage showvminfo " + service.getLabel() + " --machinereadable | grep ^uart2=",
+				"uart2=\\\"0x02f8,3\\\"", "pass"));
+
+		units.add(new SimpleUnit(service.getLabel() + "_tty1_socket", service.getLabel() + "_tty1_com_port",
+				"sudo -u " + USER_PREFIX + service.getLabel() + " VBoxManage modifyvm " + service.getLabel() + " --uartmode2 server " + ttySocketDir
+						+ "/vboxttyS1",
+				"sudo -u " + USER_PREFIX + service.getLabel() + " VBoxManage showvminfo " + service.getLabel() + " --machinereadable | grep ^uartmode2=",
+				"uartmode2=\\\"server," + ttySocketDir + "/vboxttyS1\\\"", "pass"));
+
+		return units;
+	}
+
+	@Override
+	public Collection<IUnit> buildVM(ServiceModel service) {
 		final String baseDir = getServerModel().getVMBase().getAbsolutePath();
 
 		final String backupDir = baseDir + "/backups/" + service.getLabel();
 		final String ttySocketDir = baseDir + "/sockets/" + service.getLabel();
 
-		final String user = "vboxuser_" + service.getLabel();
-		final String group = "vboxusers";
-
 		final Collection<IUnit> units = new ArrayList<>();
 
-		// Create VirtualBox user
-		units.add(new SimpleUnit("metal_virtualbox_" + service.getLabel() + "_user", "metal_virtualbox_installed",
-				"sudo adduser " + user + " --system --shell=/bin/false --disabled-login --ingroup " + group,
-				"id -u " + user + " 2>&1 | grep 'no such user'", "", "pass", "Couldn't create the user for " + service.getLabel()
-						+ " on its HyperVisor.  This is fatal, " + service.getLabel() + " will not be installed."));
-
-		// Create VM itself
-		units.add(new SimpleUnit(service.getLabel() + "_exists", "metal_virtualbox_" + service.getLabel() + "_user",
-				"sudo -u " + user + " VBoxManage createvm --name " + service.getLabel() + " --ostype \"" + group + "\""
-						+ " --register;" + "sudo -u " + user + " VBoxManage modifyvm " + service.getLabel() + " --description "
-						+ "\"" + service.getLabel() + "." + getNetworkModel().getData().getDomain() + "\n"
-						+ "ThornSec guest machine\n" + "Built with profile(s): "
-						+ String.join(", ", service.getProfiles().keySet()) + "\n"
-						+ "Built at $(date)" + "\"",
-				"sudo -u " + user + " VBoxManage list vms | grep " + service.getLabel(), "", "fail", "Couldn't create " + service.getLabel()
-						+ " on its HyperVisor.  This is fatal, " + service.getLabel() + " will not exist on your network."));
-
-		units.add(new DirUnit("socket_dir_" + service.getLabel(), "proceed", ttySocketDir, user, group, 0750, ""));
+		units.add(createVMUser(service));
+		units.add(createVM(service));
+		units.addAll(createSockets(service));
 
 		// Architecture setup
-		units.add(modifyVm(service.getLabel(), user, "paravirtprovider", "kvm")); // Default, make it explicit
-		units.add(modifyVm(service.getLabel(), user, "chipset", "ich9"));
-		units.add(modifyVm(service.getLabel(), user, "ioapic", "on", "IO APIC couldn't be enabled for " + service.getLabel()
+		units.add(modifyVm(service.getLabel(), USER_PREFIX + service.getLabel(), "paravirtprovider", "kvm")); // Default, make it explicit
+		units.add(modifyVm(service.getLabel(), USER_PREFIX + service.getLabel(), "chipset", "ich9"));
+		units.add(modifyVm(service.getLabel(), USER_PREFIX + service.getLabel(), "ioapic", "on", "IO APIC couldn't be enabled for " + service.getLabel()
 				+ ".  This is required for 64-bit installations, and for more than 1 virtual CPU in a service."));
-		units.add(modifyVm(service.getLabel(), user, "hwvirtex", "on"));
-		units.add(modifyVm(service.getLabel(), user, "pae", "on"));
-		units.add(modifyVm(service.getLabel(), user, "cpus", service.getCPUs()));
-		units.add(modifyVm(service.getLabel(), user, "cpuexecutioncap", service.getCPUExecutionCap()));
+		units.add(modifyVm(service.getLabel(), USER_PREFIX + service.getLabel(), "hwvirtex", "on"));
+		units.add(modifyVm(service.getLabel(), USER_PREFIX + service.getLabel(), "pae", "on"));
+		units.add(modifyVm(service.getLabel(), USER_PREFIX + service.getLabel(), "cpus", service.getCPUs()));
+		units.add(modifyVm(service.getLabel(), USER_PREFIX + service.getLabel(), "cpuexecutioncap", service.getCPUExecutionCap()));
 
 		// RAM setup
-		units.add(modifyVm(service.getLabel(), user, "memory", service.getRAM()));
-		units.add(modifyVm(service.getLabel(), user, "vram", "16"));
-		units.add(modifyVm(service.getLabel(), user, "nestedpaging", "on"));
-		units.add(modifyVm(service.getLabel(), user, "largepages", "on"));
+		units.add(modifyVm(service.getLabel(), USER_PREFIX + service.getLabel(), "memory", service.getRAM()));
+		units.add(modifyVm(service.getLabel(), USER_PREFIX + service.getLabel(), "vram", "16"));
+		units.add(modifyVm(service.getLabel(), USER_PREFIX + service.getLabel(), "nestedpaging", "on"));
+		units.add(modifyVm(service.getLabel(), USER_PREFIX + service.getLabel(), "largepages", "on"));
 
 		// Audio setup (switch it off)
-		units.add(modifyVm(service.getLabel(), user, "audio", "none"));
+		units.add(modifyVm(service.getLabel(), USER_PREFIX + service.getLabel(), "audio", "none"));
 
 		// Use high precision event timers instead of legacy
-		units.add(modifyVm(service.getLabel(), user, "hpet", "on"));
+		units.add(modifyVm(service.getLabel(), USER_PREFIX + service.getLabel(), "hpet", "on"));
 
 		// Shared folders setup
 		units.add(new SimpleUnit(service.getLabel() + "_backup_sf_attached", service.getLabel() + "_exists",
-				"sudo -u " + user + " VBoxManage sharedfolder add " + service.getLabel() + " --name backup --hostpath "
+				"sudo -u " + USER_PREFIX + service.getLabel() + " VBoxManage sharedfolder add " + service.getLabel() + " --name backup --hostpath "
 						+ backupDir,
-				"sudo -u " + user + " VBoxManage showvminfo " + service.getLabel()
+				"sudo -u " + USER_PREFIX + service.getLabel() + " VBoxManage showvminfo " + service.getLabel()
 						+ " --machinereadable | grep SharedFolderPathMachineMapping2",
 				"SharedFolderPathMachineMapping2=\\\"" + backupDir + "\\\"", "pass"));
 
 		// Clock setup to try and stop drift between host and guest
 		// https://www.virtualbox.org/manual/ch09.html#changetimesync
-		units.add(guestPropertySet(service.getLabel(), user, "timesync-interval", "10000", "Couldn't sync the clock between "
+		units.add(guestPropertySet(service.getLabel(), USER_PREFIX + service.getLabel(), "timesync-interval", "10000", "Couldn't sync the clock between "
 				+ service.getLabel() + " and its metal.  You'll probably see some clock drift in " + service.getLabel() + " as a result."));
-		units.add(guestPropertySet(service.getLabel(), user, "timesync-min-adjust", "100", "Couldn't sync the clock between "
+		units.add(guestPropertySet(service.getLabel(), USER_PREFIX + service.getLabel(), "timesync-min-adjust", "100", "Couldn't sync the clock between "
 				+ service.getLabel() + " and its metal.  You'll probably see some clock drift in " + service.getLabel() + " as a result."));
-		units.add(guestPropertySet(service.getLabel(), user, "timesync-set-on-restore", "1", "Couldn't sync the clock between "
+		units.add(guestPropertySet(service.getLabel(), USER_PREFIX + service.getLabel(), "timesync-set-on-restore", "1", "Couldn't sync the clock between "
 				+ service.getLabel() + " and its metal.  You'll probably see some clock drift in " + service.getLabel() + " as a result."));
-		units.add(guestPropertySet(service.getLabel(), user, "timesync-set-threshold", "1000", "Couldn't sync the clock between "
+		units.add(guestPropertySet(service.getLabel(), USER_PREFIX + service.getLabel(), "timesync-set-threshold", "1000", "Couldn't sync the clock between "
 				+ service.getLabel() + " and its metal.  You'll probably see some clock drift in " + service.getLabel() + " as a result."));
 
-		// tty0 socket
-		units.add(new SimpleUnit(service.getLabel() + "_tty0_com_port", service.getLabel() + "_exists",
-				"sudo -u " + user + " VBoxManage modifyvm " + service.getLabel() + " --uart1 0x3F8 4",
-				"sudo -u " + user + " VBoxManage showvminfo " + service.getLabel() + " --machinereadable | grep ^uart1=",
-				"uart1=\\\"0x03f8,4\\\"", "pass"));
 
-		units.add(new SimpleUnit(service.getLabel() + "_tty0_socket", service.getLabel() + "_tty0_com_port",
-				"sudo -u " + user + " VBoxManage modifyvm " + service.getLabel() + " --uartmode1 server " + ttySocketDir
-						+ "/vboxttyS0",
-				"sudo -u " + user + " VBoxManage showvminfo " + service.getLabel() + " --machinereadable | grep ^uartmode1=",
-				"uartmode1=\\\"server," + ttySocketDir + "/vboxttyS0\\\"", "pass"));
-
-		units.add(new SimpleUnit(service.getLabel() + "_tty1_com_port", service.getLabel() + "_exists",
-				"sudo -u " + user + " VBoxManage modifyvm " + service.getLabel() + " --uart2 0x2F8 3",
-				"sudo -u " + user + " VBoxManage showvminfo " + service.getLabel() + " --machinereadable | grep ^uart2=",
-				"uart2=\\\"0x02f8,3\\\"", "pass"));
-
-		units.add(new SimpleUnit(service.getLabel() + "_tty1_socket", service.getLabel() + "_tty1_com_port",
-				"sudo -u " + user + " VBoxManage modifyvm " + service.getLabel() + " --uartmode2 server " + ttySocketDir
-						+ "/vboxttyS1",
-				"sudo -u " + user + " VBoxManage showvminfo " + service.getLabel() + " --machinereadable | grep ^uartmode2=",
-				"uartmode2=\\\"server," + ttySocketDir + "/vboxttyS1\\\"", "pass"));
-
-		getServerModel().addProcessString("/usr/lib/virtualbox/VBoxHeadless --comment " + service.getLabel() + " --startvm `if id '" + user
-						+ "' >/dev/null 2>&1; then sudo -u " + user + " bash -c 'VBoxManage list runningvms | grep "
+		getServerModel().addProcessString("/usr/lib/virtualbox/VBoxHeadless --comment " + service.getLabel() + " --startvm `if id '" + USER_PREFIX + service.getLabel()
+						+ "' >/dev/null 2>&1; then sudo -u " + USER_PREFIX + service.getLabel() + " bash -c 'VBoxManage list runningvms | grep "
 						+ service.getLabel() + "' | awk '{ print $2 }' | tr -d '{}'; else echo ''; fi` --vrde config *$");
 		getServerModel().addProcessString("awk \\{");
 		getServerModel().addProcessString("tr -d \\{\\}$");
-		getServerModel().getUserModel().addUsername(user);
+		getServerModel().getUserModel().addUsername(USER_PREFIX + service.getLabel());
 
+		return units;
 	}
-	
+
 	@Override
 	public Collection<IUnit> getInstalled() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();

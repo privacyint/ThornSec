@@ -241,25 +241,14 @@ public class Hypervisor extends AStructuredProfile {
 	public Collection<IUnit> getLiveConfig() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		for (final ServiceModel service : getServices()) {
-			units.addAll(service.getOS().getISODownloadUnits();
-			units.addAll(getUserPasswordUnits());
-
-			//try {
-				//TODO
-				//units.addAll(this.hypervisor.buildIso(service));
-			//} catch (InvalidServerException | InvalidServerModelException | NoValidUsersException | MalformedURLException | URISyntaxException e) {
-				// TODO Auto-generated catch block
-			//	e.printStackTrace();
-			//}
-			units.addAll(virtualbox.buildServiceVm(service, getNetworkBridge()));
-			units.addAll(getDisksFormattedUnits(service));
-			units.addAll(getDiskLoopbackUnits(service));
-		}
-
-		units.addAll(this.hypervisor.getLiveConfig());
-		units.addAll(this.scripts.getLiveConfig());
+		getServices().forEach(service -> {
+			units.addAll(service.getUserPasswordUnits());
+			units.addAll(virtualbox.buildVM(service));
+		});
 		
+		//units.addAll(this.hypervisor.getLiveConfig());
+		units.addAll(this.scripts.getLiveConfig());
+
 		return units;
 	}
 
