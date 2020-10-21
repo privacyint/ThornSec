@@ -91,7 +91,8 @@ public abstract class AUnit implements IUnit {
 		configString += "\t\t" + "printf \"\\e[0;31m ❌ \\e[0m " + getLabel() + "... configuring\\n\"\n";
 		configString += "\t\t" + getConfig() + "\n";
 		configString += "\t\t" + "printf \"...Retesting " + getLabel() + "\\n\"\n";
-		configString += "\t\tif " + getLabel() + "_audit ; then\n";
+		configString += "\t\t" + getLabel() + "_audit_passed=$(" + getLabel() + "_audit)\n"; 
+		configString += "\t\tif " + getLabel() + "_audit_passed ; then\n";
 		configString += "\t\t\tprintf \"\\e[0;32m ✓ \\e[0m " + getLabel() + "\\n\"\n";
 		configString += "\t\t\t" + "((pass++))\n";
 		configString += "\t\telse\n";

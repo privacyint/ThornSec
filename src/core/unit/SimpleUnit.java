@@ -50,12 +50,11 @@ public class SimpleUnit extends ComplexUnit {
 		String operator = (getResult().equals("fail")) ? "!=" : "=" ;
 
 		String auditString = "";
-
 		auditString += getLabel() + "_expected=\"" + getTest() + "\";\n";		
 		auditString += "\n";
-		auditString += getLabel() + "_actual=$(" + super.getAudit() + ");\n";
-		auditString += "\n";
 		auditString += getLabel() + "_audit() {\n";
+		auditString += "\t" +getLabel() + "_actual=$(" + super.getAudit() + ");\n";
+		auditString += "\n";
 		auditString += "\tif [ \"${" +getLabel() + "_expected}\" "+operator+" \"${"+getLabel() + "_actual}\" ] ; then\n";
 		auditString += "\t\treturn 0\n";
 		auditString += "\telse\n";
