@@ -81,7 +81,7 @@ public abstract class AUnit implements IUnit {
 	public String genConfig() {
 		String configString = this.getAudit();
 		configString += getLabel() + "_audit_passed=$(" + getLabel() + "_audit)\n\n";
-		configString += "if " + getLabel() + "_audit_passed; then\n";
+		configString += "if " + getLabel() + "_audit_passed ; then\n";
 		configString += "\tprintf \"\\e[0;32m ✓ \\e[0m " + getLabel() + "\\n\"\n";
 		configString += "\t" + "((pass++))\n";
 		configString += "else\n";

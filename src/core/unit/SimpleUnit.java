@@ -58,7 +58,7 @@ public class SimpleUnit extends ComplexUnit {
 		auditString += getLabel() + "_audit() {\n";
 		auditString += "\tif [ \"${" +getLabel() + "_expected}\" "+operator+" \"${"+getLabel() + "_actual}\" ] ; then\n";
 		auditString += "\t\treturn 0\n";
-		auditString += "else\n";
+		auditString += "\telse\n";
 		auditString += "\t\treturn 1\n";
 		auditString += "\tfi ;\n";
 		auditString += "}\n";
