@@ -221,7 +221,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 					IPAddress subnet = vlan.getSubnet().getLowerNonZeroHost().withoutPrefixLength();
 
 					addComment(vlan.getIface());
-					
+
 					unboundConf.appendLine("\tlocal-zone: \\\"" + subnet.toReverseDNSLookupString() + "\\\" " + type);
 					unboundConf.appendLine("\tstub-zone:");
 					unboundConf.appendLine("\t\tname: \\\"" + subnet.toReverseDNSLookupString() + "\\\"");
@@ -807,12 +807,6 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		units.addAll(buildDropinZones());
 
 		units.add(new RunningUnit("dns", "unbound", "unbound"));
-
-		final FileUnit resolvConf = new FileUnit("dns_resolv_conf", "dns_running", "/etc/resolv.conf",
-				"Unable to change your DNS to point at the local one.  This will probably cause VM building to fail, amongst other problems");
-		units.add(resolvConf);
-		resolvConf.appendLine("search " + getMachineModel().getDomain().getHost());
-		resolvConf.appendLine("nameserver 127.0.0.1");
 
 		return units;
 	}

@@ -9,7 +9,6 @@ package profile;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
@@ -27,24 +26,6 @@ public class media extends AStructuredProfile {
 	@Override
 	public Collection<IUnit> getLiveFirewall() {
 		final Collection<IUnit> units = new ArrayList<>();
-
-		/*
-		 * for (ServerModel router : networkModel.getRouterServers()) { //DNAT
-		 * router.getFirewallModel().addNatPrerouting("dnat_media_ssh", "-d " +
-		 * networkModel.getData().getExternalIp("media_lb") + " -p tcp" +
-		 * " --dport 31337" + " -j DNAT --to-destination " + me.getIP().getHostAddress()
-		 * + ":" + networkModel.getData().getSSHPort(getLabel()),
-		 * "Redirect external traffic on :31337 to our Media server");
-		 * 
-		 * router.getFirewallModel().addFilter("media_ssh_ingress", "media_ingress",
-		 * "-s 178.238.149.157" + " -d " +
-		 * networkModel.getServerModel(getLabel()).getIP().getHostAddress() + " -p tcp"
-		 * + " --dport " + networkModel.getData().getSSHPort(getLabel()) + " -j ACCEPT",
-		 * "Allow inbound SSH"); router.getFirewallModel().addFilter("media_ssh_egress",
-		 * "media_egress", "-d 178.238.149.157" + " -s " + getIP().getHostAddress() +
-		 * " -p tcp" + " --sport " + networkModel.getData().getSSHPort(getLabel()) +
-		 * " -j ACCEPT", ""); }
-		 */
 
 		return units;
 	}

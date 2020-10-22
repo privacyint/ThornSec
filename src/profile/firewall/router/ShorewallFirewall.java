@@ -14,7 +14,6 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.json.stream.JsonParsingException;
 import core.StringUtils;
 import core.data.machine.AMachineData.MachineType;
 import core.data.machine.configuration.TrafficRule;
@@ -23,7 +22,6 @@ import core.data.machine.configuration.NetworkInterfaceData.Inet;
 import core.data.machine.configuration.TrafficRule.Encapsulation;
 import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidServerException;
-import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.exception.runtime.ARuntimeException;
 import core.exception.runtime.InvalidFirewallRuleException;
 import core.exception.runtime.InvalidMachineModelException;
@@ -395,7 +393,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 				_origDest = this.origDest.stream().map(dest -> dest.withoutPrefixLength().toCompressedString())
 						.collect(Collectors.joining(","));
 			}
-			
+
 			String rule = "";
 			rule += _action + "\t";
 			rule += _sourceZone;
@@ -407,7 +405,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 			rule += (_sPorts != null) ? _sPorts + "\t" : "-\t";
 			rule += (_origDest != null) ? _origDest + "\t" : "-\t";
 			rule += (rate != null) ? rate : "";
-		
+
 			return rule;
 		}
 	}
