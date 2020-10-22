@@ -753,7 +753,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new SimpleUnit("root_hints", "proceed",
-				"sudo wget -O /etc/unbound/root.hints https://www.internic.net/domain/named.root",
+				"sudo busybox wget -O /etc/unbound/root.hints https://www.internic.net/domain/named.root",
 				"[ ! -f /etc/unbound/root.hints ] && echo fail",
 				"", "pass"));
 
