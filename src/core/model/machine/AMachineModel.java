@@ -12,6 +12,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -56,7 +57,7 @@ import profile.type.Service;
  * This is where we stash our various networking rules
  */
 public abstract class AMachineModel extends AModel {
-	private Set<NetworkInterfaceModel> networkInterfaces;
+	private Map<String, NetworkInterfaceModel> networkInterfaces;
 
 	private HostName domain;
 	private Set<String> cnames;
@@ -180,14 +181,18 @@ public abstract class AMachineModel extends AModel {
 
 	public final void addNetworkInterface(NetworkInterfaceModel ifaceModel) {
 		if (this.networkInterfaces == null) {
-			this.networkInterfaces = new LinkedHashSet<>();
+			this.networkInterfaces = new HashMap<>();
 		}
 
-		this.networkInterfaces.add(ifaceModel);
+		this.networkInterfaces.put(ifaceModel.getIface(), ifaceModel);
 	}
 
 	public final Collection<NetworkInterfaceModel> getNetworkInterfaces() {
-		return this.networkInterfaces;
+		if (null == this.networkInterfaces) {
+			return null;
+		}
+
+		return this.networkInterfaces.values();
 	}
 
 	public final Collection<IPAddress> getExternalIPs() {
