@@ -368,16 +368,16 @@ public class NetworkModel {
 	private String getHeader(String server, String action) {
 		String line = "#!/bin/bash\n";
 		line += "\n";
-		line += "hostname=$(hostname);\n";
-		line += "proceed_audit_passed=0;\n";
+		line += "hostname=$(hostname)\n";
+		line += "proceed_audit_passed=1\n";
 		line += "\n";
 		line += "echo \"Started " + action + " ${hostname} with config label: " + server + "\"\n";
-		line += "pass=0; fail=0; fail_string=;";
+		line += "passed=0; failed=0; fail_string=;";
 		return line;
 	}
 
 	private String getFooter(String server, String action) {
-		String line = "echo \"pass=$pass fail=$fail failed:$fail_string\"\n\n";
+		String line = "printf \"passed=${passed} failed=${failed}: ${fail_string}\"\n\n";
 		line += "\n";
 		line += "echo \"Finished " + action + " ${hostname} with config label: " + server + "\"";
 		return line;
