@@ -59,7 +59,7 @@ public class ServiceModel extends ServerModel {
 		this.iso = getData().getIsoUrl();
 		this.isoSHA512 = getData().getIsoSha512();
 
-		if (this.getNetworkInterfaces() == null) {
+		if (null == this.getNetworkInterfaces()) {
 			StaticInterfaceModel nic = new StaticInterfaceModel(new NetworkInterfaceData("eth0"), networkModel);
 			this.addNetworkInterface(nic);
 		}
