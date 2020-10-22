@@ -50,11 +50,15 @@ public class Router extends AMachine {
 	private final ADHCPServerProfile dhcpServer;
 	private final AFirewallProfile firewall;
 
+	private NetworkInterfaceModel vlanTrunk;
+
 	public Router(ServerModel me) throws AThornSecException, JsonParsingException {
 		super(me);
 
+		this.vlanTrunk = null;
+
 		masqueradeWANIfaces();
-		bondLANIfaces();
+		buildLANIfaces();
 		buildVLANs();
 
 		this.firewall = me.getFirewall();
@@ -74,7 +78,7 @@ public class Router extends AMachine {
 				);
 	}
 
-	private void bondLANIfaces() throws InvalidNetworkInterfaceException {
+	private void buildLANIfaces() throws InvalidNetworkInterfaceException {
 		NetworkInterfaceModel lanTrunk = null;
 
 		Set<NetworkInterfaceModel> nics = getMachineModel().getNetworkInterfaces()
@@ -84,21 +88,28 @@ public class Router extends AMachine {
 
 		if (nics.isEmpty()) {
 			lanTrunk = new DummyModel(getNetworkModel());
+			lanTrunk.setIface("LAN");
+			getMachineModel().addNetworkInterface(lanTrunk);
+		}
+		else if (nics.size() == 1) {
+			lanTrunk = nics.iterator().next();
 		}
 		else {
+			//TODO: Bonding ifaces is broken.
 			lanTrunk = new BondModel(getNetworkModel());
-			nics.forEach((lanNic) -> {
-				try {
-					getMachineModel().addNetworkInterface(new BondInterfaceModel(lanNic.getData(), getNetworkModel()));
-				} catch (InvalidNetworkInterfaceException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			});
+			lanTrunk.setIface("LAN");
+
+			for (NetworkInterfaceModel lanNic : nics) {
+				BondInterfaceModel bondNic = new BondInterfaceModel(lanNic.getData(), getNetworkModel());
+				bondNic.setIface(lanNic.getIface());
+				bondNic.setBond((BondModel) lanTrunk);
+				getMachineModel().addNetworkInterface(bondNic);
+			}
+
+			getMachineModel().addNetworkInterface(lanTrunk);
 		}
 
-		lanTrunk.setIface("LAN");
-		getMachineModel().addNetworkInterface(lanTrunk);
+		this.vlanTrunk = lanTrunk;
 	}
 
 	/**
@@ -106,8 +117,9 @@ public class Router extends AMachine {
 	 * @return a collection of the VLANs built in this method
 	 * @throws InvalidIPAddressException if an IP address is invalid
 	 * @throws InvalidServerModelException if a given ServerModel doesn't exist
+	 * @throws InvalidNetworkInterfaceException 
 	 */
-	private final MACVLANTrunkModel buildVLANs() throws InvalidIPAddressException, InvalidServerModelException {
+	private final MACVLANTrunkModel buildVLANs() throws InvalidIPAddressException, InvalidServerModelException, InvalidNetworkInterfaceException {
 		Set<MachineType> vlans = new LinkedHashSet<>();
 		vlans.add(MachineType.SERVER);
 		vlans.add(MachineType.INTERNAL_ONLY);
@@ -119,7 +131,7 @@ public class Router extends AMachine {
 		}
 
 		final MACVLANTrunkModel trunk = new MACVLANTrunkModel();
-		trunk.setIface("LAN");
+		trunk.setIface(this.vlanTrunk.getIface());
 		getMachineModel().addNetworkInterface(trunk);
 
 		for (MachineType type : vlans) {
