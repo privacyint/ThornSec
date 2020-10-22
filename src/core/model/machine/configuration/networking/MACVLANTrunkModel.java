@@ -46,6 +46,8 @@ public class MACVLANTrunkModel extends NetworkInterfaceModel {
 		//TODO: fix this, it's a hack
 		final FileUnit network = super.getNetworkFile().get();
 
+		network.appendCarriageReturn();
+		network.appendLine("[Network]");
 		getVLANs().forEach(vlan -> {
 			network.appendLine("MACVLAN=" + vlan.getIface());
 		});
