@@ -22,12 +22,12 @@ import core.exec.network.APassphrase;
 import core.exec.network.OpenKeePassPassphrase;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
-import core.model.machine.ServiceModel;
 import core.model.network.UserModel;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 import profile.machine.configuration.AptSources;
 import profile.service.machine.SSH;
 
@@ -73,12 +73,12 @@ class PreseedFile extends FileUnit {
 	}
 }
 
-public class DebianVM extends AGuestProfile {
+public class Debian extends AOS {
 
 	private final AptSources aptSources;
 	private PreseedFile preseed;
 	
-	public DebianVM(ServiceModel me) throws AThornSecException {
+	public Debian(ServerModel me) throws AThornSecException {
 		super(me);
 		
 		this.aptSources = new AptSources(me);
@@ -131,16 +131,13 @@ public class DebianVM extends AGuestProfile {
 	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		units.addAll(super.getPersistentFirewall());
-		
-		//getMachineModel().addEgress("cdn.debian.net:80");
-		//getMachineModel().addEgress("security-cdn.debian.org:80");
-		//getMachineModel().addEgress("prod.debian.map.fastly.net:80");
-		//getMachineModel().addEgress("cdn.debian.net:443");
-		//getMachineModel().addEgress("security-cdn.debian.org:443");
-		//getMachineModel().addEgress("prod.debian.map.fastly.net:443");
+		getMachineModel().addEgress(new HostName("cdn.debian.net:80"));
+		getMachineModel().addEgress(new HostName("security-cdn.debian.org:80"));
+		getMachineModel().addEgress(new HostName("prod.debian.map.fastly.net:80"));
+		getMachineModel().addEgress(new HostName("cdn.debian.net:443"));
+		getMachineModel().addEgress(new HostName("security-cdn.debian.org:443"));
+		getMachineModel().addEgress(new HostName("prod.debian.map.fastly.net:443"));
 
-		
 		return units;
 	}
 
@@ -153,65 +150,64 @@ public class DebianVM extends AGuestProfile {
 
 		final Collection<IUnit> units = new ArrayList<>();
 
-		final String baseDir = getServerModel().getHypervisorModel().getVMBase().getAbsolutePath();
-		final String isoDir = baseDir + "/iso/" + getServerModel().getLabel();
-
-		String filename = null;
-		String checksum = null;
-		String cleanedFilename = null;
-
-		try {
-			URI isoURL = new URI(getServerModel()
-									.getIsoUrl()
-									.orElseGet(() ->
-										getIsoURLFromLatest()
-									)
-								);
-			
-			filename = Path.of(isoURL).getFileName().toString();
-			cleanedFilename = StringUtils.stringToAlphaNumeric(filename, "_");
-		} catch (final Exception e) {
-			JOptionPane.showMessageDialog(null, "You shouldn't have been able to arrive here. Well done!");
-			System.exit(1);
-		}
-
-		units.add(new DirUnit("iso_dir_" + getServerModel().getLabel(), "proceed", isoDir));
-
-		units.add(getPreseedFile());
-
-		String buildIso = "\n";
-		buildIso += "\tsudo bash -c '\n";
-		// Create a working copy of the iso for preseeding
-		buildIso += "\t\tcd " + isoDir + ";\n";
-		buildIso += "\t\tmkdir loopdir;\n";
-		buildIso += "\t\tmount -o loop " + baseDir + "/" + filename + " loopdir;\n";
-		buildIso += "\t\tmkdir cd;\n";
-		buildIso += "\t\trsync -a -H --exclude=TRANS.TBL loopdir/ cd;\n";
-		buildIso += "\t\tumount loopdir;\n";
-		buildIso += "\t\tcd cd;\n";
-		// Add our preseed directly to the initrd as per https://wiki.debian.org/DebianInstaller/Preseed/EditIso
-		buildIso += "\t\tgunzip install.*/initrd.gz;\n";
-		buildIso += "\t\techo ../preseed.cfg | cpio -H newc -o -A -F install.*/initrd;\n";
-		buildIso += "\t\tgzip install.*/initrd;\n";
-		// Set the menu timeout to 1 second, otherwise it waits for user input
-		buildIso += "\t\tsed -i \"s/timeout 0/timeout 1/g\" isolinux/isolinux.cfg;\n";
-		// Switch off default menu
-		buildIso += "\t\tsed -i \"s/^default/#default/g\" isolinux/isolinux.cfg;\n";
-		// Switch off vga and add console to *all* boot lines
-		buildIso += "\t\tsed -i \"s_vga=788_vga=none console=ttyS0,115200n8_g\" isolinux/*.cfg;\n";
-		// Rebuild md5sums to reflect changes
-		buildIso += "\t\tmd5sum `find -follow -type f` > md5sum.txt;\n";
-		buildIso += "\t' > /dev/null 2>&1;\n";
-		// Create our new preseeded image
-		buildIso += "\tsudo bash -c '\n";
-		buildIso += "\t\tcd " + isoDir + ";\n";
-		buildIso += "\t\tgenisoimage -o " + getServerModel().getLabel() + ".iso -r -J -no-emul-boot -boot-load-size 4 -boot-info-table -b isolinux/isolinux.bin -c isolinux/boot.cat ./cd;\n";
-		buildIso += "\t\trm -R cd loopdir;\n";
-		buildIso += "\t'";
-
-		units.add(new SimpleUnit("build_iso_" + getServerModel().getLabel(), cleanedFilename + "_downloaded",
-				buildIso, "test -f " + isoDir + "/" + getServerModel().getLabel() + ".iso && echo 'pass' || echo 'fail'", "pass", "pass",
-				"Couldn't create the install ISO for " + getServerModel().getLabel() + ".  This service won't be able to install."));
+//		final String baseDir = getServerModel().getHypervisorModel().getVMBase().getAbsolutePath();
+//		final String isoDir = baseDir + "/iso/" + getServerModel().getLabel();
+//		String filename = null;
+//		String checksum = null;
+//		String cleanedFilename = null;
+//
+//		try {
+//			URI isoURL = new URI(getServerModel()
+//									.getIsoUrl()
+//									.orElseGet(() ->
+//										getIsoURLFromLatest()
+//									)
+//								);
+//			
+//			filename = Path.of(isoURL).getFileName().toString();
+//			cleanedFilename = StringUtils.stringToAlphaNumeric(filename, "_");
+//		} catch (final Exception e) {
+//			JOptionPane.showMessageDialog(null, "You shouldn't have been able to arrive here. Well done!");
+//			System.exit(1);
+//		}
+//
+//		units.add(new DirUnit("iso_dir_" + getServerModel().getLabel(), "proceed", isoDir));
+//
+//		units.add(getPreseedFile());
+//
+//		String buildIso = "\n";
+//		buildIso += "\tsudo bash -c '\n";
+//		// Create a working copy of the iso for preseeding
+//		buildIso += "\t\tcd " + isoDir + ";\n";
+//		buildIso += "\t\tmkdir loopdir;\n";
+//		buildIso += "\t\tmount -o loop " + baseDir + "/" + filename + " loopdir;\n";
+//		buildIso += "\t\tmkdir cd;\n";
+//		buildIso += "\t\trsync -a -H --exclude=TRANS.TBL loopdir/ cd;\n";
+//		buildIso += "\t\tumount loopdir;\n";
+//		buildIso += "\t\tcd cd;\n";
+//		// Add our preseed directly to the initrd as per https://wiki.debian.org/DebianInstaller/Preseed/EditIso
+//		buildIso += "\t\tgunzip install.*/initrd.gz;\n";
+//		buildIso += "\t\techo ../preseed.cfg | cpio -H newc -o -A -F install.*/initrd;\n";
+//		buildIso += "\t\tgzip install.*/initrd;\n";
+//		// Set the menu timeout to 1 second, otherwise it waits for user input
+//		buildIso += "\t\tsed -i \"s/timeout 0/timeout 1/g\" isolinux/isolinux.cfg;\n";
+//		// Switch off default menu
+//		buildIso += "\t\tsed -i \"s/^default/#default/g\" isolinux/isolinux.cfg;\n";
+//		// Switch off vga and add console to *all* boot lines
+//		buildIso += "\t\tsed -i \"s_vga=788_vga=none console=ttyS0,115200n8_g\" isolinux/*.cfg;\n";
+//		// Rebuild md5sums to reflect changes
+//		buildIso += "\t\tmd5sum `find -follow -type f` > md5sum.txt;\n";
+//		buildIso += "\t' > /dev/null 2>&1;\n";
+//		// Create our new preseeded image
+//		buildIso += "\tsudo bash -c '\n";
+//		buildIso += "\t\tcd " + isoDir + ";\n";
+//		buildIso += "\t\tgenisoimage -o " + getServerModel().getLabel() + ".iso -r -J -no-emul-boot -boot-load-size 4 -boot-info-table -b isolinux/isolinux.bin -c isolinux/boot.cat ./cd;\n";
+//		buildIso += "\t\trm -R cd loopdir;\n";
+//		buildIso += "\t'";
+//
+//		units.add(new SimpleUnit("build_iso_" + getServerModel().getLabel(), cleanedFilename + "_downloaded",
+//				buildIso, "test -f " + isoDir + "/" + getServerModel().getLabel() + ".iso && echo 'pass' || echo 'fail'", "pass", "pass",
+//				"Couldn't create the install ISO for " + getServerModel().getLabel() + ".  This service won't be able to install."));
 
 		return units;
 	}

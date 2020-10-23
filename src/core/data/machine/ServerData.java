@@ -10,6 +10,7 @@ package core.data.machine;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -41,6 +42,27 @@ public class ServerData extends AMachineData {
 		DIRECT, TUNNELLED
 	}
 
+	public enum GuestOS {
+		DEBIAN_64("debian_amd64"),
+		DEBIAN_32("alpine_x86"),
+		ALPINE_64("alpine_amd64"),
+		ALPINE_32("alpine_x86");
+	
+		public static Set<GuestOS> alpine = EnumSet.of(ALPINE_32, ALPINE_64);
+		public static Set<GuestOS> debian = EnumSet.of(DEBIAN_32, DEBIAN_64);
+	
+		private String guestOS;
+	
+		GuestOS(String guestOS) {
+			this.guestOS = guestOS;
+		}
+	
+		@Override
+		public String toString() {
+			return this.guestOS;
+		}
+	}
+
 	private Set<HostName> sshSources;
 	private Set<String> profiles;
 	private Set<String> adminUsernames;
@@ -60,6 +82,9 @@ public class ServerData extends AMachineData {
 
 	private Integer ram;
 	private Integer cpus;
+	protected GuestOS guestOS;
+	protected String iso;
+	protected String isoSHA512;
 
 	public ServerData(String label) {
 		super(label);
@@ -501,5 +526,40 @@ public class ServerData extends AMachineData {
 	 */
 	public final Optional<Integer> getCPUs() {
 		return Optional.ofNullable(this.cpus);
+	}
+
+	protected void readOS() {
+		if (!getData().containsKey("os")) {
+			return;
+		}
+
+		setOS(getData().getString("os"));		
+	}
+
+	private void setOS(String os) {
+		this.guestOS = GuestOS.valueOf(os);
+	}
+
+	public Optional<GuestOS> getOS() {
+		return Optional.ofNullable(this.guestOS);
+	}
+
+	protected void readISO() {
+		this.iso = getData().getString("iso_url", null);
+		this.isoSHA512 = getData().getString("iso_sha512", null);
+	}
+
+	/**
+	 * @return the URL to use for building this service
+	 */
+	public final String getIsoUrl() {
+		return this.iso;
+	}
+
+	/**
+	 * @return the expected SHA512SUM of the Debian ISO
+	 */
+	public final String getIsoSha512() {
+		return this.isoSHA512;
 	}
 }

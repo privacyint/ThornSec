@@ -8,11 +8,9 @@
 package core.data.machine;
 
 
-import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import javax.json.JsonObject;
 import core.data.machine.configuration.DiskData;
 import core.exception.data.ADataException;
@@ -25,55 +23,27 @@ import profile.type.Hypervisor;
  * something which runs on a {@link Hypervisor} - i.e. a Virtual Machine
  */
 public class ServiceData extends ServerData {
-	// These are the only types of machine I'll recognise until I'm told otherwise...
-	public enum GuestOS {
-		DEBIAN_64("amd64"),
-		DEBIAN_32("i386"),
-		ALPINE_64("http://dl-cdn.alpinelinux.org/alpine/"),
-		ALPINE_32("x86");
-
-		public static Set<GuestOS> alpine = EnumSet.of(ALPINE_32, ALPINE_64);
-		public static Set<GuestOS> debian = EnumSet.of(DEBIAN_32, DEBIAN_64);
-
-		private String guestOS;
-
-		GuestOS(String guestOS) {
-			this.guestOS = guestOS;
-		}
-
-		@Override
-		public String toString() {
-			return this.guestOS;
-		}
-	}
-	
 	private HypervisorData hypervisor;
-
-	private String iso;
-	private String isoSHA512;
 
 	private Map<String, DiskData> disks;
 
 	private Integer backupFrequency;
 	private Integer cpuExecutionCap;
 
-	private GuestOS guestOS;
-	
 	public ServiceData(String label) {
 		super(label);
 
 		putType(MachineType.SERVICE);
 
 		this.hypervisor = null;
-		this.guestOS = null;
 
 		this.iso = null;
 		this.isoSHA512 = null;
 
 		this.backupFrequency = null;
-		
+
 		this.cpuExecutionCap = null;
-		
+
 		this.disks = null;
 	}
 
@@ -86,23 +56,6 @@ public class ServiceData extends ServerData {
 		readBackupFrequency();
 		readCPUExecutionCap();
 		readISO();
-	}
-
-	private void readISO() {
-		this.iso = getData().getString("iso_url", null);
-		this.isoSHA512 = getData().getString("iso_sha512", null);
-	}
-
-	private void readOS() {
-		if (!getData().containsKey("os")) {
-			return;
-		}
-
-		setOS(getData().getString("os"));		
-	}
-
-	private void setOS(String os) {
-		this.guestOS = GuestOS.valueOf(os);
 	}
 
 	private void readBackupFrequency() throws InvalidPropertyException {
@@ -235,20 +188,6 @@ public class ServiceData extends ServerData {
 	}
 	
 	/**
-	 * @return the URL to use for building this service
-	 */
-	public final String getIsoUrl() {
-		return this.iso;
-	}
-
-	/**
-	 * @return the expected SHA512SUM of the Debian ISO
-	 */
-	public final String getIsoSha512() {
-		return this.isoSHA512;
-	}
-
-	/**
 	 * Get a disk's size from its data, if it's set in the JSON, otherwise return
 	 * a default value
 	 * 
@@ -270,10 +209,6 @@ public class ServiceData extends ServerData {
 	 */
 	public Optional<Integer> getCPUExecutionCap() {
 		return Optional.ofNullable(this.cpuExecutionCap);
-	}
-
-	public Optional<GuestOS> getOS() {
-		return Optional.ofNullable(this.guestOS);
 	}
 
 }

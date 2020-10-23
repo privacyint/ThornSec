@@ -14,22 +14,18 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import core.data.machine.ServiceData;
+import core.data.machine.ServerData.GuestOS;
 import core.data.machine.AMachineData.MachineType;
-import core.data.machine.ServiceData.GuestOS;
+import core.data.machine.ServerData;
 import core.data.machine.configuration.DiskData.Format;
 import core.data.machine.configuration.DiskData.Medium;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.exception.AThornSecException;
-import core.exception.data.machine.InvalidDiskSizeException;
-import core.exception.runtime.InvalidGuestOSException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
 import core.model.machine.configuration.DiskModel;
 import core.model.machine.configuration.networking.StaticInterfaceModel;
 import core.model.network.NetworkModel;
-import profile.guest.AGuestProfile;
-import profile.guest.AlpineVM;
-import profile.guest.DebianVM;
 
 /**
  * This model represents a Service on our network.
@@ -37,27 +33,18 @@ import profile.guest.DebianVM;
  * A service is a machine which is run on a HyperVisor
  */
 public class ServiceModel extends ServerModel {
-	
+
 	private Map<String, DiskModel> disks;
 	private HypervisorModel hypervisor;
-	
-	private AGuestProfile guestOS;
-	
-	private String iso;
-	private String isoSHA512;
-	
+
 	private static Integer DEFAULT_BOOT_DISK_SIZE = (8 * 1024); //8GB
 	private static Integer DEFAULT_DATA_DISK_SIZE = (20 * 1024); //20GB
-	
-	public ServiceModel(ServiceData myData, NetworkModel networkModel)
+
+	public ServiceModel(ServerData myData, NetworkModel networkModel)
 			throws AThornSecException {
 		super(myData, networkModel);
 
 		this.addType(MachineType.SERVICE);
-
-		this.setGuestOS(getOS());
-		this.iso = getData().getIsoUrl();
-		this.isoSHA512 = getData().getIsoSha512();
 
 		if (null == this.getNetworkInterfaces()) {
 			StaticInterfaceModel nic = new StaticInterfaceModel(new NetworkInterfaceData("eth0"), networkModel);
@@ -65,16 +52,10 @@ public class ServiceModel extends ServerModel {
 		}
 	}
 
-	private void setGuestOS(GuestOS os) throws AThornSecException {
-		if (GuestOS.debian.contains(os)) {
-			this.guestOS = new AlpineVM(this);
-		}
-		else if (GuestOS.alpine.contains(os)) {
-			this.guestOS = new DebianVM(this);
-		}
-		else {
-			throw new InvalidGuestOSException(os.toString());
-		}
+	@Override
+	public GuestOS getOS() {
+		return getData().getOS()
+						.orElse(GuestOS.ALPINE_64);
 	}
 
 	@Override
@@ -160,32 +141,6 @@ public class ServiceModel extends ServerModel {
 	public Integer getCPUExecutionCap() {
 		return getData().getCPUExecutionCap()
 						.orElse(100);
-	}
-
-	public Optional<String> getIsoUrl() {
-		return Optional.ofNullable(this.iso);
-	}
-
-	public void setIsoURL(String url) {
-		this.iso = url;
-	}
-
-	public void setIsoSHA512(String checksum) {
-		this.isoSHA512 = checksum;
-	}
-
-	public Optional<String> getIsoSHA512() {
-		return Optional.ofNullable(this.isoSHA512);
-	}
-
-	public GuestOS getOS() {
-		return getData().getOS()
-						.orElse(GuestOS.ALPINE_64);
-	}
-
-	public Collection<? extends IUnit> getISODownloadUnits() {
-		// TODO Auto-generated method stub
-		return new ArrayList<>();
 	}
 
 	public Collection<? extends IUnit> getUserPasswordUnits() {

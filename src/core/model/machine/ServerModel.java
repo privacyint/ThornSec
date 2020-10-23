@@ -11,12 +11,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import com.metapossum.utils.scanner.reflect.ClassesInPackageScanner;
 import core.data.machine.AMachineData.MachineType;
 import core.data.machine.ServerData;
+import core.data.machine.ServerData.GuestOS;
 import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.data.machine.InvalidUserException;
+import core.exception.runtime.InvalidGuestOSException;
 import core.exception.runtime.InvalidProfileException;
 import core.exception.runtime.InvalidTypeException;
 import core.iface.IUnit;
@@ -26,6 +29,9 @@ import core.unit.SimpleUnit;
 import core.unit.fs.FileAppendUnit;
 import profile.firewall.AFirewallProfile;
 import profile.firewall.router.ShorewallFirewall;
+import profile.guest.AOS;
+import profile.guest.Alpine;
+import profile.guest.Debian;
 import profile.machine.configuration.Processes;
 import profile.machine.configuration.UserAccounts;
 import profile.type.Dedicated;
@@ -47,14 +53,22 @@ public class ServerModel extends AMachineModel {
 	
 	private Map<String, AProfile> profiles;
 
+	private AOS os;
+	private String iso;
+	private String isoSHA512;
+
 	public ServerModel(ServerData myData, NetworkModel networkModel) throws AThornSecException {
 		super(myData, networkModel);
 
+		this.os = null;
 		this.profiles = new LinkedHashMap<>();
 
 		this.runningProcesses = new Processes();
 		this.users = new UserAccounts();
 		this.firewall = new ShorewallFirewall(this);
+
+		this.iso = null;
+		this.isoSHA512 = null;
 	}
 
 	@Override
@@ -63,9 +77,16 @@ public class ServerModel extends AMachineModel {
 	}
 
 	public void init() throws AThornSecException {
+		this.setOS(getOS());
 		this.addTypes();
 		this.addProfiles();
 		this.addAdmins();
+		this.addISODetails();
+	}
+
+	private void addISODetails() {
+		this.iso = getData().getIsoUrl();
+		this.isoSHA512 = getData().getIsoSha512();
 	}
 
 	protected AProfile reflectedProfile(String profile) throws InvalidProfileException {
@@ -129,7 +150,7 @@ public class ServerModel extends AMachineModel {
 					addType(type, new Router((ServerModel)this));
 					break;
 				case SERVICE:
-					addType(type, new Service((ServiceModel)this));
+					addType(type, new Service((ServerModel)this));
 					break;
 				case SERVER:
 					addType(MachineType.SERVER, new Server((ServerModel)this));
@@ -138,13 +159,6 @@ public class ServerModel extends AMachineModel {
 					throw new InvalidTypeException(type + " is not a valid type");
 			}
 		}		
-	}
-
-	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineException {
-		if (getData().getExternalIPs().isEmpty()) {
-		}
-
-		return null;
 	}
 
 	@Override
@@ -171,6 +185,8 @@ public class ServerModel extends AMachineModel {
 		units.addAll(this.users.getUnits());
 
 		units.addAll(this.runningProcesses.getUnits());
+
+		this.os.getPersistentFirewall();
 
 		return units;
 	}
@@ -234,5 +250,43 @@ public class ServerModel extends AMachineModel {
 
 	public Integer getCPUs() {
 		return getData().getCPUs().orElse(2);
+	}
+
+	protected void setOS(GuestOS os) throws AThornSecException {
+		if (GuestOS.debian.contains(os)) {
+			this.os = new Debian(this);
+		}
+		else if (GuestOS.alpine.contains(os)) {
+			this.os = new Alpine(this);
+		}
+		else {
+			throw new InvalidGuestOSException(os.toString());
+		}
+	}
+
+	public GuestOS getOS() {
+		return getData().getOS()
+						.orElse(GuestOS.DEBIAN_64);
+	}
+
+	public Optional<String> getIsoUrl() {
+		return Optional.ofNullable(this.iso);
+	}
+
+	public void setIsoURL(String url) {
+		this.iso = url;
+	}
+
+	public void setIsoSHA512(String checksum) {
+		this.isoSHA512 = checksum;
+	}
+
+	public Optional<String> getIsoSHA512() {
+		return Optional.ofNullable(this.isoSHA512);
+	}
+
+	public Collection<? extends IUnit> getISODownloadUnits() {
+		// TODO Auto-generated method stub
+		return new ArrayList<>();
 	}
 }
