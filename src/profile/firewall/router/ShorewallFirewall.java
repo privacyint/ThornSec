@@ -833,7 +833,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 			.filter(machine -> !machine.isType(MachineType.ROUTER))
 			.forEach(machine -> {
 				hosts.add(cleanZone(machine.getLabel())
-					+ "\t" + cleanZone(type.toString())
+					+ "\t" + type.toString()
 					+ ":" + getAddresses(machine)
 					+ "\tmaclist");
 			});
@@ -865,7 +865,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 											.collect(Collectors.joining(","));
 
 					maclist.add("ACCEPT"
-								+ "\t" + cleanZone(type.toString())
+								+ "\t" + type.toString()
 								+ "\t" + mac
 								+ "\t" + addresses
 								+ "\t#" + machine.getLabel());
