@@ -179,7 +179,13 @@ public class Virtualbox extends AHypervisorProfile {
 	public Collection<IUnit> getInstalled() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		units.add(new InstalledUnit("metal_virtualbox", "a2f683c52980aecf_pgp", "virtualbox-6.1"));
+		units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
+		units.add(new SimpleUnit("virtualbox_pgp", "proceed",
+				"busybox wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O - | sudo apt-key add -",
+				"apt-key list | grep virtualbox", "", "fail",
+				"I couldn't import the PGP public key corresponding to"
+				+ " the VirtualBox Debian repository. VirtualBox won't be installed."));
+
 		units.add(new InstalledUnit("metal_genisoimage", "proceed", "genisoimage"));
 		units.add(new InstalledUnit("metal_rsync", "proceed", "rsync"));
 		units.add(new InstalledUnit("metal_guestfs_utils", "proceed", "libguestfs-tools"));
