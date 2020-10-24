@@ -186,6 +186,13 @@ public class Virtualbox extends AHypervisorProfile {
 				"I couldn't import the PGP public key corresponding to"
 				+ " the VirtualBox Debian repository. VirtualBox won't be installed."));
 
+		FileUnit source = new FileUnit("virtualbox_repository", "virtualbox_pgp",
+				"/etc/apt/sources.list.d/virtualbox.list",
+				"");
+		source.appendLine("deb http://download.virtualbox.org/virtualbox/debian bionic contrib");
+		units.add(source);
+
+		units.add(new InstalledUnit("metal_virtualbox", "virtualbox_repository", "virtualbox-6.1"));
 		units.add(new InstalledUnit("metal_genisoimage", "proceed", "genisoimage"));
 		units.add(new InstalledUnit("metal_rsync", "proceed", "rsync"));
 		units.add(new InstalledUnit("metal_guestfs_utils", "proceed", "libguestfs-tools"));
