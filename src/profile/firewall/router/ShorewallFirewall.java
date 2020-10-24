@@ -761,7 +761,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 					.stream()
 					.filter(n -> n instanceof MACVLANModel)
 					.forEach(macVLAN -> {
-						final String line = macVLAN.getIface() + "\t" + wanNIC.getIface();
+						final String line = wanNIC.getIface() + "\t" + macVLAN.getIface();
 
 						if (!masq.containsLine(line)) {
 							masq.appendLine(line);
