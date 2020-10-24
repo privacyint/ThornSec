@@ -257,7 +257,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 		 */
 		private void buildEgress(TrafficRule rule) throws InvalidFirewallRuleException {
 			this.setAction(Action.ACCEPT);
-			this.setSourceZone(rule.getSource());
+			this.setSourceZone(cleanZone(rule.getSource()));
 			this.setProto(rule.getEncapsulation());
 			this.setDPorts(rule.getPorts());
 			this.setDestinationZone(ParentZone.INTERNET.toString());
