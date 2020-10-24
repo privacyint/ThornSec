@@ -381,6 +381,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 			if ((this.destinationSubZone != null)
 					&& !(new HostName(this.destinationSubZone).isAddress())
 					&& !(this.destinationSubZone.startsWith("&"))) {
+					&& !(this.destinationSubZone.matches(".*\\.[0-9]+$"))) {
 				_egress += ".";
 			}		
 			if (dPorts != null) {
