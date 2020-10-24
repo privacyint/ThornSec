@@ -661,6 +661,8 @@ public class ShorewallFirewall extends AFirewallProfile {
 		// Finally, build our FW rules...
 		final FileUnit rules = new FileUnit("shorewall_rules", "shorewall_hosts", CONFIG_BASEDIR + "/rules");
 		try {
+			rules.appendLine("ACCEPT\t\\$FW\t\\$FW"); //Talk to myself, please
+
 			getRulesFile().forEach(rule -> {
 				rules.appendLine(rule.getRule());
 			});
