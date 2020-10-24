@@ -7,8 +7,6 @@
  */
 package core.data.machine;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
@@ -75,7 +73,7 @@ public class ServerData extends AMachineData {
 
 	private SSHConnection sshConnection;
 
-	private URL packageMirror;
+	private String packageMirror;
 	private String packageMirrorDirectory;
 
 	private String keePassDB;
@@ -254,12 +252,7 @@ public class ServerData extends AMachineData {
 			return;
 		}
 
-		try {
-			setMirror(new URL(data.getString("mirror")));
-		} catch (MalformedURLException e) {
-			throw new InvalidPropertyException(data.getString("mirror")
-					+ " is not a valid URL");
-		}
+		setMirror(data.getString("mirror"));
 	}
 
 	/**
@@ -399,7 +392,7 @@ public class ServerData extends AMachineData {
 		this.packageMirrorDirectory = dir;
 	}
 
-	private void setMirror(URL url) {
+	private void setMirror(String url) {
 		this.packageMirror = url;
 	}
 
@@ -474,7 +467,7 @@ public class ServerData extends AMachineData {
 		return Optional.ofNullable(this.sshConnection);
 	}
 
-	public final Optional<URL> getPackageMirror() {
+	public final Optional<String> getPackageMirror() {
 		return Optional.ofNullable(this.packageMirror);
 	}
 

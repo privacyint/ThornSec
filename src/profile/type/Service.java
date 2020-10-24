@@ -10,21 +10,24 @@ package profile.type;
 import java.util.ArrayList;
 import java.util.Collection;
 import core.data.machine.AMachineData.MachineType;
+import core.exception.AThornSecException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
+import core.model.machine.ServerModel;
 import core.model.machine.ServiceModel;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirMountedUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileAppendUnit;
-import profile.guest.AGuestProfile;
+import profile.guest.AOS;
+import profile.guest.Alpine;
 
 /**
  * This is a Service, which represents a VM on a HyperVisor
  */
 public class Service extends Server {
 
-	public Service(ServiceModel me) {
+	public Service(ServerModel me) {
 		super(me);
 	}
 
@@ -33,12 +36,11 @@ public class Service extends Server {
 		return (Hypervisor) getNetworkModel()
 								.getMachineModel(label)
 								.getType(MachineType.HYPERVISOR);
-		
-		//getNetworkModel().getServerModel().
 	}
 	
-	public final AGuestProfile getGuestProfile() {
+	public final AOS getGuestProfile() throws AThornSecException {
 		//return getServerModel().get;
+		return new Alpine(getServerModel());
 	}
 	
 	@Override

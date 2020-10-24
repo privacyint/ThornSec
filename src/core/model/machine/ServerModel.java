@@ -173,6 +173,8 @@ public class ServerModel extends AMachineModel {
 
 		units.addAll(super.getUnits());
 
+		units.addAll(this.os.getUnits());
+
 		for (final AProfile profile : getProfiles().values()) {
 			units.addAll(profile.getUnits());
 		}
@@ -185,8 +187,6 @@ public class ServerModel extends AMachineModel {
 		units.addAll(this.users.getUnits());
 
 		units.addAll(this.runningProcesses.getUnits());
-
-		this.os.getPersistentFirewall();
 
 		return units;
 	}
@@ -288,5 +288,13 @@ public class ServerModel extends AMachineModel {
 	public Collection<? extends IUnit> getISODownloadUnits() {
 		// TODO Auto-generated method stub
 		return new ArrayList<>();
+	}
+
+	public String getPackageMirror() throws InvalidGuestOSException {
+		return this.os.getPackageMirror();
+	}
+
+	public String getPackageDirectory() {
+		return this.os.getPackageDirectory();
 	}
 }

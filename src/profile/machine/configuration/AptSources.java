@@ -8,7 +8,6 @@
 package profile.machine.configuration;
 
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,12 +22,11 @@ import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
-import inet.ipaddr.HostName;
 
 public class AptSources extends AStructuredProfile {
 
-	private final URL debianRepo;
-	private final String debianDir;
+	private String debianRepo;
+	private String debianDir;
 
 	private final Hashtable<String, Set<String>> sources;
 	private final Hashtable<String, Set<String>> pgpKeys;
@@ -36,8 +34,8 @@ public class AptSources extends AStructuredProfile {
 	public AptSources(ServerModel me) throws AThornSecException {
 		super(me);
 
-		this.debianRepo = getNetworkModel().getData().getDebianMirror(getLabel());
-		this.debianDir = getNetworkModel().getData().getDebianDirectory(getLabel());
+		this.debianRepo = null;
+		this.debianDir = null;
 
 		this.sources = new Hashtable<>();
 		this.pgpKeys = new Hashtable<>();
@@ -46,6 +44,8 @@ public class AptSources extends AStructuredProfile {
 	@Override
 	public final Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
+		this.debianRepo = getServerModel().getPackageMirror();
+		this.debianDir = getServerModel().getPackageDirectory();
 
 		units.add(new InstalledUnit("dirmngr", "proceed", "dirmngr", "Couldn't install dirmngr.  Anything which requires a PGP key to be downloaded and installed won't work. "
 				+ "You can possibly fix this by running a configuration again."));
@@ -53,14 +53,6 @@ public class AptSources extends AStructuredProfile {
 		((ServerModel) getMachineModel()).addProcessString("dirmngr --daemon --homedir /tmp/apt-key-gpghome.[a-zA-Z0-9]*$");
 
 		return units;
-	}
-
-	@Override
-	public final Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException {
-		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName(this.debianRepo.getHost()));
-		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName("security-cdn.debian.org"));
-
-		return new ArrayList<>();
 	}
 
 	@Override
@@ -79,9 +71,9 @@ public class AptSources extends AStructuredProfile {
 		final FileUnit aptSources = new FileUnit("apt_debian_sources", "proceed", "/etc/apt/sources.list");
 		units.add(aptSources);
 
-		aptSources.appendLine("deb " + this.debianRepo + this.debianDir + " buster main");
+		aptSources.appendLine("deb http://" + this.debianRepo + this.debianDir + " buster main");
 		aptSources.appendLine("deb http://security.debian.org/ buster/updates main");
-		aptSources.appendLine("deb " + this.debianRepo + this.debianDir + " buster-updates main");
+		aptSources.appendLine("deb http://" + this.debianRepo + this.debianDir + " buster-updates main");
 
 		return units;
 	}
@@ -111,7 +103,7 @@ public class AptSources extends AStructuredProfile {
 	}
 
 	public final void addAptSource(String name, String sourceLine, String keyserver, String fingerprint) throws InvalidMachineModelException {
-		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName(keyserver + ":11371"));
+		//getMachineModel().addEgress(new HostName(keyserver + ":11371"));
 
 		this.addAptSource(name, sourceLine);
 		addPGPKey(keyserver, fingerprint);

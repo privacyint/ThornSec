@@ -64,4 +64,8 @@ public abstract class AOS extends AStructuredProfile {
 	//Force our OS to return some firewall rules.
 	@Override
 	public abstract Collection<IUnit> getPersistentFirewall() throws AThornSecException;
+
+	public abstract String getPackageMirror();
+
+	public abstract String getPackageDirectory();
 }

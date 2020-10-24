@@ -1,22 +1,17 @@
 package profile.guest;
 
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
-import javax.swing.JOptionPane;
-import core.StringUtils;
 import core.exception.AThornSecException;
 import core.exception.data.ADataException;
 import core.exception.data.NoValidUsersException;
 import core.exception.data.machine.InvalidServiceException;
 import core.exception.data.machine.InvalidUserException;
 import core.exception.runtime.ARuntimeException;
+import core.exception.runtime.InvalidGuestOSException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exec.network.APassphrase;
 import core.exec.network.OpenKeePassPassphrase;
@@ -24,7 +19,6 @@ import core.iface.IUnit;
 import core.model.machine.ServerModel;
 import core.model.network.UserModel;
 import core.unit.SimpleUnit;
-import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import inet.ipaddr.HostName;
@@ -80,7 +74,7 @@ public class Debian extends AOS {
 	
 	public Debian(ServerModel me) throws AThornSecException {
 		super(me);
-		
+
 		this.aptSources = new AptSources(me);
 		this.preseed = new PreseedFile();
 	}
@@ -131,6 +125,7 @@ public class Debian extends AOS {
 	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
+		getMachineModel().addEgress(new HostName(getPackageMirror() + ":80"));
 		getMachineModel().addEgress(new HostName("cdn.debian.net:80"));
 		getMachineModel().addEgress(new HostName("security-cdn.debian.org:80"));
 		getMachineModel().addEgress(new HostName("prod.debian.map.fastly.net:80"));
@@ -250,22 +245,16 @@ public class Debian extends AOS {
 	}
 	
 
-	private FileUnit getPreseedFile() throws InvalidUserException, NoValidUsersException {
+	private FileUnit getPreseedFile() throws InvalidUserException, NoValidUsersException, InvalidGuestOSException {
 		//this.preseed = new FileUnit("preseed_" + getServerModel().getLabel(), cleanedFilename + "_downloaded", isoDir + "/preseed.cfg", "root", "root", 0700, "");
 		
 		String username = getNetworkModel().getData().getUser();
 		UserModel user = getNetworkModel().getUser(username)
 							.orElseThrow(() -> new InvalidUserException(username));
-		
+
 		String domain = getServerModel().getDomain().getHost();
-		URL mirror = null;
-		try {
-			mirror = getServerModel().getData().getPackageMirror().orElse(new URL(""));
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		String mirrorDirectory = getServerModel().getData().getPackageMirrorDirectory().orElse("");
+		String mirror = getServerModel().getPackageMirror();
+		String mirrorDirectory = getServerModel().getPackageDirectory();
 
 		buildPreseedLateCommand(user);
 		
@@ -365,12 +354,6 @@ public class Debian extends AOS {
 
 	
 	@Override
-	public Collection<IUnit> getUnits() throws AThornSecException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	protected String getIsoURLFromLatest() {
 		// TODO Auto-generated method stub
 		return null;
@@ -382,4 +365,15 @@ public class Debian extends AOS {
 		return null;
 	}
 
+	@Override
+	public String getPackageMirror() {
+		return getServerModel().getData()
+					.getPackageMirror()
+					.orElseGet(() -> "mirrorservice.org");
+	}
+
+	@Override
+	public String getPackageDirectory() {
+		return getServerModel().getData().getPackageMirrorDirectory().orElseGet(() -> "/sites/ftp.debian.org/debian");
+	}
 }
