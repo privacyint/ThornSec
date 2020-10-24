@@ -881,8 +881,8 @@ public class UnboundDNSServer extends ADNSServerProfile {
 		getUpstreamDNSRules();
 
 		//Our local server listens on both TCP&UDP (for now, at least)
-		getMachineModel().addLANOnlyListen(Encapsulation.UDP, 67);
-		getMachineModel().addLANOnlyListen(Encapsulation.TCP, 67);
+		getMachineModel().addLANOnlyListen(Encapsulation.UDP, 53);
+		getMachineModel().addLANOnlyListen(Encapsulation.TCP, 53);
 
 		return new HashSet<>();
 	}
