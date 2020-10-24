@@ -231,8 +231,12 @@ public class Router extends AMachine {
 		promiscuousService.appendLine("[Install]");
 		promiscuousService.appendLine("WantedBy=multi-user.target");
 
-		units.add(new SimpleUnit("promiscuous_mode_enabled_lan", "promiscuous_service", "sudo systemctl enable promiscuous@LAN.service",
-				"sudo systemctl is-enabled promiscuous@LAN.service", "enabled", "pass"));
+		units.add(new SimpleUnit("promiscuous_mode_enabled_lan", "promiscuous_service",
+				"sudo systemctl enable promiscuous@" + this.vlanTrunk.getIface() + ".service",
+				"sudo systemctl is-enabled promiscuous@" + this.vlanTrunk.getIface() + ".service", "enabled", "pass",
+				"I was unable to set " + this.vlanTrunk.getIface() + " to "
+					+ "promiscuous mode. Your Router will not be able to route "
+					+ "any internal traffic."));
 
 		final FileUnit sysctl = new FileUnit("sysctl_conf", "proceed", "/etc/sysctl.conf");
 		units.add(sysctl);
