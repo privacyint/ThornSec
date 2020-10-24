@@ -303,7 +303,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	 * @throws InvalidProfileException if size is invalid
 	 */
 	private void msgCacheSize(int megabytes) throws InvalidProfileException {
-		addSettingToConfig("msg-cache-size", megabytes + "m");
+		addSettingToConfig("msg-cache-size", megabytes * 1024);
 	}
 
 	/**
@@ -312,7 +312,7 @@ public class UnboundDNSServer extends ADNSServerProfile {
 	 * @throws InvalidProfileException if size is invalid
 	 */
 	private void rrsetCacheSize(int megabytes) throws InvalidProfileException {
-		addSettingToConfig("rrset-cache-size", megabytes + "m");
+		addSettingToConfig("rrset-cache-size", megabytes * 1024);
 	}
 
 	/**
