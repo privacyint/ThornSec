@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import core.exception.AThornSecException;
+import core.exception.data.InvalidPortException;
 import core.exception.data.NoValidUsersException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidMachineModelException;
@@ -26,6 +27,7 @@ import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 
 public class Virtualbox extends AHypervisorProfile {
 	final static String USER_PREFIX = "vboxuser_";
@@ -215,11 +217,12 @@ public class Virtualbox extends AHypervisorProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException, InvalidPortException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-//		getServerModel().getAptSourcesModel().addAptSource("virtualbox", "deb http://download.virtualbox.org/virtualbox/debian buster contrib", "keyserver.ubuntu.com", "a2f683c52980aecf");
-//		//getMachineModel().addEgress("download.virtualbox.org:80");
+		//getServerModel().getAptSourcesModel().addAptSource("virtualbox", "deb http://download.virtualbox.org/virtualbox/debian buster contrib", "keyserver.ubuntu.com", "a2f683c52980aecf");
+		getMachineModel().addEgress(new HostName("virtualbox.org:443"));
+		getMachineModel().addEgress(new HostName("download.virtualbox.org:80"));
 
 		return units;
 	}
