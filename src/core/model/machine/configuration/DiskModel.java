@@ -1,3 +1,10 @@
+/*
+ * This code is part of the ThornSec project.
+ *
+ * To learn more, please head to its GitHub repo: @privacyint
+ *
+ * Pull requests encouraged.
+ */
 package core.model.machine.configuration;
 
 import java.io.File;
