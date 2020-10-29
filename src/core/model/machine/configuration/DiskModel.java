@@ -80,11 +80,19 @@ public class DiskModel extends AModel {
 	 * @return the filename
 	 */
 	public String getFilename() {
-		return FilenameUtils.normalize(filename.toString(), true);
-	}
+		if (null == this.filename) {
+			return null;
+		}
 	
+		return FilenameUtils.normalize(this.filename.toString(), true);
+	}
+
 	public String getFilePath() {
-		return FilenameUtils.normalize(filename.getParent().toString(), true);
+		if (null == this.filename) {
+			return null;
+		}
+
+		return FilenameUtils.normalize(this.filename.getParent().toString(), true);
 	}
 
 	/**
