@@ -21,6 +21,7 @@ import core.data.machine.configuration.DiskData.Format;
 import core.data.machine.configuration.DiskData.Medium;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.exception.AThornSecException;
+import core.exception.data.machine.InvalidDiskSizeException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
 import core.model.machine.configuration.DiskModel;
@@ -68,7 +69,11 @@ public class ServiceModel extends ServerModel {
 
 		getData().getDisks().ifPresent((disks) -> {
 			disks.forEach((label, diskData) -> {
-				addDisk(new DiskModel(diskData, getNetworkModel()));
+				try {
+					addDisk(new DiskModel(diskData, getNetworkModel()));
+				} catch (final InvalidDiskSizeException e) {
+					// Famous last words go here...
+				}
 			});
 		});
 
