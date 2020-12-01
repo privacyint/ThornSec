@@ -134,7 +134,7 @@ public class Processes extends AModel {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		for (final String processString : this.processStrings) {
-			grepString += " | egrep -v \"" + processString + "\"";
+			grepString += " | grep -Ev \"" + processString + "\"";
 		}
 
 		grepString += " | tee /dev/stderr | grep -v 'tee /dev/stderr'"; // We want to be able to see what's running if

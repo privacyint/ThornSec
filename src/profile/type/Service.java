@@ -37,12 +37,12 @@ public class Service extends Server {
 								.getMachineModel(label)
 								.getType(MachineType.HYPERVISOR);
 	}
-	
+
 	public final AOS getGuestProfile() throws AThornSecException {
 		//return getServerModel().get;
 		return new Alpine(getServerModel());
 	}
-	
+
 	@Override
 	public Collection<IUnit> getPersistentConfig() {
 		final Collection<IUnit> units = new ArrayList<>();
@@ -62,7 +62,7 @@ public class Service extends Server {
 
 		return units;
 	}
-	
+
 	@Override
 	public ServiceModel getServerModel() {
 		return (ServiceModel) getServerModel();
