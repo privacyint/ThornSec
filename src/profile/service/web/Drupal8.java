@@ -9,17 +9,17 @@ package profile.service.web;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import core.exception.data.InvalidPortException;
+import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidServerException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 import profile.stack.LEMP;
 import profile.stack.Nginx;
 import profile.stack.PHP;
@@ -31,14 +31,14 @@ public class Drupal8 extends AStructuredProfile {
 
 	private final LEMP lempStack;
 
-	public Drupal8(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Drupal8(ServerModel me) {
+		super(me);
 
-		this.lempStack = new LEMP(label, networkModel);
+		this.lempStack = new LEMP(me);
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getInstalled());
@@ -73,7 +73,7 @@ public class Drupal8 extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		this.lempStack.getDB().setUsername("drupal");
@@ -148,7 +148,7 @@ public class Drupal8 extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getLiveConfig());
@@ -157,14 +157,14 @@ public class Drupal8 extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("drupal.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("packagist.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("api.github.com");
-		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
-		getNetworkModel().getServerModel(getLabel()).addEgress("codeload.github.com");
+		getMachineModel().addEgress(new HostName("drupal.org"));
+		getMachineModel().addEgress(new HostName("packagist.org"));
+		getMachineModel().addEgress(new HostName("api.github.com"));
+		getMachineModel().addEgress(new HostName("github.com"));
+		getMachineModel().addEgress(new HostName("codeload.github.com"));
 
 		units.addAll(this.lempStack.getPersistentFirewall());
 

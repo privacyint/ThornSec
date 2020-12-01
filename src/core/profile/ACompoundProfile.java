@@ -13,7 +13,9 @@ import java.util.Set;
 
 import core.iface.IChildUnit;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+
+import core.model.machine.ServerModel;
+
 import core.unit.ComplexUnit;
 
 public abstract class ACompoundProfile extends AProfile {
@@ -21,8 +23,9 @@ public abstract class ACompoundProfile extends AProfile {
 	private final String precondition;
 	private final String config;
 
-	public ACompoundProfile(String name, NetworkModel model, String precondition, String config) {
-		super(name, model);
+	public ACompoundProfile(ServerModel me, String precondition, String config) {
+		super(me);
+		
 		this.precondition = precondition;
 		this.config = config;
 	}
@@ -30,11 +33,20 @@ public abstract class ACompoundProfile extends AProfile {
 	@Override
 	public Collection<IUnit> getUnits() {
 		final Collection<IUnit> rules = new ArrayList<>();
-		rules.add(new ComplexUnit(getLabel() + "_compound", this.precondition, "",
-				getLabel() + "_unchanged=1;\n" + getLabel() + "_compound=1;\n"));
+		rules.add(new ComplexUnit(getMachineModel().getLabel() + "_compound",
+						this.precondition,
+						"",
+						getMachineModel().getLabel() + "_unchanged=1;\n" + getMachineModel().getLabel() + "_compound=1;\n")
+		);
+		
 		rules.addAll(getChildren());
-		rules.add(new ComplexUnit(getLabel(), this.precondition, this.config + "\n" + getLabel() + "_unchanged=1;\n",
-				getLabel() + "=$" + getLabel() + "_unchanged;\n"));
+		
+		rules.add(new ComplexUnit(getMachineModel().getLabel(),
+						this.precondition,
+						this.config + "\n" + getMachineModel().getLabel() + "_unchanged=1;\n",
+						getMachineModel().getLabel() + "=$" + getMachineModel().getLabel() + "_unchanged;\n")
+		);
+		
 		return rules;
 	}
 

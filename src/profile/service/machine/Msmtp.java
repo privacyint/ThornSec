@@ -9,9 +9,10 @@ package profile.service.machine;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
+import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
+import core.model.machine.ServerModel;
 import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
@@ -19,12 +20,12 @@ import core.unit.pkg.InstalledUnit;
 
 public class Msmtp extends AStructuredProfile {
 
-	public Msmtp(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Msmtp(ServerModel me) {
+		super(me);
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addLogBindPoint("msmtp", "proceed",

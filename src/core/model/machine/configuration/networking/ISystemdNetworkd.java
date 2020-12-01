@@ -8,7 +8,7 @@
 package core.model.machine.configuration.networking;
 
 import java.util.Collection;
-
+import java.util.Optional;
 import core.unit.fs.FileUnit;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.mac.MACAddress;
@@ -30,7 +30,7 @@ public interface ISystemdNetworkd {
 	 *
 	 * @return FileUnit in /etc/systemd/network/
 	 */
-	FileUnit getNetworkFile();
+	Optional<FileUnit> getNetworkFile();
 
 	/**
 	 * Build a Systemd-networkd .netwdev file for this NIC
@@ -40,27 +40,27 @@ public interface ISystemdNetworkd {
 	 *
 	 * @return FileUnit in /etc/systemd/network/
 	 */
-	FileUnit getNetDevFile();
+	Optional<FileUnit> getNetDevFile();
 
 	/**
 	 * Get all IP Addresses associated with this NIC
 	 *
 	 * @return
 	 */
-	Collection<IPAddress> getAddresses();
+	Optional<Collection<IPAddress>> getAddresses();
 
 	/**
 	 * Get the gateway associated with this NIC
 	 * 
 	 * @return
 	 */
-	IPAddress getGateway();
+	Optional<IPAddress> getGateway();
 
 	/**
 	 * Get the MAC Address of this NIC
 	 * 
 	 * @return
 	 */
-	MACAddress getMac();
+	Optional<MACAddress> getMac();
 
 }

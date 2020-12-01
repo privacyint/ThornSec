@@ -9,10 +9,10 @@ package core.profile;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
 import core.exception.AThornSecException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.AMachineModel;
+import core.model.machine.ServerModel;
 import inet.ipaddr.AddressStringException;
 import inet.ipaddr.IncompatibleAddressException;
 
@@ -29,8 +29,8 @@ import inet.ipaddr.IncompatibleAddressException;
  */
 public abstract class AStructuredProfile extends AProfile {
 
-	protected AStructuredProfile(String name, NetworkModel networkModel) {
-		super(name, networkModel);
+	protected AStructuredProfile(AMachineModel me) {
+		super(me);
 	}
 
 	/**
@@ -52,7 +52,7 @@ public abstract class AStructuredProfile extends AProfile {
 	/**
 	 * This is units relating to installing software for this profile
 	 */
-	protected Collection<IUnit> getInstalled() throws AThornSecException {
+	public Collection<IUnit> getInstalled() throws AThornSecException {
 		return new ArrayList<>();
 	}
 
@@ -62,7 +62,7 @@ public abstract class AStructuredProfile extends AProfile {
 	 *
 	 * @throws AThornSecException
 	 */
-	protected Collection<IUnit> getPersistentConfig() throws AThornSecException {
+	public Collection<IUnit> getPersistentConfig() throws AThornSecException {
 		return new ArrayList<>();
 	}
 
@@ -96,7 +96,15 @@ public abstract class AStructuredProfile extends AProfile {
 	 * If you want to do configuration of the firewall (e.g. add a Device) please
 	 * see {@link #getPersistentFirewall()}
 	 */
-	protected Collection<IUnit> getLiveFirewall() throws AThornSecException {
+	public Collection<IUnit> getLiveFirewall() throws AThornSecException {
 		return new ArrayList<>();
+	}
+	
+	/**
+	 * Get the ServerModel on which this profile resides
+	 * @return
+	 */
+	public ServerModel getServerModel() {
+		return (ServerModel)getMachineModel();
 	}
 }

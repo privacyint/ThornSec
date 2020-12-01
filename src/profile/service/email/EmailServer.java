@@ -9,14 +9,14 @@ package profile.service.email;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import core.data.machine.AMachineData.Encapsulation;
+import core.data.machine.configuration.TrafficRule.Encapsulation;
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
+import inet.ipaddr.HostName;
 import profile.stack.MariaDB;
 import profile.stack.Nginx;
 import profile.stack.PHP;
@@ -32,16 +32,16 @@ public class EmailServer extends AStructuredProfile {
 	private final PHP php;
 	private final MariaDB db;
 
-	public EmailServer(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public EmailServer(ServerModel me) {
+		super(me);
 
-		this.webserver = new Nginx(getLabel(), networkModel);
-		this.php = new PHP(getLabel(), networkModel);
-		this.db = new MariaDB(getLabel(), networkModel);
+		this.webserver = new Nginx(me);
+		this.php = new PHP(me);
+		this.db = new MariaDB(me);
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getInstalled());
@@ -52,7 +52,7 @@ public class EmailServer extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getPersistentConfig());
@@ -63,7 +63,7 @@ public class EmailServer extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getLiveConfig());
@@ -74,14 +74,14 @@ public class EmailServer extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getPersistentFirewall());
 
-		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 25, 465, 993);
-		getNetworkModel().getServerModel(getLabel()).addEgress("spamassassin.apache.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("sa-update.pccc.com");
+		getMachineModel().addListen(Encapsulation.TCP, 25, 465, 993);
+		getMachineModel().addEgress(new HostName("spamassassin.apache.org:443"));
+		getMachineModel().addEgress(new HostName("sa-update.pccc.com:443"));
 
 		return units;
 	}

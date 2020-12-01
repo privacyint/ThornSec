@@ -12,12 +12,13 @@ import java.util.Collection;
 
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 import profile.stack.Nginx;
 import profile.stack.PHP;
 
@@ -29,15 +30,15 @@ public class Grav extends AStructuredProfile {
 	private final Nginx webserver;
 	private final PHP php;
 
-	public Grav(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Grav(ServerModel me) {
+		super(me);
 
-		this.webserver = new Nginx(getLabel(), networkModel);
-		this.php = new PHP(getLabel(), networkModel);
+		this.webserver = new Nginx(me);
+		this.php = new PHP(me);
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getInstalled());
@@ -57,7 +58,7 @@ public class Grav extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getPersistentConfig());
@@ -67,7 +68,7 @@ public class Grav extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		final FileUnit nginxConf = new FileUnit("nginx_conf", "nginx_installed", Nginx.DEFAULT_CONFIG_FILE.toString());
@@ -139,11 +140,10 @@ public class Grav extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("www.getgrav.com:443");
-		getNetworkModel().getServerModel(getLabel()).addEgress("www.getgrav.com:80");
+		getMachineModel().addEgress(new HostName("getgrav.com"));
 
 		units.addAll(this.webserver.getPersistentFirewall());
 

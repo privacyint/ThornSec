@@ -13,7 +13,7 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AProfile;
 import core.unit.SimpleUnit;
 
@@ -21,8 +21,8 @@ public class ConfigFiles extends AProfile {
 
 	private final Collection<File> configFiles;
 
-	public ConfigFiles(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public ConfigFiles(ServerModel me) {
+		super(me);
 
 		this.configFiles = new HashSet<>();
 	}

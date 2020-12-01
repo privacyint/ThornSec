@@ -12,15 +12,16 @@ import java.util.Collection;
 
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileEditUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
+import inet.ipaddr.HostName;
 import profile.stack.Nginx;
 
 /**
@@ -30,14 +31,14 @@ public class Git extends AStructuredProfile {
 
 	private final Nginx webserver;
 
-	public Git(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Git(ServerModel me) {
+		super(me);
 
-		this.webserver = new Nginx(getLabel(), networkModel);
+		this.webserver = new Nginx(me);
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("java", "proceed", "default-jre-headless"));
@@ -50,7 +51,7 @@ public class Git extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("scm", "proceed",
@@ -110,7 +111,7 @@ public class Git extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getLiveConfig());
@@ -119,13 +120,13 @@ public class Git extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("scm_manager",
 				"deb http://maven.scm-manager.org/nexus/content/repositories/releases ./", "keyserver.ubuntu.com",
 				"D742B261");
-		getNetworkModel().getServerModel(getLabel()).addEgress("maven.scm-manager.org");
+		getMachineModel().addEgress(new HostName("maven.scm-manager.org"));
 
 		units.addAll(this.webserver.getPersistentFirewall());
 

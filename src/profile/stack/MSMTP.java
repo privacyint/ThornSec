@@ -9,10 +9,9 @@ package profile.stack;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.pkg.InstalledUnit;
 
@@ -23,8 +22,8 @@ import core.unit.pkg.InstalledUnit;
  */
 public class MSMTP extends AStructuredProfile {
 
-	public MSMTP(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public MSMTP(ServerModel me) {
+		super(me);
 	}
 
 	@Override
@@ -55,7 +54,7 @@ public class MSMTP extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addEgress("*:25,465");

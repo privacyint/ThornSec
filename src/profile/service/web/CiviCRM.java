@@ -9,16 +9,16 @@ package profile.service.web;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import core.exception.data.InvalidPortException;
+import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidServerException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 import profile.stack.MariaDB;
 
 /**
@@ -31,11 +31,11 @@ public class CiviCRM extends AStructuredProfile {
 	private final Drupal7 drupal;
 	private final MariaDB db;
 
-	public CiviCRM(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public CiviCRM(ServerModel me) {
+		super(me);
 
-		this.drupal = new Drupal7(getLabel(), networkModel);
-		this.db = new MariaDB(getLabel(), networkModel);
+		this.drupal = new Drupal7(me);
+		this.db = new MariaDB(me);
 
 		this.db.setUsername("civicrm");
 		this.db.setUserPrivileges("SUPER");
@@ -44,7 +44,7 @@ public class CiviCRM extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.db.getInstalled());
@@ -57,7 +57,7 @@ public class CiviCRM extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidMachineModelException, InvalidServerException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.db.getPersistentConfig());
@@ -67,7 +67,7 @@ public class CiviCRM extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.db.getLiveConfig());
@@ -102,13 +102,13 @@ public class CiviCRM extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("download.civicrm.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("latest.civicrm.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("www.civicrm.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("storage.googleapis.com");
+		getMachineModel().addEgress(new HostName("download.civicrm.org"));
+		getMachineModel().addEgress(new HostName("latest.civicrm.org"));
+		getMachineModel().addEgress(new HostName("www.civicrm.org"));
+		getMachineModel().addEgress(new HostName("storage.googleapis.com"));
 
 		units.addAll(this.db.getPersistentFirewall());
 		units.addAll(this.drupal.getPersistentFirewall());

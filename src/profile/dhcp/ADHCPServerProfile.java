@@ -12,12 +12,15 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
+import inet.ipaddr.IPAddress;
+import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
+
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
+
 import core.profile.AStructuredProfile;
-import inet.ipaddr.IPAddress;
 
 /**
  * This is a DHCP server of some type.
@@ -26,19 +29,17 @@ import inet.ipaddr.IPAddress;
  */
 public abstract class ADHCPServerProfile extends AStructuredProfile {
 
-	private final Map<String, IPAddress> subnets;
-	private final Map<String, Collection<AMachineModel>> subnetsMachines;
+	private final Map<MachineType, Collection<AMachineModel>> subnetsMachines;
 
 	/**
 	 * In your constructor, you will need
 	 *
-	 * @param label
+	 * @param myData
 	 * @param networkModel
 	 */
-	public ADHCPServerProfile(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public ADHCPServerProfile(ServerModel me) {
+		super(me);
 
-		this.subnets = new LinkedHashMap<>();
 		this.subnetsMachines = new LinkedHashMap<>();
 	}
 
@@ -46,34 +47,25 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 	 * @param subnetName
 	 * @return false if subnet already exists, true if subnet was added
 	 */
-	public final void addSubnet(String subnetName, IPAddress subnet) {
+	public final void addSubnet(MachineType subnetName, IPAddress subnet) {
 		this.subnetsMachines.putIfAbsent(subnetName, new LinkedHashSet<>());
-		this.subnets.putIfAbsent(subnetName, subnet);
 	}
 
-	protected final Map<String, IPAddress> getSubnets() {
-		return this.subnets;
+	protected final IPAddress getSubnet(MachineType subnet) {
+		return getNetworkModel().getSubnets().get(subnet);
 	}
 
-	protected final IPAddress getSubnet(String subnet) {
-		return getSubnets().get(subnet);
-	}
-
-	private final void putMachines(String subnetName, Collection<AMachineModel> machines) {
+	private final void putMachines(MachineType subnetName, Collection<AMachineModel> machines) {
 		this.subnetsMachines.put(subnetName, machines);
 	}
 
 	/**
 	 *
-	 * @param subnetName
+	 * @param type
 	 * @return null if doesn't exist
 	 */
-	protected final Collection<AMachineModel> getMachines(String subnetName) {
-		return this.subnetsMachines.get(subnetName);
-	}
-
-	protected final IPAddress getGateway(String subnetName) {
-		return this.subnets.get(subnetName);
+	protected final Collection<AMachineModel> getMachines(MachineType type) {
+		return this.subnetsMachines.get(type);
 	}
 
 	/**
@@ -82,7 +74,7 @@ public abstract class ADHCPServerProfile extends AStructuredProfile {
 	 * @param machine
 	 * @return false if machine already added, true otherwise
 	 */
-	public final void addToSubnet(String subnetName, Collection<AMachineModel> machines) {
+	public final void addToSubnet(MachineType subnetName, Collection<AMachineModel> machines) {
 		final Collection<AMachineModel> currentMachines = getMachines(subnetName);
 
 		currentMachines.addAll(machines);

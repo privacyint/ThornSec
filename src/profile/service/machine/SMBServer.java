@@ -12,19 +12,19 @@ import java.util.Collection;
 
 import core.data.machine.AMachineData.Encapsulation;
 import core.exception.data.InvalidPortException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 
 public class SMBServer extends AStructuredProfile {
 
-	public SMBServer(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public SMBServer(ServerModel me) {
+		super(me);
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 137, 138, 139, 445);

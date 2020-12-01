@@ -15,9 +15,9 @@ import java.util.LinkedHashSet;
 import core.data.machine.AMachineData.Encapsulation;
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.CustomFileUnit;
@@ -31,14 +31,14 @@ public class Nginx extends AStructuredProfile {
 	public static final File CONF_D_DIRECTORY = new File("/etc/nginx/conf.d/");
 	private Collection<FileUnit> liveConfigs;
 
-	public Nginx(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Nginx(ServerModel me) {
+		super(me);
 
 		this.liveConfigs = null;
 	}
 
 	@Override
-	public Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		// If we don't give the nginx user a home dir, it can cause problems with npm
@@ -47,7 +47,7 @@ public class Nginx extends AStructuredProfile {
 				"id nginx 2>&1 | grep 'no such'", "", "pass",
 				"The nginx user couldn't be added.  This will cause all sorts of errors."));
 
-		getNetworkModel().getServerModel(getLabel()).getUserModel().addUsername("nginx");
+		getServerModel().getUserModel().addUsername("nginx");
 
 		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addLogBindPoint("nginx", "proceed",
 				"nginx", "0600"));
@@ -58,7 +58,7 @@ public class Nginx extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("www", "proceed",
@@ -87,7 +87,7 @@ public class Nginx extends AStructuredProfile {
 
 		nginxConf.appendLine("user nginx;");
 		nginxConf.appendCarriageReturn();
-		nginxConf.appendLine("worker_processes " + getNetworkModel().getData().getCPUs(getLabel()) + ";");
+		nginxConf.appendLine("worker_processes " + ((ServerModel) getMachineModel()).getCPUs() + ";");
 		nginxConf.appendCarriageReturn();
 		nginxConf.appendLine("error_log  /var/log/nginx/error.log warn;");
 		nginxConf.appendLine("pid        /var/run/nginx.pid;");
@@ -126,14 +126,12 @@ public class Nginx extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel())
-				.addProcessString("nginx: master process /usr/sbin/nginx -g daemon on; master_process on;$");
-		getNetworkModel().getServerModel(getLabel())
-				.addProcessString("nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf$");
-		getNetworkModel().getServerModel(getLabel()).addProcessString("nginx: worker process *$");
+		getServerModel().addProcessString("nginx: master process /usr/sbin/nginx -g daemon on; master_process on;$");
+		getServerModel().addProcessString("nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf$");
+		getServerModel().addProcessString("nginx: worker process *$");
 
 		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel()
 				.addDataBindPoint("nginx_custom_conf_d", "nginx_installed", "nginx", "nginx", "0750"));
@@ -185,7 +183,7 @@ public class Nginx extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException, InvalidPortException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 80);

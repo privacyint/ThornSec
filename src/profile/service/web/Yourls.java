@@ -9,16 +9,16 @@ package profile.service.web;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import core.exception.data.InvalidPortException;
+import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidServerException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileUnit;
 import core.unit.fs.GitCloneUnit;
+import inet.ipaddr.HostName;
 import profile.stack.LEMP;
 import profile.stack.Nginx;
 import profile.stack.PHP;
@@ -27,14 +27,14 @@ public class Yourls extends AStructuredProfile {
 
 	private final LEMP lempStack;
 
-	public Yourls(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Yourls(ServerModel me) {
+		super(me);
 
-		this.lempStack = new LEMP(getLabel(), networkModel);
+		this.lempStack = new LEMP(me);
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getInstalled());
@@ -43,7 +43,7 @@ public class Yourls extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		this.lempStack.getDB().setUsername("yourls");
@@ -108,7 +108,7 @@ public class Yourls extends AStructuredProfile {
 		yourlsConfig.appendLine("	define('YOURLS_DB_HOST', 'localhost');");
 		yourlsConfig.appendLine("	define('YOURLS_DB_PREFIX', 'yourls_');");
 		yourlsConfig.appendLine(
-				"	define('YOURLS_SITE', '" + getNetworkModel().getServerModel(getLabel()).getDomain() + "');");
+				"	define('YOURLS_SITE', '" + getMachineModel().getDomain() + "');");
 		yourlsConfig.appendLine("	define('YOURLS_HOURS_OFFSET', 0);");
 		yourlsConfig.appendLine("	define('YOURLS_LANG', '');");
 		yourlsConfig.appendLine("	define('YOURLS_UNIQUE_URLS', false);");
@@ -131,7 +131,7 @@ public class Yourls extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getLiveConfig());
@@ -140,12 +140,12 @@ public class Yourls extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getPersistentFirewall());
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
+		getMachineModel().addEgress(new HostName("github.com"));
 
 		return units;
 	}

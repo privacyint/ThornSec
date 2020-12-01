@@ -10,10 +10,9 @@ package profile.stack;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileUnit;
@@ -27,18 +26,8 @@ public class MariaDB extends AStructuredProfile {
 	private String db;
 	private String privileges;
 
-	public MariaDB(String label, NetworkModel networkModel, String username, String password, String dbName,
-			String privileges) {
-		super(label, networkModel);
-
-		setUsername(username);
-		setUserPassword(password);
-		setDb(dbName);
-		setUserPrivileges(privileges);
-	}
-
-	public MariaDB(String label, NetworkModel networkModel) {
-		this(label, networkModel, null, null, null, null);
+	public MariaDB(ServerModel me) {
+		super(me);
 	}
 
 	public final String getDb() {
@@ -74,7 +63,7 @@ public class MariaDB extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("openssl", "proceed", "openssl"));
@@ -213,14 +202,14 @@ public class MariaDB extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new RunningUnit("mariadb", "mysql", "mysql"));
 
-		getNetworkModel().getServerModel(getLabel()).addProcessString("/bin/bash /usr/bin/mysqld_safe$");
-		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/sbin/mysqld$");
-		getNetworkModel().getServerModel(getLabel()).addProcessString("logger -t mysqld -p daemon.error$");
+		getServerModel().addProcessString("/bin/bash /usr/bin/mysqld_safe$");
+		getServerModel().addProcessString("/usr/sbin/mysqld$");
+		getServerModel().addProcessString("logger -t mysqld -p daemon.error$");
 
 		units.add(new SimpleUnit("mariadb_no_failed_logins", "mariadb_installed", "",
 				"sudo grep \"[Warning] Access denied for user\" /var/log/syslog", "", "pass",
@@ -229,17 +218,17 @@ public class MariaDB extends AStructuredProfile {
 		return units;
 	}
 
-	public Collection<IUnit> checkUserExists() throws InvalidServerModelException {
+	public Collection<IUnit> checkUserExists() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		final String userCreateSql = "CREATE USER IF NOT EXISTS '" + getUsername() + "'@'localhost' IDENTIFIED BY '"
 				+ getUserPassword() + "';";
 
-		units.add(new SimpleUnit(getNetworkModel().getServerModel(getLabel()) + "_mariadb_db_exists",
+		units.add(new SimpleUnit(getMachineModel().getLabel() + "_mariadb_db_exists",
 				"mariadb_installed", "sudo mysql -uroot -B -N -e \"" + userCreateSql + "\" 2>&1",
 				"sudo mysql -uroot -B -N -e \"SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '" + getUsername()
 						+ "')\" 2>&1",
-				"1", "pass", "Could not create/update the MYSQL user required for " + getLabel()
+				"1", "pass", "Could not create/update the MYSQL user required for " + getMachineModel().getLabel()
 						+ ". Don't expect anything to work, I'm afraid"));
 
 		return units;
@@ -254,12 +243,12 @@ public class MariaDB extends AStructuredProfile {
 		dbCreateSql += "SET GLOBAL default_storage_engine = 'InnoDB';";
 		dbCreateSql += "SET GLOBAL innodb_large_prefix=on;";
 
-		units.add(new SimpleUnit(getLabel() + "_mariadb_db_exists", getLabel() + "_mariadb_user_exists",
+		units.add(new SimpleUnit(getMachineModel().getLabel() + "_mariadb_db_exists", getMachineModel().getLabel() + "_mariadb_user_exists",
 				"sudo mysql -uroot -B -N -e \"" + dbCreateSql + "\" 2>&1",
 				"mysql -u" + getUsername() + " -p" + getUserPassword()
 						+ " -B -N -e \"SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '"
 						+ getDb() + "'\" 2>&1",
-				getDb(), "pass", "Could not create the MYSQL database required for " + getLabel()
+				getDb(), "pass", "Could not create the MYSQL database required for " + getMachineModel().getLabel()
 						+ ". Don't expect anything to work, I'm afraid"));
 
 		return units;
@@ -295,7 +284,7 @@ public class MariaDB extends AStructuredProfile {
 	 */
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("mariadb",

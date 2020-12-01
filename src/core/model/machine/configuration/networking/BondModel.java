@@ -7,7 +7,11 @@
  */
 package core.model.machine.configuration.networking;
 
+import java.util.Optional;
+import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
+import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
 
 /**
@@ -15,29 +19,21 @@ import core.unit.fs.FileUnit;
  * to work, of course.
  */
 public class BondModel extends NetworkInterfaceModel {
-	public BondModel(String name) {
-		super(name);
+	public BondModel(NetworkInterfaceData myData, NetworkModel networkModel) throws InvalidNetworkInterfaceException {
+		super(myData, networkModel);
+		
 		super.setInet(Inet.BOND);
+		super.setWeighting(0);
+
+		super.addToNetDev(Section.BOND, "Mode", "802.3ad");
+	}
+
+	public BondModel(NetworkModel networkModel) throws InvalidNetworkInterfaceException {
+		this(new NetworkInterfaceData("bond"), networkModel);
 	}
 
 	@Override
-	public FileUnit getNetworkFile() {
-		// Don't need a Network for a Bond
-		return null;
-	}
-
-	@Override
-	public FileUnit getNetDevFile() {
-		final FileUnit netdev = new FileUnit(getIface() + "_netdev", "proceed", "/etc/systemd/network/10-" + getIface() + ".netdev");
-
-		netdev.appendLine("[NetDev]");
-		netdev.appendLine("Name=" + getIface());
-		netdev.appendLine("Kind=bond");
-		netdev.appendCarriageReturn();
-
-		netdev.appendLine("[Bond]");
-		netdev.appendLine("Mode=802.3ad");
-
-		return netdev;
+	public Optional<FileUnit> getNetworkFile() {
+		return Optional.empty(); // Don't need a Network for a Bond
 	}
 }

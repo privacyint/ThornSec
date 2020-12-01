@@ -9,10 +9,9 @@ package profile.dns;
 
 import java.util.Collection;
 
-import core.exception.AThornSecException;
-import core.iface.IUnit;
 import core.model.machine.AMachineModel;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
+
 import core.profile.AStructuredProfile;
 
 /**
@@ -22,27 +21,22 @@ import core.profile.AStructuredProfile;
  */
 public abstract class ADNSServerProfile extends AStructuredProfile {
 
-	public ADNSServerProfile(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	protected static Integer DEFAULT_LISTEN_PORT = 53;
+
+	public ADNSServerProfile(ServerModel me) {
+		super(me);
 	}
 
-	@Override
-	public abstract Collection<IUnit> getInstalled() throws AThornSecException;
-
-	@Override
-	public abstract Collection<IUnit> getPersistentConfig() throws AThornSecException;
-
-	@Override
-	public abstract Collection<IUnit> getLiveConfig() throws AThornSecException;
-
-	@Override
-	public abstract Collection<IUnit> getPersistentFirewall() throws AThornSecException;
-
-	@Override
-	public abstract Collection<IUnit> getLiveFirewall() throws AThornSecException;
+	/**
+	 * add a machine(s) to a given domain
+	 */
+	public abstract void addRecord(AMachineModel... machine);
 
 	/**
-	 * add a machine to a given domain
+	 * Add the required DNS records for a Collection of Machines
+	 * @param machines The machines to build DNS records for
 	 */
-	public abstract void addRecords(AMachineModel machine);
+	public final void addRecord(Collection<AMachineModel> machines) {
+		machines.forEach(machine -> addRecord(machine));
+	}
 }

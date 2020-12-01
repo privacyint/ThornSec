@@ -30,7 +30,7 @@ import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.fs.CustomFileUnit;
 import core.unit.fs.DirUnit;
@@ -48,10 +48,10 @@ public class Webproxy extends AStructuredProfile {
 	private FileUnit liveConfig;
 	private Set<String> backends;
 
-	public Webproxy(String label, NetworkModel networkModel) throws MissingPropertiesException {
-		super(label, networkModel);
+	public Webproxy(ServerModel me) throws MissingPropertiesException {
+		super(me);
 
-		this.webserver = new Nginx(getLabel(), networkModel);
+		this.webserver = new Nginx(me);
 		this.liveConfig = null;
 
 		final AMachineData data = getNetworkModel().getData().getMachine(MachineType.SERVER, getLabel());
@@ -69,7 +69,7 @@ public class Webproxy extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("openssl", "proceed", "openssl"));
@@ -80,16 +80,14 @@ public class Webproxy extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentConfig()
-			throws InvalidPropertyException, InvalidServerException, InvalidServerModelException {
+	public Collection<IUnit> getPersistentConfig()
+			throws InvalidPropertyException, InvalidServerException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getPersistentConfig());
 
 		// Should we pass through real IPs?
-		final Boolean passThroughIps = Boolean
-				.parseBoolean(getNetworkModel().getData().getProperty(getLabel(), "passrealips")); // Defaults false
-
+		final Boolean passThroughIps = getServerModel().getData().getData().getBoolean("passrealips"); // Defaults false
 		// First, build our ssl config
 		units.add(new DirUnit("nginx_ssl_include_dir", "proceed", "/etc/nginx/includes"));
 		final FileUnit sslConf = new FileUnit("nginx_ssl", "proceed", "/etc/nginx/includes/ssl_params");
@@ -259,13 +257,10 @@ public class Webproxy extends AStructuredProfile {
 
 		units.addAll(this.webserver.getPersistentFirewall());
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("check.torproject.org:443");
-		getNetworkModel().getServerModel(getLabel()).addEgress("check.torproject.org:80");
-		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 443);
+		getMachineModel().addListen(443);
 
 		for (final String backend : getBackends()) {
-			getNetworkModel().getMachineModel(getLabel()).addForward(backend);
-			getNetworkModel().getMachineModel(getLabel()).addDNAT(backend, 80, 443);
+			getMachineModel().addDNAT(backend, 80, 443);
 		}
 
 		return units;

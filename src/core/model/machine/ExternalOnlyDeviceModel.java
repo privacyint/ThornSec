@@ -7,17 +7,15 @@
  */
 package core.model.machine;
 
-import java.io.IOException;
 import java.util.Collection;
-
-import javax.json.stream.JsonParsingException;
-import javax.mail.internet.AddressException;
-
-import core.exception.data.ADataException;
-import core.exception.runtime.InvalidDeviceModelException;
-import core.exception.runtime.InvalidServerModelException;
+import java.util.LinkedHashSet;
+import core.data.machine.ExternalDeviceData;
+import core.data.machine.configuration.TrafficRule.Encapsulation;
+import core.exception.AThornSecException;
+import core.exception.data.InvalidPortException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
+import inet.ipaddr.HostName;
 
 /**
  * This model represents an "External-Only" device on our network.
@@ -26,15 +24,23 @@ import core.model.network.NetworkModel;
  * not allowed to access internal services.
  */
 public class ExternalOnlyDeviceModel extends ADeviceModel {
-	public ExternalOnlyDeviceModel(String label, NetworkModel networkModel)
-			throws AddressException, JsonParsingException, ADataException, IOException, InvalidServerModelException, InvalidDeviceModelException {
-		super(label, networkModel);
+	public ExternalOnlyDeviceModel(ExternalDeviceData myData, NetworkModel networkModel) throws AThornSecException {
+		super(myData, networkModel);
+	}
+
+	/**
+	 * Set up our device to access the Internet 
+	 */
+	@Override
+	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException {
+		this.addEgress(Encapsulation.UDP, new HostName("*"));
+		this.addEgress(Encapsulation.TCP, new HostName("*"));
+
+		return new LinkedHashSet<>();
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() {
-		addEgress("*");
-
-		return null;
+	public void init() throws AThornSecException {
+		// TODO Auto-generated method stub
 	}
 }

@@ -9,20 +9,17 @@ package profile.service.web;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import core.exception.data.InvalidPortException;
+import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidServerException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
-import core.unit.fs.DirOwnUnit;
-import core.unit.fs.DirPermsUnit;
 import core.unit.fs.DirUnit;
-import core.unit.fs.FileOwnUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 import profile.stack.MariaDB;
 import profile.stack.Nginx;
 
@@ -35,15 +32,15 @@ public class Redmine extends AStructuredProfile {
 	private final Nginx webserver;
 	private final MariaDB db;
 
-	public Redmine(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Redmine(ServerModel me) {
+		super(me);
 
-		this.webserver = new Nginx(getLabel(), networkModel);
-		this.db = new MariaDB(getLabel(), networkModel);
+		this.webserver = new Nginx(me);
+		this.db = new MariaDB(me);
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getInstalled());
@@ -53,14 +50,13 @@ public class Redmine extends AStructuredProfile {
 		units.add(new InstalledUnit("thin", "redmine_installed", "thin"));
 		units.add(new InstalledUnit("sendmail", "proceed", "sendmail"));
 
-		getNetworkModel().getServerModel(getLabel())
-				.addProcessString("thin server \\(/var/run/thin/sockets/thin.[0-3].sock\\)$");
+		getServerModel().addProcessString("thin server \\(/var/run/thin/sockets/thin.[0-3].sock\\)$");
 
 		return units;
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("redmine_logs",
@@ -211,7 +207,7 @@ public class Redmine extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getLiveConfig());
@@ -221,13 +217,13 @@ public class Redmine extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.webserver.getPersistentFirewall());
 		units.addAll(this.db.getPersistentFirewall());
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("www.rubygems.org:443");
+		getMachineModel().addEgress(new HostName("rubygems.org"));
 
 		return units;
 	}

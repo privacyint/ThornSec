@@ -9,20 +9,18 @@ package core.exec.network;
 
 import core.exception.data.ADataException;
 import core.exception.runtime.ARuntimeException;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
+import core.profile.AProfile;
 
 /**
  * This class represents a Password of some kind.
  */
-public abstract class APassphrase {
+public abstract class APassphrase extends AProfile {
 
-	private final String label;
-	protected final NetworkModel networkModel;
 	private Boolean isADefaultPassphrase;
 
-	public APassphrase(String label, NetworkModel networkModel) {
-		this.label = label;
-		this.networkModel = networkModel;
+	public APassphrase(ServerModel me) {
+		super(me);
 		this.isADefaultPassphrase = null;
 	}
 
@@ -31,14 +29,6 @@ public abstract class APassphrase {
 	public abstract String getPassphrase() throws ARuntimeException, ADataException;
 
 	protected abstract String generatePassphrase();
-
-	public final NetworkModel getNetworkModel() {
-		return this.networkModel;
-	}
-
-	public final String getLabel() {
-		return this.label;
-	}
 
 	public final Boolean isADefaultPassphrase() {
 		return this.isADefaultPassphrase;

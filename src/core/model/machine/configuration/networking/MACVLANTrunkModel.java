@@ -7,10 +7,14 @@
  */
 package core.model.machine.configuration.networking;
 
-import java.util.ArrayList;
 import java.util.Collection;
-
+import java.util.LinkedHashSet;
+import java.util.Optional;
+import java.util.Set;
+import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
+import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
 
 /**
@@ -18,50 +22,45 @@ import core.unit.fs.FileUnit;
  * which to stack the VLANs.
  */
 public class MACVLANTrunkModel extends NetworkInterfaceModel {
-	private Collection<MACVLANModel> vlans;
+	private Set<MACVLANModel> vlans;
 
-	public MACVLANTrunkModel(String name) {
-		super(name);
+	public MACVLANTrunkModel(NetworkInterfaceData myData, NetworkModel networkModel) throws InvalidNetworkInterfaceException {
+		super(myData, networkModel);
+
 		super.setInet(Inet.MACVLAN);
+		super.setWeighting(10);
+		super.setARP(false);
+		super.setIsIPForwarding(true);
+		super.setIsIPMasquerading(false);
+		super.setReqdForOnline(true);
 
-		vlans = null;
+		vlans = new LinkedHashSet<>();
+	}
+
+	public MACVLANTrunkModel() throws InvalidNetworkInterfaceException {
+		this(new NetworkInterfaceData("MACVLANTrunk"), null);
 	}
 
 	@Override
-	public FileUnit getNetworkFile() {
-		final FileUnit network = new FileUnit(getIface() + "_network", "proceed", "/etc/systemd/network/10-" + getIface() + ".network");
-		network.appendLine("[Match]");
-		network.appendLine("Name=" + getIface());
-		network.appendCarriageReturn();
+	public Optional<FileUnit> getNetworkFile() {
+		//TODO: fix this, it's a hack
+		final FileUnit network = super.getNetworkFile().get();
 
-		network.appendLine("[Link]");
-		network.appendLine("RequiredForOnline=yes");
-		network.appendLine("ARP=no");
 		network.appendCarriageReturn();
-
 		network.appendLine("[Network]");
-		network.appendLine("IPForward=yes");
+		getVLANs().forEach(vlan -> {
+			network.appendLine("MACVLAN=" + vlan.getIface());
+		});
 
-		if (getVLANs() != null) {
-			getVLANs().forEach(vlan -> {
-				network.appendLine("MACVLAN=" + vlan.getIface());
-			});
-		}
-
-		return network;
+		return Optional.of(network);
 	}
 
 	@Override
-	public FileUnit getNetDevFile() {
-		// Don't need a NetDev for a MACVLAN Trunk
-		return null;
+	public Optional<FileUnit> getNetDevFile() {
+		return Optional.empty(); // Don't need a NetDev for a MACVLAN Trunk
 	}
 
 	public final void addVLAN(MACVLANModel vlan) {
-		if (this.vlans == null) {
-			this.vlans = new ArrayList<>();
-		}
-
 		this.vlans.add(vlan);
 	}
 

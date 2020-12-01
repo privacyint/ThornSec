@@ -13,9 +13,10 @@ import java.util.Collection;
 import core.data.machine.AMachineData.Encapsulation;
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidMachineException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirOwnUnit;
@@ -32,8 +33,8 @@ import core.unit.pkg.RunningUnit;
  */
 public class SSH extends AStructuredProfile {
 
-	public SSH(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public SSH(ServerModel me) {
+		super(me);
 	}
 
 	@Override
@@ -49,7 +50,7 @@ public class SSH extends AStructuredProfile {
 	 * See https://man.openbsd.org/sshd_config
 	 */
 	@Override
-	protected Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidMachineException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidMachineException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		// The below is informed by https://infosec.mozilla.org/guidelines/openssh
@@ -57,7 +58,7 @@ public class SSH extends AStructuredProfile {
 		final FileUnit sshdConf = new FileUnit("sshd_config", "sshd_installed", "/etc/ssh/sshd_config");
 		units.add(sshdConf);
 
-		sshdConf.appendLine("Port " + getNetworkModel().getData().getSSHPort(getLabel()));
+		sshdConf.appendLine("Port " + getServerModel().getSSHListenPort());
 		// sshdConf.appendLine((((ServerModel)me).isRouter()) ? "ListenAddress " +
 		// networkModel.getData().getIP().getHostAddress() + "\n" : "";
 		sshdConf.appendLine("Protocol 2");
@@ -182,11 +183,10 @@ public class SSH extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP,
-				getNetworkModel().getData().getSSHPort(getLabel()));
+		getMachineModel().addListen(Encapsulation.TCP, getServerModel().getSSHListenPort());
 
 		return units;
 	}

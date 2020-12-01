@@ -7,7 +7,11 @@
  */
 package core.model.machine.configuration.networking;
 
+import java.util.Optional;
+import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
+import core.model.network.NetworkModel;
 import core.unit.fs.FileUnit;
 
 /**
@@ -15,39 +19,17 @@ import core.unit.fs.FileUnit;
  */
 public class DHCPClientInterfaceModel extends NetworkInterfaceModel {
 
-	public DHCPClientInterfaceModel(String name) {
-		super(name);
+	public DHCPClientInterfaceModel(NetworkInterfaceData myData, NetworkModel networkModel) throws InvalidNetworkInterfaceException {
+		super(myData, networkModel);
+
 		super.setInet(Inet.DHCP);
+		super.setWeighting(10);
+
+		super.addToNetwork(Section.NETWORK, "DHCP", true);
 	}
 
 	@Override
-	public FileUnit getNetworkFile() {
-		final FileUnit network = new FileUnit(getIface() + "_network", "proceed", "/etc/systemd/network/00-" + getIface() + ".network");
-		network.appendLine("[Match]");
-		network.appendLine("Name=" + getIface());
-		network.appendCarriageReturn();
-
-		network.appendLine("[Network]");
-		network.appendLine("DHCP=yes");
-
-		if (super.getIsIPForwarding() != null) {
-			network.appendLine("IPForward=" + super.getIsIPForwarding());
-		}
-
-		if (super.getIsIPMasquerading() != null) {
-			network.appendLine("IPMasquerade=" + super.getIsIPMasquerading());
-		}
-
-		if (super.getARP() != null) {
-			network.appendLine("ARP=" + super.getARP());
-		}
-
-		return network;
-	}
-
-	@Override
-	public FileUnit getNetDevFile() {
-		// Don't need a NetDev for a MACVLAN Trunk
-		return null;
+	public Optional<FileUnit> getNetDevFile() {
+		return Optional.empty();
 	}
 }

@@ -16,38 +16,39 @@ import core.exception.data.InvalidPropertyException;
 import core.exception.data.MissingPropertiesException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.runtime.InvalidMachineModelException;
-import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
+import inet.ipaddr.HostName;
 import profile.stack.Nginx;
 
 /**
  * This profile will put an onion address in front of website(s)
  */
-public class Tor extends AStructuredProfile {
+public class TorHS extends AStructuredProfile {
 
 	private final Webproxy proxy;
 
-	public Tor(String label, NetworkModel networkModel) throws MissingPropertiesException {
-		super(label, networkModel);
+	public TorHS(ServerModel me) throws MissingPropertiesException {
+		super(me);
 
-		this.proxy = new Webproxy(getLabel(), networkModel);
+		this.proxy = new Webproxy(me);
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("tor_keyring", "tor_pgp", "deb.torproject.org-keyring"));
 		units.add(new InstalledUnit("tor", "tor_keyring_installed", "tor"));
 
-		getNetworkModel().getServerModel(getLabel()).getUserModel().addUsername("debian-tor");
+		getServerModel().getUserModel().addUsername("debian-tor");
 
 		units.addAll(this.proxy.getInstalled());
 
@@ -55,13 +56,13 @@ public class Tor extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentConfig() throws InvalidPropertyArrayException, InvalidMachineException,
-			InvalidServerModelException, InvalidPropertyException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidPropertyArrayException, InvalidMachineException,
+			InvalidPropertyException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("tor",
+		units.addAll(((ServerModel)getNetworkModel().getMachineModel(getLabel())).getBindFsModel().addDataBindPoint("tor",
 				"tor_installed", "debian-tor", "debian-tor", "0700"));
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addLogBindPoint("tor",
+		units.addAll(((ServerModel)getNetworkModel().getMachineModel(getLabel())).getBindFsModel().addLogBindPoint("tor",
 				"tor_installed", "debian-tor", "0750"));
 
 		units.add(new DirUnit("torhs_files_dir", "tor_installed", "/var/lib/tor/hidden_service"));
@@ -124,7 +125,7 @@ public class Tor extends AStructuredProfile {
 				"sudo systemctl is-enabled tor", "enabled", "pass",
 				"Couldn't set tor to auto-start on boot.  You will need to manually start the service (\"sudo service tor start\") on reboot."));
 
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("tls", "proceed",
+		units.addAll(((ServerModel)getNetworkModel().getMachineModel(getLabel())).getBindFsModel().addDataBindPoint("tls", "proceed",
 				"root", "root", "600"));
 
 		final FileUnit proxyConfig = new FileUnit("tor_nginx_config", "tor_installed",
@@ -202,7 +203,7 @@ public class Tor extends AStructuredProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new RunningUnit("tor", "tor", "/usr/bin/tor"));
-		getNetworkModel().getServerModel(getLabel()).addProcessString(
+		getServerModel().addProcessString(
 				"/usr/bin/tor --defaults-torrc /usr/share/tor/tor-service-defaults-torrc -f /etc/tor/torrc --RunAsDaemon 0$");
 		units.addAll(this.proxy.getLiveConfig());
 
@@ -216,12 +217,13 @@ public class Tor extends AStructuredProfile {
 
 		units.addAll(this.proxy.getPersistentFirewall());
 
-		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("tor",
+		((ServerModel)getNetworkModel().getMachineModel(getLabel())).getAptSourcesModel().addAptSource("tor",
 				"deb http://deb.torproject.org/torproject.org buster main", "keys.gnupg.net",
 				"A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
 
-		// Allow the server to call out everywhere
-		getNetworkModel().getServerModel(getLabel()).addEgress("255.255.255.255");
+		// Allow the server to call out everywhere on :80 & :443
+		getMachineModel().addEgress(new HostName("255.255.255.255:80"));
+		getMachineModel().addEgress(new HostName("255.255.255.255"));
 
 		return units;
 	}

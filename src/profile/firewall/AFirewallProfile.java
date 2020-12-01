@@ -8,11 +8,10 @@
 package profile.firewall;
 
 import java.util.Collection;
-
 import core.exception.AThornSecException;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 
 /**
@@ -22,8 +21,8 @@ import core.profile.AStructuredProfile;
  */
 public abstract class AFirewallProfile extends AStructuredProfile {
 
-	public AFirewallProfile(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public AFirewallProfile(ServerModel me) {
+		super(me);
 	}
 
 	@Override
@@ -40,4 +39,5 @@ public abstract class AFirewallProfile extends AStructuredProfile {
 
 	@Override
 	public abstract Collection<IUnit> getLiveFirewall() throws ARuntimeException;
+
 }

@@ -13,13 +13,15 @@ import java.util.Collection;
 import javax.json.JsonObject;
 
 import core.data.machine.AMachineData.Encapsulation;
+import core.data.machine.AMachineData.MachineType;
 import core.exception.data.InvalidIPAddressException;
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
+import core.model.machine.ServerModel;
 import core.model.machine.configuration.networking.WireGuardModel;
-import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.pkg.InstalledUnit;
@@ -33,10 +35,10 @@ public class WireGuard extends AStructuredProfile {
 	private final Integer listenPort;
 	private final String psk;
 
-	public WireGuard(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public WireGuard(ServerModel me) {
+		super(me);
 
-		final JsonObject wgSettings = getNetworkModel().getData().getProperties(getLabel(), "wireguard");
+		final JsonObject wgSettings = getMachineModel().getData().getData().getJsonObject("wireguard");
 		this.listenPort = wgSettings.getInt("listen_port", 51820);
 		this.psk = wgSettings.getString("psk");
 	}
@@ -52,7 +54,7 @@ public class WireGuard extends AStructuredProfile {
 
 	@Override
 	public final Collection<IUnit> getPersistentConfig()
-			throws InvalidServerException, InvalidServerModelException, InvalidIPAddressException {
+			throws InvalidServerException, InvalidIPAddressException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		final WireGuardModel nic = new WireGuardModel("VPN", this.psk, this.listenPort);
@@ -61,13 +63,13 @@ public class WireGuard extends AStructuredProfile {
 			final String key = getNetworkModel().getWireGuardKey(user);
 
 			if (key != null) {
-				nic.addPeer(key);
+				nic.addPeer(user, key);
 			}
 		});
 
-		nic.addAddress(getNetworkModel().getData().getVPNSubnet());
+		nic.addAddress(getNetworkModel().getData().getSubnet(MachineType.VPN));
 
-		getNetworkModel().getServerModel(getLabel()).addNetworkInterface(nic);
+		getMachineModel().addNetworkInterface(nic);
 
 		units.add(new SimpleUnit("wireguard_private_key", "wireguard_installed",
 				"echo $(wg genkey) | sudo tee /etc/wireguard/private.key > /dev/null",
@@ -78,7 +80,7 @@ public class WireGuard extends AStructuredProfile {
 	}
 
 	@Override
-	public final Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+	public final Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException, InvalidPortException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.UDP, this.listenPort);

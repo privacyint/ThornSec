@@ -7,13 +7,12 @@
  */
 package core.data.machine;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
+import java.util.Optional;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
-import javax.json.stream.JsonParsingException;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.exception.data.ADataException;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import inet.ipaddr.MACAddressString;
 
 /**
@@ -28,30 +27,41 @@ public abstract class ADeviceData extends AMachineData {
 		super(label);
 
 		this.managed = null;
-		
+
 		this.putType(MachineType.DEVICE);
 	}
 
 	@Override
-	protected void read(JsonObject data) throws ADataException, JsonParsingException, IOException, URISyntaxException {
+	public void read(JsonObject data) throws ADataException {
 		super.read(data);
 
-		if (data.containsKey("managed")) {
-			this.managed = data.getBoolean("managed");
+		readIsManaged(data);
+		readNICs(data);
+	}
+
+	private final void readIsManaged(JsonObject data) {
+		if (!data.containsKey("managed")) {
+			return;
 		}
-		
-		if (data.containsKey("macs")) {
-			final JsonArray macs = data.getJsonArray("macs");
-			for (int i = 0; i < macs.size(); ++i) {
-				final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
-	
-				iface.setMAC(new MACAddressString(macs.getString(i)).getAddress());
-				putLANNetworkInterface(iface);
-			}
+
+		this.managed = data.getBoolean("managed");
+	}
+
+	private final void readNICs(JsonObject data) throws InvalidNetworkInterfaceException {
+		if (!data.containsKey("macs")) {
+			return;
+		}
+
+		final JsonArray macs = data.getJsonArray("macs");
+		for (int i = 0; i < macs.size(); ++i) {
+			final NetworkInterfaceData iface = new NetworkInterfaceData(getLabel());
+			iface.setIface(getLabel() + i);
+			iface.setMAC(new MACAddressString(macs.getString(i)).getAddress());
+			putNetworkInterface(iface);
 		}
 	}
 
-	public final Boolean isManaged() {
-		return this.managed;
+	public final Optional<Boolean> isManaged() {
+		return Optional.ofNullable(this.managed);
 	}
 }

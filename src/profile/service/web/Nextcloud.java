@@ -9,12 +9,11 @@ package profile.service.web;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import core.exception.data.InvalidPortException;
+import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidServerException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.CrontabUnit;
@@ -23,6 +22,7 @@ import core.unit.fs.FileChecksumUnit.Checksum;
 import core.unit.fs.FileDownloadUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 import profile.stack.LEMP;
 import profile.stack.Nginx;
 import profile.stack.PHP;
@@ -34,14 +34,14 @@ public class Nextcloud extends AStructuredProfile {
 
 	private final LEMP lempStack;
 
-	public Nextcloud(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Nextcloud(ServerModel me) {
+		super(me);
 
-		this.lempStack = new LEMP(getLabel(), networkModel);
+		this.lempStack = new LEMP(me);
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getInstalled());
@@ -127,7 +127,7 @@ public class Nextcloud extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getPersistentConfig());
@@ -140,7 +140,7 @@ public class Nextcloud extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		final FileUnit nginxConf = new FileUnit("nextcloud_nginx_conf", "nginx_installed",
@@ -228,21 +228,21 @@ public class Nextcloud extends AStructuredProfile {
 				"sudo -u nginx php /media/data/www/nextcloud/updater/updater.phar | grep \"No update available\"",
 				"No update available.", "pass"));
 
-		getNetworkModel().getServerModel(getLabel()).getUserModel().addUsername("redis");
+		getServerModel().getUserModel().addUsername("redis");
 
 		return units;
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("nextcloud.com:443");
-		getNetworkModel().getServerModel(getLabel()).addEgress("apps.nextcloud.com:443");
-		getNetworkModel().getServerModel(getLabel()).addEgress("download.nextcloud.com:443");
-		getNetworkModel().getServerModel(getLabel()).addEgress("updates.nextcloud.com:443");
+		getMachineModel().addEgress(new HostName("nextcloud.com"));
+		getMachineModel().addEgress(new HostName("apps.nextcloud.com"));
+		getMachineModel().addEgress(new HostName("download.nextcloud.com"));
+		getMachineModel().addEgress(new HostName("updates.nextcloud.com"));
 		// It requires opening to the wider web anyway :(
-		getNetworkModel().getServerModel(getLabel()).addEgress("github.com:443");
+		getMachineModel().addEgress(new HostName("github.com"));
 
 		units.addAll(this.lempStack.getPersistentFirewall());
 

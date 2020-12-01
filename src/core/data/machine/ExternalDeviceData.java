@@ -7,14 +7,6 @@
  */
 package core.data.machine;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-
-import javax.json.JsonObject;
-import javax.json.stream.JsonParsingException;
-
-import core.exception.data.ADataException;
-
 /**
  * Represents an external-only device on our network.
  * 
@@ -27,11 +19,5 @@ public class ExternalDeviceData extends ADeviceData {
 		super(label);
 		
 		this.putType(MachineType.EXTERNAL_ONLY);
-	}
-
-	@Override
-	public void read(JsonObject data)
-	throws ADataException, JsonParsingException, IOException, URISyntaxException {
-		super.read(data);
 	}
 }

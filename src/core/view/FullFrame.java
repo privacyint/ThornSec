@@ -26,10 +26,12 @@ import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeSelectionModel;
-
+import core.data.machine.AMachineData.MachineType;
+import core.data.machine.ServerData;
 import core.exception.runtime.InvalidDeviceModelException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
+import core.model.machine.AMachineModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.model.network.NetworkModel;
 import core.model.network.ThornsecModel;
@@ -134,10 +136,10 @@ public class FullFrame {
 			final String device = e.getPath().getLastPathComponent().toString();
 
 			try {
-				if (model.getDeviceModel(device) == null) {
+				if (model.getMachineModel(device) == null) {
 					return;
 				}
-			} catch (final InvalidDeviceModelException e1) {
+			} catch (InvalidMachineModelException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			} // Stop it crashing on labels!
@@ -229,8 +231,8 @@ public class FullFrame {
 		final JPanel serverPanel = getNewPanel();
 		final DefaultMutableTreeNode serverRoot = new DefaultMutableTreeNode(model.getLabel());
 
-		for (final String server : model.getServers().keySet()) {
-			serverRoot.add(new DefaultMutableTreeNode(server));
+		for (final AMachineModel server : model.getMachines(MachineType.SERVER)) {
+			serverRoot.add(new DefaultMutableTreeNode(server.getLabel()));
 //		for (ServerModel router : model.getRouterServers()) {
 //			if (!router.isMetal()) {
 //				serverRoot.add(new DefaultMutableTreeNode(router.getLabel()));
@@ -260,8 +262,8 @@ public class FullFrame {
 
 			final String serverLabel = e.getPath().getLastPathComponent().toString();
 			try {
-				model.getServerModel(serverLabel);
-			} catch (final InvalidServerModelException e1) {
+				model.getMachineModel(serverLabel);
+			} catch (InvalidMachineModelException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
@@ -299,10 +301,11 @@ public class FullFrame {
 				final Collection<NetworkInterfaceModel> ifaces = model.getNetworkInterfaces(serverLabel);
 				if (ifaces.size() > 0) {
 					for (final NetworkInterfaceModel iface : ifaces) {
-						final Collection<IPAddress> ipAddresses = iface.getAddresses();
-						if (ipAddresses == null) {
+						if (iface.getAddresses().isEmpty()) {
 							continue;
 						}
+						
+						final Collection<IPAddress> ipAddresses = iface.getAddresses().get();
 
 						for (final IPAddress address : ipAddresses) {
 							addresses.setText(addresses.getText() + "<li>" + address.toCompressedString() + "</li>");
@@ -325,7 +328,7 @@ public class FullFrame {
 			detailsPanel.add(new JLabel("External SSH Port:"), g);
 			g.gridx = 2;
 			g.anchor = GridBagConstraints.LINE_END;
-			detailsPanel.add(new JLabel(model.getData().getAdminPort(serverLabel) + ""), g);
+			//detailsPanel.add(new JLabel((ServerModel)model.getMachineModel(serverLabel). + ""), g);
 
 			// Profiles
 //				if (server.getProfiles().length > 0) {
@@ -340,7 +343,7 @@ public class FullFrame {
 //
 //					if (server.getProfiles().length > 1) {
 //						profiles.setText("<html><body><ul>");
-//						for (String profile : model.getServerModel(serverLabel).getProfiles()) {
+//						for (String profile : model.getMachineModel(serverLabel).getProfiles()) {
 //							profiles.setText(profiles.getText() + "<li>" + profile + "</li> ");
 //						}
 //						profiles.setText(profiles.getText() + "</ul></body></html>");
@@ -494,13 +497,13 @@ class CustomServerIconRenderer extends DefaultTreeCellRenderer {
 		nodeObj.toString();
 
 //		if (row > 0) {
-//			if (model.getServerModel(node).isRouter()) {
+//			if (model.getMachineModel(node).isRouter()) {
 //				setIcon(routerIcon);
 //			}
-//			else if (model.getServerModel(node).isMetal() || model.getServerModel(node).isDedi()) {
+//			else if (model.getMachineModel(node).isMetal() || model.getMachineModel(node).isDedi()) {
 //				setIcon(metalIcon);
 //			}
-//			else if (model.getServerModel(node).isService()) {
+//			else if (model.getMachineModel(node).isService()) {
 //				setIcon(serviceIcon);
 //			}
 //		}

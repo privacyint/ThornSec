@@ -7,41 +7,57 @@
  */
 package core.model.machine;
 
-import java.io.IOException;
 import java.util.Collection;
 
-import javax.json.stream.JsonParsingException;
-import javax.mail.internet.AddressException;
-
+import core.data.machine.ADeviceData;
+import core.data.machine.AMachineData.MachineType;
 import core.exception.AThornSecException;
-import core.exception.data.ADataException;
-import core.exception.data.machine.InvalidMachineException;
-import core.exception.runtime.InvalidDeviceModelException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.data.InvalidPortException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
 import profile.type.Device;
+import profile.type.ExternalOnly;
+import profile.type.InternalOnly;
+import profile.type.User;
 
 /**
  * This model represents a device on our network.
  *
  * A device is something which is managed by ThornSec, but is not directly
- * configured. For instance, users.
+ * configured. For instance, printers, or user machines.
  */
 abstract public class ADeviceModel extends AMachineModel {
 	private Boolean managed;
-	@SuppressWarnings("unused")
-	private final Device me;
 
-	public ADeviceModel(String label, NetworkModel networkModel)
-			throws AddressException, JsonParsingException, ADataException, IOException, InvalidServerModelException, InvalidDeviceModelException {
-		super(label, networkModel);
+	public ADeviceModel(ADeviceData myData, NetworkModel networkModel)
+			throws AThornSecException  {
+		super(myData, networkModel);
 
-		this.managed = getNetworkModel().getData().isManaged(getLabel());
-		this.me = new Device(getLabel(), networkModel);
+		this.managed = myData.isManaged().orElse(false);
+
+		this.addTypes();
+	}
+	
+	private void addTypes() throws AThornSecException {
+		this.addType(MachineType.DEVICE, new Device(this));
+		
+		for (final MachineType type : ((ADeviceData)getData()).getTypes()) {
+			switch (type) {
+				case INTERNAL_ONLY:
+					addType(type, new InternalOnly((InternalOnlyDeviceModel) this));
+					break;
+				case EXTERNAL_ONLY:
+					addType(type, new ExternalOnly((ExternalOnlyDeviceModel) this));
+					break;
+				case USER:
+					addType(type, new User((UserDeviceModel) this));
+					break;
+				default:
+			}
+		}		
 	}
 
-	final public Boolean isManaged() throws InvalidMachineException {
+	final public Boolean isManaged() {
 		return this.managed;
 	}
 
@@ -49,13 +65,13 @@ abstract public class ADeviceModel extends AMachineModel {
 		this.managed = managed;
 	}
 
-	@Override
-	public Collection<IUnit> getUnits() throws AThornSecException {
-		return this.me.getPersistentConfig();
+	final public Boolean hasRealNICs() {
+		return getNetworkInterfaces()
+				.stream()
+				.filter((nic) -> nic.getMac().isPresent())
+				.count() > 0;
 	}
 
-	protected abstract Collection<IUnit> getPersistentFirewall();
+	protected abstract Collection<IUnit> getPersistentFirewall() throws InvalidPortException;
 
-//	public Collection<IUnit> getPersistentConfig() throws InvalidDeviceModelException, JsonParsingException, ADataException {
-//	}
 }

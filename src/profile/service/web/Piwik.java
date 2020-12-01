@@ -9,12 +9,11 @@ package profile.service.web;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import core.exception.data.InvalidPortException;
+import core.exception.AThornSecException;
 import core.exception.data.machine.InvalidServerException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileChecksumUnit;
@@ -22,6 +21,7 @@ import core.unit.fs.FileChecksumUnit.Checksum;
 import core.unit.fs.FileDownloadUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 import profile.stack.LEMP;
 import profile.stack.Nginx;
 import profile.stack.PHP;
@@ -30,14 +30,14 @@ public class Piwik extends AStructuredProfile {
 
 	private final LEMP lempStack;
 
-	public Piwik(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Piwik(ServerModel me) {
+		super(me);
 
-		this.lempStack = new LEMP(label, networkModel);
+		this.lempStack = new LEMP(me);
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() throws InvalidServerModelException {
+	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getInstalled());
@@ -63,7 +63,7 @@ public class Piwik extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidServerModelException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		this.lempStack.getDB().setUsername("piwik");
@@ -120,7 +120,7 @@ public class Piwik extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getLiveConfig());
@@ -129,7 +129,7 @@ public class Piwik extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getLiveFirewall() throws InvalidServerModelException, InvalidPortException {
+	public Collection<IUnit> getLiveFirewall() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.addAll(this.lempStack.getLiveFirewall());
@@ -138,10 +138,10 @@ public class Piwik extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException, InvalidPortException {
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addEgress("builds.matomo.org:443");
+		getMachineModel().addEgress(new HostName("builds.matomo.org"));
 
 		units.addAll(this.lempStack.getPersistentFirewall());
 

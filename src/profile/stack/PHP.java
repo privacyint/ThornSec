@@ -12,9 +12,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import core.exception.data.machine.InvalidServerException;
-import core.exception.runtime.InvalidServerModelException;
+import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
+import core.model.machine.ServiceModel;
 import core.profile.AStructuredProfile;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
@@ -27,8 +28,8 @@ public class PHP extends AStructuredProfile {
 	public static final File SOCK_PATH = new File("/var/run/php/php7.0-fpm.sock");
 	public static final File CONFIG_ROOT = new File("/etc/php/7.0/fpm/");
 
-	public PHP(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public PHP(ServerModel me) {
+		super(me);
 	}
 
 	@Override
@@ -202,7 +203,7 @@ public class PHP extends AStructuredProfile {
 		// breathing room.
 		// On most VMs I have configured, it's usually below 40M.
 		final int mbRamPerProcess = 75;
-		final int serverTotalRam = getNetworkModel().getData().getRAM(getLabel());
+		final int serverTotalRam = ((ServiceModel)getMachineModel()).getRAM();
 
 		final int maxChildren = serverTotalRam / mbRamPerProcess;
 		final int minSpareServers = maxChildren / 3;
@@ -228,7 +229,7 @@ public class PHP extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getLiveConfig() throws InvalidServerModelException {
+	public Collection<IUnit> getLiveConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new RunningUnit("php_fpm", "php7.0-fpm", "php7.0-fpm"));

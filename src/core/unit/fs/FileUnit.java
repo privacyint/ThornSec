@@ -19,8 +19,11 @@ import core.unit.SimpleUnit;
  */
 public class FileUnit extends SimpleUnit {
 
-	private final String path;
-	private final Collection<String> lines;
+	private String path;
+	private Collection<String> lines;
+	private int permissions;
+	private String owner;
+	private String group;
 
 	/**
 	 * Unit for writing out a whole file, with custom fail message
@@ -29,14 +32,44 @@ public class FileUnit extends SimpleUnit {
 	 * @param precondition Precondition unit test name
 	 * @param path         Path to the file
 	 * @param message      Custom fail message
+	 * @param permissions  File permissions, as an octal
 	 */
-	public FileUnit(String name, String precondition, String path, String message) {
+	public FileUnit(String name, String precondition, String path, String owner, String group, int permissions, String message) {
 		super(name, precondition, "sudo touch " + path, "sudo cat " + path + " 2>&1;", "", "pass", message);
 
 		this.lines = new ArrayList<>();
 		this.path = path;
+		this.permissions = permissions;
+		this.owner = owner;
+		this.group = group;
 	}
 
+	/**
+	 * Unit for writing out a whole file, with custom fail message
+	 *
+	 * @param name         Name of unit test
+	 * @param precondition Precondition unit test name
+	 * @param path         Path to the file
+	 */
+	public FileUnit(String name, String precondition, String path, String message) {
+		this(name, precondition, path, "root", "root", 0660, message);
+	}
+
+	/**
+	 * Unit for writing out a whole file, with custom fail message
+	 *
+	 * @param name         Name of unit test
+	 * @param precondition Precondition unit test name
+	 * @param path         Path to the file
+	 */
+	public FileUnit(String name, String precondition, String path, int permissions, String message) {
+		this(name, precondition, path, "root", "root", permissions, message);
+	}
+	
+	public FileUnit(String name, String precondition, String path, int permissions) {
+		this(name, precondition, path, "root", "root", permissions, "Couldn't create " + path + ".  This is a pretty serious problem!");
+	}
+	
 	/**
 	 * Unit for writing out a whole file, with default fail message
 	 *
@@ -56,8 +89,7 @@ public class FileUnit extends SimpleUnit {
 			body = body.substring(0, body.length() - 1);
 		}
 
-		super.config = "sudo [ -f " + this.path + " ] || sudo touch " + this.path + ";" + "echo \"" + body
-				+ "\" | sudo tee " + this.path + " > /dev/null";
+		super.config = "sudo [ -f " + this.path + " ] || sudo touch " + this.path + ";" + "echo \"${" + this.label + "_expected}\" | sudo tee " + this.path + " > /dev/null";
 
 		super.test = body;
 	}
@@ -79,7 +111,7 @@ public class FileUnit extends SimpleUnit {
 	 * @param text
 	 */
 	public final void appendText(String text) {
-		this.appendLine(text, false);
+		this.appendText(text, false);
 	}
 
 	/**
@@ -88,7 +120,7 @@ public class FileUnit extends SimpleUnit {
 	 * @param line
 	 * @param endWithCarriageReturn
 	 */
-	public final void appendLine(String line, Boolean endWithCarriageReturn) {
+	public final void appendText(String line, Boolean endWithCarriageReturn) {
 		if (endWithCarriageReturn) {
 			line += "\n";
 		}
@@ -103,7 +135,7 @@ public class FileUnit extends SimpleUnit {
 	 */
 	public final void appendLine(String... lines) {
 		for (final String line : lines) {
-			this.appendLine(line, true);
+			this.appendText(line, true);
 		}
 	}
 	
@@ -120,6 +152,46 @@ public class FileUnit extends SimpleUnit {
 	 * Append a carriage return to this FileUnit
 	 */
 	public final void appendCarriageReturn() {
-		this.appendLine("", true);
+		this.appendText("", true);
+	}
+
+	public Collection<String> getLines() {
+		return lines;
+	}
+	
+	protected void setLines(Collection<String> lines) {
+		this.lines = lines;
+	}
+
+	public void setPermissions(int permissions) {
+		this.permissions = permissions;
+	}
+
+	public void setOwner(String owner) {
+		this.owner = owner;
+	}
+
+	public void setGroup(String group) {
+		this.group = group;
+	}
+
+	public int getPermissions() {
+		return permissions;
+	}
+
+	public String getOwner() {
+		return owner;
+	}
+
+	public String getGroup() {
+		return group;
+	}
+
+	public String getPath() {
+		return this.path;
+	}
+
+	protected void setPath(String path) {
+		this.path = path;
 	}
 }
