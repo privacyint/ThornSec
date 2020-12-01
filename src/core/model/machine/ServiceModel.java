@@ -24,7 +24,7 @@ import core.exception.AThornSecException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
 import core.model.machine.configuration.DiskModel;
-import core.model.machine.configuration.networking.StaticInterfaceModel;
+import core.model.machine.configuration.networking.DHCPClientInterfaceModel;
 import core.model.network.NetworkModel;
 
 /**
@@ -47,7 +47,7 @@ public class ServiceModel extends ServerModel {
 		this.addType(MachineType.SERVICE);
 
 		if (null == this.getNetworkInterfaces()) {
-			StaticInterfaceModel nic = new StaticInterfaceModel(new NetworkInterfaceData("eth0"), networkModel);
+			final DHCPClientInterfaceModel nic = new DHCPClientInterfaceModel(new NetworkInterfaceData("eth0"), networkModel);
 			this.addNetworkInterface(nic);
 		}
 	}
