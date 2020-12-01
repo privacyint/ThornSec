@@ -380,7 +380,7 @@ public class ShorewallFirewall extends AFirewallProfile {
 			String _egress = this.destinationSubZone;
 			if ((this.destinationSubZone != null)
 					&& !(new HostName(this.destinationSubZone).isAddress())
-					&& !(this.destinationSubZone.startsWith("&"))) {
+					&& !(this.destinationSubZone.startsWith("&"))
 					&& !(this.destinationSubZone.matches(".*\\.[0-9]+$"))) {
 				_egress += ".";
 			}		
