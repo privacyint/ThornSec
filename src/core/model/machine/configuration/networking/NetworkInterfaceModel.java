@@ -422,7 +422,7 @@ public abstract class NetworkInterfaceModel extends AModel implements ISystemdNe
 				if (section.equals(Section.NETWORK)) {
 					getAddresses().ifPresent((addresses) ->	
 						addresses.forEach((address) ->
-							networkFile.appendLine("Address=" + address.withoutPrefixLength().toCompressedString())
+							networkFile.appendLine("Address=" + address.toCompressedString())
 						)
 					);
 				}
