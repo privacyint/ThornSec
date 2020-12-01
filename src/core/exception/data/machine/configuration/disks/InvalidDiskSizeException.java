@@ -5,11 +5,9 @@
  *
  * Pull requests encouraged.
  */
-package core.exception.data.machine;
+package core.exception.data.machine.configuration.disks;
 
-import core.exception.data.ADataException;
-
-public class InvalidDiskSizeException extends ADataException {
+public class InvalidDiskSizeException extends DiskModelException {
 	private static final long serialVersionUID = -4978682429685931190L;
 
 	public InvalidDiskSizeException(String message) {

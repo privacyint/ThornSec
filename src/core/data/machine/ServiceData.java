@@ -15,7 +15,7 @@ import javax.json.JsonObject;
 import core.data.machine.configuration.DiskData;
 import core.exception.data.ADataException;
 import core.exception.data.InvalidPropertyException;
-import core.exception.data.machine.InvalidDiskSizeException;
+import core.exception.data.machine.configuration.disks.InvalidDiskSizeException;
 import profile.type.Hypervisor;
 
 /**

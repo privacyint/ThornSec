@@ -21,7 +21,7 @@ import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.machine.configuration.DiskModel;
+import core.model.machine.configuration.disks.ADiskModel;
 import core.model.network.NetworkModel;
 import core.data.machine.UserDeviceData;
 import core.data.machine.configuration.DiskData.Medium;
@@ -222,7 +222,7 @@ public class Virtualisation extends AStructuredProfile {
 		return preseed;
 	}
 
-	private Collection<IUnit> buildDisks(String user, String group, String service, Map<String, DiskModel> disks) {
+	private Collection<IUnit> buildDisks(String user, String group, String service, Map<String, ADiskModel> disks) {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		// Disk controller setup
@@ -251,8 +251,8 @@ public class Virtualisation extends AStructuredProfile {
 						+ ".  This is fatal, " + service + " will not be installed."));
 
 		int deviceCounter = 0;
-		for (final DiskModel disk : disks.values().stream().filter(disk -> disk.getMedium() == Medium.DISK)
-				.toArray(DiskModel[]::new)) {
+		for (final ADiskModel disk : disks.values().stream().filter(disk -> disk.getMedium() == Medium.DISK)
+				.toArray(ADiskModel[]::new)) {
 			units.add(new DirUnit(disk.getLabel() + "_disk_dir_" + service, "proceed", disk.getFilePath()));
 			units.add(new DirOwnUnit(disk.getLabel() + "_disk_dir_" + service,
 					disk.getLabel() + "_disk_dir_" + service + "_created", disk.getFilePath(), user, group));
@@ -303,8 +303,8 @@ public class Virtualisation extends AStructuredProfile {
 		}
 
 		deviceCounter = 0;
-		for (final DiskModel disk : disks.values().stream().filter(disk -> disk.getMedium() == Medium.DVD)
-				.toArray(DiskModel[]::new)) {
+		for (final ADiskModel disk : disks.values().stream().filter(disk -> disk.getMedium() == Medium.DVD)
+				.toArray(ADiskModel[]::new)) {
 			String diskAttach = "";
 			diskAttach += "sudo -u " + user + " VBoxManage storageattach " + service;
 			diskAttach += " --storagectl \"DVDs\"";
