@@ -71,6 +71,16 @@ public class ServiceModel extends ServerModel {
 		HypervisorModel hv = (HypervisorModel) getNetworkModel().getMachineModel(hypervisorLabel); 
 		setHypervisor(hv);
 
+		initDisks();
+	}
+
+	/**
+	 * Initialise our disks, making sure there's at least a boot disk and a data
+	 * disk.
+	 * 
+	 * @throws DiskModelException
+	 */
+	private void initDisks() throws DiskModelException {
 		if (getData().getDisks().isPresent()) {
 			for (DiskData diskData : getData().getDisks().get().values()) {
 				if (diskData.getMedium().isPresent() && diskData.getMedium().get().equals(Medium.DVD)) {
