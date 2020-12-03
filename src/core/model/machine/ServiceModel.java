@@ -17,6 +17,7 @@ import core.data.machine.ServiceData;
 import core.data.machine.ServerData.GuestOS;
 import core.data.machine.AMachineData.MachineType;
 import core.data.machine.ServerData;
+import core.data.machine.configuration.DiskData;
 import core.data.machine.configuration.DiskData.Format;
 import core.data.machine.configuration.DiskData.Medium;
 import core.data.machine.configuration.NetworkInterfaceData;
@@ -26,6 +27,8 @@ import core.exception.data.machine.configuration.disks.InvalidDiskSizeException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
 import core.model.machine.configuration.disks.ADiskModel;
+import core.model.machine.configuration.disks.DVDModel;
+import core.model.machine.configuration.disks.HardDiskModel;
 import core.model.machine.configuration.networking.DHCPClientInterfaceModel;
 import core.model.network.NetworkModel;
 
@@ -68,11 +71,16 @@ public class ServiceModel extends ServerModel {
 		HypervisorModel hv = (HypervisorModel) getNetworkModel().getMachineModel(hypervisorLabel); 
 		setHypervisor(hv);
 
-		getData().getDisks().ifPresent((disks) -> {
-			disks.forEach((label, diskData) -> {
-				addDisk(new ADiskModel(diskData, getNetworkModel()));
-			});
-		});
+		if (getData().getDisks().isPresent()) {
+			for (DiskData diskData : getData().getDisks().get().values()) {
+				if (diskData.getMedium().isPresent() && diskData.getMedium().get().equals(Medium.DVD)) {
+					addDisk(new DVDModel(diskData, getNetworkModel()));
+				}
+				else {
+					addDisk(new HardDiskModel(diskData, getNetworkModel()));
+				}
+			}
+		}
 
 		if (getDisk("boot").isEmpty()) {
 			File bootDiskPath = new File(hypervisor.getVMBase().getAbsolutePath() + "/disks/boot/" + getLabel() + "/boot.vmdk");
