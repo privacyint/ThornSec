@@ -329,9 +329,12 @@ public class Virtualbox extends Virtualisation {
 		units.add(modifyVm(service, user, "hpet", "on"));
 
 		// Shared folders setup
-		units.add(new SimpleUnit(service + "_backup_sf_attached", service + "_exists",
-				"sudo -u " + user + " VBoxManage sharedfolder add " + service + " --name backup --hostpath "
-						+ backupDir,
+		units.add(new SimpleUnit(service.getLabel() + "_backup_sf_attached",
+					service.getLabel() + "_exists",
+					"sudo -u " + user
+						+ " VBoxManage sharedfolder add " + service.getLabel()
+							+ " --name backup"
+							+ " --hostpath " + FilenameUtils.normalize(backupDir, true),
 				"sudo -u " + user + " VBoxManage showvminfo " + service
 						+ " --machinereadable | grep SharedFolderPathMachineMapping2",
 				"SharedFolderPathMachineMapping2=\\\"" + backupDir + "\\\"", "pass"));
