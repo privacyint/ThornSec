@@ -268,41 +268,43 @@ public class Virtualbox extends Virtualisation {
 	@Override
 	public Collection<IUnit> buildServiceVm(ServiceModel service, String bridge)
 			throws InvalidServerException, InvalidMachineModelException {
-		final String baseDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel());
+		final String baseDir = FilenameUtils.normalize(getServerModel().getVMBase().toString(), true);
 
-		final String logDir = baseDir + "/logs/" + service;
-		final String backupDir = baseDir + "/backups/" + service;
-		final String ttySocketDir = baseDir + "/sockets/" + service;
+		final String logDir = baseDir + "/logs/" + service.getLabel();
+		final String backupDir = baseDir + "/backups/" + service.getLabel();
+		final String ttySocketDir = baseDir + "/sockets/" + service.getLabel();
 
-		// final String installIso = baseDir + "/isos/" + service + "/" + service +
-		// ".iso";
-		final String user = "vboxuser_" + service;
-		final String group = "vboxusers";
+		final String user = USER_PREFIX + service.getLabel();
+
+		final String osType = "Linux";
 
 		final Collection<IUnit> units = new ArrayList<>();
 
 		// Create VM itself
 		units.add(new SimpleUnit(service + "_exists", "metal_virtualbox_" + service + "_user",
-				"sudo -u " + user + " VBoxManage createvm --name " + service + " --ostype \"" + group + "\""
-						+ " --register;" + "sudo -u " + user + " VBoxManage modifyvm " + service + " --description "
-						+ "\"" + service + "." + getNetworkModel().getData().getDomain() + "\n"
-						+ "ThornSec guest machine\n" + "Built with profile(s): "
-						+ String.join(", ", getNetworkModel().getData().getProfiles(service)) + "\n"
-						+ "Built at $(date)" + "\"",
-				"sudo -u " + user + " VBoxManage list vms | grep " + service, "", "fail", "Couldn't create " + service
-						+ " on its HyperVisor.  This is fatal, " + service + " will not exist on your network."));
+				"sudo -u " + user + " VBoxManage createvm"
+							+ " --name " + service
+							+ " --ostype \"" + osType + "\""
+							+ " --register;"
+						+ "sudo -u " + user + " VBoxManage modifyvm " + service
+							+ " --description \"" + service.getLabel() + "." + service.getDomain() + "\n"
+								+ "ThornSec guest machine\n"
+								+ "Built with profile(s): "
+								+ String.join(", ", service.getProfiles().keySet()) + "\n"
+								+ "Built at $(date)" + "\"",
+				"sudo -u " + user + " VBoxManage list vms | grep " + service, "", "fail",
+				"Couldn't create " + service + " on its HyperVisor."
+						+ " This is fatal, " + service + " will not exist on your network.")
+		);
 
 		// Set up VM's storage
-		units.addAll(buildDisks(user, group, service, getNetworkModel().getServiceModel(service).getDisks()));
+		units.addAll(buildDisks(service));
 		//Make sure Logs are attached
-		units.addAll(buildLogs(service, logDir, user, group));
+		units.addAll(buildLogs(service));
 		//And the backups
-		units.addAll(buildBackups(service, backupDir, user, group));
+		units.addAll(buildBackups(service));
 
 		units.add(new DirUnit("socket_dir_" + service, "proceed", ttySocketDir));
-		units.add(new DirOwnUnit("socket_dir_" + service, "socket_dir_" + service + "_created", ttySocketDir, user,
-				group));
-		units.add(new DirPermsUnit("socket_dir_" + service, "socket_dir_" + service + "_chowned", ttySocketDir, "750"));
 
 		// Architecture setup
 		units.add(modifyVm(service, user, "paravirtprovider", "kvm")); // Default, make it explicit
