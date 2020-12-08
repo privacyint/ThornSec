@@ -166,7 +166,7 @@ public class Webproxy extends AStructuredProfile {
 		if (this.liveConfig == null) {
 			Boolean isDefault = true;
 
-			for (final String backendLabel : this.backends) {
+			for (String backendLabel : getBackends()) {
 				final AMachineModel backendObj = getNetworkModel().getMachineModel(backendLabel);
 
 				final Collection<String> cnames = getNetworkModel().getData().getCNAMEs(backendLabel);
