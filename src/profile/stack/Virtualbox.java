@@ -27,10 +27,7 @@ import core.model.network.NetworkModel;
 import core.data.machine.configuration.DiskData.Medium;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
-import core.unit.fs.DirOwnUnit;
-import core.unit.fs.DirPermsUnit;
 import core.unit.fs.DirUnit;
-import core.unit.fs.FileOwnUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import inet.ipaddr.HostName;
@@ -238,10 +235,6 @@ public class Virtualbox extends Virtualisation {
 	@Override
 	protected Collection<IUnit> buildBackups(ServiceModel service) {
 		Collection<IUnit> units = new ArrayList<>();
-		
-		units.add(new DirUnit("log_dir_" + service, "proceed", logDir));
-		units.add(new DirOwnUnit("log_dir_" + service, "log_dir_" + service + "_created", logDir, user, group));
-		units.add(new DirPermsUnit("log_dir_" + service, "log_dir_" + service + "_chowned", logDir, "750"));
 
 		units.add(new SimpleUnit(service + "_log_sf_attached", service + "_exists",
 				"sudo -u " + user + " VBoxManage sharedfolder add " + service + " --name log --hostpath " + logDir + ";"
@@ -258,16 +251,17 @@ public class Virtualbox extends Virtualisation {
 	@Override
 	protected Collection<IUnit> buildLogs(ServiceModel service) {
 		Collection<IUnit> units = new ArrayList<>();
-		
-		units.add(new DirUnit("backup_dir_" + service, "proceed", backupDir));
-		units.add(new DirOwnUnit("backup_dir_" + service, "backup_dir_" + service + "_created", backupDir, user,
-				group));
-		units.add(new DirPermsUnit("backup_dir_" + service, "backup_dir_" + service + "_chowned", backupDir,
-				"750"));
-		// Mark the backup destination directory as a valid destination
-		units.add(new FileUnit(service + "_mark_backup_dir", "backup_dir_" + service + "_chmoded",
-				backupDir + "/backup.marker", "In memoriam Luke and Guy.  Miss you two!"));
-		
+
+		units.add(new DirUnit(service.getLabel() + "_log_dir",
+							  "proceed",
+							  FilenameUtils.normalize(getServerModel().getVMBase().getPath() + "/logs", true),
+							  USER_PREFIX + service.getLabel(),
+							  USER_GROUP,
+							  750,
+							  "Couldn't create " + service.getLabel() + "'s log directory"
+				 )
+		);
+
 		return units;
 	}
 
