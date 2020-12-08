@@ -60,6 +60,24 @@ public class Virtualbox extends Virtualisation {
 		getServerModel().addProcessString("\\[iprt-VBoxTscThr\\]$");
 		getServerModel().addProcessString("\\[kvm-irqfd-clean\\]$");
 
+		getServerModel().getServices().forEach((service) -> {
+			// Create system user for this VM
+			units.add(
+				new SimpleUnit("metal_virtualbox_" + service.getLabel() + "_user",
+					"metal_virtualbox_installed",
+					"sudo adduser " + USER_PREFIX + service.getLabel()
+						+ " --system" //System account, no aging info
+						+ " --shell=/bin/false" //Disables console
+						+ " --disabled-login"
+						+ " --ingroup " + USER_GROUP,
+					"id -u " + USER_PREFIX + service.getLabel() + " 2>&1 | grep 'no such user'", 
+					"",
+					"pass",
+					"Couldn't create the user for " + service.getLabel()
+						+ " on its HyperVisor."
+						+ " This is fatal, " + service.getLabel() + " will not be installed."));
+		});
+
 		return units;
 	}
 
@@ -232,12 +250,6 @@ public class Virtualbox extends Virtualisation {
 		final String group = "vboxusers";
 
 		final Collection<IUnit> units = new ArrayList<>();
-
-		// Create VirtualBox user
-		units.add(new SimpleUnit("metal_virtualbox_" + service + "_user", "metal_virtualbox_installed",
-				"sudo adduser " + user + " --system --shell=/bin/false --disabled-login --ingroup " + group,
-				"id -u " + user + " 2>&1 | grep 'no such user'", "", "pass", "Couldn't create the user for " + service
-						+ " on its HyperVisor.  This is fatal, " + service + " will not be installed."));
 
 		// Create VM itself
 		units.add(new SimpleUnit(service + "_exists", "metal_virtualbox_" + service + "_user",
