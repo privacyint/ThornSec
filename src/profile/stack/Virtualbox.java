@@ -311,11 +311,11 @@ public class Virtualbox extends Virtualisation {
 				+ ".  This is required for 64-bit installations, and for more than 1 virtual CPU in a service."));
 		units.add(modifyVm(service, user, "hwvirtex", "on"));
 		units.add(modifyVm(service, user, "pae", "on"));
-		units.add(modifyVm(service, user, "cpus", getNetworkModel().getData().getCPUs(service)));
-		units.add(modifyVm(service, user, "cpuexecutioncap", getNetworkModel().getData().getCPUExecutionCap(service)));
+		units.add(modifyVm(service, user, "cpus", service.getCPUs()));
+		units.add(modifyVm(service, user, "cpuexecutioncap", service.getCPUExecutionCap()));
 
 		// RAM setup
-		units.add(modifyVm(service, user, "memory", getNetworkModel().getData().getRAM(service)));
+		units.add(modifyVm(service, user, "memory", service.getRAM()));
 		units.add(modifyVm(service, user, "vram", "16"));
 		units.add(modifyVm(service, user, "nestedpaging", "on"));
 		units.add(modifyVm(service, user, "largepages", "on"));
