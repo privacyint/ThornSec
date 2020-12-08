@@ -54,11 +54,11 @@ public class Virtualbox extends Virtualisation {
 	public final Collection<IUnit> getPersistentConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/lib/virtualbox/VBoxXPCOMIPCD$");
-		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/lib/virtualbox/VBoxSVC --auto-shutdown$");
-		getNetworkModel().getServerModel(getLabel()).addProcessString("\\[iprt-VBoxWQueue\\]$");
-		getNetworkModel().getServerModel(getLabel()).addProcessString("\\[iprt-VBoxTscThr\\]$");
-		getNetworkModel().getServerModel(getLabel()).addProcessString("\\[kvm-irqfd-clean\\]$");
+		getServerModel().addProcessString("/usr/lib/virtualbox/VBoxXPCOMIPCD$");
+		getServerModel().addProcessString("/usr/lib/virtualbox/VBoxSVC --auto-shutdown$");
+		getServerModel().addProcessString("\\[iprt-VBoxWQueue\\]$");
+		getServerModel().addProcessString("\\[iprt-VBoxTscThr\\]$");
+		getServerModel().addProcessString("\\[kvm-irqfd-clean\\]$");
 
 		return units;
 	}
