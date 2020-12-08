@@ -196,13 +196,18 @@ public class Webproxy extends AStructuredProfile {
 
 				nginxConf.appendLine("\tserver_name " + backendLabel + "." + domain + ";");
 
-				if (cnames != null) {
-					for (final String cname : cnames) {
-						nginxConf.appendText("\tserver_name ");
-						nginxConf.appendText((cname.equals("") || (cname.equals("."))) ? "" : cname + ".");
-						nginxConf.appendLine(domain.toNormalizedString() + ";");
-					}
-				}
+				backendObj.getCNAMEs()
+						  .ifPresent((cnames) -> {
+							  cnames.forEach((cname) -> {
+									nginxConf.appendText("\tserver_name ");
+									nginxConf.appendText(
+											(cname.equals("") || (cname.equals(".")))
+											? ""
+											: cname + "."
+									);
+									nginxConf.appendLine(domain.toNormalizedString() + ";");
+						   });
+				});
 
 				nginxConf.appendCarriageReturn();
 
