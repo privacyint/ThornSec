@@ -18,8 +18,6 @@ import javax.json.JsonString;
 import javax.json.JsonValue;
 
 import core.data.machine.ServerData;
-import core.data.machine.AMachineData.Encapsulation;
-import core.data.machine.AMachineData.MachineType;
 import core.exception.data.InvalidPortException;
 import core.exception.data.InvalidPropertyArrayException;
 import core.exception.data.InvalidPropertyException;
@@ -27,12 +25,10 @@ import core.exception.data.MissingPropertiesException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidMachineModelException;
-import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
 import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
-import core.unit.fs.CustomFileUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
@@ -169,15 +165,8 @@ public class Webproxy extends AStructuredProfile {
 			for (String backendLabel : getBackends()) {
 				final AMachineModel backendObj = getNetworkModel().getMachineModel(backendLabel);
 
-				final Collection<String> cnames = getNetworkModel().getData().getCNAMEs(backendLabel);
 				final HostName domain = backendObj.getDomain();
 				final String logDir = "/var/log/nginx/" + backendLabel + "." + domain + "/";
-
-				units.add(new DirUnit(backendLabel + "_log_dir", "proceed", logDir,
-						"Could not create the directory for " + backendLabel + "'s logs. Nginx will refuse to start."));
-				units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addBindPoint(
-						backendLabel + "_tls_certs", "proceed", "/media/metaldata/tls/" + backendLabel,
-						"/media/data/tls/" + backendLabel, "root", "root", "600", "/media/metaldata", false));
 
 				// Generated from
 				// https://mozilla.github.io/server-side-tls/ssl-config-generator/
@@ -224,11 +213,6 @@ public class Webproxy extends AStructuredProfile {
 				nginxConf.appendLine("\tssl_trusted_certificate /media/data/tls/" + backendLabel + "/stapling.pem;");
 				nginxConf.appendCarriageReturn();
 				nginxConf.appendLine("\tlocation / {");
-				// for (final JsonValue source :
-				// getNetworkModel().getData().getData().getJsonArray(backend, "allow")) {
-				// nginxConf.appendLine(" allow " + source + ";");
-				// nginxConf.appendLine(" deny all;");
-				// }
 
 				nginxConf.appendLine("\t\tproxy_pass              http://" + backendLabel + "/;");
 				nginxConf.appendLine("\t\tproxy_request_buffering off;");
@@ -245,10 +229,6 @@ public class Webproxy extends AStructuredProfile {
 				nginxConf.appendLine("}");
 
 				this.webserver.addLiveConfig(nginxConf);
-
-				units.add(new CustomFileUnit("nginx_custom_block_" + backendLabel,
-						"nginx_custom_blocks_data_bindpoint_created",
-						"/media/data/nginx_custom_blocks/" + backendLabel + ".conf"));
 			}
 		} else {
 			this.webserver.addLiveConfig(this.liveConfig);
