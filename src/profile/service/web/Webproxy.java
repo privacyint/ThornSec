@@ -17,7 +17,7 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
-import core.data.machine.AMachineData;
+import core.data.machine.ServerData;
 import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
 import core.exception.data.InvalidPortException;
@@ -54,7 +54,7 @@ public class Webproxy extends AStructuredProfile {
 		this.webserver = new Nginx(me);
 		this.liveConfig = null;
 
-		final AMachineData data = getNetworkModel().getData().getMachine(MachineType.SERVER, getLabel());
+		final ServerData data = getServerModel().getData();
 
 		if (data.getData().containsKey("webproxy")) {
 			final JsonObject proxyData = data.getData().getJsonObject("webproxy");
