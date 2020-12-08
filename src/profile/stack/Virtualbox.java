@@ -26,7 +26,7 @@ import core.unit.fs.FileOwnUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 
-public class Virtualbox extends AStructuredProfile {
+public class Virtualbox extends Virtualisation {
 
 	public Virtualbox(String label, NetworkModel networkModel) {
 		super(label, networkModel);
