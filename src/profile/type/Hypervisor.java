@@ -24,7 +24,7 @@ import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
 import core.model.machine.HypervisorModel;
 import core.model.machine.ServiceModel;
-import core.model.machine.configuration.DiskModel;
+import core.model.machine.configuration.disks.ADiskModel;
 import core.model.machine.configuration.networking.NetworkInterfaceModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
@@ -158,7 +158,7 @@ public class Hypervisor extends AStructuredProfile {
 	private Collection<IUnit> getDiskLoopbackUnits(String service) throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		for (DiskModel disk : ((ServiceModel)getNetworkModel().getMachineModel(service)).getDisks().values().stream().filter(disk -> disk.getMedium() == Medium.DISK).toArray(DiskModel[]::new)) {
+		for (ADiskModel disk : ((ServiceModel)getNetworkModel().getMachineModel(service)).getDisks().values().stream().filter(disk -> disk.getMedium() == Medium.DISK).toArray(ADiskModel[]::new)) {
 			// For now, do all this as root. We probably want to move to another user, idk
 
 			units.add(new SimpleUnit(service + "_" + disk.getLabel() + "_disk_loopback_mounted", service + "_" + disk.getLabel() + "_disk_formatted",

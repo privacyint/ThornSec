@@ -14,7 +14,7 @@ import javax.json.JsonObject;
 import core.StringUtils;
 import core.data.AData;
 import core.exception.data.InvalidPropertyException;
-import core.exception.data.machine.InvalidDiskSizeException;
+import core.exception.data.machine.configuration.disks.InvalidDiskSizeException;
 
 /**
  * Represents some form of Disk attached to a Service
@@ -68,7 +68,7 @@ public class DiskData extends AData {
 	private File diffParent;
 	private String comment;
 
-	public DiskData(String label) throws InvalidDiskSizeException {
+	public DiskData(String label) {
 		super(label);
 
 		this.medium = null;

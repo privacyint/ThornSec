@@ -7,23 +7,15 @@
  */
 package profile.stack;
 
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
-import javax.swing.JOptionPane;
-import core.StringUtils;
-import core.exception.data.NoValidUsersException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.configuration.disks.ADiskModel;
 import core.model.network.NetworkModel;
-import core.data.machine.UserDeviceData;
 import core.data.machine.configuration.DiskData.Medium;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
@@ -31,22 +23,18 @@ import core.unit.fs.DirOwnUnit;
 import core.unit.fs.DirPermsUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileOwnUnit;
-import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 
-public class Virtualisation extends AStructuredProfile {
+public class Virtualbox extends AStructuredProfile {
 
-	public Virtualisation(String label, NetworkModel networkModel) {
+	public Virtualbox(String label, NetworkModel networkModel) {
 		super(label, networkModel);
 	}
 
 	@Override
 	public Collection<IUnit> getInstalled() {
 		final Collection<IUnit> units = new ArrayList<>();
-
-		units.add(new InstalledUnit("build_essential", "proceed", "build-essential"));
-		units.add(new InstalledUnit("linux_headers", "build_essential_installed", "linux-headers-\"$(uname -r)\""));
 
 		units.add(new InstalledUnit("metal_virtualbox", "a2f683c52980aecf_pgp", "virtualbox-6.1"));
 		units.add(new InstalledUnit("metal_genisoimage", "proceed", "genisoimage"));
@@ -80,149 +68,7 @@ public class Virtualisation extends AStructuredProfile {
 		return units;
 	}
 
-	public Collection<IUnit> buildIso(String service, String preseed) throws InvalidServerException {
-
-		final Collection<IUnit> units = new ArrayList<>();
-
-		final String isoDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/isos/" + service;
-
-		String filename = null;
-		String cleanedFilename = null;
-
-		try {
-			filename = Paths.get(new URI(getNetworkModel().getData().getDebianIsoUrl(service)).getPath()).getFileName().toString();
-			cleanedFilename = StringUtils.stringToAlphaNumeric(filename, "_");
-		} catch (final Exception e) {
-			JOptionPane.showMessageDialog(null, "You shouldn't have been able to arrive here. Well done!");
-			System.exit(1);
-		}
-
-		units.add(new DirUnit("iso_dir_" + service, "proceed", isoDir));
-		FileUnit preseedUnit = new FileUnit("preseed_" + service, cleanedFilename + "_downloaded", isoDir + "/preseed.cfg");
-		preseedUnit.appendLine(preseed);
-		units.add(preseedUnit);
-		units.add(new FileOwnUnit("preseed_" + service, "preseed_" + service, isoDir + "/preseed.cfg", "root"));
-		units.add(new FilePermsUnit("preseed_" + service, "preseed_" + service + "_chowned", isoDir + "/preseed.cfg",
-				"700"));
-
-		String buildIso = "\n";
-		buildIso += "\tsudo bash -c '\n";
-		// Create a working copy of the iso for preseeding
-		buildIso += "\t\tcd " + isoDir + ";\n";
-		buildIso += "\t\tmkdir loopdir;\n";
-		buildIso += "\t\tmount -o loop " + getNetworkModel().getData().getHypervisorThornsecBase(getLabel()) + "/"	+ filename + " loopdir;\n";
-		buildIso += "\t\tmkdir cd;\n";
-		buildIso += "\t\trsync -a -H --exclude=TRANS.TBL loopdir/ cd;\n";
-		buildIso += "\t\tumount loopdir;\n";
-		buildIso += "\t\tcd cd;\n";
-		// Add our preseed directly to the initrd as per https://wiki.debian.org/DebianInstaller/Preseed/EditIso
-		buildIso += "\t\tgunzip install.*/initrd.gz;\n";
-		buildIso += "\t\techo ../preseed.cfg | cpio -H newc -o -A -F install.*/initrd;\n";
-		buildIso += "\t\tgzip install.*/initrd;\n";
-		// Set the menu timeout to 1 second, otherwise it waits for user input
-		buildIso += "\t\tsed -i \"s/timeout 0/timeout 1/g\" isolinux/isolinux.cfg;\n";
-		// Switch off default menu
-		buildIso += "\t\tsed -i \"s/^default/#default/g\" isolinux/isolinux.cfg;\n";
-		// Switch off vga and add console to *all* boot lines
-		buildIso += "\t\tsed -i \"s_vga=788_vga=none console=ttyS0,115200n8_g\" isolinux/*.cfg;\n";
-		// Rebuild md5sums to reflect changes
-		buildIso += "\t\tmd5sum `find -follow -type f` > md5sum.txt;\n";
-		buildIso += "\t' > /dev/null 2>&1;\n";
-		// Create our new preseeded image
-		buildIso += "\tsudo bash -c '\n";
-		buildIso += "\t\tcd " + isoDir + ";\n";
-		buildIso += "\t\tgenisoimage -o " + service+ ".iso -r -J -no-emul-boot -boot-load-size 4 -boot-info-table -b isolinux/isolinux.bin -c isolinux/boot.cat ./cd;\n";
-		buildIso += "\t\trm -R cd loopdir;\n";
-		buildIso += "\t'";
-
-		units.add(new SimpleUnit("build_iso_" + service, cleanedFilename + "_downloaded",
-				buildIso, "test -f " + isoDir + "/" + service + ".iso && echo 'pass' || echo 'fail'", "pass", "pass",
-				"Couldn't create the install ISO for " + service + ".  This service won't be able to install."));
-
-		return units;
-	}
-
-	public String preseed(String service, Boolean expirePasswords) throws InvalidServerModelException, NoValidUsersException, MalformedURLException, URISyntaxException {
-
-		String user            = getNetworkModel().getData().getUser();
-		String sshDir          = "/home/" + user + "/.ssh";
-		String pubKey          = getNetworkModel().getData().getSSHKey(user);
-		String hostname        = StringUtils.stringToAlphaNumeric(service, "-");
-		String domain          = getNetworkModel().getServerModel(service).getDomain().getHost();
-		String fullName        = ((UserDeviceData) getNetworkModel().getData().getUserDevices().get(user)).getFullName();
-		String debianMirror    = getNetworkModel().getData().getDebianMirror(service).getHost();
-		String debianDirectory = getNetworkModel().getData().getDebianDirectory(service);
-
-		String preseed = "";
-		//Set up new box before rebooting. Sometimes you need to echo out in chroot;
-		//in-target just doesn't work reliably for many things (most likely due to the shell it uses) :(
-		preseed += "d-i preseed/late_command string";
-		//Echo out public keys, make sure it's all secured properly
-		preseed += "\tin-target mkdir " + sshDir + ";";
-		preseed += "\tin-target touch " + sshDir + "/authorized_keys;";
-		preseed += "\techo \\\"echo '" + pubKey + "' >> " + sshDir + "/authorized_keys; \\\" | chroot /target /bin/bash;";
-		
-		preseed += "\tin-target chmod 700 " + sshDir + ";";
-		preseed += "\tin-target chmod 400 " + sshDir + "/authorized_keys;";
-		preseed += "\tin-target chown -R " + user + ":" + user + " " + sshDir + ";";
-		
-		if (expirePasswords) {
-			//Force the user to change their passphrase on first login if they haven't set a passwd
-			preseed += "\tin-target passwd -e " + user + ";";
-		}
-		
-		//Lock the root account
-		preseed += "\tin-target passwd -l root;";
-		
-		//Change the SSHD to be on the expected port
-		preseed += "\tin-target sed -i 's/#Port 22/Port " + getNetworkModel().getData().getSSHPort(service) + "/g' /etc/ssh/sshd_config;";
-		
-		//Debian installer options.
-		preseed += "\n";
-		preseed += "d-i debian-installer/locale string en_GB.UTF-8\n";
-		preseed += "d-i keyboard-configuration/xkb-keymap select gb\n";
-		preseed += "d-i netcfg/target_network_config select ifupdown\n";
-		preseed += "d-i netcfg/choose_interface select auto\n";
-		preseed += "d-i netcfg/get_hostname string " + hostname + "\n";
-		preseed += "d-i netcfg/get_domain string " + domain + "\n";
-		preseed += "d-i netcfg/hostname string " + hostname + "\n";
-		preseed += "d-i mirror/country string manual\n";
-		preseed += "d-i mirror/http/hostname string " + debianMirror + "\n";
-		preseed += "d-i mirror/http/directory string " + debianDirectory + "\n";
-		preseed += "d-i mirror/http/proxy string \n";
-		preseed += "d-i passwd/root-password-crypted password ${" + service.toUpperCase() + "_PASSWORD}\n";
-		preseed += "d-i passwd/user-fullname string " + fullName + "\n";
-		preseed += "d-i passwd/username string " + user + "\n";
-		preseed += "d-i passwd/user-password-crypted password ${" + service.toUpperCase() + "_PASSWORD}\n";
-		preseed += "d-i passwd/user-default-groups string sudo\n";
-		preseed += "d-i clock-setup/utc boolean true\n";
-		preseed += "d-i time/zone string Europe/London\n";
-		preseed += "d-i clock-setup/ntp boolean true\n";
-		preseed += "d-i partman-auto/disk string /dev/sda\n";
-		preseed += "d-i grub-installer/bootdev string /dev/sda\n";
-		preseed += "d-i partman-auto/method string regular\n";
-		preseed += "d-i partman-auto/choose_recipe select atomic\n";
-		preseed += "d-i partman-partitioning/confirm_write_new_label boolean true\n";
-		preseed += "d-i partman/choose_partition select finish\n";
-		preseed += "d-i partman/confirm boolean true\n";
-		preseed += "d-i partman/confirm_nooverwrite boolean true\n";
-		preseed += "iptasksel tasksel/first multiselect none\n";
-		preseed += "d-i apt-setup/cdrom/set-first boolean false\n";
-		preseed += "d-i apt-setup/cdrom/set-next boolean false\n";
-		preseed += "d-i apt-setup/cdrom/set-failed boolean false\n";
-		preseed += "d-i pkgsel/include string sudo openssh-server dkms gcc bzip2\n";
-		preseed += "openssh-server openssh-server/permit-root-login boolean false\n";
-		preseed += "discover discover/install_hw_packages multiselect virtualbox-ose-guest-x11\n";
-		preseed += "popularity-contest popularity-contest/participate boolean false\n";
-		preseed += "d-i grub-installer/only_debian boolean true\n";
-		preseed += "d-i grub-installer/with_other_os boolean false\n";
-		preseed += "d-i grub-installer/bootdev string default\n";
-		preseed += "d-i finish-install/reboot_in_progress note";
-
-		return preseed;
-	}
-
-	private Collection<IUnit> buildDisks(String user, String group, String service, Map<String, ADiskModel> disks) {
+	protected Collection<IUnit> buildDisks(String user, String group, String service, Map<String, ADiskModel> disks) {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		// Disk controller setup
@@ -329,7 +175,7 @@ public class Virtualisation extends AStructuredProfile {
 		return units;
 	}
 	
-	private Collection<IUnit> buildBackups(String service, String logDir, String user, String group) {
+	protected Collection<IUnit> buildBackups(String service, String logDir, String user, String group) {
 		Collection<IUnit> units = new ArrayList<>();
 		
 		units.add(new DirUnit("log_dir_" + service, "proceed", logDir));
@@ -348,7 +194,7 @@ public class Virtualisation extends AStructuredProfile {
 		return units;
 	}
 	
-	private Collection<IUnit> buildLogs(String service, String backupDir, String user, String group) {
+	protected Collection<IUnit> buildLogs(String service, String backupDir, String user, String group) {
 		Collection<IUnit> units = new ArrayList<>();
 		
 		units.add(new DirUnit("backup_dir_" + service, "proceed", backupDir));
@@ -375,8 +221,6 @@ public class Virtualisation extends AStructuredProfile {
 		// ".iso";
 		final String user = "vboxuser_" + service;
 		final String group = "vboxusers";
-		final String osType = getNetworkModel().getData().getDebianIsoUrl(service).contains("amd64") ? "Debian_64"
-				: "Debian";
 
 		final Collection<IUnit> units = new ArrayList<>();
 
@@ -388,7 +232,7 @@ public class Virtualisation extends AStructuredProfile {
 
 		// Create VM itself
 		units.add(new SimpleUnit(service + "_exists", "metal_virtualbox_" + service + "_user",
-				"sudo -u " + user + " VBoxManage createvm --name " + service + " --ostype \"" + osType + "\""
+				"sudo -u " + user + " VBoxManage createvm --name " + service + " --ostype \"" + group + "\""
 						+ " --register;" + "sudo -u " + user + " VBoxManage modifyvm " + service + " --description "
 						+ "\"" + service + "." + getNetworkModel().getData().getDomain() + "\n"
 						+ "ThornSec guest machine\n" + "Built with profile(s): "
@@ -425,15 +269,6 @@ public class Virtualisation extends AStructuredProfile {
 		units.add(modifyVm(service, user, "nestedpaging", "on"));
 		units.add(modifyVm(service, user, "largepages", "on"));
 
-		// Boot setup - DVD is second to stop machines being wiped every time they're
-		// brought up
-		units.add(modifyVm(service, user, "boot1", "disk",
-				"Couldn't set the boot order for " + service + ".  This may mean the service will not be installed.",
-				service + "_hdds_sas_controller"));
-		units.add(modifyVm(service, user, "boot2", "dvd",
-				"Couldn't set the boot order for " + service + ".  This may mean the service will not be installed.",
-				service + "_dvds_ide_controller"));
-
 		// Audio setup (switch it off)
 		units.add(modifyVm(service, user, "audio", "none"));
 
@@ -441,8 +276,6 @@ public class Virtualisation extends AStructuredProfile {
 		units.add(modifyVm(service, user, "hpet", "on"));
 
 		// Shared folders setup
-
-
 		units.add(new SimpleUnit(service + "_backup_sf_attached", service + "_exists",
 				"sudo -u " + user + " VBoxManage sharedfolder add " + service + " --name backup --hostpath "
 						+ backupDir,
@@ -484,13 +317,6 @@ public class Virtualisation extends AStructuredProfile {
 				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^uartmode2=",
 				"uartmode2=\\\"server," + ttySocketDir + "/vboxttyS1\\\"", "pass"));
 
-		// Ready to go!
-		// units.add(new SimpleUnit(service + "_running", service + "_exists",
-		// "sudo -u " + user + " bash -c 'VBoxManage startvm " + service + " --type
-		// headless'",
-		// "sudo -u " + user + " bash -c 'VBoxManage list runningvms | grep " + service
-		// + "'", "", "fail"));
-
 		getNetworkModel().getServerModel(getLabel())
 				.addProcessString("/usr/lib/virtualbox/VBoxHeadless --comment " + service + " --startvm `if id '" + user
 						+ "' >/dev/null 2>&1; then sudo -u " + user + " bash -c 'VBoxManage list runningvms | grep "
@@ -502,7 +328,7 @@ public class Virtualisation extends AStructuredProfile {
 		return units;
 	}
 
-	private SimpleUnit modifyVm(String service, String user, String setting, String value, String errorMsg,
+	protected SimpleUnit modifyVm(String service, String user, String setting, String value, String errorMsg,
 			String prerequisite) {
 
 		String check = "";
@@ -520,19 +346,19 @@ public class Virtualisation extends AStructuredProfile {
 				check, "pass", errorMsg);
 	}
 
-	private SimpleUnit modifyVm(String service, String user, String setting, String value, String errorMsg) {
+	protected SimpleUnit modifyVm(String service, String user, String setting, String value, String errorMsg) {
 		return modifyVm(service, user, setting, value, errorMsg, service + "_exists");
 	}
 
-	private SimpleUnit modifyVm(String service, String user, String setting, String value) {
+	protected SimpleUnit modifyVm(String service, String user, String setting, String value) {
 		return modifyVm(service, user, setting, value, "Couldn't change " + setting + " to " + value);
 	}
 
-	private SimpleUnit modifyVm(String service, String user, String setting, Integer value) {
+	protected SimpleUnit modifyVm(String service, String user, String setting, Integer value) {
 		return modifyVm(service, user, setting, value + "", "Couldn't change " + setting + " to " + value);
 	}
 
-	private SimpleUnit guestPropertySet(String service, String user, String property, String value, String errorMsg,
+	protected SimpleUnit guestPropertySet(String service, String user, String property, String value, String errorMsg,
 			String prerequisite) {
 		return new SimpleUnit(service + "_" + property.replaceAll("-", "_") + "_" + value, prerequisite,
 				"sudo -u " + user + " VBoxManage guestproperty set " + service
@@ -542,7 +368,7 @@ public class Virtualisation extends AStructuredProfile {
 				"", "fail", errorMsg);
 	}
 
-	private SimpleUnit guestPropertySet(String service, String user, String property, String value, String errorMsg) {
+	protected SimpleUnit guestPropertySet(String service, String user, String property, String value, String errorMsg) {
 		return guestPropertySet(service, user, property, value, errorMsg, service + "_exists");
 	}
 }
