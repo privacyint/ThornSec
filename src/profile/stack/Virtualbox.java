@@ -33,6 +33,7 @@ import core.unit.fs.DirUnit;
 import core.unit.fs.FileOwnUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 
 public class Virtualbox extends Virtualisation {
 
@@ -89,12 +90,14 @@ public class Virtualbox extends Virtualisation {
 
 	@Override
 	public Collection<IUnit> getPersistentFirewall() throws InvalidServerModelException {
-		final Collection<IUnit> units = new ArrayList<>();
+		try {
+			getServerModel().addEgress(new HostName("download.virtualbox.org:80"));
+		} catch (InvalidPortException e) {
+			// Shouldn't be able to get here!
+			e.printStackTrace();
+		}
 
-		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("virtualbox", "deb http://download.virtualbox.org/virtualbox/debian buster contrib", "keyserver.ubuntu.com", "a2f683c52980aecf");
-		getNetworkModel().getServerModel(getLabel()).addEgress("download.virtualbox.org:80");
-
-		return units;
+		return new ArrayList<>();
 	}
 
 	@Override
