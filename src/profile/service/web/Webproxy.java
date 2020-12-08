@@ -260,7 +260,7 @@ public class Webproxy extends AStructuredProfile {
 		getMachineModel().addListen(443);
 
 		for (final String backend : getBackends()) {
-			getMachineModel().addDNAT(backend, 80, 443);
+			getMachineModel().addDNAT(getNetworkModel().getMachineModel(backend), 80, 443);
 		}
 
 		return units;
