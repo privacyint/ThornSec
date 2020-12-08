@@ -14,6 +14,8 @@ import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
+import core.model.machine.HypervisorModel;
+import core.model.machine.ServiceModel;
 import core.model.machine.configuration.disks.ADiskModel;
 import core.model.network.NetworkModel;
 import core.data.machine.configuration.DiskData.Medium;
@@ -28,8 +30,11 @@ import core.unit.pkg.InstalledUnit;
 
 public class Virtualbox extends Virtualisation {
 
-	public Virtualbox(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	final static String USER_PREFIX = "vboxuser_";
+	final static String USER_GROUP = "vboxusers";
+	
+	public Virtualbox(HypervisorModel machine) {
+		super(machine);
 	}
 
 	@Override
@@ -46,7 +51,7 @@ public class Virtualbox extends Virtualisation {
 	}
 
 	@Override
-	public final Collection<IUnit> getPersistentConfig() throws InvalidServerModelException {
+	public final Collection<IUnit> getPersistentConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		getNetworkModel().getServerModel(getLabel()).addProcessString("/usr/lib/virtualbox/VBoxXPCOMIPCD$");
@@ -68,7 +73,8 @@ public class Virtualbox extends Virtualisation {
 		return units;
 	}
 
-	protected Collection<IUnit> buildDisks(String user, String group, String service, Map<String, ADiskModel> disks) {
+	@Override
+	protected Collection<IUnit> buildDisks(ServiceModel service) {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		// Disk controller setup
@@ -175,7 +181,8 @@ public class Virtualbox extends Virtualisation {
 		return units;
 	}
 	
-	protected Collection<IUnit> buildBackups(String service, String logDir, String user, String group) {
+	@Override
+	protected Collection<IUnit> buildBackups(ServiceModel service) {
 		Collection<IUnit> units = new ArrayList<>();
 		
 		units.add(new DirUnit("log_dir_" + service, "proceed", logDir));
@@ -194,7 +201,8 @@ public class Virtualbox extends Virtualisation {
 		return units;
 	}
 	
-	protected Collection<IUnit> buildLogs(String service, String backupDir, String user, String group) {
+	@Override
+	protected Collection<IUnit> buildLogs(ServiceModel service) {
 		Collection<IUnit> units = new ArrayList<>();
 		
 		units.add(new DirUnit("backup_dir_" + service, "proceed", backupDir));
@@ -209,7 +217,8 @@ public class Virtualbox extends Virtualisation {
 		return units;
 	}
 
-	public Collection<IUnit> buildServiceVm(String service, String bridge)
+	@Override
+	public Collection<IUnit> buildServiceVm(ServiceModel service, String bridge)
 			throws InvalidServerException, InvalidMachineModelException {
 		final String baseDir = getNetworkModel().getData().getHypervisorThornsecBase(getLabel());
 
