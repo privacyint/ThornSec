@@ -69,9 +69,7 @@ public class WireGuard extends AStructuredProfile {
 			nic.addWireGuardPeer(user);
 		}
 
-		nic.addAddress(getNetworkModel().getData()
-										.getSubnet(MachineType.VPN)
-										.get());
+		nic.addAddress(getNetworkModel().getSubnet(MachineType.VPN));
 
 		getMachineModel().addNetworkInterface(nic);
 
