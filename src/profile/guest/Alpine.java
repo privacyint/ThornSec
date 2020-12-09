@@ -6,7 +6,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import com.amihaiemil.eoyaml.YamlNode;
 import core.exception.AThornSecException;
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
@@ -34,7 +33,7 @@ public class Alpine extends AOS {
 		return super.getISODownloadUnits(url, checksum);
 	}
 
-	private YamlNode getLatestIsoDetails() {
+	private String getLatestIsoDetails() {
 		try {
 			InputStream alpineLatest = new URL(RELEASES_FILE).openStream();
 		} catch (IOException e) {
