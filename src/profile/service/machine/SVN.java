@@ -66,9 +66,6 @@ public class SVN extends AStructuredProfile {
 
 		units.addAll(this.php.getPersistentConfig());
 
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("www", "proceed",
-				"www-data", "www-data", "0750"));
-
 		units.add(new SimpleUnit("apache_mod_headers_enabled", "apache_installed", "sudo a2enmod headers;",
 				"sudo apache2ctl -M | grep headers", "", "fail"));
 
@@ -92,9 +89,6 @@ public class SVN extends AStructuredProfile {
 		// Turn off Apache version in headers
 		units.add(new FileAppendUnit("hide_apache_version_headers", "apache_installed", "ServerTokens Prod",
 				"/etc/apache2/apache2.conf", "Couldn't hide the Apache version in its headers.  No real problem."));
-
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("svn", "proceed",
-				"www-data", "www-data", "0750"));
 
 		units.add(new DirUnit("svn_repo_dir", "svn_data_mounted", "/media/data/svn/repos"));
 		units.add(new DirUnit("svn_credentials_dir", "svn_data_mounted", "/media/data/svn/credentials"));

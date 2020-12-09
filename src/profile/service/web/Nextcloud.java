@@ -51,9 +51,6 @@ public class Nextcloud extends AStructuredProfile {
 		this.lempStack.getDB().setUserPassword("${NEXTCLOUD_PASSWORD}");
 		this.lempStack.getDB().setDb("nextcloud");
 
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("nextcloud",
-				"proceed", "nginx", "nginx", "0770"));
-
 		units.add(new InstalledUnit("unzip", "proceed", "unzip"));
 		units.add(new InstalledUnit("ca_certificates", "proceed", "ca-certificates"));
 		units.add(new InstalledUnit("php_gd", "php_fpm_installed", "php-gd"));

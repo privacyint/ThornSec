@@ -201,8 +201,6 @@ public class SSH extends AStructuredProfile {
 
 			// Create the .ssh dir for the user, with the correct permissions
 			units.add(new DirUnit("ssh_dir_" + admin, "sshd_config", sshDir));
-			units.add(new DirOwnUnit("ssh_dir_" + admin, "ssh_dir_" + admin + "_created", sshDir, admin));
-			units.add(new DirPermsUnit("ssh_dir_" + admin, "ssh_dir_" + admin + "_chowned", sshDir, "755"));
 
 			// Create the authorized_keys file, with root permissions (we don't want users
 			// to be able to add arbitrary keys)
@@ -213,8 +211,6 @@ public class SSH extends AStructuredProfile {
 
 			authorised.appendLine(getNetworkModel().getData().getSSHKey(admin));
 
-			units.add(new FileOwnUnit("ssh_key_" + admin, "ssh_key_" + admin, keys, "root"));
-			units.add(new FilePermsUnit("ssh_key_" + admin, "ssh_key_" + admin + "_chowned", keys, "644"));
 		}
 
 		units.add(new RunningUnit("sshd", "sshd", "sshd"));

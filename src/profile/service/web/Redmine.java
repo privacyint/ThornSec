@@ -56,15 +56,8 @@ public class Redmine extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentConfig() throws InvalidServerModelException, InvalidServerException {
+	public Collection<IUnit> getPersistentConfig() throws InvalidMachineModelException, InvalidServerException {
 		final Collection<IUnit> units = new ArrayList<>();
-
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("redmine_logs",
-				"proceed", "www-data", "www-data", "0640"));
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("redmine_files",
-				"proceed", "www-data", "www-data", "0750"));
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("redmine_data",
-				"proceed", "www-data", "www-data", "0750"));
 
 		this.db.setUsername("redmine");
 		this.db.setUserPrivileges("ALL");
@@ -94,10 +87,6 @@ public class Redmine extends AStructuredProfile {
 						+ "sudo rm -R /usr/share/redmine ; sudo ln -s /media/data/redmine_data /usr/share/redmine;",
 				"[ -L /usr/share/redmine ] && echo pass || echo fail", "pass", "pass"));
 
-		units.add(
-				new FileOwnUnit("database_config", "redmine_installed", "/etc/redmine/default/database.yml", "nginx"));
-		units.add(new FileOwnUnit("secret_key", "redmine_installed", "/etc/redmine/default/secret_key.txt", "nginx"));
-
 		units.add(new SimpleUnit("redmine_mysql_password", "proceed",
 				"REDMINE_PASSWORD=`sudo grep \"password\" /usr/share/redmine/instances/default/config/database.yml 2>/dev/null | grep -v \"[*#]\" | awk '{ print $2 }'`; [[ -z $REDMINE_PASSWORD ]] && REDMINE_PASSWORD=`openssl rand -hex 32`",
 				"echo $REDMINE_PASSWORD", "", "fail",
@@ -121,12 +110,8 @@ public class Redmine extends AStructuredProfile {
 		dbConfig.appendLine("  encoding: utf8");
 
 		units.add(new DirUnit("thin_pid_dir", "thin_installed", "/var/run/thin"));
-		units.add(new DirOwnUnit("thin_pid_dir", "thin_pid_dir_created", "/var/run/thin", "www-data"));
-		units.add(new DirPermsUnit("thin_pid_dir_perms", "thin_pid_dir_chowned", "/var/run/thin", "744"));
 
 		units.add(new DirUnit("thin_sockets_dir", "thin_installed", "/var/run/thin/sockets"));
-		units.add(new DirOwnUnit("thin_sockets_dir_permissions", "thin_sockets_dir_created", "/var/run/thin/sockets",
-				"www-data"));
 
 		final FileUnit thinConfig = new FileUnit("thin_config", "thin_installed", "/etc/thin2.3/redmine.yml");
 		units.add(thinConfig);
@@ -195,10 +180,6 @@ public class Redmine extends AStructuredProfile {
 		nginxConf.appendLine("}");
 
 		this.webserver.addLiveConfig(nginxConf);
-
-		units.add(new DirOwnUnit("redmine_cache", "redmine_installed", "/var/cache/redmine/default/tmp", "www-data"));
-		units.add(new DirOwnUnit("redmine_cache_tmp", "redmine_installed", "/var/cache/redmine/default/tmp/cache",
-				"www-data"));
 
 		units.addAll(this.webserver.getPersistentConfig());
 		units.addAll(this.db.getPersistentConfig());
