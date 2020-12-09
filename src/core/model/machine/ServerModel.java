@@ -24,6 +24,7 @@ import core.exception.runtime.InvalidProfileException;
 import core.exception.runtime.InvalidTypeException;
 import core.iface.IUnit;
 import core.model.network.NetworkModel;
+import core.model.network.UserModel;
 import core.profile.AProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.FileAppendUnit;
@@ -63,8 +64,8 @@ public class ServerModel extends AMachineModel {
 		this.os = null;
 		this.profiles = new LinkedHashMap<>();
 
-		this.runningProcesses = new Processes();
-		this.users = new UserAccounts();
+		this.runningProcesses = new Processes(this);
+		this.users = new UserAccounts(this);
 		this.firewall = new ShorewallFirewall(this);
 
 		this.iso = null;
@@ -115,7 +116,8 @@ public class ServerModel extends AMachineModel {
 	private void addAdmins(Collection<String> usernames) throws InvalidUserException {
 		for (String username : usernames) {
 			if (getNetworkModel().getUser(username).isPresent()) {
-				this.users.addAdmin(getNetworkModel().getUser(username).get());
+				//TODO
+				//this.users.addAdmin(getNetworkModel().getUser(username).get());
 			}
 			else {
 				throw new InvalidUserException(username);
@@ -296,5 +298,11 @@ public class ServerModel extends AMachineModel {
 
 	public String getPackageDirectory() {
 		return this.os.getPackageDirectory();
+	}
+
+	public Collection<UserModel> getAdmins() {
+		//TODO
+		return new ArrayList<>();
+		//return this.users;
 	}
 }
