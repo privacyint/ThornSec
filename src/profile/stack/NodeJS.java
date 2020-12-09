@@ -9,7 +9,7 @@ package profile.stack;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import core.exception.runtime.InvalidMachineModelException;
+import core.exception.data.InvalidPortException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
@@ -17,8 +17,8 @@ import core.unit.SimpleUnit;
 import core.unit.fs.FileChecksumUnit;
 import core.unit.fs.FileChecksumUnit.Checksum;
 import core.unit.fs.FileDownloadUnit;
-import core.unit.fs.FilePermsUnit;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 
 /**
  * This profile installs and configures NodeJS
@@ -43,9 +43,6 @@ public class NodeJS extends AStructuredProfile {
 		units.add(new FileChecksumUnit("nodejs", "nodejs_downloaded", Checksum.SHA512, "/root/nodejs.sh",
 				"98321bbfa4f4b4108fedc7153666e0a0e5423787f6b9b3285d1b2e71336e114e1ac861e46d2b0ca40790295b98d0bb479bd4e68321b6e03b43eab42b7d09dc35",
 				"nodejs's checksum doesn't match.  This could indicate a failed download, MITM attack, or a newer version than our code supports.  Etherpad's installation will fail."));
-
-		units.add(new FilePermsUnit("nodejs_is_executable", "nodejs_checksum", "/root/nodejs.sh", "755",
-				"nodejs couldn't be set to be executable.  Etherpad's installation will fail."));
 
 		units.add(new SimpleUnit("nodejs_setup_environment", "nodejs_is_executable_chmoded", "sudo -E /root/nodejs.sh",
 				"sudo test -f /etc/apt/sources.list.d/nodesource.list && echo 'pass' || echo 'fail'", "pass", "pass",
@@ -75,14 +72,14 @@ public class NodeJS extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		// Let's open this box up to most of the internet. Thanks, node!
-		getNetworkModel().getServerModel(getLabel()).addEgress("github.com");
-		getNetworkModel().getServerModel(getLabel()).addEgress("deb.nodesource.com");
-		getNetworkModel().getServerModel(getLabel()).addEgress("npmjs.org");
-		getNetworkModel().getServerModel(getLabel()).addEgress("registry.npmjs.org");
+		getServerModel().addEgress(new HostName("github.com"));
+		getServerModel().addEgress(new HostName("deb.nodesource.com"));
+		getServerModel().addEgress(new HostName("npmjs.org"));
+		getServerModel().addEgress(new HostName("registry.npmjs.org"));
 
 		return units;
 	}
