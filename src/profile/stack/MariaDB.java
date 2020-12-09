@@ -9,7 +9,6 @@ package profile.stack;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
@@ -67,43 +66,7 @@ public class MariaDB extends AStructuredProfile {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("openssl", "proceed", "openssl"));
-
-		units.add(new SimpleUnit("mysql_user_exists", "proceed", "sudo useradd -r -s /bin/false mysql",
-				"id mysql -u 2>&1 | grep id", "", "pass",
-				"The mysql user couldn't be added.  This will cause all sorts of errors."));
-
-		getNetworkModel().getServerModel(getLabel()).getUserModel().addUsername("mysql");
-
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addLogBindPoint("mysql", "proceed",
-				"mysql", "0750"));
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("mysql", "proceed",
-				"mysql", "mysql", "0750"));
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("mysql_backups",
-				"proceed", "root", "root", "0600"));
-
-		units.add(new SimpleUnit("mariadb_root_password", "openssl_installed",
-				"echo \"[client]\npassword=\\\"${MYSQL_PASSWORD}\\\"\" | sudo tee /root/.my.cnf > /dev/null;",
-				"sudo [ -f /root/.my.cnf ] || echo '' && (${MYSQL_PASSWORD}=\\$(grep 'password' /root/.my.cnf | awk -F\\\" '{ print $2 }')",
-				"", "fail"));
-
-		// Generate a root password, if not already installed
-		units.add(new SimpleUnit("mariadb_root_password", "openssl_installed", "MYSQL_PASSWORD=`openssl rand -hex 32`",
-				"echo $MYSQL_PASSWORD && dpkg -l | grep '^.i' | grep 'mariadb-server'", "", "fail",
-				"Couldn't set MariaDB's root password.  Best case scenario, it'll be installed with a blank root password - worst case, its installation will have failed.  Run \"sudo mysql-secure-installation\" to fix."));
-
-		// Use our generated password for root, but only set if not already installed
-		units.add(new SimpleUnit("mariadb_rootpass", "mariadb_root_password",
-				"sudo debconf-set-selections <<< 'mariadb-server-10.2 mysql-server/root_password password ${MYSQL_PASSWORD}'",
-				"sudo debconf-show mariadb-server-10.2 | grep 'mysql-server/root_password:' || dpkg -l | grep '^.i' | grep 'mariadb-server'",
-				"", "fail",
-				"Couldn't set MariaDB's root password.  Best case scenario, it'll be installed with a blank root password - worst case, its installation will have failed.  Run \"sudo mysql-secure-installation\" to fix."));
-		units.add(new SimpleUnit("mariadb_rootpass_again", "mariadb_rootpass",
-				"sudo debconf-set-selections <<< 'mariadb-server-10.2 mysql-server/root_password_again password ${MYSQL_PASSWORD}'",
-				"sudo debconf-show mariadb-server-10.2 | grep 'mysql-server/root_password_again:' || dpkg -l | grep '^.i' | grep 'mariadb-server'",
-				"", "fail",
-				"Couldn't set MariaDB's root password.  Best case scenario, it'll be installed with a blank root password - worst case, its installation will have failed.  Run \"sudo mysql-secure-installation\" to fix."));
-
-		units.add(new InstalledUnit("mariadb", "mariadb_rootpass_again", "mariadb-server"));
+		units.add(new InstalledUnit("mariadb", "proceed", "mariadb-server"));
 
 		return units;
 	}
@@ -111,14 +74,6 @@ public class MariaDB extends AStructuredProfile {
 	@Override
 	public Collection<IUnit> getPersistentConfig() {
 		final Collection<IUnit> units = new ArrayList<>();
-
-		units.add(new SimpleUnit("mariadb_data_dir_moved", "mariadb_installed",
-				// We only want to move over the files if they don't already exist
-				"sudo [ -d /media/data/mysql/mysql ] || sudo mv /var/lib/mysql/* /media/data/mysql/;"
-						// Either which way, remove the new ones
-						+ "sudo rm -R /var/lib/mysql;",
-				"sudo [ -d /var/lib/mysql ] && echo fail || echo pass", "pass", "pass",
-				"Couldn't move MariaDB's data directory.  This means that the database files will be stored in the VM, and won't be backed up."));
 
 		final FileUnit myCnf = new FileUnit("mysql_conf", "mariadb_installed", "/etc/mysql/my.cnf");
 		units.add(myCnf);
@@ -193,11 +148,6 @@ public class MariaDB extends AStructuredProfile {
 
 		units.add(new RunningUnit("mariadb", "mysql", "mysql"));
 
-		// units.add(new CrontabUnit("mysqldump", "mariadb_installed", true, "root",
-		// "mysqldump -uroot -h localhost --all-databases | gzip -9 >
-		// /media/data/mysql_backups/\\$(date -u).sql.gz > /dev/null", "*", "*", "*",
-		// "*/3", "30"));
-
 		return units;
 	}
 
@@ -252,53 +202,6 @@ public class MariaDB extends AStructuredProfile {
 						+ ". Don't expect anything to work, I'm afraid"));
 
 		return units;
-	}
-
-	public Collection<IUnit> queryDb(String db, String username, String password, String query) {
-		final Collection<IUnit> units = new ArrayList<>();
-
-		return units;
-	}
-
-	/*
-	 * private String stopMariaDb() { //Stop the service, and sleep until it stops
-	 * to prevent race conditions return
-	 * "sudo kill -SIGTERM $(sudo cat /var/run/mysqld/mysqld.pid);" +
-	 * "while sudo test -f /var/run/mysqld/mysqld.pid;" //Sleep until the pid file
-	 * has gone (i.e. MySQL service has been killed) + "do sleep 2;" + "done;"; }
-	 *
-	 * private String startMariaDbWithInit(String query) { return stopMariaDb() +
-	 * "echo \"" + query + "\" | sudo tee /etc/mysql/query.sql > /dev/null;" //Echo
-	 * our user creation query out +
-	 * "sudo -u mysql mysqld --init-file=/etc/mysql/query.sql --pid-file=/var/run/mysqld/mysqld.pid & disown;"
-	 * //Start MariaDB, importing the sql query // + "sleep 5;" //Wait until MariaDB
-	 * has started again + "while sudo test ! -f /var/run/mysqld/mysqld.pid;" +
-	 * "do sleep 2;" + "done;" + "sudo rm /etc/mysql/query.sql"; //Then delete the
-	 * query }
-	 *
-	 * private String startMariaDbUser() { //Forcibly restart the service and sleep
-	 * until it's actually restarted return
-	 * "sudo service mysql stop && sudo service mysql start;" +
-	 * "while sudo test ! -f /var/run/mysqld/mysqld.pid;" + "do sleep 2;" + "done;";
-	 * }
-	 */
-
-	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException {
-		final Collection<IUnit> units = new ArrayList<>();
-
-		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("mariadb",
-				"deb http://mirror.sax.uk.as61049.net/mariadb/repo/10.2/debian buster main", "keyserver.ubuntu.com",
-				"0xF1656F24C74CD1D8");
-
-		getNetworkModel().getServerModel(getLabel()).addEgress("mirror.sax.uk.as61049.net");
-
-		return units;
-	}
-
-	@Override
-	public Collection<IUnit> getLiveFirewall() {
-		return new HashSet<>(); // Empty (for now?)
 	}
 
 }
