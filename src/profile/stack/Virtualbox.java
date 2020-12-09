@@ -9,26 +9,19 @@ package profile.stack;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FilenameUtils;
 import core.exception.data.InvalidPortException;
-import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.HypervisorModel;
 import core.model.machine.ServiceModel;
-import core.model.machine.configuration.disks.ADiskModel;
 import core.model.machine.configuration.disks.DVDModel;
 import core.model.machine.configuration.disks.HardDiskModel;
-import core.model.network.NetworkModel;
-import core.data.machine.configuration.DiskData.Medium;
-import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.fs.DirUnit;
-import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import inet.ipaddr.HostName;
 
@@ -236,15 +229,29 @@ public class Virtualbox extends Virtualisation {
 	protected Collection<IUnit> buildBackups(ServiceModel service) {
 		Collection<IUnit> units = new ArrayList<>();
 
-		units.add(new SimpleUnit(service + "_log_sf_attached", service + "_exists",
-				"sudo -u " + user + " VBoxManage sharedfolder add " + service + " --name log --hostpath " + logDir + ";"
-						+ "sudo -u " + user + " VBoxManage setextradata " + service
-						+ " VBoxInternal1/SharedFoldersEnableSymlinksCreate/log 1",
-				"sudo -u " + user + " VBoxManage showvminfo " + service
-						+ " --machinereadable | grep SharedFolderPathMachineMapping1",
-				"SharedFolderPathMachineMapping1=\\\"" + logDir + "\\\"", "pass",
-				"Couldn't attach the logs folder to " + service + ".  This means logs will only exist in the VM."));
-		
+		String path = FilenameUtils.normalize(getServerModel().getVMBase().getPath() + "/backups", true);
+
+		units.add(new DirUnit(service.getLabel() + "_backup_dir",
+							  "proceed",
+							  path,
+							  "root",
+							  "root",
+							  700,
+							  "Couldn't create " + service.getLabel() + "'s backup directory"
+				)
+		);
+
+		units.add(new SimpleUnit(service.getLabel() + "_backup_sf_attached", service + "_exists",
+				"sudo -u " + getServiceUser(service)
+					+ " VBoxManage sharedfolder add " + service.getLabel()
+						+ " --name backups"
+						+ " --hostpath " + path,
+				"sudo -u " + getServiceUser(service)+ " VBoxManage showvminfo " + service
+						+ " --machinereadable | grep SharedFolderPathMachineMapping2",
+				"SharedFolderPathMachineMapping1=\\\"" + path + "\\\"", "pass",
+				"Couldn't attach the backups folder to " + service + "."
+					+ " This means backups will not be accessible from the VM."));
+
 		return units;
 	}
 	
@@ -252,29 +259,43 @@ public class Virtualbox extends Virtualisation {
 	protected Collection<IUnit> buildLogs(ServiceModel service) {
 		Collection<IUnit> units = new ArrayList<>();
 
+		String path = FilenameUtils.normalize(getServerModel().getVMBase().getPath() + "/logs", true);
+
 		units.add(new DirUnit(service.getLabel() + "_log_dir",
 							  "proceed",
-							  FilenameUtils.normalize(getServerModel().getVMBase().getPath() + "/logs", true),
-							  USER_PREFIX + service.getLabel(),
+							  path,
+							  getServiceUser(service),
 							  USER_GROUP,
 							  750,
 							  "Couldn't create " + service.getLabel() + "'s log directory"
 				 )
 		);
 
+		units.add(new SimpleUnit(service.getLabel() + "_log_sf_attached", service + "_exists",
+				"sudo -u " + getServiceUser(service)
+					+ " VBoxManage sharedfolder add " + service.getLabel()
+						+ " --name logs"
+						+ " --hostpath " + path + ";"
+				+ "sudo -u " + getServiceUser(service)
+					+ " VBoxManage setextradata " + service
+						+ " VBoxInternal1/SharedFoldersEnableSymlinksCreate/logs 1",
+				"sudo -u " + getServiceUser(service)
+					+ " VBoxManage showvminfo " + service + " --machinereadable"
+				+ " | grep SharedFolderPathMachineMapping1",
+				"SharedFolderPathMachineMapping1=\\\"" + path + "\\\"", "pass",
+				"Couldn't attach the logs folder to " + service + "."
+					+ " This means logs will only exist in the VM."));
+
 		return units;
 	}
 
 	@Override
-	public Collection<IUnit> buildServiceVm(ServiceModel service, String bridge)
-			throws InvalidServerException, InvalidMachineModelException {
+	public Collection<IUnit> buildServiceVm(ServiceModel service, String bridge) {
 		final String baseDir = FilenameUtils.normalize(getServerModel().getVMBase().toString(), true);
 
-		final String logDir = baseDir + "/logs/" + service.getLabel();
-		final String backupDir = baseDir + "/backups/" + service.getLabel();
 		final String ttySocketDir = baseDir + "/sockets/" + service.getLabel();
 
-		final String user = USER_PREFIX + service.getLabel();
+		final String user = getServiceUser(service);
 
 		final String osType = "Linux";
 
@@ -307,20 +328,22 @@ public class Virtualbox extends Virtualisation {
 		units.add(new DirUnit("socket_dir_" + service, "proceed", ttySocketDir));
 
 		// Architecture setup
-		units.add(modifyVm(service, user, "paravirtprovider", "kvm")); // Default, make it explicit
-		units.add(modifyVm(service, user, "chipset", "ich9"));
-		units.add(modifyVm(service, user, "ioapic", "on", "IO APIC couldn't be enabled for " + service
-				+ ".  This is required for 64-bit installations, and for more than 1 virtual CPU in a service."));
-		units.add(modifyVm(service, user, "hwvirtex", "on"));
-		units.add(modifyVm(service, user, "pae", "on"));
-		units.add(modifyVm(service, user, "cpus", service.getCPUs()));
-		units.add(modifyVm(service, user, "cpuexecutioncap", service.getCPUExecutionCap()));
+		units.add(modifyVm(service, "paravirtprovider", "kvm")); // Default, make it explicit
+		units.add(modifyVm(service, "chipset", "ich9"));
+		units.add(modifyVm(service, "ioapic", "on",
+				"IO APIC couldn't be enabled for " + service + "."
+				+ " This is required for 64-bit installations, and for more than"
+				+ " 1 virtual CPU in a service."));
+		units.add(modifyVm(service, "hwvirtex", "on"));
+		units.add(modifyVm(service, "pae", "on"));
+		units.add(modifyVm(service, "cpus", service.getCPUs()));
+		units.add(modifyVm(service, "cpuexecutioncap", service.getCPUExecutionCap()));
 
 		// RAM setup
-		units.add(modifyVm(service, user, "memory", service.getRAM()));
-		units.add(modifyVm(service, user, "vram", "16"));
-		units.add(modifyVm(service, user, "nestedpaging", "on"));
-		units.add(modifyVm(service, user, "largepages", "on"));
+		units.add(modifyVm(service, "memory", service.getRAM()));
+		units.add(modifyVm(service, "vram", 16));
+		units.add(modifyVm(service, "nestedpaging", "on"));
+		units.add(modifyVm(service, "largepages", "on"));
 
 		// Audio setup (switch it off)
 		units.add(modifyVm(service, user, "audio", "none"));
@@ -328,103 +351,144 @@ public class Virtualbox extends Virtualisation {
 		// Use high precision event timers instead of legacy
 		units.add(modifyVm(service, user, "hpet", "on"));
 
-		// Shared folders setup
-		units.add(new SimpleUnit(service.getLabel() + "_backup_sf_attached",
-					service.getLabel() + "_exists",
-					"sudo -u " + user
-						+ " VBoxManage sharedfolder add " + service.getLabel()
-							+ " --name backup"
-							+ " --hostpath " + FilenameUtils.normalize(backupDir, true),
-				"sudo -u " + user + " VBoxManage showvminfo " + service
-						+ " --machinereadable | grep SharedFolderPathMachineMapping2",
-				"SharedFolderPathMachineMapping2=\\\"" + backupDir + "\\\"", "pass"));
-
 		// Clock setup to try and stop drift between host and guest
 		// https://www.virtualbox.org/manual/ch09.html#changetimesync
-		units.add(guestPropertySet(service, user, "timesync-interval", "10000", "Couldn't sync the clock between "
-				+ service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
-		units.add(guestPropertySet(service, user, "timesync-min-adjust", "100", "Couldn't sync the clock between "
-				+ service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
-		units.add(guestPropertySet(service, user, "timesync-set-on-restore", "1", "Couldn't sync the clock between "
-				+ service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
-		units.add(guestPropertySet(service, user, "timesync-set-threshold", "1000", "Couldn't sync the clock between "
-				+ service + " and its metal.  You'll probably see some clock drift in " + service + " as a result."));
+		units.add(guestPropertySet(service, "timesync-interval", 10000,
+				"Couldn't sync the clock between " + service.getLabel()
+					+ " and its metal. You'll probably see some clock drift in "
+					+ service.getLabel() + " as a result."));
+		units.add(guestPropertySet(service, "timesync-min-adjust", 100,
+				"Couldn't sync the clock between " + service.getLabel()
+					+ " and its metal. You'll probably see some clock drift in "
+					+ service.getLabel() + " as a result."));
+		units.add(guestPropertySet(service, "timesync-set-on-restore", 1,
+				"Couldn't sync the clock between " + service.getLabel()
+					+ " and its metal. You'll probably see some clock drift in "
+					+ service.getLabel() + " as a result."));
+		units.add(guestPropertySet(service, "timesync-set-threshold", 1000,
+				"Couldn't sync the clock between " + service.getLabel()
+					+ " and its metal. You'll probably see some clock drift in "
+					+ service.getLabel() + " as a result."));
 
 		// tty0 socket
-		units.add(new SimpleUnit(service + "_tty0_com_port", service + "_exists",
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --uart1 0x3F8 4",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^uart1=",
+		units.add(new SimpleUnit(service.getLabel() + "_tty0_com_port", service.getLabel() + "_exists",
+				"sudo -u " + user
+					+ " VBoxManage modifyvm " + service.getLabel()
+						+ " --uart1 0x3F8 4",
+				"sudo -u " + user
+					+ " VBoxManage showvminfo " + service.getLabel() + " --machinereadable"
+					+ " | grep ^uart1=",
 				"uart1=\\\"0x03f8,4\\\"", "pass"));
 
-		units.add(new SimpleUnit(service + "_tty0_socket", service + "_tty0_com_port",
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --uartmode1 server " + ttySocketDir
-						+ "/vboxttyS0",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^uartmode1=",
+		units.add(new SimpleUnit(service.getLabel() + "_tty0_socket", service.getLabel() + "_tty0_com_port",
+				"sudo -u " + user
+					+ " VBoxManage modifyvm " + service.getLabel()
+						+ " --uartmode1 server " + ttySocketDir + "/vboxttyS0",
+				"sudo -u " + user
+					+ " VBoxManage showvminfo " + service.getLabel()
+						+ " --machinereadable"
+					+ " | grep ^uartmode1=",
 				"uartmode1=\\\"server," + ttySocketDir + "/vboxttyS0\\\"", "pass"));
 
-		units.add(new SimpleUnit(service + "_tty1_com_port", service + "_exists",
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --uart2 0x2F8 3",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^uart2=",
+		units.add(new SimpleUnit(service.getLabel() + "_tty1_com_port", service.getLabel() + "_exists",
+				"sudo -u " + user
+					+ " VBoxManage modifyvm " + service.getLabel()
+						+ " --uart2 0x2F8 3",
+				"sudo -u " + user
+					+ " VBoxManage showvminfo " + service.getLabel() + " --machinereadable"
+					+ " | grep ^uart2=",
 				"uart2=\\\"0x02f8,3\\\"", "pass"));
 
-		units.add(new SimpleUnit(service + "_tty1_socket", service + "_tty1_com_port",
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --uartmode2 server " + ttySocketDir
-						+ "/vboxttyS1",
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^uartmode2=",
+		units.add(new SimpleUnit(service.getLabel() + "_tty1_socket", service.getLabel() + "_tty1_com_port",
+				"sudo -u " + user
+					+ " VBoxManage modifyvm " + service.getLabel()
+					+ " --uartmode2 server " + ttySocketDir	+ "/vboxttyS1",
+				"sudo -u " + user
+					+ " VBoxManage showvminfo " + service.getLabel() + " --machinereadable"
+					+ " | grep ^uartmode2=",
 				"uartmode2=\\\"server," + ttySocketDir + "/vboxttyS1\\\"", "pass"));
 
-		getNetworkModel().getServerModel(getLabel())
-				.addProcessString("/usr/lib/virtualbox/VBoxHeadless --comment " + service + " --startvm `if id '" + user
-						+ "' >/dev/null 2>&1; then sudo -u " + user + " bash -c 'VBoxManage list runningvms | grep "
-						+ service + "' | awk '{ print $2 }' | tr -d '{}'; else echo ''; fi` --vrde config *$");
-		getNetworkModel().getServerModel(getLabel()).addProcessString("awk \\{");
-		getNetworkModel().getServerModel(getLabel()).addProcessString("tr -d \\{\\}$");
-		getNetworkModel().getServerModel(getLabel()).getUserModel().addUsername(user);
+		//TODO: add running vbox process string
+		getServerModel().getUserModel().addUsername(user);
 
 		return units;
 	}
 
-	protected SimpleUnit modifyVm(String service, String user, String setting, String value, String errorMsg,
-			String prerequisite) {
+	/**
+	 * Modifies the "hardware" of the VM in some way.
+	 * 
+	 * https://www.virtualbox.org/manual/ch08.html#vboxmanage-modifyvm
+	 * @param service The service being modified
+	 * @param setting What we're modifying
+	 * @param value What to set it to
+	 * @param errorMsg Error to return if we were unable to set
+	 * @param prerequisite What needs to be in place before this runs
+	 * @return
+	 */
+	protected SimpleUnit modifyVm(ServiceModel service, String setting, String value, String errorMsg, String prerequisite) {
 
 		String check = "";
 
 		// Integers aren't quoted...
 		if (value.matches("-?(0|[1-9]\\d*)")) {
 			check = setting + "=" + value;
-		} else {
+		}
+		else {
 			check = setting + "=\\\"" + value + "\\\"";
 		}
 
 		return new SimpleUnit(service + "_" + setting + "_" + value, prerequisite,
-				"sudo -u " + user + " VBoxManage modifyvm " + service + " --" + setting + " " + value,
-				"sudo -u " + user + " VBoxManage showvminfo " + service + " --machinereadable | grep ^" + setting + "=",
+				"sudo -u " + getServiceUser(service)
+					+ " VBoxManage modifyvm " + service.getLabel()
+						+ " --" + setting + " " + value,
+				"sudo -u " + getServiceUser(service)
+					+ " VBoxManage showvminfo " + service + " --machinereadable"
+					+ " | grep ^" + setting + "=",
 				check, "pass", errorMsg);
 	}
 
-	protected SimpleUnit modifyVm(String service, String user, String setting, String value, String errorMsg) {
-		return modifyVm(service, user, setting, value, errorMsg, service + "_exists");
+	protected SimpleUnit modifyVm(ServiceModel service, String setting, String value, String errorMsg) {
+		return modifyVm(service, setting, value, errorMsg, service + "_exists");
 	}
 
-	protected SimpleUnit modifyVm(String service, String user, String setting, String value) {
-		return modifyVm(service, user, setting, value, "Couldn't change " + setting + " to " + value);
+	protected SimpleUnit modifyVm(ServiceModel service, String setting, String value) {
+		return modifyVm(service, setting, value, "Couldn't change " + setting + " to " + value);
 	}
 
-	protected SimpleUnit modifyVm(String service, String user, String setting, Integer value) {
-		return modifyVm(service, user, setting, value + "", "Couldn't change " + setting + " to " + value);
+	protected SimpleUnit modifyVm(ServiceModel service, String setting, Integer value) {
+		return modifyVm(service, setting, value + "", "Couldn't change " + setting + " to " + value);
 	}
 
-	protected SimpleUnit guestPropertySet(String service, String user, String property, String value, String errorMsg,
+	/**
+	 * Sets a property on the Guest VM.
+	 * 
+	 * This can either be arbitrary strings for low-volume communication between
+	 * host and guest (https://www.virtualbox.org/manual/ch08.html#vboxmanage-guestproperty) 
+	 * or for guest additions-related settings (https://www.virtualbox.org/manual/ch04.html#guestadd-guestprops)
+	 * @param service The service to set the property on
+	 * @param property The property to set
+	 * @param value What to set it to
+	 * @param errorMsg Error to return if we were unable to set
+	 * @param prerequisite What needs to be in place before this runs
+	 * @return
+	 */
+	protected SimpleUnit guestPropertySet(ServiceModel service, String property, String value, String errorMsg,
 			String prerequisite) {
-		return new SimpleUnit(service + "_" + property.replaceAll("-", "_") + "_" + value, prerequisite,
-				"sudo -u " + user + " VBoxManage guestproperty set " + service
-						+ " \"/VirtualBox/GuestAdd/VBoxService/--" + property + "\" " + value,
-				"sudo -u " + user + " VBoxManage guestproperty enumerate " + service
-						+ " | grep \"Name: /VirtualBox/GuestAdd/VBoxService/--" + property + ", value: " + value + "\"",
+
+		return new SimpleUnit(service.getLabel() + "_" + property.replaceAll("-", "_") + "_" + value, prerequisite,
+				"sudo -u " + getServiceUser(service)
+					+ " VBoxManage guestproperty set " + service.getLabel() + " \"/VirtualBox/GuestAdd/VBoxService/--" + property + "\" " + value,
+				"sudo -u " + getServiceUser(service)
+					+ " VBoxManage guestproperty enumerate " + service.getLabel()
+					+ " | grep \"Name: /VirtualBox/GuestAdd/VBoxService/--" + property + ", value: " + value + "\"",
 				"", "fail", errorMsg);
 	}
 
-	protected SimpleUnit guestPropertySet(String service, String user, String property, String value, String errorMsg) {
-		return guestPropertySet(service, user, property, value, errorMsg, service + "_exists");
+	protected SimpleUnit guestPropertySet(ServiceModel service, String property, Integer value, String errorMsg) {
+		return guestPropertySet(service, property, value.toString(), errorMsg, service.getLabel() + "_exists");
+	}
+
+	protected String getServiceUser(ServiceModel service) {
+		return USER_PREFIX + service.getLabel();		
 	}
 }
