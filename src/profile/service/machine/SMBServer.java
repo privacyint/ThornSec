@@ -9,8 +9,7 @@ package profile.service.machine;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import core.data.machine.AMachineData.Encapsulation;
+import core.data.machine.configuration.TrafficRule.Encapsulation;
 import core.exception.data.InvalidPortException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
@@ -27,7 +26,7 @@ public class SMBServer extends AStructuredProfile {
 	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 137, 138, 139, 445);
+		getServerModel().addListen(Encapsulation.TCP, 137, 138, 139, 445);
 
 		/*
 		 * for (ServerModel router : getNetworkModel().getRouterServers()) {
