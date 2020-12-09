@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
-
+import core.exception.data.InvalidPortException;
 import core.exception.data.InvalidPropertyArrayException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.runtime.InvalidMachineModelException;
@@ -19,11 +19,11 @@ import core.iface.IUnit;
 import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
-import core.unit.fs.DirOwnUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
+import inet.ipaddr.HostName;
 
 public class OnionBalance extends AStructuredProfile {
 
@@ -52,18 +52,7 @@ public class OnionBalance extends AStructuredProfile {
 	public Collection<IUnit> getPersistentConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("onionbalance",
-				"onionbalance_installed", "onionbalance", "onionbalance", "0700"));
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addLogBindPoint("onionbalance",
-				"onionbalance_installed", "onionbalance", "0750"));
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("tor",
-				"tor_installed", "debian-tor", "debian-tor", "0700"));
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addLogBindPoint("tor",
-				"tor_installed", "debian-tor", "0750"));
-
 		units.add(new DirUnit("onionbalance_var_run", "onionbalance_installed", "/var/run/onionbalance"));
-		units.add(new DirOwnUnit("onionbalance_var_run", "onionbalance_var_run_created", "/var/run/onionbalance",
-				"onionbalance"));
 
 		final FileUnit service = new FileUnit("onionbalance_service", "onionbalance_installed",
 				"/lib/systemd/system/onionbalance.service");
@@ -177,13 +166,13 @@ public class OnionBalance extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("tor",
-				"deb http://deb.torproject.org/torproject.org buster main", "keys.gnupg.net",
-				"A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
-		getNetworkModel().getServerModel(getLabel()).addEgress("*"); // Needs to be able to call out to everywhere
+		//getServerModel().getAptSourcesModel().addAptSource("tor",
+		//		"deb http://deb.torproject.org/torproject.org buster main", "keys.gnupg.net",
+		//		"A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89");
+		getServerModel().addEgress(new HostName("*")); // Needs to be able to call out to everywhere
 
 		return units;
 	}
