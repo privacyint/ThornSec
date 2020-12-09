@@ -41,6 +41,7 @@ import profile.stack.Nginx;
 public class Webproxy extends AStructuredProfile {
 
 	private final Nginx webserver;
+	private final JsonObject proxyData;
 	private FileUnit liveConfig;
 	private Set<String> backends;
 
@@ -53,7 +54,7 @@ public class Webproxy extends AStructuredProfile {
 		final ServerData data = getServerModel().getData();
 
 		if (data.getData().containsKey("webproxy")) {
-			final JsonObject proxyData = data.getData().getJsonObject("webproxy");
+			this.proxyData = data.getData().getJsonObject("webproxy");
 			final JsonArray backends = proxyData.getJsonArray("backends");
 
 			for (final JsonValue backend : backends) {
@@ -83,7 +84,7 @@ public class Webproxy extends AStructuredProfile {
 		units.addAll(this.webserver.getPersistentConfig());
 
 		// Should we pass through real IPs?
-		final Boolean passThroughIps = getServerModel().getData().getData().getBoolean("passrealips"); // Defaults false
+		final Boolean passThroughIps = proxyData.getBoolean("passrealips", false);
 		// First, build our ssl config
 		units.add(new DirUnit("nginx_ssl_include_dir", "proceed", "/etc/nginx/includes"));
 		final FileUnit sslConf = new FileUnit("nginx_ssl", "proceed", "/etc/nginx/includes/ssl_params");
