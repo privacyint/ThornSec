@@ -7,14 +7,14 @@
  */
 package core.model.machine.configuration.networking;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Optional;
 import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.configuration.NetworkInterfaceData.Inet;
-import core.exception.data.InvalidIPAddressException;
 import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.model.network.NetworkModel;
+import core.model.network.UserModel;
 import core.unit.fs.FileUnit;
 
 /**
@@ -24,8 +24,7 @@ import core.unit.fs.FileUnit;
  */
 public class WireGuardModel extends NetworkInterfaceModel {
 
-	private Map<String, String> peerKeys;
-	private String psk;
+	private Collection<UserModel> peers;
 	private Integer listenPort;
 
 	public WireGuardModel(NetworkInterfaceData myData, NetworkModel networkModel) throws InvalidNetworkInterfaceException {
@@ -33,18 +32,16 @@ public class WireGuardModel extends NetworkInterfaceModel {
 
 		super.setInet(Inet.WIREGUARD);
 
-		this.peerKeys = null;
-		this.psk = null;
+		this.peers = null;
 		this.listenPort = null;
 	}
 
-	public WireGuardModel(NetworkInterfaceModel nic) throws InvalidIPAddressException, InvalidNetworkInterfaceException {
+	public WireGuardModel(NetworkInterfaceModel nic) throws InvalidNetworkInterfaceException {
 		super(nic);
 
 		super.setInet(Inet.WIREGUARD);
 
-		this.peerKeys = null;
-		this.psk = null;
+		this.peers = null;
 		this.listenPort = null;
 	}
 
@@ -56,37 +53,32 @@ public class WireGuardModel extends NetworkInterfaceModel {
 		this.listenPort = listenPort;
 	}
 
-	public void setPSK(String psk) {
-		this.psk = psk;
-	}
-
 	@Override
 	public Optional<FileUnit> getNetDevFile() {
 		FileUnit netdev = super.getNetDevFile().get();
 
-		//Todo: fix this hack
 		netdev.appendCarriageReturn();
 		netdev.appendLine("[WireGuard]");
 		netdev.appendLine("PrivateKey=$(cat /etc/wireguard/private.key)");
 		netdev.appendLine("ListenPort=" + this.listenPort);
 
-		this.peerKeys.forEach((peer, pubKey) -> {
+		this.peers.forEach((peer) -> {
 			netdev.appendCarriageReturn();
 			netdev.appendLine("[WireGuardPeer]");
-			netdev.appendLine("PublicKey=" + pubKey);
-			netdev.appendLine("PresharedKey=" + this.psk);
-			netdev.appendLine("AllowedIPs=0.0.0.0/0");
-			netdev.appendLine("Description=" + peer);
+			netdev.appendLine("PublicKey=" + peer.getWireGuardKey().orElseGet(() -> ""));
+			netdev.appendLine("PresharedKey=" + peer.getWireguardPSK().orElseGet(() -> ""));
+			netdev.appendLine("AllowedIPs=" + peer.getWireGuardIP().orElseGet(() -> ""));
+			netdev.appendLine("Description=" + peer.getUsername());
 		});
 
 		return Optional.of(netdev);
 	}
 
-	public void addWireGuardPeer(String peer, String pubKey) {
-		if (this.peerKeys == null) {
-			this.peerKeys = new LinkedHashMap<>();
+	public void addWireGuardPeer(UserModel user) {
+		if (this.peers == null) {
+			this.peers = new ArrayList<>();
 		}
 
-		this.peerKeys.put(peer, pubKey);
+		this.peers.add(user);
 	}
 }
