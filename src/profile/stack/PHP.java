@@ -234,9 +234,8 @@ public class PHP extends AStructuredProfile {
 
 		units.add(new RunningUnit("php_fpm", "php7.0-fpm", "php7.0-fpm"));
 
-		getNetworkModel().getServerModel(getLabel())
-				.addProcessString("php-fpm: master process \\(/etc/php/7.0/fpm/php-fpm\\.conf\\) *$");
-		getNetworkModel().getServerModel(getLabel()).addProcessString("php-fpm: pool www *$");
+		getServerModel().addProcessString("php-fpm: master process \\(/etc/php/7.0/fpm/php-fpm\\.conf\\) *$");
+		getServerModel().addProcessString("php-fpm: pool www *$");
 
 		return units;
 	}
