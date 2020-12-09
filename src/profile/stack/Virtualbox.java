@@ -151,7 +151,7 @@ public class Virtualbox extends Virtualisation {
 						+ " This is fatal, " + service + " will not be bootable."));
 
 		int deviceCounter = 0;
-		hdds.forEach((disk) -> {
+		for (HardDiskModel disk : hdds) {
 			//Make sure its directories exists, with the correct ownership
 			units.add(new DirUnit(disk.getLabel() + "_disk_dir_" + service.getLabel(),
 								  "proceed",
@@ -205,10 +205,10 @@ public class Virtualbox extends Virtualisation {
 			);
 
 			deviceCounter++;
-		});
+		}
 
 		deviceCounter = 0;
-		dvds.forEach((disk) -> {
+		for (DVDModel disk : dvds) {
 			//Attach the disk
 			units.add(new SimpleUnit(disk.getLabel() + "_disk_" + service.getLabel() + "_attached",
 						service.getLabel() + "_dvds_ide_controller",
@@ -227,7 +227,7 @@ public class Virtualbox extends Virtualisation {
 			);
 
 			deviceCounter++;
-		});
+		}
 
 		return units;
 	}
