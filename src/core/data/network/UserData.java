@@ -25,7 +25,7 @@ public class UserData extends AData {
 	private String defaultPassword;
 	private String wireguardKey;
 	private String wireguardIP;
-	
+	private String wireguardPSK;
 
 	/**
 	 * Create a new UserData populated with null values
@@ -41,6 +41,7 @@ public class UserData extends AData {
 		this.defaultPassword = null;
 		this.wireguardKey = null;
 		this.wireguardIP = null;
+		this.wireguardPSK = null;
 	}
 
 	@Override
@@ -50,7 +51,7 @@ public class UserData extends AData {
 		this.sshKey = data.getString("ssh", null);
 		this.homeDir = data.getString("home_dir", null);
 		this.defaultPassword = data.getString("defaultpw", null);
-		
+
 		readWireguard(data);
 	}
 
@@ -58,11 +59,12 @@ public class UserData extends AData {
 		if (!data.containsKey("wireguard")) {
 			return;
 		}
-		
+
 		JsonObject wireguardData = data.getJsonObject("wireguard");
-		
+
 		this.wireguardKey = wireguardData.getString("key", null);
 		this.wireguardIP = wireguardData.getString("ip", null);
+		this.wireguardPSK = wireguardData.getString("psk", null);
 	}
 
 	/**
@@ -94,6 +96,14 @@ public class UserData extends AData {
 	 */
 	public final Optional<String> getWireGuardIP() {
 		return Optional.ofNullable(this.wireguardIP);
+	}
+
+	/**
+	 * Get a User's WireGuard PreShared Key, if set
+	 * @return
+	 */
+	public Optional<String> getWireGuardPSK() {
+		return Optional.ofNullable(this.wireguardPSK);
 	}
 
 	/**
