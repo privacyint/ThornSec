@@ -53,8 +53,7 @@ public abstract class Virtualisation extends AStructuredProfile {
 	 * @throws InvalidServerException
 	 * @throws InvalidMachineModelException
 	 */
-	public abstract Collection<IUnit> buildServiceVm(String service, String bridge)
-			throws InvalidServerException, InvalidMachineModelException;
+	public abstract Collection<IUnit> buildServiceVm(ServiceModel service, String bridge);
 
 	@Override
 	public HypervisorModel getServerModel() {
