@@ -9,11 +9,13 @@ package profile.stack;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import core.exception.data.InvalidPortException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.pkg.InstalledUnit;
+import inet.ipaddr.HostName;
 
 /**
  * This profile installs and configures msmtp (https://marlam.de/msmtp/).
@@ -36,28 +38,10 @@ public class MSMTP extends AStructuredProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentConfig() {
+	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException, InvalidPortException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		// TODO: iunno. Is there something which needs to go here?
-
-		return units;
-	}
-
-	@Override
-	public Collection<IUnit> getLiveConfig() {
-		final Collection<IUnit> units = new ArrayList<>();
-
-		// TODO: check it's up to date, etc
-
-		return units;
-	}
-
-	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException {
-		final Collection<IUnit> units = new ArrayList<>();
-
-		getNetworkModel().getServerModel(getLabel()).addEgress("*:25,465");
+		getServerModel().addEgress(new HostName("*:25,465"));
 
 		return units;
 	}
