@@ -13,15 +13,17 @@ import java.util.HashSet;
 
 import core.iface.IUnit;
 import core.model.AModel;
+import core.model.machine.ServerModel;
 import core.model.network.NetworkModel;
+import core.profile.AProfile;
 import core.unit.SimpleUnit;
 
-public class Processes extends AModel {
+public class Processes extends AProfile {
 
 	private final Collection<String> processStrings;
 
-	public Processes(String label, NetworkModel networkModel) {
-		super(label, networkModel);
+	public Processes(ServerModel server) {
+		super(server);
 
 		this.processStrings = new HashSet<String>();
 		// These are processes related to TS

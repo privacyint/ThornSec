@@ -12,7 +12,7 @@ import java.util.Collection;
 
 import core.exception.data.machine.InvalidServerException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
+import core.model.machine.ServerModel;
 import core.profile.AProfile;
 import core.unit.SimpleUnit;
 
@@ -20,14 +20,15 @@ public class UserAccounts extends AProfile {
 
 	private final Collection<String> usernames;
 
-	public UserAccounts(String label, NetworkModel networkModel) throws InvalidServerException {
-		super(label, networkModel);
+	public UserAccounts(ServerModel server) throws InvalidServerException {
+		super(server);
 
 		this.usernames = new ArrayList<>();
 
-		for (final String admin : getNetworkModel().getData().getAdmins(getLabel())) {
-			this.usernames.add(admin);
-		}
+		//TODO
+		//for (final String admin : getNetworkModel().getData().getAdmins(getLabel())) {
+		//	this.usernames.add(admin);
+		//}
 
 		this.usernames.add("root");
 		this.usernames.add("daemon");
