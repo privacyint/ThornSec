@@ -12,10 +12,9 @@ import java.util.Collection;
 
 import core.exception.data.machine.InvalidServerException;
 import core.iface.IUnit;
+import core.model.machine.ServerModel;
 import core.model.network.NetworkModel;
 import core.profile.AStructuredProfile;
-import core.unit.fs.DirOwnUnit;
-import core.unit.fs.DirPermsUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.GitCloneUnit;
 import core.unit.pkg.InstalledUnit;
@@ -50,7 +49,8 @@ public class HypervisorScripts extends AStructuredProfile {
 	public Collection<IUnit> getPersistentConfig() throws InvalidServerException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		this.vmBase = getNetworkModel().getData().getHypervisorThornsecBase(getLabel());
+		//TODO
+		this.vmBase = null;//getServerModel().getHypervisorThornsecBase();
 
 		this.scriptsBase = this.vmBase + "/scripts";
 		this.recoveryScriptsBase = this.scriptsBase + "/recovery";
@@ -60,30 +60,10 @@ public class HypervisorScripts extends AStructuredProfile {
 		this.helperScriptsBase = this.scriptsBase + "/helper";
 
 		units.add(new DirUnit("recovery_scripts_dir", "proceed", this.recoveryScriptsBase));
-		units.add(new DirOwnUnit("recovery_scripts_dir", "recovery_scripts_dir_created", this.recoveryScriptsBase,
-				"root"));
-		units.add(new DirPermsUnit("recovery_scripts_dir", "recovery_scripts_dir_chowned", this.recoveryScriptsBase,
-				"400"));
-
 		units.add(new DirUnit("backup_scripts_dir", "proceed", this.backupScriptsBase));
-		units.add(new DirOwnUnit("backup_scripts_dir", "backup_scripts_dir_created", this.backupScriptsBase, "root"));
-		units.add(new DirPermsUnit("backup_scripts_dir", "backup_scripts_dir_chowned", this.backupScriptsBase, "400"));
-
 		units.add(new DirUnit("control_scripts_dir", "proceed", this.controlScriptsBase));
-		units.add(
-				new DirOwnUnit("control_scripts_dir", "control_scripts_dir_created", this.controlScriptsBase, "root"));
-		units.add(
-				new DirPermsUnit("control_scripts_dir", "control_scripts_dir_chowned", this.controlScriptsBase, "400"));
-
 		units.add(new DirUnit("watchdog_scripts_dir", "proceed", this.watchdogScriptsBase));
-		units.add(new DirOwnUnit("watchdog_scripts_dir", "watchdog_scripts_dir_created", this.watchdogScriptsBase,
-				"root"));
-		units.add(new DirPermsUnit("watchdog_scripts_dir", "watchdog_scripts_dir_chowned", this.watchdogScriptsBase,
-				"400"));
-
 		units.add(new DirUnit("helper_scripts_dir", "proceed", this.helperScriptsBase));
-		units.add(new DirOwnUnit("helper_scripts_dir", "helper_scripts_dir_created", this.helperScriptsBase, "root"));
-		units.add(new DirPermsUnit("helper_scripts_dir", "helper_scripts_dir_chowned", this.helperScriptsBase, "400"));
 
 		// This is for our internal backups
 		units.add(new GitCloneUnit("backup_script", "metal_git_installed",

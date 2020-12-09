@@ -17,9 +17,7 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
-import core.data.machine.AMachineData;
-import core.data.machine.AMachineData.Encapsulation;
-import core.data.machine.AMachineData.MachineType;
+import core.data.machine.ServerData;
 import core.exception.data.InvalidPortException;
 import core.exception.data.InvalidPropertyArrayException;
 import core.exception.data.InvalidPropertyException;
@@ -27,12 +25,10 @@ import core.exception.data.MissingPropertiesException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidMachineModelException;
-import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.AMachineModel;
 import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
-import core.unit.fs.CustomFileUnit;
 import core.unit.fs.DirUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
@@ -45,6 +41,7 @@ import profile.stack.Nginx;
 public class Webproxy extends AStructuredProfile {
 
 	private final Nginx webserver;
+	private final JsonObject proxyData;
 	private FileUnit liveConfig;
 	private Set<String> backends;
 
@@ -54,10 +51,10 @@ public class Webproxy extends AStructuredProfile {
 		this.webserver = new Nginx(me);
 		this.liveConfig = null;
 
-		final AMachineData data = getNetworkModel().getData().getMachine(MachineType.SERVER, getLabel());
+		final ServerData data = getServerModel().getData();
 
 		if (data.getData().containsKey("webproxy")) {
-			final JsonObject proxyData = data.getData().getJsonObject("webproxy");
+			this.proxyData = data.getData().getJsonObject("webproxy");
 			final JsonArray backends = proxyData.getJsonArray("backends");
 
 			for (final JsonValue backend : backends) {
@@ -87,7 +84,7 @@ public class Webproxy extends AStructuredProfile {
 		units.addAll(this.webserver.getPersistentConfig());
 
 		// Should we pass through real IPs?
-		final Boolean passThroughIps = getServerModel().getData().getData().getBoolean("passrealips"); // Defaults false
+		final Boolean passThroughIps = proxyData.getBoolean("passrealips", false);
 		// First, build our ssl config
 		units.add(new DirUnit("nginx_ssl_include_dir", "proceed", "/etc/nginx/includes"));
 		final FileUnit sslConf = new FileUnit("nginx_ssl", "proceed", "/etc/nginx/includes/ssl_params");
@@ -108,9 +105,13 @@ public class Webproxy extends AStructuredProfile {
 		sslConf.appendLine("\tssl_stapling_verify on;");
 
 		sslConf.appendText("\tresolver ");
-		getNetworkModel().getData().getUpstreamDNSServers().forEach(resolver -> {
-			sslConf.appendText(resolver.asInetAddress() + " ");
-		});
+		getNetworkModel().getData()
+						 .getUpstreamDNSServers()
+						 .ifPresent(upstreams ->
+						 	upstreams.forEach(resolver -> {
+						 		sslConf.appendText(resolver.asInetAddress() + " ");
+						 	}
+						 ));
 		sslConf.appendLine("valid=300s;");
 
 		sslConf.appendLine("\tresolver_timeout 5s;");
@@ -162,18 +163,11 @@ public class Webproxy extends AStructuredProfile {
 		if (this.liveConfig == null) {
 			Boolean isDefault = true;
 
-			for (final String backendLabel : this.backends) {
+			for (String backendLabel : getBackends()) {
 				final AMachineModel backendObj = getNetworkModel().getMachineModel(backendLabel);
 
-				final Collection<String> cnames = getNetworkModel().getData().getCNAMEs(backendLabel);
 				final HostName domain = backendObj.getDomain();
 				final String logDir = "/var/log/nginx/" + backendLabel + "." + domain + "/";
-
-				units.add(new DirUnit(backendLabel + "_log_dir", "proceed", logDir,
-						"Could not create the directory for " + backendLabel + "'s logs. Nginx will refuse to start."));
-				units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addBindPoint(
-						backendLabel + "_tls_certs", "proceed", "/media/metaldata/tls/" + backendLabel,
-						"/media/data/tls/" + backendLabel, "root", "root", "600", "/media/metaldata", false));
 
 				// Generated from
 				// https://mozilla.github.io/server-side-tls/ssl-config-generator/
@@ -192,13 +186,18 @@ public class Webproxy extends AStructuredProfile {
 
 				nginxConf.appendLine("\tserver_name " + backendLabel + "." + domain + ";");
 
-				if (cnames != null) {
-					for (final String cname : cnames) {
-						nginxConf.appendText("\tserver_name ");
-						nginxConf.appendText((cname.equals("") || (cname.equals("."))) ? "" : cname + ".");
-						nginxConf.appendLine(domain.toNormalizedString() + ";");
-					}
-				}
+				backendObj.getCNAMEs()
+						  .ifPresent((cnames) -> {
+							  cnames.forEach((cname) -> {
+									nginxConf.appendText("\tserver_name ");
+									nginxConf.appendText(
+											(cname.equals("") || (cname.equals(".")))
+											? ""
+											: cname + "."
+									);
+									nginxConf.appendLine(domain.toNormalizedString() + ";");
+						   });
+				});
 
 				nginxConf.appendCarriageReturn();
 
@@ -215,11 +214,6 @@ public class Webproxy extends AStructuredProfile {
 				nginxConf.appendLine("\tssl_trusted_certificate /media/data/tls/" + backendLabel + "/stapling.pem;");
 				nginxConf.appendCarriageReturn();
 				nginxConf.appendLine("\tlocation / {");
-				// for (final JsonValue source :
-				// getNetworkModel().getData().getData().getJsonArray(backend, "allow")) {
-				// nginxConf.appendLine(" allow " + source + ";");
-				// nginxConf.appendLine(" deny all;");
-				// }
 
 				nginxConf.appendLine("\t\tproxy_pass              http://" + backendLabel + "/;");
 				nginxConf.appendLine("\t\tproxy_request_buffering off;");
@@ -236,10 +230,6 @@ public class Webproxy extends AStructuredProfile {
 				nginxConf.appendLine("}");
 
 				this.webserver.addLiveConfig(nginxConf);
-
-				units.add(new CustomFileUnit("nginx_custom_block_" + backendLabel,
-						"nginx_custom_blocks_data_bindpoint_created",
-						"/media/data/nginx_custom_blocks/" + backendLabel + ".conf"));
 			}
 		} else {
 			this.webserver.addLiveConfig(this.liveConfig);
@@ -260,7 +250,7 @@ public class Webproxy extends AStructuredProfile {
 		getMachineModel().addListen(443);
 
 		for (final String backend : getBackends()) {
-			getMachineModel().addDNAT(backend, 80, 443);
+			getMachineModel().addDNAT(getNetworkModel().getMachineModel(backend), 80, 443);
 		}
 
 		return units;

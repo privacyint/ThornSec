@@ -9,21 +9,17 @@ package profile.service.machine;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import core.data.machine.AMachineData.Encapsulation;
+import core.data.machine.configuration.TrafficRule.Encapsulation;
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidMachineException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
+import core.model.network.UserModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
-import core.unit.fs.DirOwnUnit;
-import core.unit.fs.DirPermsUnit;
 import core.unit.fs.DirUnit;
-import core.unit.fs.FileOwnUnit;
-import core.unit.fs.FilePermsUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
@@ -38,7 +34,7 @@ public class SSH extends AStructuredProfile {
 	}
 
 	@Override
-	protected Collection<IUnit> getInstalled() {
+	public Collection<IUnit> getInstalled() {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		units.add(new InstalledUnit("sshd", "proceed", "openssh-server"));
@@ -150,7 +146,7 @@ public class SSH extends AStructuredProfile {
 		motd.appendCarriageReturn();
 
 		// this.networkModel.getServerModel(getLabel()).getConfigsModel().addConfigFilePath("/etc/update-motd.d/00-motd");
-		units.add(new FilePermsUnit("sshd_motd_perms", "sshd_motd", "/etc/update-motd.d/00-motd", "755"));
+		//units.add(new FilePermsUnit("sshd_motd_perms", "sshd_motd", "/etc/update-motd.d/00-motd", "755"));
 
 		// units.add(new SimpleUnit("sshd_rsa", "sshd_config",
 		// "echo -e \"y\\n\" | sudo ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N \"\" -t
@@ -195,26 +191,21 @@ public class SSH extends AStructuredProfile {
 	public Collection<IUnit> getLiveConfig() throws InvalidMachineException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		for (final String admin : getNetworkModel().getData().getAdmins(getLabel())) {
-			final String sshDir = "/home/" + admin + "/.ssh";
+		for (final UserModel admin : getServerModel().getAdmins()) {
+			final String sshDir = admin.getHomeDirectory() + "/.ssh";
 			final String keys = sshDir + "/authorized_keys";
 
 			// Create the .ssh dir for the user, with the correct permissions
 			units.add(new DirUnit("ssh_dir_" + admin, "sshd_config", sshDir));
-			units.add(new DirOwnUnit("ssh_dir_" + admin, "ssh_dir_" + admin + "_created", sshDir, admin));
-			units.add(new DirPermsUnit("ssh_dir_" + admin, "ssh_dir_" + admin + "_chowned", sshDir, "755"));
 
 			// Create the authorized_keys file, with root permissions (we don't want users
 			// to be able to add arbitrary keys)
 			final FileUnit authorised = new FileUnit("ssh_key_" + admin, "ssh_dir_" + admin + "_created", keys,
-					"I couldn't add SSH keys for " + admin + " on " + getLabel() + "."
-							+ " This user will not be able to SSH into " + getLabel());
+					"I couldn't add SSH keys for " + admin + " on " + getServerModel().getLabel() + "."
+							+ " This user will not be able to SSH into " + getServerModel().getLabel());
 			units.add(authorised);
 
-			authorised.appendLine(getNetworkModel().getData().getSSHKey(admin));
-
-			units.add(new FileOwnUnit("ssh_key_" + admin, "ssh_key_" + admin, keys, "root"));
-			units.add(new FilePermsUnit("ssh_key_" + admin, "ssh_key_" + admin + "_chowned", keys, "644"));
+			admin.getSSHPublicKey().ifPresent(key -> authorised.appendLine(key));
 		}
 
 		units.add(new RunningUnit("sshd", "sshd", "sshd"));

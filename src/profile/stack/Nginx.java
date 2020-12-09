@@ -11,19 +11,17 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
-
-import core.data.machine.AMachineData.Encapsulation;
+import core.data.machine.configuration.TrafficRule.Encapsulation;
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
-import core.unit.SimpleUnit;
-import core.unit.fs.CustomFileUnit;
 import core.unit.fs.FileUnit;
 import core.unit.pkg.InstalledUnit;
 import core.unit.pkg.RunningUnit;
+import inet.ipaddr.HostName;
 
 public class Nginx extends AStructuredProfile {
 	public static final File DEFAULT_CONFIG_FILE = new File("/etc/nginx/conf.d/default.conf");
@@ -41,17 +39,6 @@ public class Nginx extends AStructuredProfile {
 	public Collection<IUnit> getInstalled() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		// If we don't give the nginx user a home dir, it can cause problems with npm
-		// etc
-		units.add(new SimpleUnit("nginx_user", "proceed", "sudo useradd -r -d /media/data/www nginx",
-				"id nginx 2>&1 | grep 'no such'", "", "pass",
-				"The nginx user couldn't be added.  This will cause all sorts of errors."));
-
-		getServerModel().getUserModel().addUsername("nginx");
-
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addLogBindPoint("nginx", "proceed",
-				"nginx", "0600"));
-
 		units.add(new InstalledUnit("nginx", "nginx_pgp", "nginx"));
 
 		return units;
@@ -60,27 +47,6 @@ public class Nginx extends AStructuredProfile {
 	@Override
 	public Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
-
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("www", "proceed",
-				"nginx", "nginx", "0750"));
-
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("nginx_includes",
-				"nginx_installed", "nginx", "nginx", "0750"));
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("nginx_modules",
-				"nginx_installed", "nginx", "nginx", "0750"));
-
-		units.add(new SimpleUnit("nginx_modules_symlink", "nginx_modules_data_bindpoint_created",
-				"sudo rm -r /etc/nginx/modules;" + "sudo ln -s /media/data/nginx_modules/ /etc/nginx/modules",
-				"readlink /etc/nginx/modules", "/media/data/nginx_modules/", "pass"));
-
-		units.add(new CustomFileUnit("nginx_custom_nginx", "nginx_includes_data_bindpoint_created",
-				"/media/data/nginx_includes/customNginxBlockParams"));
-		units.add(new CustomFileUnit("nginx_custom_http", "nginx_includes_data_bindpoint_created",
-				"/media/data/nginx_includes/customHttpBlockParams"));
-
-		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("nginx",
-				"deb http://nginx.org/packages/mainline/debian/ buster nginx", "keyserver.ubuntu.com",
-				"ABF5BD827BD9BF62");
 
 		final FileUnit nginxConf = new FileUnit("nginx_conf", "nginx_installed", "/etc/nginx/nginx.conf");
 		units.add(nginxConf);
@@ -133,9 +99,6 @@ public class Nginx extends AStructuredProfile {
 		getServerModel().addProcessString("nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf$");
 		getServerModel().addProcessString("nginx: worker process *$");
 
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel()
-				.addDataBindPoint("nginx_custom_conf_d", "nginx_installed", "nginx", "nginx", "0750"));
-
 		if ((getLiveConfigs() != null) && !getLiveConfigs().isEmpty()) {
 			units.addAll(this.liveConfigs);
 		} else {
@@ -186,10 +149,10 @@ public class Nginx extends AStructuredProfile {
 	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException, InvalidPortException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.TCP, 80);
+		getServerModel().addListen(Encapsulation.TCP, 80);
 		// Allow the server to call out to nginx.org to download mainline
-		getNetworkModel().getServerModel(getLabel()).addEgress("nginx.org:80");
-		getNetworkModel().getServerModel(getLabel()).addEgress("nginx.org:443");
+		getServerModel().addEgress(new HostName("nginx.org:80"));
+		getServerModel().addEgress(new HostName("nginx.org:443"));
 
 		return units;
 	}

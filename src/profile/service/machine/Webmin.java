@@ -14,7 +14,6 @@ import core.exception.data.InvalidPortException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
-import core.model.network.NetworkModel;
 import core.model.machine.ServerModel;
 import core.profile.AStructuredProfile;
 import core.unit.pkg.InstalledUnit;
@@ -33,8 +32,8 @@ public class Webmin extends AStructuredProfile {
 	public Collection<IUnit> getPersistentConfig() throws InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("webmin", "deb http://download.webmin.com/download/repository sarge contrib",
-				"keyserver.ubuntu.com", "D97A3AE911F63C51");
+		//getServerModel().getAptSourcesModel().addAptSource("webmin", "deb http://download.webmin.com/download/repository sarge contrib",
+		//		"keyserver.ubuntu.com", "D97A3AE911F63C51");
 
 		return units;
 	}

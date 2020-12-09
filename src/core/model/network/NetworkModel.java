@@ -396,7 +396,7 @@ public class NetworkModel {
 	}
 
 	public String getKeePassDBPath(String server) throws URISyntaxException {
-		return getData().getKeePassDB(server);
+		return null;//getData().getKeePassDB(server);
 	}
 
 	public String getDomain() {

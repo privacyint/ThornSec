@@ -54,9 +54,6 @@ public class Git extends AStructuredProfile {
 	public Collection<IUnit> getPersistentConfig() throws InvalidServerException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("scm", "proceed",
-				"scm", "scm", "0750"));
-
 		units.add(new FileEditUnit("scm_server_home", "scm_data_mounted", "export SCM_HOME=/var/lib/scm",
 				"export SCM_HOME=/media/data/scm", "/etc/default/scm-server",
 				"Couldn't change scm-manager's data directory.  Its data will be stored in the VM only."));
@@ -123,9 +120,9 @@ public class Git extends AStructuredProfile {
 	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("scm_manager",
-				"deb http://maven.scm-manager.org/nexus/content/repositories/releases ./", "keyserver.ubuntu.com",
-				"D742B261");
+		//getNetworkModel().getServerModel(getLabel()).getAptSourcesModel().addAptSource("scm_manager",
+		//		"deb http://maven.scm-manager.org/nexus/content/repositories/releases ./", "keyserver.ubuntu.com",
+		//		"D742B261");
 		getMachineModel().addEgress(new HostName("maven.scm-manager.org"));
 
 		units.addAll(this.webserver.getPersistentFirewall());

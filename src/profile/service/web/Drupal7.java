@@ -59,9 +59,6 @@ public class Drupal7 extends AStructuredProfile {
 		units.add(new InstalledUnit("php_mod_curl", "php_fpm_installed", "php-curl"));
 		units.add(new InstalledUnit("php_mbstring", "php_fpm_installed", "php-mbstring"));
 
-		units.addAll(getNetworkModel().getServerModel(getLabel()).getBindFsModel().addDataBindPoint("drush",
-				"composer_installed", "nginx", "nginx", "0750"));
-
 		units.add(new SimpleUnit("drush_installed", "composer_installed",
 				"sudo -u nginx bash -c 'composer create-project drush/drush /media/data/drush -n'",
 				"sudo [ -f /media/data/drush/drush ] && echo pass || echo fail", "pass", "pass",

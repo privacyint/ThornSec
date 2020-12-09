@@ -12,7 +12,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-
+import core.exception.data.InvalidPortException;
 import core.exception.runtime.ARuntimeException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
@@ -218,8 +218,8 @@ public class CSFFirewall extends AFirewallProfile {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws ARuntimeException {
-		getNetworkModel().getServerModel(getLabel()).addEgress(new HostName("download.configserver.com:443"));
+	public Collection<IUnit> getPersistentFirewall() throws InvalidPortException {
+		getServerModel().addEgress(new HostName("download.configserver.com:443"));
 		return new ArrayList<>();
 	}
 

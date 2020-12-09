@@ -12,35 +12,35 @@ import java.util.Collection;
 
 import javax.json.JsonObject;
 
-import core.data.machine.AMachineData.Encapsulation;
 import core.data.machine.AMachineData.MachineType;
+import core.data.machine.configuration.TrafficRule.Encapsulation;
 import core.exception.data.InvalidIPAddressException;
 import core.exception.data.InvalidPortException;
 import core.exception.data.machine.InvalidServerException;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
 import core.exception.runtime.InvalidMachineModelException;
 import core.exception.runtime.InvalidServerModelException;
 import core.iface.IUnit;
 import core.model.machine.ServerModel;
 import core.model.machine.configuration.networking.WireGuardModel;
+import core.model.network.UserModel;
 import core.profile.AStructuredProfile;
 import core.unit.SimpleUnit;
 import core.unit.pkg.InstalledUnit;
 
 /**
- * This builds a WireGuard server on a given machine (designed to be run on a
+ * This builds a WireGuard server on a given machine (intended to be run on a
  * Router).
  */
 public class WireGuard extends AStructuredProfile {
 
 	private final Integer listenPort;
-	private final String psk;
 
 	public WireGuard(ServerModel me) {
 		super(me);
 
 		final JsonObject wgSettings = getMachineModel().getData().getData().getJsonObject("wireguard");
 		this.listenPort = wgSettings.getInt("listen_port", 51820);
-		this.psk = wgSettings.getString("psk");
 	}
 
 	@Override
@@ -57,17 +57,19 @@ public class WireGuard extends AStructuredProfile {
 			throws InvalidServerException, InvalidIPAddressException, InvalidMachineModelException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		final WireGuardModel nic = new WireGuardModel("VPN", this.psk, this.listenPort);
+		WireGuardModel nic = null;
+		try {
+			nic = new WireGuardModel(getNetworkModel());
+		} catch (InvalidNetworkInterfaceException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
-		getNetworkModel().getUserDevices().keySet().forEach(user -> {
-			final String key = getNetworkModel().getWireGuardKey(user);
+		for (UserModel user : getNetworkModel().getUsers().values()) {
+			nic.addWireGuardPeer(user);
+		}
 
-			if (key != null) {
-				nic.addPeer(user, key);
-			}
-		});
-
-		nic.addAddress(getNetworkModel().getData().getSubnet(MachineType.VPN));
+		nic.addAddress(getNetworkModel().getSubnet(MachineType.VPN));
 
 		getMachineModel().addNetworkInterface(nic);
 
@@ -80,10 +82,10 @@ public class WireGuard extends AStructuredProfile {
 	}
 
 	@Override
-	public final Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException, InvalidPortException {
+	public final Collection<IUnit> getPersistentFirewall() throws InvalidPortException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		getNetworkModel().getServerModel(getLabel()).addListen(Encapsulation.UDP, this.listenPort);
+		getServerModel().addListen(Encapsulation.UDP, this.listenPort);
 
 		return units;
 	}
