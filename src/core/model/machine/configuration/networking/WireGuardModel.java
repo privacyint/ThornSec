@@ -67,7 +67,7 @@ public class WireGuardModel extends NetworkInterfaceModel {
 			netdev.appendLine("[WireGuardPeer]");
 			netdev.appendLine("PublicKey=" + peer.getWireGuardKey().orElseGet(() -> ""));
 			netdev.appendLine("PresharedKey=" + peer.getWireguardPSK().orElseGet(() -> ""));
-			netdev.appendLine("AllowedIPs=" + peer.getWireGuardIP().orElseGet(() -> ""));
+			netdev.appendLine("AllowedIPs=" + String.join(", ", peer.getWireGuardIPs().orElseGet(() -> new ArrayList<>())));
 			netdev.appendLine("Description=" + peer.getUsername());
 		});
 

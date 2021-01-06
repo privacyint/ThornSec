@@ -7,6 +7,7 @@
  */
 package core.model.network;
 
+import java.util.Collection;
 import java.util.Optional;
 import core.data.network.UserData;
 import core.exception.AThornSecException;
@@ -47,8 +48,8 @@ public class UserModel {
 		return myData.getWireGuardPSK();
 	}
 
-	public Optional<String> getWireGuardIP() {
-		return myData.getWireGuardIP();
+	public Optional<Collection<String>> getWireGuardIPs() {
+		return myData.getWireGuardIPs();
 	}
 
 	public String getHomeDirectory() {
