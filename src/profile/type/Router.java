@@ -199,8 +199,6 @@ public class Router extends AMachine {
 	public Collection<IUnit> getPersistentConfig() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
-		units.addAll(super.getPersistentConfig());
-
 		final FileUnit resolvConf = new FileUnit("leave_my_resolv_conf_alone", "proceed",
 				"/etc/dhcp/dhclient-enter-hooks.d/leave_my_resolv_conf_alone", 
 				"I couldn't stop various systemd services deciding to override your DNS settings."
@@ -260,6 +258,8 @@ public class Router extends AMachine {
 		units.addAll(getDHCPServer().getPersistentConfig());
 		units.addAll(getDNSServer().getPersistentConfig());
 
+		units.addAll(super.getPersistentConfig());
+
 		return units;
 	}
 
@@ -269,6 +269,8 @@ public class Router extends AMachine {
 
 		units.addAll(getDHCPServer().getPersistentFirewall());
 		units.addAll(getDNSServer().getPersistentFirewall());
+
+		units.addAll(super.getPersistentFirewall());
 
 		return units;
 	}

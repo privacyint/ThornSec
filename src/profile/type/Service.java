@@ -44,7 +44,7 @@ public class Service extends Server {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentConfig() {
+	public Collection<IUnit> getPersistentConfig() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
 		// Mount /media/backup
@@ -60,6 +60,8 @@ public class Service extends Server {
 				"mount | grep 'log on /var/log' 2>&1", "", "fail",
 				"Couldn't move & remount the logs.  This is usually caused by logs already being in the hypervisor, on the first config of a service.  This can be fixed by rebooting the service (though you will lose any logs from the installation)"));
 
+		units.addAll(super.getPersistentConfig());
+
 		return units;
 	}
 
@@ -69,9 +71,10 @@ public class Service extends Server {
 	}
 
 	@Override
-	public Collection<IUnit> getPersistentFirewall() throws InvalidMachineModelException {
+	public Collection<IUnit> getPersistentFirewall() throws AThornSecException {
 		final Collection<IUnit> units = new ArrayList<>();
 
+		units.addAll(super.getPersistentFirewall());
 //		//getMachineModel().addEgress("download.virtualbox.org");
 
 		return units;
