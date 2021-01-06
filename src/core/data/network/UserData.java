@@ -7,7 +7,10 @@
  */
 package core.data.network;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Optional;
+import javax.json.JsonArray;
 import javax.json.JsonObject;
 import core.data.AData;
 
@@ -24,7 +27,7 @@ public class UserData extends AData {
 	private String homeDir;
 	private String defaultPassword;
 	private String wireguardKey;
-	private String wireguardIP;
+	private Collection<String> wireguardIPs;
 	private String wireguardPSK;
 
 	/**
@@ -40,7 +43,7 @@ public class UserData extends AData {
 		this.homeDir = null;
 		this.defaultPassword = null;
 		this.wireguardKey = null;
-		this.wireguardIP = null;
+		this.wireguardIPs = null;
 		this.wireguardPSK = null;
 	}
 
@@ -63,8 +66,18 @@ public class UserData extends AData {
 		JsonObject wireguardData = data.getJsonObject("wireguard");
 
 		this.wireguardKey = wireguardData.getString("key", null);
-		this.wireguardIP = wireguardData.getString("ip", null);
 		this.wireguardPSK = wireguardData.getString("psk", null);
+
+		if (!wireguardData.containsKey("ips")) {
+			return;
+		}
+
+		final JsonArray ips = wireguardData.getJsonArray("ips");
+		this.wireguardIPs = new ArrayList<>();
+
+		for (int i = 0; i < ips.size(); ++i) {
+			this.wireguardIPs.add(ips.getString(i));
+		}
 	}
 
 	/**
@@ -94,8 +107,8 @@ public class UserData extends AData {
 	 * Get a User's WireGuard IP address, if set
 	 * @return
 	 */
-	public final Optional<String> getWireGuardIP() {
-		return Optional.ofNullable(this.wireguardIP);
+	public final Optional<Collection<String>> getWireGuardIPs() {
+		return Optional.ofNullable(this.wireguardIPs);
 	}
 
 	/**

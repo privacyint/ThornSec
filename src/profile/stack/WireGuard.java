@@ -39,7 +39,7 @@ public class WireGuard extends AStructuredProfile {
 	public WireGuard(ServerModel me) {
 		super(me);
 
-		final JsonObject wgSettings = getMachineModel().getData().getData().getJsonObject("wireguard");
+		final JsonObject wgSettings = getServerModel().getData().getData().getJsonObject("wireguard");
 		this.listenPort = wgSettings.getInt("listen_port", 51820);
 	}
 
@@ -69,6 +69,7 @@ public class WireGuard extends AStructuredProfile {
 			nic.addWireGuardPeer(user);
 		}
 
+		nic.setListenPort(this.listenPort);
 		nic.addAddress(getNetworkModel().getSubnet(MachineType.VPN));
 
 		getMachineModel().addNetworkInterface(nic);
