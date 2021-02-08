@@ -84,7 +84,7 @@ public class NetworkInterfaceData extends AData {
 	}
 
 	@Override
-	public void read(JsonObject data) throws ADataException {
+	public NetworkInterfaceData read(JsonObject data) throws ADataException {
 		this.iface = data.getString("iface", null);
 
 		readInet(data);
@@ -95,6 +95,8 @@ public class NetworkInterfaceData extends AData {
 		readGateway(data);
 		readMAC(data);
 		readComment(data);
+
+		return this;
 	}
 
 	/**

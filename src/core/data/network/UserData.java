@@ -48,7 +48,7 @@ public class UserData extends AData {
 	}
 
 	@Override
-	public void read(JsonObject data) {
+	public UserData read(JsonObject data) {
 		this.username = data.getString("username", null);
 		this.fullName = data.getString("fullname", "Dr McNuggets");
 		this.sshKey = data.getString("ssh", null);
@@ -56,6 +56,8 @@ public class UserData extends AData {
 		this.defaultPassword = data.getString("defaultpw", null);
 
 		readWireguard(data);
+
+		return this;
 	}
 
 	private void readWireguard(JsonObject data) {

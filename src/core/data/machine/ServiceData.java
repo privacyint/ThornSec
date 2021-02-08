@@ -48,7 +48,7 @@ public class ServiceData extends ServerData {
 	}
 
 	@Override
-	public void read(JsonObject data) throws ADataException {
+	public ServiceData read(JsonObject data) throws ADataException {
 		super.read(data);
 
 		readOS();
@@ -56,6 +56,8 @@ public class ServiceData extends ServerData {
 		readBackupFrequency();
 		readCPUExecutionCap();
 		readISO();
+
+		return this;
 	}
 
 	private void readBackupFrequency() throws InvalidPropertyException {

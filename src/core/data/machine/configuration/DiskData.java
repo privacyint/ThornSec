@@ -80,7 +80,7 @@ public class DiskData extends AData {
 	}
 
 	@Override
-	public void read(JsonObject data) throws InvalidDiskSizeException {
+	public DiskData read(JsonObject data) throws InvalidDiskSizeException {
 		if (data.containsKey("medium")) {
 			setMedium(Medium.valueOf(data.getString("medium").toUpperCase()));
 		}
@@ -106,6 +106,8 @@ public class DiskData extends AData {
 
 			setSize(sizeInMB);
 		}
+
+		return this;
 	}
 
 	private void setSize(int size) throws InvalidDiskSizeException {

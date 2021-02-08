@@ -112,13 +112,15 @@ public abstract class AMachineData extends AData {
 	}
 
 	@Override
-	protected void read(JsonObject data) throws ADataException {
+	protected AMachineData read(JsonObject data) throws ADataException {
 		super.setData(data);
 
 		readEmailAddress();
 		readDomain();
 		readCNAMEs();
 		readFirewallRules();
+
+		return this;
 	}
 
 	/**

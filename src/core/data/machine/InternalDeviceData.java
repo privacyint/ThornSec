@@ -29,7 +29,9 @@ public class InternalDeviceData extends ADeviceData {
 	}
 
 	@Override
-	public void read(JsonObject data) throws ADataException {
+	public InternalDeviceData read(JsonObject data) throws ADataException {
 		super.read(data);
+
+		return this;
 	}
 }

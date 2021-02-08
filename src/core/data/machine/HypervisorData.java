@@ -38,7 +38,7 @@ public class HypervisorData extends ServerData {
 	}
 
 	@Override
-	public void read(JsonObject data) throws ADataException {
+	public HypervisorData read(JsonObject data) throws ADataException {
 		super.read(data);
 
 		if (data.containsKey("vm_base")) {
@@ -48,6 +48,8 @@ public class HypervisorData extends ServerData {
 		if (data.containsKey("backup_frequency")) {
 			this.backupFrequency = data.getInt("backup_frequency");
 		}
+
+		return this;
 	}
 
 	public final Set<ServerData> getServices() {

@@ -32,11 +32,13 @@ public abstract class ADeviceData extends AMachineData {
 	}
 
 	@Override
-	public void read(JsonObject data) throws ADataException {
+	public ADeviceData read(JsonObject data) throws ADataException {
 		super.read(data);
 
 		readIsManaged(data);
 		readNICs(data);
+
+		return this;
 	}
 
 	private final void readIsManaged(JsonObject data) {

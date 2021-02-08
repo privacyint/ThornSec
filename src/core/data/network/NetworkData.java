@@ -107,9 +107,10 @@ public class NetworkData extends AData {
 
 	/**
 	 * This is where we build the objects for our network.
+	 * @return 
 	 */
 	@Override
-	public void read(JsonObject networkJSONData) throws ADataException {
+	public NetworkData read(JsonObject networkJSONData) throws ADataException {
 		super.setData(networkJSONData);
 
 		readIncludes();
@@ -124,6 +125,8 @@ public class NetworkData extends AData {
 		readSubnets();
 		readUsers();
 		readMachines();
+
+		return this;
 	}
 
 	private HypervisorData readHyperVisor(String label, JsonObject hypervisorData)

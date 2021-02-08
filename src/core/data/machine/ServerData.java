@@ -112,7 +112,7 @@ public class ServerData extends AMachineData {
 	}
 
 	@Override
-	public void read(JsonObject data) throws ADataException {
+	public ServerData read(JsonObject data) throws ADataException {
 		super.read(data);
 
 		readNICs(data);
@@ -126,6 +126,8 @@ public class ServerData extends AMachineData {
 		readKeepassDbPath(data);
 		readCPUs(data);
 		readRAM(data);
+
+		return this;
 	}
 	
 	private NetworkInterfaceData readNIC(Direction dir, JsonObject nic) throws ADataException {
