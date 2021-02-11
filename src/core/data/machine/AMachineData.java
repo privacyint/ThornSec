@@ -1,223 +1,435 @@
 /*
  * This code is part of the ThornSec project.
- * 
+ *
  * To learn more, please head to its GitHub repo: @privacyint
- * 
+ *
  * Pull requests encouraged.
  */
 package core.data.machine;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-
 import javax.json.JsonArray;
 import javax.json.JsonObject;
-import javax.json.stream.JsonParsingException;
-
+import javax.json.JsonString;
+import javax.json.JsonValue;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
+import core.data.AData;
+import core.data.machine.configuration.NetworkInterfaceData;
+import core.data.machine.configuration.TrafficRule;
+import core.data.machine.configuration.TrafficRule.Encapsulation;
+import core.data.machine.configuration.TrafficRule.Table;
+import core.exception.data.ADataException;
+import core.exception.data.InvalidIPAddressException;
+import core.exception.data.InvalidPortException;
+import core.exception.data.machine.InvalidEmailAddressException;
+import core.exception.data.machine.configuration.InvalidNetworkInterfaceException;
+import core.exception.runtime.InvalidTypeException;
+import inet.ipaddr.AddressStringException;
 import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
 
-import core.data.AData;
-
-import core.data.machine.configuration.NetworkInterfaceData;
-
-import core.exception.data.ADataException;
-import core.exception.data.machine.InvalidEmailAddressException;
-
 /**
  * Abstract class for something representing a "Machine" on our network.
- * 
- * A machine, at its most basic, is something with network interfaces.
- * This means it can also talk TCP and UDP, can be throttled, and has
- * a name somewhere in DNS-world.
+ *
+ * A machine, at its most basic, is something with network interfaces. This
+ * means it can also talk TCP and UDP, can be throttled, and has a name
+ * somewhere in DNS-world.
  */
 public abstract class AMachineData extends AData {
-	//Networking
-	public enum Encapsulation { UDP, TCP; }
+	// These are the only types of machine I'll recognise until I'm told otherwise...
+	public enum MachineType {
+		ROUTER("Router"),
+		SERVER("Servers"),
+		HYPERVISOR("Hypervisors"),
+		DEDICATED("Dedicateds"),
+		SERVICE("Services"),
+		DEVICE("Devices"),
+		USER("Users"),
+		INTERNAL_ONLY("InternalOnlys"),
+		EXTERNAL_ONLY("ExternalOnlys"),
+		ADMIN("Administrators"),
+		GUEST("Guests"),
+		VPN("VPN"),
+		INTERNET("Internet");
 
-	private Set<NetworkInterfaceData> lanInterfaces;
-	private Set<NetworkInterfaceData> wanInterfaces;
+		private String machineType;
 
-	private IPAddress externalIPAddress;
+		MachineType(String machineType) {
+			this.machineType = machineType;
+		}
 
-	//DNS
-	private HostName fqdn;
-	private Set<HostName> cnames;
-	
-	//Alerting
+		@Override
+		public String toString() {
+			return this.machineType;
+		}
+		
+	    public static MachineType fromString(String text) throws InvalidTypeException {
+	        for (MachineType type : MachineType.values()) {
+	            if (type.toString().equalsIgnoreCase(text)) {
+	                return type;
+	            }
+	        }
+	        throw new InvalidTypeException(text + " is not a valid machine type");
+	    }
+	}
+
+	public static Boolean DEFAULT_IS_THROTTLED = true;
+
+	private Map<String, NetworkInterfaceData> networkInterfaces;
+	private Set<IPAddress> externalIPAddresses;
+	private Set<String> cnames;
+
+	// Alerting
 	private InternetAddress emailAddress;
-	
-	//Firewall
+
 	private Boolean throttled;
-	
-	private Hashtable<Encapsulation, Set<HostName>> listens;
-	
-	private Set<HostName> forwards;
-	private Set<HostName> ingresses;
-	private Set<HostName> egresses;
-	
+
+	private Set<TrafficRule> trafficRules;
+
+	private HostName domain;
+
+	protected Set<MachineType> types;
+
 	protected AMachineData(String label) {
 		super(label);
 
-		this.lanInterfaces = null;
-		this.wanInterfaces = null;
-		
-		this.externalIPAddress = null;
-		
-		this.fqdn   = null;
-		this.cnames = null;
-		
+		this.networkInterfaces = null;
 		this.emailAddress = null;
-		
 		this.throttled = null;
 
-		this.listens = null;
-
-		this.forwards  = null;
-		this.ingresses = null;
-		this.egresses  = null;
+		this.types = new LinkedHashSet<>();
+		this.externalIPAddresses = new LinkedHashSet<>();
+		this.cnames = new LinkedHashSet<>();
+		this.trafficRules = new LinkedHashSet<>();
 	}
-	
+
 	@Override
-	protected void read(JsonObject data)
-	throws ADataException, JsonParsingException, IOException, URISyntaxException {
-		this.setData(data);
-		
-		//These are all arrays, we need to do some further processing first!
-		JsonArray   lanIfaces  = (JsonArray) super.getPropertyObjectArray("lan");
-		JsonArray   wanIfaces  = (JsonArray) super.getPropertyObjectArray("wan");
-		Set<String> cnames     = getPropertyArray("cnames");
-		Set<String> listensTCP = getPropertyArray("listentcp");
-		Set<String> listensUDP = getPropertyArray("listenudp");
-		Set<String> forwards   = getPropertyArray("forward");
-		Set<String> ingresses  = getPropertyArray("ingress");
-		Set<String> egresses   = getPropertyArray("egress");
-	
-		//Let's set some fields
-		this.externalIPAddress = new IPAddressString(getStringProperty("externalip", null)).getAddress();
-		this.fqdn              = new HostName(getStringProperty("fqdn", null));
-		this.throttled         = getBooleanProperty("throttle");
-		
-		//But only set these fields !null if we actually have anything to put in them
-		if (lanIfaces != null) {
-			this.lanInterfaces = new HashSet<NetworkInterfaceData>();
-			
-			for (int i = 0; i < lanIfaces.size(); ++i) {
-				NetworkInterfaceData iface = new NetworkInterfaceData();
-				iface.setHost(this.getFQDN());
-				iface.read(lanIfaces.getJsonObject(i));
-				this.lanInterfaces.add(iface);
-			}	
-		}
-		if (wanIfaces != null) {
-			this.wanInterfaces = new HashSet<NetworkInterfaceData>();
-			
-			for (int i = 0; i < wanIfaces.size(); ++i) {
-				NetworkInterfaceData iface = new NetworkInterfaceData();
-				iface.setHost(this.getFQDN());
-				iface.read(wanIfaces.getJsonObject(i));
-				this.wanInterfaces.add(iface);
-			}
-		}
-		if (cnames != null) {
-			this.cnames = new HashSet<HostName>();
-			
-			for (String cname : cnames) {
-				this.cnames.add(new HostName(cname));
-			}
-		}
-		if (listensTCP != null || listensUDP != null) {
-			this.listens = new Hashtable<Encapsulation, Set<HostName>>();
+	protected AMachineData read(JsonObject data) throws ADataException {
+		super.setData(data);
 
-			if (listensTCP != null) {
-				this.listens.put(Encapsulation.TCP, setStringToSetHostName(listensTCP));
-			}
-			if (listensUDP != null) {
-				this.listens.put(Encapsulation.UDP, setStringToSetHostName(listensUDP));
-			}
+		readEmailAddress();
+		readDomain();
+		readCNAMEs();
+		readFirewallRules();
+
+		return this;
+	}
+
+	/**
+	 * Read in any firewall-related data
+	 * 
+	 * @throws InvalidPortException if a requested port is outside the valid range
+	 * @throws InvalidIPAddressException if a requested IP address isn't valid
+	 */
+	private void readFirewallRules() throws InvalidPortException, InvalidIPAddressException {
+		if (!getData().containsKey("firewall")) {
+			return;
 		}
-		if (forwards != null) {
-			this.forwards = setStringToSetHostName(forwards);
 		
+		readFirewallData(getData().getJsonObject("firewall"));		
+	}
+
+	/**
+	 * Read in any CNAMEs which have been set in the data
+	 */
+	private void readCNAMEs() {
+		if (!getData().containsKey("cnames")) {
+			return;
 		}
-		if (ingresses != null) {
-			this.ingresses = setStringToSetHostName(ingresses);
-		}
-		if (egresses != null) {
-			this.egresses = setStringToSetHostName(egresses);
-		}
+
+		final JsonArray cnames = getData().getJsonArray("cnames");
 		
+		for (final JsonValue cname : cnames) {
+			putCNAME(((JsonString) cname).getString());
+		}		
+	}
+
+	/**
+	 * Read in this machine's domain, as it may be different to the network's
+	 */
+	private void readDomain() {
+		if (!getData().containsKey("domain")) {
+			return;
+		}
+
+		setDomain(new HostName(getData().getString("domain")));
+	}
+
+	/**
+	 * Read in this machine's email address, if set
+	 * 
+	 * @throws InvalidEmailAddressException if the email address is invalid
+	 */
+	private void readEmailAddress() throws InvalidEmailAddressException {
+		if (!getData().containsKey("email")) {
+			return;
+		}
+
+		setEmailAddress(getData().getString("email"));
+	}
+
+	/**
+	 * Set this machine's email address.
+	 * 
+	 * @param address The email address for this machine
+	 * @throws InvalidEmailAddressException if the email address isn't valid
+	 */
+	private void setEmailAddress(String address) throws InvalidEmailAddressException {
 		try {
-			this.emailAddress = new InternetAddress(getStringProperty("email", null));
+			setEmailAddress(new InternetAddress(address));
+		} catch (AddressException e) {
+			throw new InvalidEmailAddressException(getData().getString("email")
+					+ " is an invalid email address");
 		}
-		catch (AddressException e) {
-			throw new InvalidEmailAddressException();
+	}
+
+	/**
+	 * Set the email address for this Machine
+	 * 
+	 * @param emailAddress The email address for this machine
+	 */
+	private void setEmailAddress(InternetAddress emailAddress) {
+		this.emailAddress = emailAddress;
+	}
+
+	/**
+	 * Read in listen rules for this machine. This punches holes in our Ingress
+	 * table, allowing traffic to come into this machine on the requested port(s)
+	 * in a given Encapsulation.
+	 * 
+	 * @param encapsulation The packet encapsulation
+	 * @param ports The port(s) on which to listen
+	 * @throws InvalidPortException if a port is outside of the valid range
+	 */
+	private void readListenRules(Encapsulation encapsulation, JsonArray ports) throws InvalidPortException {
+		TrafficRule rule = new TrafficRule();
+		rule.setEncapsulation(encapsulation);
+		rule.setSource("*");
+		rule.addDestination(new HostName(getLabel()));
+		rule.setTable(Table.INGRESS);
+
+		for (final JsonValue port : ports) {
+			rule.addPorts(Integer.parseInt(port.toString()));
+		}
+
+		this.addTrafficRule(rule);
+	}
+
+	/**
+	 * Read in firewall-related data
+	 * 
+	 * @param firewallData The data object "firewall" associated with this machine
+	 * @throws InvalidPortException
+	 * @throws InvalidIPAddressException
+	 */
+	private void readFirewallData(JsonObject firewallData) throws InvalidPortException, InvalidIPAddressException {
+		readThrottled(firewallData);
+		readListens(firewallData);
+		readForwards(firewallData);
+		readDnats(firewallData);
+		readIngresses(firewallData);
+		readEgresses(firewallData);
+		readExternalIPs(firewallData);
+	}
+
+	/**
+	 * Read in any external IP addresses assigned to this machine
+	 * @param firewallData the
+	 * @throws InvalidIPAddressException
+	 */
+	private void readExternalIPs(JsonObject firewallData) throws InvalidIPAddressException {
+		if (firewallData.containsKey("external_ip")) {
+			putExternalIP(firewallData.getString("external_ip"));
 		}
 	}
 
-	final protected Set<HostName> setStringToSetHostName(Set<String> hostnamesStrings) {
-		Set<HostName> hostnames = new HashSet<HostName>();
-		
-		for (String hostnameString : hostnamesStrings) {
-			hostnames.add(new HostName(hostnameString));
+	private void readEgresses(JsonObject firewallData) throws InvalidPortException {
+		if (!firewallData.containsKey("allow_egress_to")) {
+			return;
 		}
-		
-		return hostnames;
-	}
-	
-	public final HostName getFQDN() {
-		return this.fqdn;
-	}
-	
-	public final Set<NetworkInterfaceData> getLanInterfaces() {
-		return this.lanInterfaces;
+
+		final JsonArray destinations = firewallData.getJsonArray("allow_egress_to");
+
+		for (final JsonValue destination : destinations) {
+			TrafficRule egressRule = new TrafficRule();
+			egressRule.addDestination(new HostName(((JsonString) destination).getString()));
+			egressRule.setSource(getLabel());
+
+			this.addTrafficRule(egressRule);
+		}
 	}
 
-	public final Set<NetworkInterfaceData> getWanInterfaces() {
-		return this.wanInterfaces;
+	private void readIngresses(JsonObject firewallData) throws InvalidPortException {
+		if (!firewallData.containsKey("allow_ingress_from")) {
+			return;
+		}
+		final JsonArray sources = firewallData.getJsonArray("allow_ingress_from");
+
+		for (final JsonValue source : sources) {
+			TrafficRule ingressRule = new TrafficRule();
+			ingressRule.setSource(((JsonString) source).getString());
+			ingressRule.addDestination(new HostName(getLabel()));
+			ingressRule.setTable(Table.INGRESS);
+
+			this.addTrafficRule(ingressRule);
+		}
+	}		
+
+	private void readDnats(JsonObject firewallData) throws InvalidPortException {
+		if (!firewallData.containsKey("dnat_to")) {
+			return;
+		}
+
+		final JsonArray destinations = firewallData.getJsonArray("dnat_to");
+
+		for (final JsonValue destination : destinations) {
+			TrafficRule dnatRule = new TrafficRule();
+			dnatRule.addDestination(new HostName(((JsonString) destination).getString()));
+			dnatRule.setSource(getLabel());
+			dnatRule.setTable(Table.DNAT);
+
+			addTrafficRule(dnatRule);
+		}
 	}
 
-	public final IPAddress getExternalIP() {
-		return this.externalIPAddress;
+	private void readForwards(JsonObject firewallData) throws InvalidPortException {
+		if (firewallData.containsKey("allow_forward_to")) {
+			final JsonArray forwards = firewallData.getJsonArray("allow_forward_to");
+
+			for (final JsonValue forward : forwards) {
+				TrafficRule forwardRule = new TrafficRule();
+				forwardRule.addDestination(new HostName(((JsonString) forward).getString()));
+				forwardRule.setTable(Table.FORWARD);
+
+				this.addTrafficRule(forwardRule);
+			}
+		}
 	}
 
-	public final Hashtable<Encapsulation, Set<HostName>> getListens() {
-		return this.listens;
+	private void readListens(JsonObject firewallData) throws InvalidPortException {
+		if (!firewallData.containsKey("listen")) {
+			return;
+		}
+
+		final JsonObject listens = firewallData.getJsonObject("listen");
+
+		if (listens.containsKey("tcp")) {
+			readListenRules(Encapsulation.TCP, listens.getJsonArray("tcp"));
+		}
+		if (listens.containsKey("udp")) {
+			readListenRules(Encapsulation.UDP, listens.getJsonArray("udp"));
+		}
 	}
 
-	public final Set<HostName> getForwards() {
-		return this.forwards;
+	private void readThrottled(JsonObject firewallData) {
+		if (!firewallData.containsKey("throttle")) {
+			return;
+		}
+
+		this.throttled = firewallData.getBoolean("throttle");		
 	}
 
-	public final Set<HostName> getIngresses() {
-		return this.ingresses;
+	public final Optional<Set<String>> getCNAMEs() {
+		return Optional.ofNullable(this.cnames);
 	}
 
-	public final Set<HostName> getEgresses() {
-		return this.egresses;
+	public Optional<HostName> getDomain() {
+		return Optional.ofNullable(this.domain);
 	}
 
-	public final Boolean getIsThrottled() {
+	public final Set<TrafficRule> getTrafficRules() {
+		return this.trafficRules;
+	}
+
+	public final Optional<InternetAddress> getEmailAddress() {
+		return Optional.ofNullable(this.emailAddress);
+	}
+
+	public final Set<IPAddress> getExternalIPs() {
+		return this.externalIPAddresses;
+	}
+
+	public final Optional<Map<String, NetworkInterfaceData>> getNetworkInterfaces() {
+		return Optional.ofNullable(this.networkInterfaces);
+	}
+
+	public final Boolean isThrottled() {
 		return this.throttled;
 	}
 
-	public final Set<HostName> getCnames() {
-		return this.cnames;
-	}
-	
-	public final InternetAddress getEmailAddress() {
-		return this.emailAddress;
+	private void putCNAME(String cname) {
+		this.cnames.add(cname);
 	}
 
-	public final IPAddress getExternalIp() {
-		return this.externalIPAddress;
+	/**
+	 * 
+	 * @param dir
+	 * @param ifaces
+	 * @throws InvalidNetworkInterfaceException
+	 */
+	protected void putNetworkInterface(NetworkInterfaceData... ifaces) throws InvalidNetworkInterfaceException {
+		if (this.networkInterfaces == null) {
+			this.networkInterfaces = new LinkedHashMap<>();
+		}
+
+		for (final NetworkInterfaceData iface : ifaces) {
+			if (this.networkInterfaces.containsKey(iface.getIface())) {
+				throw new InvalidNetworkInterfaceException("Interfaces can only be declared once");
+			}
+
+			this.networkInterfaces.put(iface.getIface(), iface);
+		}
+	}
+
+	private void addTrafficRule(TrafficRule rule) {
+		this.trafficRules.add(rule);
+	}
+
+	private void putExternalIP(String address) throws InvalidIPAddressException {
+		if (this.externalIPAddresses == null) {
+			this.externalIPAddresses = new LinkedHashSet<>();
+		}
+		
+		try {
+			this.externalIPAddresses.add(new IPAddressString(address).toAddress());
+		}
+		catch (final AddressStringException e) {
+			throw new InvalidIPAddressException(address + " on machine "
+					+ getLabel() + " is not a valid IP Address");
+		}		
+	}
+
+
+	private void setDomain(HostName domain) {
+		this.domain = domain;
+	}
+
+	protected void putType(String... types) {
+		for (String type : types) {
+			MachineType machineType = MachineType.valueOf(type.replaceAll("[^a-zA-Z]", "").toUpperCase());
+			putType(machineType);
+		}
+	}
+
+	protected void putType(MachineType... types) {
+		for (MachineType type : types) {
+			this.types.add(type);
+		}
+	}
+
+	public final Collection<MachineType> getTypes() {
+		return this.types;
 	}
 	
+	public final Boolean isType(MachineType type) {
+		return this.getTypes().contains(type);
+	}
 }

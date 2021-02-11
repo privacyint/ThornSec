@@ -1,34 +1,55 @@
+/*
+ * This code is part of the ThornSec project.
+ *
+ * To learn more, please head to its GitHub repo: @privacyint
+ *
+ * Pull requests encouraged.
+ */
 package core.profile;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Set;
 
 import core.iface.IChildUnit;
 import core.iface.IUnit;
-import core.model.NetworkModel;
-import core.model.ServerModel;
+
+import core.model.machine.ServerModel;
+
 import core.unit.ComplexUnit;
 
 public abstract class ACompoundProfile extends AProfile {
 
-	private String precondition;
-	private String config;
+	private final String precondition;
+	private final String config;
 
-	public ACompoundProfile(String name, ServerModel me, NetworkModel model, String precondition, String config) {
-		super(name, me, model);
+	public ACompoundProfile(ServerModel me, String precondition, String config) {
+		super(me);
+		
 		this.precondition = precondition;
 		this.config = config;
 	}
 
-	public Vector<IUnit> getUnits() {
-		Vector<IUnit> rules = new Vector<IUnit>();
-		rules.add(new ComplexUnit(getLabel() + "_compound", precondition, "",
-				getLabel() + "_unchanged=1;\n" + getLabel() + "_compound=1;\n"));
-		rules.addAll(this.getChildren());
-		rules.add(new ComplexUnit(getLabel(), precondition, config + "\n" + getLabel() + "_unchanged=1;\n",
-				getLabel() + "=$" + getLabel() + "_unchanged;\n"));
+	@Override
+	public Collection<IUnit> getUnits() {
+		final Collection<IUnit> rules = new ArrayList<>();
+		rules.add(new ComplexUnit(getMachineModel().getLabel() + "_compound",
+						this.precondition,
+						"",
+						getMachineModel().getLabel() + "_unchanged=1;\n" + getMachineModel().getLabel() + "_compound=1;\n")
+		);
+		
+		rules.addAll(getChildren());
+		
+		rules.add(new ComplexUnit(getMachineModel().getLabel(),
+						this.precondition,
+						this.config + "\n" + getMachineModel().getLabel() + "_unchanged=1;\n",
+						getMachineModel().getLabel() + "=$" + getMachineModel().getLabel() + "_unchanged;\n")
+		);
+		
 		return rules;
 	}
 
-	public abstract Vector<IChildUnit> getChildren();
+	public abstract Set<IChildUnit> getChildren();
 
 }

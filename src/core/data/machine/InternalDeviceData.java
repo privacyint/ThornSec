@@ -7,11 +7,7 @@
  */
 package core.data.machine;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-
 import javax.json.JsonObject;
-import javax.json.stream.JsonParsingException;
 
 import core.exception.data.ADataException;
 
@@ -28,11 +24,14 @@ public class InternalDeviceData extends ADeviceData {
 
 	public InternalDeviceData(String label) {
 		super(label);
+		
+		this.putType(MachineType.INTERNAL_ONLY);
 	}
 
 	@Override
-	public void read(JsonObject data)
-	throws ADataException, JsonParsingException, IOException, URISyntaxException {
+	public InternalDeviceData read(JsonObject data) throws ADataException {
 		super.read(data);
+
+		return this;
 	}
 }

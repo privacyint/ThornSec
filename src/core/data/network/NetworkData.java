@@ -1,721 +1,640 @@
 /*
  * This code is part of the ThornSec project.
- * 
+ *
  * To learn more, please head to its GitHub repo: @privacyint
- * 
+ *
  * Pull requests encouraged.
  */
 package core.data.network;
 
-import java.io.BufferedReader;
-import java.io.File;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.StringReader;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.UnknownHostException;
-
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Paths;
-
+import java.nio.file.Path;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
-
+import java.util.stream.Collectors;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
+import javax.json.JsonString;
 import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
-import javax.mail.internet.InternetAddress;
-
+import inet.ipaddr.AddressStringException;
 import inet.ipaddr.HostName;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
-
+import inet.ipaddr.IncompatibleAddressException;
 import core.data.AData;
-
-import core.data.machine.ADeviceData;
 import core.data.machine.AMachineData;
-import core.data.machine.AMachineData.Encapsulation;
+import core.data.machine.AMachineData.MachineType;
+import core.data.machine.DedicatedData;
 import core.data.machine.ExternalDeviceData;
 import core.data.machine.HypervisorData;
 import core.data.machine.InternalDeviceData;
-import core.data.machine.UserDeviceData;
-import core.data.machine.configuration.NetworkInterfaceData;
 import core.data.machine.ServerData;
-import core.data.machine.ServerData.WANConnection;
 import core.data.machine.ServiceData;
-
+import core.data.machine.UserDeviceData;
 import core.exception.data.ADataException;
+import core.exception.data.InvalidHostException;
 import core.exception.data.InvalidIPAddressException;
-import core.exception.data.InvalidPropertyArrayException;
+import core.exception.data.InvalidJSONException;
 import core.exception.data.InvalidPropertyException;
+import core.exception.data.MissingPropertiesException;
 import core.exception.data.NoValidUsersException;
-import core.exception.data.machine.InvalidDeviceException;
 import core.exception.data.machine.InvalidMachineException;
-import core.exception.data.machine.InvalidServerException;
 import core.exception.data.machine.InvalidUserException;
+import core.exception.runtime.InvalidTypeException;
 
 /**
  * This class represents the state of our network *AS DEFINED IN THE JSON*
- * 
- * If something isn't defined in our JSON, we will return default values.
- * 
+ *
  * This is our "interface" between the data and the models ThornSec will build.
  */
 public class NetworkData extends AData {
-	private static final String DEFAULT_DTLS           = "true";
-	private static final String DEFAULT_ADBLOCKING     = "false";
-	private static final String DEFAULT_AUTOGENPASSWDS = "false";
-	private static final String DEFAULT_VPNONLY        = "false";
-	private static final String DEFAULT_AUTOGUEST      = "false";
-	private static final String DEFAULT_THORNSECBASE   = "/srv/ThornSec";
-	private static final String DEFAULT_DEBIAN_ISO_DIR = "https://gensho.ftp.acc.umu.se/debian-cd/current/amd64/iso-cd/";
-	private static final String DEFAULT_DEBIANMIRROR   = "free.hands.com";
-	private static final String DEFAULT_DEBIANDIR      = "/debian";
-	private static final String DEFAULT_NETMASK        = "/30";
-	private static final String DEFAULT_KEEPASS_DB   = "ThornSec.kdbx";
-	
-	private static final Integer DEFAULT_RAM          = 2048;
-	private static final Integer DEFAULT_CPUS         = 1;
-	
-	private static final Integer DEFAULT_SSH_PORT   = 65422;
-	private static final Integer DEFAULT_ADMIN_PORT = 65422;
-	
-	private static final Boolean DEFAULT_UPDATE = true;
-	
 	private String myUser;
-	private String pgp;
-	private IPAddress ip;
+	private IPAddress configIP;
+	private String domain;
 
 	private Boolean adBlocking;
-	private Boolean autoGenPasswds;
-	
+	private Boolean autoGenPassphrases;
+
 	private Boolean vpnOnly;
-	private Boolean dtls;
 	private Boolean autoGuest;
 
-	private Set<IPAddress> upstreamDNS;
-	
-	private ServiceData    defaultServiceData;
-	private HypervisorData defaultHypervisorData;
+	private Set<HostName> upstreamDNS;
 
-	private Hashtable<String, ServerData>  servers;
-	private Hashtable<String, ADeviceData> devices;
-	
+	private final Map<MachineType, IPAddress> subnets;
+
+	private Map<String, AMachineData> machines;
+	private Map<String, UserData> users;
+
+	/**
+	 * Create a new Network, populated with null values.
+	 *
+	 * @param label the network's name
+	 */
 	public NetworkData(String label) {
 		super(label);
-		
-		this.myUser     = null;
-		this.pgp        = null;
-		
-		this.ip = null;
-		
-		this.adBlocking     = null;
-		this.autoGenPasswds = null;
-		this.vpnOnly        = null;
-		this.dtls           = null;
-		this.autoGuest      = null;
-		
+
+		this.myUser = null;
+		this.domain = null;
+
+		this.configIP = null;
+
+		this.adBlocking = null;
+		this.autoGenPassphrases = null;
+		this.vpnOnly = null;
+		this.autoGuest = null;
+
 		this.upstreamDNS = null;
-		
-		this.defaultServiceData    = new ServiceData("");
-		this.defaultHypervisorData = new HypervisorData("");
-		
-		this.servers = new Hashtable<String, ServerData>();
-		this.devices = new Hashtable<String, ADeviceData>();
+
+		this.subnets = new Hashtable<>();
+
+		this.machines = new LinkedHashMap<>();
+		this.users = new LinkedHashMap<>();
 	}
 
+	/**
+	 * This is where we build the objects for our network.
+	 * @return 
+	 */
 	@Override
-	public void read(JsonObject data)
-	throws ADataException, JsonParsingException, IOException, URISyntaxException {
-		super.setData(data);
-		
-		String include = data.getString("include", null);
-		if (include != null) {
-			this.readInclude(include);
-		}
-		else {
-			this.defaultServiceData.read(data);
-			
-			this.upstreamDNS = getIPAddressArray(data, "dns");
+	public NetworkData read(JsonObject networkJSONData) throws ADataException {
+		super.setData(networkJSONData);
 
-			this.ip = new IPAddressString(data.getString("ip", null)).getAddress();
+		readIncludes();
+		readUpstreamDNS();
+		readNetworkDomain();
+		readNetworkConfigIP();
+		readNetworkConfigUser();
+		readAdBlocking();
+		readAutoGenPasswords();
+		readVPNOnly();
+		readAutoGuest();
+		readSubnets();
+		readUsers();
+		readMachines();
 
-			this.myUser         = data.getString("myuser", null);
-			this.pgp            = data.getString("gpg", null);
-			
-			this.dtls           = Boolean.parseBoolean(data.getString("dtls", DEFAULT_DTLS));
-			this.adBlocking     = Boolean.parseBoolean(data.getString("adblocking", DEFAULT_ADBLOCKING));
-			this.autoGenPasswds = Boolean.parseBoolean(data.getString("autogenpasswds", DEFAULT_AUTOGENPASSWDS));
-			this.vpnOnly        = Boolean.parseBoolean(data.getString("vpnonly", DEFAULT_VPNONLY));
-			this.autoGuest      = Boolean.parseBoolean(data.getString("autoguest", DEFAULT_AUTOGUEST));
-
-			readServers(data.getJsonObject("servers"));
-			readInternalDevices(data.getJsonObject("internaldevices"));
-			readExternalDevices(data.getJsonObject("externaldevices"));
-			readUserDevices(data.getJsonObject("users"));
-		}
+		return this;
 	}
 
-	private Set<IPAddress> getIPAddressArray(JsonObject data, String property)
-	throws UnknownHostException {
-		Set<IPAddress> addresses = new HashSet<IPAddress>();
+	private HypervisorData readHyperVisor(String label, JsonObject hypervisorData)
+			throws ADataException {
 
-		JsonArray jsonIPAddresses = data.getJsonArray(property);
-		
-		for (JsonValue ip : jsonIPAddresses) {
-			addresses.add(new IPAddressString(ip.toString()).getAddress());
+		HypervisorData hv = new HypervisorData(label);
+		hv.read(getData());
+		hv.read(hypervisorData);
+
+		// They *should* contain information about their services
+		if (!hypervisorData.containsKey("services")) {
+			throw new MissingPropertiesException(label +
+					" doesn't contain any services. Please check your config");
 		}
-		
-		return addresses;
+
+		JsonObject services = hypervisorData.getJsonObject("services");
+
+		for (final String serviceLabel : services.keySet()) {
+			ServiceData service = readService(serviceLabel, services.getJsonObject(serviceLabel));
+
+			hv.addService(service);
+			service.setHypervisor(hv);
+
+			this.putMachine(service);
+		}
+
+		return hv;
 	}
 	
-	private void readInclude(String include)
-	throws IOException, JsonParsingException, ADataException, URISyntaxException {
-		String rawIncludeData = null;
-		
-		JsonReader jsonReader = null;
-		
-		rawIncludeData = new String(Files.readAllBytes(Paths.get(include)), StandardCharsets.UTF_8);
-		jsonReader = Json.createReader(new StringReader(rawIncludeData));
+	private ServiceData readService(String label, JsonObject serviceData) throws ADataException {
+		final ServiceData service = new ServiceData(label);
+		service.read(getData());
+		service.read(serviceData);
 
-		read(jsonReader.readObject());
+		return service;
+	}
+	
+	/**
+	 * Read in a given server object, specialise and add it to our network.
+	 * 
+	 * If the object is a Hypervisor, interrogate it further for its nested
+	 * services, read those in, and add those to the network too.
+	 * 
+	 * @param label The server's label
+	 * @param serverDataObject raw JsonObject to read in
+	 * @throws ADataException if attempting to add a machine with a duplicate label
+	 */
+	private void readServer(String label, JsonObject serverDataObject) throws ADataException {
+		// We have to read it in first to find out what it is - we can then
+		// replace it with a specialised version
+		ServerData serverData = new ServerData(label);
+		serverData.read(getData()); //Read in network-level defaults
+		serverData.read(serverDataObject); //Read in server-specific settings
+
+		// If we've just hit a hypervisor machine, we need to dig a little,
+		// because the services are nested inside
+		if (serverData.isType(MachineType.HYPERVISOR)) {
+			serverData = readHyperVisor(label, serverDataObject);
+		}
+		else if (serverData.isType(MachineType.DEDICATED)) {
+			serverData = new DedicatedData(label);
+			serverData.read(getData()); //Read in network-level defaults
+			serverData.read(serverDataObject); //Read in server-specific settings
+		}
+
+		this.putMachine(serverData);
 	}
 
-	private void readServers(JsonObject jsonServers)
-	throws ADataException, JsonParsingException, IOException, URISyntaxException {
-		for (String server : jsonServers.keySet()) {
-			ServerData net = new ServerData(server);
-			net.read(jsonServers.getJsonObject(server));
-			
-			this.servers.put(server, net);
+	private void readNetworkConfigUser() {
+		if (!getData().containsKey("my_ssh_user")) {
+			return;
+		}
+
+		this.myUser = getData().getJsonString("my_ssh_user").getString();
+	}
+
+	private void readMachines() throws ADataException {
+		readServers();
+		readInternalDevices();
+		readExternalDevices();
+		readUserDevices();
+	}
+
+	private void readUserDevices() throws ADataException {
+		if (!getData().containsKey("users")) {
+			return;
+		}
+
+		final JsonObject jsonDevices = getData().getJsonObject("users");
+
+		for (final String jsonDevice : jsonDevices.keySet()) {
+			final UserDeviceData device = new UserDeviceData(jsonDevice);
+			device.read(jsonDevices.getJsonObject(jsonDevice));
+
+			if (device.getNetworkInterfaces().isPresent()) {
+				putMachine(device);
+			}
 		}
 	}
 
-	private void readExternalDevices(JsonObject jsonDevices)
-	throws ADataException, JsonParsingException, IOException, URISyntaxException {
-		for (String device : jsonDevices.keySet()) {
-			ExternalDeviceData dev = new ExternalDeviceData(device);
-			dev.read(jsonDevices.getJsonObject(device));
-			
-			this.devices.put(device, dev);
+	private void readExternalDevices() throws ADataException {
+		if (!getData().containsKey("guests")) {
+			return;
+		}
+
+		final JsonObject jsonDevices = getData().getJsonObject("guests");
+
+		for (final String jsonDevice : jsonDevices.keySet()) {
+			final ExternalDeviceData device = new ExternalDeviceData(jsonDevice);
+			device.read(jsonDevices.getJsonObject(jsonDevice));
+
+			putMachine(device);
 		}
 	}
 
-	private void readInternalDevices(JsonObject jsonDevices)
-	throws ADataException, JsonParsingException, IOException, URISyntaxException {
-		for (String device : jsonDevices.keySet()) {
-			InternalDeviceData dev = new InternalDeviceData(device);
-			dev.read(jsonDevices.getJsonObject(device));
-			
-			this.devices.put(device, dev);
+	private void readInternalDevices() throws ADataException {
+		if (getData().containsKey("peripherals")) {
+			final JsonObject jsonDevices = getData().getJsonObject("peripherals");
+
+			for (final String jsonDevice : jsonDevices.keySet()) {
+				final InternalDeviceData device = new InternalDeviceData(jsonDevice);
+				device.read(jsonDevices.getJsonObject(jsonDevice));
+
+				putMachine(device);
+			}
+		}	
+	}
+
+	private void readServers() throws ADataException {
+		if (!getData().containsKey("servers")) {
+			return;
+		}
+
+		final JsonObject jsonServers = getData().getJsonObject("servers");
+
+		for (final String label : jsonServers.keySet()) {
+			readServer(label, jsonServers.getJsonObject(label));
+		}
+	}
+
+	/**
+	 * Read in any Subnet declarations made in the JSON
+	 * @throws InvalidIPAddressException 
+	 * @throws InvalidTypeException 
+	 * @throws InvalidPropertyException 
+	 */
+	private void readSubnets() throws InvalidIPAddressException, InvalidPropertyException {
+		if (!getData().containsKey("subnets")) {
+			return;
+		}
+
+		final JsonObject jsonSubnets = getData().getJsonObject("subnets");
+
+		for (final String label : jsonSubnets.keySet()) {
+			String ip = ((JsonString)jsonSubnets.getJsonString(label)).getString();
+			readSubnet(label, ip);
 		}
 	}
 	
-	private void readUserDevices(JsonObject jsonDevices)
-	throws ADataException, JsonParsingException, IOException, URISyntaxException {
-		Set<String> devices = jsonDevices.keySet();
-
-		//We will *always* need user devices, or we will have no way to SSH in!
-		if (devices.isEmpty()) { throw new NoValidUsersException(); }
-		
-		for (String device : devices) {
-			UserDeviceData userDevice = new UserDeviceData(device);
-			userDevice.read(jsonDevices.getJsonObject(device));
-			
-			this.devices.put(device, userDevice);
+	private void readSubnet(String label, String ip) throws InvalidIPAddressException, InvalidPropertyException {
+		try {
+			this.subnets.put(MachineType.fromString(label), new IPAddressString(ip).toAddress());
+		} catch (AddressStringException | IncompatibleAddressException e) {
+			throw new InvalidIPAddressException(ip + " is an invalid subnet");
+		} catch (InvalidTypeException e) {
+			throw new InvalidPropertyException(label + " is not a valid Machine Type");
 		}
 	}
 
-	public final Set<String> getServerProfiles(String server)
-	throws InvalidServerException {
-		return getServerData(server).getProfiles();
+	@Deprecated //TODO: This is a property of a Router
+	private void readAutoGuest() {
+		if (!getData().containsKey("guest_network")) {
+			return;
+		}
+
+		this.autoGuest = getData().getBoolean("guest_network");
+	}
+
+	@Deprecated //TODO: This is a property of a Router
+	private void readVPNOnly() {
+		if (!getData().containsKey("vpn_only")) {
+			return;
+		}
+
+		this.vpnOnly = getData().getBoolean("vpn_only");
+	}
+
+	/**
+	 * Read in whether we should autogenerate secure passwords, or set the
+	 * default from {@link NETWORK_AUTOGENPASSWDS}
+	 */
+	private void readAutoGenPasswords() {
+		if (!getData().containsKey("autogen_passwds")) {
+			return;
+		}
+
+		this.autoGenPassphrases = getData().getBoolean("autogen_passwds");
+	}
+
+	/**
+	 * Read in whether or not we should be doing network-level ad-blocking.
+	 */
+	@Deprecated //TODO: this should be in Router(), not here.
+	private void readAdBlocking() {
+		if (!getData().containsKey("adblocking")) {
+			return;
+		}
+
+		this.adBlocking = getData().getBoolean("adblocking");
+	}
+
+	/**
+	 * Get the gateway IP address for our configuration
+	 * @throws InvalidIPAddressException 
+	 */
+	private void readNetworkConfigIP() throws InvalidIPAddressException {
+		if (!getData().containsKey("network_config_ip")) {
+			return;
+		}
+
+		this.configIP = new IPAddressString(getData().getString("network_config_ip")
+				.replaceAll("[^\\.0-9]", ""))
+				.getAddress();
+
+		if (this.configIP == null) {
+			throw new InvalidIPAddressException(getData().getString("network_config_ip"));
+		}
+	}
+
+	/**
+	 * Read in our Network-level domain from the JSON
+	 */
+	private void readNetworkDomain() {
+		if (!getData().containsKey("domain")) {
+			return;
+		}
+
+		this.domain = getData().getJsonString("domain").getString();
+	}
+
+	private void readUpstreamDNS() throws InvalidHostException {
+		if (!getData().containsKey("upstream_dns")) {
+			return;
+		}
+
+		this.upstreamDNS = getHostNameArray("upstream_dns");
+	}
+
+	/**
+	 * Parse and merge a given file with this. The include argument
+	 * must be an absolute path to a JSON file, in your Operating System's
+	 * native path style.
+	 * 
+	 * @throws InvalidPropertyException if a path is invalid
+	 * @throws InvalidJSONException if the JSON itself is invalid
+	 */
+	private void readIncludes() throws InvalidPropertyException, InvalidJSONException {
+		if (!getData().containsKey("includes")) {
+			return;
+		}
+
+		for (JsonValue path : getData().getJsonArray("includes")) {
+			readInclude(((JsonString) path).getString());
+		}
+	}
+
+	/**
+	 * Parse and merge a given file with this. The include argument
+	 * must be an absolute path to a JSON file, in your Operating System's
+	 * native path style.
+	 * 
+	 * @param includePath Absolute path to the JSON file to be read into our
+	 * 		NetworkData
+	 * @throws InvalidPropertyException if the path to the JSON is invalid
+	 * @throws InvalidJSONException 
+	 */
+	private void readInclude(String includePath) throws InvalidPropertyException, InvalidJSONException {
+		String configBase = getConfigFilePath().getParent().toString();
+		Path includeFile = Path.of(configBase, includePath);
+
+		try {
+			String rawUTF8Data = new String(Files.readAllBytes(includeFile),
+											StandardCharsets.UTF_8);
+			rawUTF8Data = rawUTF8Data.replaceAll("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)", "");
+
+			JsonReader jsonReader = Json.createReader(new StringReader(rawUTF8Data));
+
+			JsonObject currentData = getData();
+			JsonObject includeData = jsonReader.readObject();
+
+			JsonObjectBuilder newData = Json.createObjectBuilder();
+			currentData.forEach((k,v) -> newData.add(k, v));
+			includeData.forEach((k,v) -> newData.add(k, v));
+
+			setData(newData.build());
+
+			if (includeData.containsKey("includes")) {
+				for (JsonValue path : includeData.getJsonArray("includes")) {
+					this.readInclude(((JsonString) path).getString());
+				}
+			}
+		}
+		catch (IOException e) {
+			throw new InvalidPropertyException("Invalid path to include:"
+					+ includeFile.toString());
+		}
+		catch (JsonParsingException e) {
+			throw new InvalidJSONException("Trying to read in " + includeFile.toString()
+					+ " threw the following error " + e.getLocalizedMessage());
+		}
+	}
+
+	/**
+	 * Creates UserData objects from a given JSON network
+	 * @param networkJSONData the whole network
+	 * @throws InvalidUserException If there are duplicate users declared
+	 * in this network's data
+	 * @throws NoValidUsersException If there aren't any Users to 
+	 */
+	private void readUsers() throws InvalidUserException, NoValidUsersException {
+		if (!getData().containsKey("users") || getData().getJsonObject("users").isEmpty()) {
+			throw new NoValidUsersException("There must be at least one user on"
+					+ " your network");
+		}
+
+		JsonObject jsonUsers = getData().getJsonObject("users");
+
+		for (final String userLabel : jsonUsers.keySet()) {
+			UserData user = new UserData(userLabel);
+			user.read(jsonUsers.getJsonObject(userLabel));
+
+			if (this.users.put(user.getLabel(), user) != null) {
+				throw new InvalidUserException("You have a duplicate user ("
+						+ user.getLabel() + ") in your network");
+			}
+		}
+	}
+
+	/**
+	 * Add (a) given machine(s) to your network. Machines must have unique labels
+	 *  
+	 * @param machinesData The machine to add to our network
+	 * @throws InvalidMachineException on attempting to add a model with a
+	 * 		duplicate label
+	 */
+	private void putMachine(AMachineData... machinesData) throws InvalidMachineException {
+		for (AMachineData machineData : machinesData) {
+			if (this.machines.put(machineData.getLabel(), machineData) != null) {
+				throw new InvalidMachineException("You have a duplicate machine ("
+						+ machineData.getLabel() + ") in your network");
+			}
+		}
+	}
+
+	/**
+	 * Get the MachineData for all machines on this network.
+	 * 
+	 * @return a map of all machines' data on the network, indexed by label
+	 */
+	public Map<String, AMachineData> getMachinesData() {
+		return this.machines;
+	}
+
+	/**
+	 * Get a given machine's data. You're not guaranteed that this machine is
+	 * there, if you're reading from a config file 
+	 *
+	 * @param label the label of the Machine you wish to get
+	 * @return
+	 */
+	public AMachineData getMachineData(String label) {
+		return getMachinesData().get(label);
 	}
 	
+	private Set<HostName> getHostNameArray(String key) throws InvalidHostException {
+		if (!getData().containsKey(key)) {
+			return null;
+		}
+
+		Set<HostName> hosts = new HashSet<>();
+		final JsonArray jsonHosts = getData().getJsonArray(key);
+
+		for (final JsonValue jsonHost : jsonHosts) {
+			HostName host = new HostName(((JsonString) jsonHost).getString());
+
+			if (!host.isValid()) {
+				throw new InvalidHostException(((JsonString) jsonHost).getString()
+						+ " is an invalid host");
+			}
+
+			hosts.add(host);
+		}
+
+		return hosts;
+	}
 
 	// Network only data
-	public final String getUser()
-	throws NoValidUsersException {
-		if (this.myUser ==  null) {
+	public final String getUser() throws NoValidUsersException {
+		if (this.myUser == null) {
 			throw new NoValidUsersException();
 		}
-		
+
 		return this.myUser;
 	}
 
-	public final Set<IPAddress> getDNS() {
-		return this.upstreamDNS;
+	/**
+	 * @return the upstream DNS server addresses
+	 */
+	public final Optional<Collection<HostName>> getUpstreamDNSServers() {
+		return Optional.ofNullable(this.upstreamDNS);
 	}
 
-	public final Boolean getDTLS() {
-		return this.dtls;
-	}
-	
-	public final String getPGP() {
-		return this.pgp;
-	}
-	
 	/**
-	 * Should we build an auto guest network?
+	 * Should we automatically build a guest network?
 	 */
-	public final Boolean getAutoGuest() {
-		return this.autoGuest;
+	public final Optional<Boolean> buildAutoGuest() {
+		return Optional.ofNullable(this.autoGuest);
 	}
-	
+
 	/**
-	 * Should we autogenerate passwords for users who haven't set a default?
+	 * Should we autogenerate passphrases for users who haven't set a default?
 	 */
-	public final Boolean getAutoGenPasswds() {
-		return this.autoGenPasswds;
+	public final Boolean autoGenPassphrasess() {
+		return this.autoGenPassphrases;
 	}
-	
+
 	/**
 	 * Gets the netmask - hardcoded as /30.
 	 *
 	 * @return the netmask (255.255.255.252)
 	 */
 	public final IPAddress getNetmask() {
-		return new IPAddressString(DEFAULT_NETMASK).getAddress();
+		//TODO: THIS
+		return new IPAddressString("255.255.255.252").getAddress();
 	}
-	
+
 	/**
-	 * This is either the IP of our router (if we're inside) or the public IP address (if it's an external resource)
+	 * This is either the IP of our router (if we're inside) or the public IP
+	 * address (if it's an external resource)
 	 */
-	public final IPAddress getIP() throws InvalidIPAddressException {
-		if (this.ip == null) {
-			throw new InvalidIPAddressException();
+	public final IPAddress getConfigIP() throws InvalidIPAddressException {
+		if (this.configIP == null) {
+			throw new InvalidIPAddressException("You must set a valid IP address for this network");
 		}
 
-		return this.ip;
+		return this.configIP;
 	}
-	
+
 	/**
 	 * Should we do ad blocking at the router?
 	 */
-	public final Boolean getAdBlocking() {
-		return this.adBlocking;
+	public final Optional<Boolean> doAdBlocking() {
+		return Optional.ofNullable(this.adBlocking);
 	}
 
-	public final boolean getVpnOnly() {
-		return this.vpnOnly;
-	}
-	
 	/**
-	 * Gets an arbitrary property from a server's Data.
-	 * 
-	 * Use this method with great care, you should only really call a wrapper
+	 * Do we require users to be on a VPN connection to use our services?
+	 * (This is only useful for internal services...)
 	 */
-	public final String getProperty(String server, String property, Boolean isRequired)
-	throws InvalidPropertyException {
-		String value = this.servers.get(server).getStringProperty(property, null); 
-		
-		if (value == null && isRequired) {
-			throw new InvalidPropertyException(); 
-		}
-
-		return value;
+	public final Optional<Boolean> isVPNOnly() {
+		return Optional.ofNullable(this.vpnOnly);
 	}
-	
+
 	/**
-	 * Gets an arbitrary property array.
-	 * 
-	 * Use this method with great care, you should only really call a wrapper
+	 * @return the domain which applies to this network
 	 */
-	public final Set<String> getPropertyArray(String machine, String property)
-	throws InvalidPropertyArrayException, InvalidMachineException {
-		return this.getAMachineData(machine).getPropertyArray(property);
+	public final Optional<String> getDomain() {
+		return Optional.ofNullable(this.domain);
 	}
-	
+
+	public Optional<Map<MachineType, IPAddress>> getSubnets() {
+		return Optional.ofNullable(this.subnets);
+	}
+
+	public Optional<IPAddress> getSubnet(MachineType subnet) {
+		return Optional.ofNullable(this.subnets.get(subnet));
+	}
+
+	public Optional<String> getProperty(String label, String property) {
+		return Optional.ofNullable(getMachineData(label).getData().getString(property, null));
+	}
+
+	public Optional<JsonObject> getProperties(String machine, String properties) {
+		return Optional.ofNullable(getMachineData(machine).getData().getJsonObject(properties));
+	}
+
+	public Map<String, AMachineData> getMachines() {
+		////assertNotNull(this.machines);
+
+		return this.machines;
+	}
+
 	/**
-	 * Gets an arbitrary property object array.
-	 *
-	 * Use this method with great care, you should only really call a wrapper
+	 * Gets all machines which have a given Type declared in their Data
+	 * @param type The type of machines to get
+	 * @return Optionally a Map of machines, indexed by their label
 	 */
-	public final JsonArray getPropertyObjectArray(String machine, String property)
-	throws InvalidMachineException {
-		return this.getAMachineData(machine).getPropertyObjectArray(property);
-	}
-	
-	private final Boolean isServer(String machine) {
-		return this.servers.containsKey(machine);
-	}
-	
-	private final Boolean isDevice(String machine) {
-		return this.devices.containsKey(machine);
-	}
-	
-	private final AMachineData getAMachineData(String machine)
-	throws InvalidMachineException {
-		if (isServer(machine)) {
-			return this.getServerData(machine);
-		}
-		if (isDevice(machine)) {
-			return this.getDevice(machine);
-		}
-		
-		throw new InvalidMachineException();
-	}
-	
-	private final ServiceData getServiceData(String service)
-	throws InvalidServerException {
-		if (isServer(service)) {
-			return (ServiceData) this.servers.get(service);
-		}
-		else {
-			throw new InvalidServerException();
-		}
+	public Optional<Map<String, AMachineData>> getMachines(MachineType type) {
+		Map<String, AMachineData> machines = getMachines().entrySet()
+				.stream()
+				.filter(Objects::nonNull)
+				.filter(kvp -> kvp.getValue().isType(type))
+				.collect(Collectors.toMap(kvp -> kvp.getKey(), kvp -> kvp.getValue()));
+
+		return Optional.ofNullable(machines);
 	}
 
-	private final HypervisorData getHypervisorData(String hypervisor)
-	throws InvalidServerException {
-		if (isServer(hypervisor)) {
-			return (HypervisorData) this.servers.get(hypervisor);
-		}
-		else {
-			throw new InvalidServerException();
-		}
-	}
-	public HostName getFQDN(String machine)
-	throws InvalidMachineException {
-		return getAMachineData(machine).getFQDN();
-	}
-
-	final public Set<String> getTypes(String server)
-	throws InvalidServerException {
-		Set<String> types = getServerData(server).getTypes();
-		
-		if (types.isEmpty()) {
-			types = this.defaultServiceData.getTypes();
-		}
-		
-		return types;
-	}
-	
-	public Set<HostName> getCnames(String machine)
-	throws InvalidMachineException {
-		return getAMachineData(machine).getCnames();
-	}
-	
-	public IPAddress getExternalIp(String machine)
-	throws InvalidMachineException {
-		return getAMachineData(machine).getExternalIp();
-	}
-	
-	final public Set<String> getAdmins(String server)
-	throws InvalidServerException {
-		Set<String> admins = getServerData(server).getAdmins();
-		
-		if (admins.isEmpty()) {
-			admins = this.defaultServiceData.getAdmins();
-		}
-
-		return admins;
-	}
-	
-	public Integer getAdminPort(String server) {
-		Integer port = this.servers.get(server).getAdminPort();
-		
-		if (port == null) {
-			port = this.defaultServiceData.getAdminPort();
-			if (port == null) {
-				port = NetworkData.DEFAULT_ADMIN_PORT;
-			}
-		}
-		
-		return port;
-	}
-	
-	public Integer getSSHPort(String server) {
-		Integer port = this.servers.get(server).getSSHPort();
-		
-		if (port == null) {
-			port = this.defaultServiceData.getSSHPort();
-			if (port == null) {
-				port = NetworkData.DEFAULT_SSH_PORT;
-			}
-		}
-		
-		return port;
-	}
-
-	public Boolean getAutoUpdate(String server) {
-		Boolean update = this.servers.get(server).getUpdate();
-		
-		if (update == null) {
-			update = this.defaultServiceData.getUpdate();
-			if (update == null) {
-				update = NetworkData.DEFAULT_UPDATE;
-			}
-		}
-		
-		return update;
-	}
-
-	public String getKeePassDB(String server)
-	throws URISyntaxException {
-		String db = this.servers.get(server).getKeePassDB();
-		
-		if (db == null) {
-			db = this.defaultServiceData.getKeePassDB();
-			if (db == null) {
-				db = NetworkData.DEFAULT_KEEPASS_DB;
-			}
-		}
-		
-		return db;
-	}
-	
-	public Set<NetworkInterfaceData> getLanIfaces(String machine)
-	throws InvalidMachineException {
-		return getAMachineData(machine).getLanInterfaces();
-	}
-	
-	public Set<NetworkInterfaceData> getWanIfaces(String machine)
-	throws InvalidMachineException {
-		return getAMachineData(machine).getWanInterfaces();
-	}
-
-	public Integer getRam(String service)
-	throws InvalidServerException {
-		Integer ram = getServiceData(service).getRAM();
-		
-		if (ram == null) {
-			ram = this.defaultServiceData.getRAM();
-			if (ram == null) {
-				ram = NetworkData.DEFAULT_RAM;
-			}
-		}
-		
-		return ram;
-	}
-
-	public Integer getCpus(String service)
-	throws InvalidServerException {
-		Integer cpus = getServiceData(service).getCPUs(); 
-		
-		if (cpus == null) {
-			cpus = this.defaultServiceData.getCPUs();
-			if (cpus == null) {
-				cpus = NetworkData.DEFAULT_CPUS;
-			}
-		}
-		
-		return cpus;
-	}
-	
-	public WANConnection getWanConnection(String server) {
-		WANConnection connection = this.servers.get(server).getWanConnection();
-		
-		if (connection == null) {
-			connection = this.defaultServiceData.getWanConnection();
-		}
-		
-		return connection;
-	}
-
-	public String getDebianIsoUrl(String service)
-	throws InvalidServerException {
-		String url = getServiceData(service).getDebianIsoUrl();
-		
-		if (url == null) {
-			url = this.defaultServiceData.getDebianIsoUrl();
-			if (url == null) {
-				try {
-					url = NetworkData.DEFAULT_DEBIAN_ISO_DIR;
-
-					URL isoVersion = new URL(url + "SHA512SUMS");
-			        BufferedReader line = new BufferedReader(new InputStreamReader(isoVersion.openStream()));
-			        String inputLine;
-			        if ((inputLine = line.readLine()) != null) {
-			            String[] netInst = inputLine.split(" ");
-			            url += netInst[2];
-			        }
-			        line.close();
-				}
-				catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		}
-		
-		return url;
-	}
-
-	public String getDebianIsoSha512(String service)
-	throws InvalidServerException {
-		String hash = getServiceData(service).getDebianIsoSha512();
-		
-		if (hash == null) {
-			hash = this.defaultServiceData.getDebianIsoSha512();
-			if (hash == null) {
-				try {
-					String url = NetworkData.DEFAULT_DEBIAN_ISO_DIR;
-
-					URL isoVersion = new URL(url + "SHA512SUMS");
-			        BufferedReader line = new BufferedReader(new InputStreamReader(isoVersion.openStream()));
-			        String inputLine;
-			        if ((inputLine = line.readLine()) != null) {
-			            String[] netInst = inputLine.split(" ");
-			            hash = netInst[0];
-			        }
-			        line.close();
-				}
-				catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		}
-		
-		return hash;
-	}
-
-	public File getHypervisorThornsecBase(String hypervisor)
-	throws InvalidServerException {
-		File baseDir = getHypervisorData(hypervisor).getVmBase();
-		
-		if (baseDir == null) {
-			baseDir = this.defaultHypervisorData.getVmBase();
-			if (baseDir == null) {
-				baseDir = new File(NetworkData.DEFAULT_THORNSECBASE);
-			}
-		}
-	
-		return baseDir;
-	}
-
-	public URI getDebianMirror(String server)
-	throws URISyntaxException {
-		URI mirror = this.servers.get(server).getDebianMirror();
-		
-		if (mirror == null) {
-			mirror = this.defaultServiceData.getDebianMirror();
-			if (mirror == null) {
-				mirror = new URI(NetworkData.DEFAULT_DEBIANMIRROR);
-			}
-		}
-		
-		return mirror;
-	}
-
-	public String getDebianDirectory(String server) {
-		String directory = this.servers.get(server).getDebianDirectory();
-		
-		if (directory == null) {
-			directory = this.defaultServiceData.getDebianDirectory();
-			if (directory == null) {
-				directory = NetworkData.DEFAULT_DEBIANDIR;
-			}
-		}
-		
-		return directory;
-	}
-	
-	public final Set<String> getDeviceNames() {
-		return this.devices.keySet();
-	}
-	
-	public final Set<String> getServerNames() {
-		return this.servers.keySet();
-	}
-	
-	private final ADeviceData getDevice(String device)
-	throws InvalidMachineException, InvalidDeviceException {
-		Object dev = getAMachineData(device);
-		
-		if (dev instanceof ADeviceData) {
-			return (ADeviceData) dev;
-		}
-		else {
-			throw new InvalidDeviceException();
-		}
-	}
-	
-	private final UserDeviceData getUserDeviceData(String user)
-	throws InvalidUserException, InvalidMachineException {
-		Object device = getAMachineData(user);
-		
-		if (device instanceof UserDeviceData) {
-			return (UserDeviceData) device;
-		}
-		else {
-			throw new InvalidUserException();
-		}
-	}
-	
-	private final ServerData getServerData(String server)
-	throws InvalidServerException {
-		Object device = this.servers.get(server);
-		
-		if (device instanceof ServerData) {
-			return (ServerData) device;
-		}
-		else {
-			throw new InvalidServerException();
-		}
-	}
-	
-	public final String getUserSSHKey(String user)
-	throws InvalidUserException, InvalidMachineException {
-		return getUserDeviceData(user).getSSHKey();
-	}
-	
-	public final String getUserFullName(String user)
-	throws InvalidUserException, InvalidMachineException {
-		return getUserDeviceData(user).getFullName();
-	}
-	
-	public final Boolean getMachineIsThrottled(String machine)
-	throws InvalidMachineException {
-		return getAMachineData(machine).getIsThrottled();
-	}
-	
-	public final Boolean getDeviceIsManaged(String device)
-	throws InvalidMachineException, InvalidDeviceException {
-		return getDevice(device).getIsManaged();
-	}
-
-	public final Hashtable<Encapsulation, Set<HostName>> getListens(String machine)
-	throws InvalidMachineException {
-		return getAMachineData(machine).getListens();
-	}
-	
-	public final String getDeviceType(String device) {
-		String type = this.devices.get(device).getClass().getSimpleName().replace("DeviceData", "");
-		
-		assert !type.isEmpty();
-		
-		return type;
-	}
-	
-	public final String getUserDefaultPassword(String user)
-	throws InvalidUserException, InvalidMachineException {
-		return getUserDeviceData(user).getDefaultPassword();
-	}
-	
-	public final InternetAddress getEmailAddress(String machine)
-	throws InvalidMachineException {
-		return getAMachineData(machine).getEmailAddress();
-	}
-	
-	final public Set<HostName> getEgress(String machine)
-	throws InvalidMachineException {
-		return getAMachineData(machine).getEgresses();
-	}
-	
-	public Set<HostName> getForwards(String machine)
-	throws InvalidMachineException {
-		return getAMachineData(machine).getForwards();
-	}
-
-	public Set<HostName> getRequiredIngress(String machine)
-	throws InvalidMachineException {
-		return getAMachineData(machine).getIngresses();
+	public Map<String, UserData> getUsers() {
+		return this.users;
 	}
 }

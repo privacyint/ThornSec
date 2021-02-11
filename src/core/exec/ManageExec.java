@@ -3,6 +3,9 @@ package core.exec;
 import java.io.OutputStream;
 import java.net.InetAddress;
 
+import core.model.machine.ServerModel;
+import core.model.network.NetworkModel;
+
 public class ManageExec {
 
 	private InetAddress ip;
@@ -22,6 +25,10 @@ public class ManageExec {
 		this.cmd = cmd;
 		this.out = out;
 		this.password = password;
+	}
+
+	public ManageExec(ServerModel serverModel, NetworkModel networkModel, String cmd, OutputStream out) {
+		// TODO Auto-generated constructor stub
 	}
 
 	public ProcessExec manage() {

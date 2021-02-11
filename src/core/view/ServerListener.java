@@ -5,7 +5,7 @@ import java.awt.event.ActionListener;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import core.model.NetworkModel;
+import core.model.network.NetworkModel;
 
 public class ServerListener implements ActionListener {
 
@@ -22,17 +22,22 @@ public class ServerListener implements ActionListener {
 	}
 
 	public void actionPerformed(ActionEvent e) {
-		String action = e.getActionCommand();
-		if (action.equals("Audit"))
-			network.auditNonBlock(server, out, in, false);
-		else if (action.equals("Dry Run"))
-			network.dryrunNonBlock(server, out, in);
-		else if (action.equals("Config"))
-			network.configNonBlock(server, out, in);
-		else if (action.equals("Build ISO"))
-			network.genIsoServer(server, "./");
-		else if (action.equals("Audit All"))
-			network.auditAll(out, in, false);
+		try {
+			String action = e.getActionCommand();
+			if (action.equals("Audit"))
+				network.auditNonBlock(server, out, in, false);
+			else if (action.equals("Dry Run"))
+				network.dryrunNonBlock(server, out, in);
+			else if (action.equals("Config"))
+				network.configNonBlock(server, out, in);
+			//else if (action.equals("Build ISO"))
+			//	network.genIsoServer(server, "./");
+			else if (action.equals("Audit All"))
+				network.auditAll(out, in, false);
+		}
+		catch (Exception ex) {
+			System.out.println(ex.getLocalizedMessage());
+		}
  	}
 
 }

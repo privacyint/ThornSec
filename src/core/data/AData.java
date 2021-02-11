@@ -1,25 +1,32 @@
+/*
+ * This code is part of the ThornSec project.
+ * 
+ * To learn more, please head to its GitHub repo: @privacyint
+ * 
+ * Pull requests encouraged.
+ */
 package core.data;
 
+//import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.json.JsonArray;
+import java.nio.file.Path;
 import javax.json.JsonObject;
-import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
 
 import core.exception.data.ADataException;
-import core.exception.data.InvalidPropertyArrayException;
 
 /**
- * Abstract class for something representing "Data" on our network 
+ * Abstract class for something representing "Data" on our network.
+ * 
+ * This is something which has been read() from a JSON, and for our purposes
+ * acts as a DAO.
  */
 public abstract class AData {
 
 	private final String label;
 	private JsonObject data;
+	private Path configFilePath;
 
 	/**
 	 * Instantiates a new data object.
@@ -27,21 +34,40 @@ public abstract class AData {
 	 * @param label the label for this object
 	 */
 	protected AData(String label) {
-		this.label = label;
+		////assertNotNull(label);
 		
+		this.label = label;
+		this.configFilePath = null;
 	}
 
 	/**
 	 * Abstract JSON read method - must be overridden by descendants
 	 *
 	 * @param data the JSON data
-	 * @throws ADataException 
-	 * @throws IOException 
-	 * @throws JsonParsingException 
-	 * @throws URISyntaxException 
+	 * @return the built AData
+	 * @throws ADataException
+	 * @throws IOException
+	 * @throws JsonParsingException
+	 * @throws URISyntaxException
 	 */
-	protected abstract void read(JsonObject data)
-	throws ADataException, JsonParsingException, IOException, URISyntaxException;
+	protected abstract AData read(JsonObject data) throws ADataException;
+
+	/**
+	 * JSON read method - must be overridden by descendants
+	 *
+	 * @param data the JSON data
+	 * @param configFilePath path to the config file the data came from
+	 * @return 
+	 * @throws ADataException
+	 * @throws IOException
+	 * @throws JsonParsingException
+	 * @throws URISyntaxException
+	 */
+	public AData read(JsonObject data, Path configFilePath) throws ADataException {
+		this.configFilePath = configFilePath;
+
+		return this.read(data);
+	}
 
 	/**
 	 * Gets the object label.
@@ -49,114 +75,39 @@ public abstract class AData {
 	 * @return the object label
 	 */
 	public final String getLabel() {
+		////assertNotNull(this.label);
+
 		return this.label;
 	}
-	
+
+	/**
+	 * Gets the path to the config file this AData was initially read() against
+	 *
+	 * @return the path, or null if not reading from a file
+	 */
+	public final Path getConfigFilePath() {
+		return this.configFilePath;
+	}
+
 	/**
 	 * Gets the object's data.
 	 *
 	 * @return the data
 	 */
 	public final JsonObject getData() {
+		////assertNotNull(this.data);
+
 		return this.data;
 	}
-	
+
 	/**
 	 * Sets the object's data.
 	 *
-	 * @param data the new data
+	 * @param object the new data
 	 */
 	protected final void setData(JsonObject data) {
+		////assertNotNull(data);
+
 		this.data = data;
-	}
-
-	/**
-	 * Parses an arbitrary list of Integers from a string representation.
-	 *
-	 * @param toParse the string of Integers to parse, with any non-numeric
-	 *                character used as a delimiter
-	 * @return Integers
-	 */
-	protected final Set<Integer> parseIntList(String toParse)
-	throws NumberFormatException {
-		Set<Integer> integers = new HashSet<Integer>();
-		
-		if (toParse != null && !toParse.isEmpty()) {
-			//Don't really care what delimiters people use, tbh
-			String[] intStrings = toParse.trim().split("[^0-9]");
-			
-			assert intStrings.length > 0;
-			
-			for (String intString : intStrings) {		
-				integers.add(Integer.parseInt(intString));
-			}
-		}
-		
-		return integers;
-	}
-	
-	/**
-	 * Gets an arbitrary property from the object's data.
-	 * 
-	 * You should avoid using this method directly where possible, but
-	 * we keep it public in case a profile wishes to use it.
-	 *
-	 * @param property the property to read
-	 * @param defaultVal the default value
-	 * @return the property's value
-	 */
-	public final String getStringProperty(String property, String defaultVal) {
-		return getData().getString(property, defaultVal);
-	}
-	
-	public final String getStringProperty(String property) {
-		return getStringProperty(property, null);
-	}
-	
-	public final Boolean getBooleanProperty(String property) {
-		if (getStringProperty(property, null) != null) {
-			return getData().getBoolean(property);
-		}
-
-		return null;
-	}
-
-	public final Integer getIntegerProperty(String property) {
-		if (getStringProperty(property, null) != null) {
-			return getData().getInt(property);
-		}
-
-		return null;
-	}
-	
-	/**
-	 * Gets an arbitrary array of properties from the object's data.
-	 *
-	 * @param property the property array to read
-	 * @return the property values array, or empty array if unset
-	 * @throws InvalidPropertyArrayException 
-	 */
-	public final Set<String> getPropertyArray(String property)
-	throws InvalidPropertyArrayException {
-		JsonArray jsonProperties = getPropertyObjectArray(property);
-		Set<String> properties = new HashSet<String>();
-		
-		if (jsonProperties == null) { throw new InvalidPropertyArrayException(); }
-			
-		for (JsonValue jsonProperty : jsonProperties) {
-			properties.add(jsonProperty.toString());
-		}
-		
-		return properties;
-	}
-	
-	/**
-	 * Gets the property's object array.
-	 *
-	 * @param property the property
-	 * @return the property object array
-	 */
-	public final JsonArray getPropertyObjectArray(String property) {
-		return getData().getJsonArray(property);
 	}
 }

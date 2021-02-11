@@ -1,24 +1,18 @@
 #!/bin/bash
-if [ $# -eq 0 ]
-then
-    echo "No parameter supplied. You need to provide the name of the VM as a parameter, or 'all' to stop all VMs"
-    exit 1;
-fi
-
 vmRunning() {
-    return $( ! [ -z $(sudo -u vboxuser_"${1}" VBoxManage list runningvms ) ] &> /dev/null );
+    return $( ! [ -z "$(sudo -u vboxuser_${1} VBoxManage list runningvms )" ] &> /dev/null );
 }
 
 stopVm() {
     vm="${1}";
     pullPlug=15;
 
-    printf "Attempting the graceful stopping of ${vm}...";
+    printf "Attempting the graceful stopping of %s..." "${vm}";
 
-    if vmRunning ; then
+    if vmRunning "${vm}"; then
         sudo -u vboxuser_"${vm}" VBoxManage controlvm "${vm}" acpipowerbutton;
 
-        while vmRunning && [ "${pullPlug}" -gt 0 ] ; do
+        while vmRunning "${vm}" && [ "${pullPlug}" -gt 0 ] ; do
             printf ".";
             (( pullPlug-- ));
 	    sleep 1;
@@ -28,8 +22,7 @@ stopVm() {
         sudo -u vboxuser_"${vm}" VBoxManage controlvm "${vm}" acpipowerbutton;
     fi;
 
-
-    if vmRunning && [ ${pullPlug} -eq 0 ]; then
+    if vmRunning "${vm}" && [ ${pullPlug} -eq 0 ]; then
         printf "15 seconds has elapsed.\nPulling the plug.\n\n";
         sudo -u vboxuser_"${vm}" VBoxManage controlvm "${vm}" poweroff;
         wait $!;
@@ -39,17 +32,23 @@ stopVm() {
 }
 
 stopAll() {
-    echo "=== Stopping all VMs at $(date) ==="
-    for dirPath in /media/VMs/disks/data/*/
-    do
-        dirPath="${dirPath%*/}"
-        vm="${dirPath##*/}"
-        stopVm "${vm}"
+    printf "=== Stopping all VMs at %s ===" "$(date)\n";
+    for dirPath in /media/VMs/disks/data/*/; do
+        dirPath="${dirPath%*/}";
+        vm="${dirPath##*/}";
+        stopVm "${vm}";
     done
-    echo "=== Finished stopping all VMs at $(date) ==="
+    printf "=== Finished stopping all VMs at %s ===" "$(date)";
 }
 
-vm="${1}"
+
+
+if [ $# -eq 0 ]; then
+    printf "No parameter supplied. You need to provide the name of the VM as a parameter, or 'all' to stop all VMs";
+    exit 1;
+fi
+
+vm="${1}";
 
 case "${vm}" in
     all ) stopAll;;

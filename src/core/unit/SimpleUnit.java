@@ -1,12 +1,16 @@
+/*
+ * This code is part of the ThornSec project.
+ * 
+ * To learn more, please head to its GitHub repo: @privacyint
+ * 
+ * Pull requests encouraged.
+ */
 package core.unit;
-
-import java.util.regex.Pattern;
 
 public class SimpleUnit extends ComplexUnit {
 
 	protected String test;
 	protected String result;
-	protected String message;
 
 	/**
 	 * This is a unit test, with a default fail message.
@@ -22,7 +26,6 @@ public class SimpleUnit extends ComplexUnit {
 		super(name, precondition, config, audit);
 		this.test = test;
 		this.result = result;
-		this.message = "This is a placeholder.  I don't know whether this failure is good, bad, or indifferent.  I'm sorry!";
 	}
 	
 	/**
@@ -37,43 +40,37 @@ public class SimpleUnit extends ComplexUnit {
 	 * @param message      Custom fail message
 	 */
 	public SimpleUnit(String name, String precondition, String config, String audit, String test, String result, String message) {
-		super(name, precondition, config, audit);
+		super(name, precondition, config, audit, message);
 		this.test = test;
 		this.result = result;
-		this.message = message;
 	}
 
-	protected String getAudit() {
-		String auditString = "out=$(" + super.getAudit() + ");\n";
-		auditString += "test=\"" + getTest() + "\";\n";
-		
-		if (getResult().equals("fail"))
-			auditString += "if [ \"$out\" = \"$test\" ] ; then\n";
-		else
-			auditString += "if [ \"$out\" != \"$test\" ] ; then\n";
-		auditString += "\t" + getLabel() + "=0;\n";
-		auditString += "else\n";
-		auditString += "\t" + getLabel() + "=1;\n";
-		auditString += "fi ;\n";
+	@Override
+	protected final String getAudit() {
+		String operator = (getResult().equals("fail")) ? "!=" : "=" ;
+
+		String auditString = "";
+		auditString += getLabel() + "_expected=\\\n";
+		auditString +=  "\"" + getTest() + "\";\n";		
+		auditString += "\n";
+		auditString += getLabel() + "_audit() {\n";
+		auditString += "\t" +getLabel() + "_actual=$(" + super.getAudit() + ");\n";
+		auditString += "\n";
+		auditString += "\tif [ \"$" + getLabel() + "_actual\" " + operator + " \"$" + getLabel() + "_expected\" ] ; then\n";
+		auditString += "\t\t" + getLabel() + "_audit_passed=1\n";
+		auditString += "\telse\n";
+		auditString += "\t\t" + getLabel() + "_audit_passed=0\n";
+		auditString += "\tfi\n";
+		auditString += "}\n";
+
 		return auditString;
 	}
 
-	protected String getTest() {
+	protected final String getTest() {
 		return this.test;
 	}
 
-	protected String getResult() {
+	protected final String getResult() {
 		return this.result;
 	}
-	
-	protected String getMessage() {
-		String message = this.message;
-		
-		message = Pattern.quote(message); //Turn special characters into literal so they don't get parsed out
-		message = message.substring(2, message.length()-2).trim(); //Remove '\Q' and '\E' from beginning/end since we're not using this as a regex
-		message = message.replace("\"", "\\\""); //Also, make sure quote marks are properly escaped!
-		
-		return message;
-	}
-
 }
