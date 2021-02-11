@@ -83,4 +83,3 @@ Learn more about the [structure](doc/structure.md) behind ThornSec so you can co
 # No Use
 
 Not for use by governments of United Kingdom, United States and Israel.
-
